@@ -56,6 +56,19 @@ describe('moodFor', () => {
     expect(moodFor(days([5, 0], [4, 4], [3, 3], [3, 3]))).toBe('happy');
   });
 
+  it('is happy when at least one mission is completed today, whatever the last 3 days show', () => {
+    expect(moodFor([], 1)).toBe('happy');
+    expect(moodFor([], 5)).toBe('happy');
+    // Would be sad from last 3 days alone (2 of 10 = 20%), but today has a completion.
+    expect(moodFor(days([4, 1], [3, 1], [3, 0]), 1)).toBe('happy');
+  });
+
+  it('falls back to the last 3 days when nothing is completed today', () => {
+    expect(moodFor(days([4, 3], [3, 3], [3, 2]), 0)).toBe('happy');
+    expect(moodFor(days([4, 1], [3, 1], [3, 0]), 0)).toBe('sad');
+    expect(moodFor(days([10, 5], [10, 5], [10, 5]), 0)).toBe('normal');
+  });
+
   it('rejects impossible days', () => {
     expect(() => moodFor(days([2, 3]))).toThrow(RangeError);
     expect(() => moodFor(days([-1, 0]))).toThrow(RangeError);

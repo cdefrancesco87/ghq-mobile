@@ -46,12 +46,17 @@ export function stageFor(
 }
 
 /**
- * Mood from the missions of the last 3 days: happy above 70% done, sad below 30%, normal in
- * between (borders included) and when no mission was due.
+ * Mood from today's completions and the missions of the last 3 closed days (CLAUDE.md, choice 13):
+ * happy if at least one mission is done today; otherwise happy above 70%, sad below 30%, normal in
+ * between (borders included) and when no mission was due in the last 3 days.
  *
  * @param lastDays The closed days, oldest first; only the last 3 count.
+ * @param todayDoneCount Completions done in the current open day (not yet closed).
  */
-export function moodFor(lastDays: readonly DayCompletion[]): Mood {
+export function moodFor(lastDays: readonly DayCompletion[], todayDoneCount = 0): Mood {
+  if (todayDoneCount >= 1) {
+    return 'happy';
+  }
   let scheduled = 0;
   let done = 0;
   for (const day of lastDays.slice(-MOOD.windowDays)) {
