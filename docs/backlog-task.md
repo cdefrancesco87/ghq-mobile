@@ -127,7 +127,7 @@ Tutto in `src/rules/`, senza React, Expo o database. Ogni file ha il suo `*.test
 - **Fatto quando:** i test coprono 0, 1, 149 e 150 completamenti e i bordi esatti del 30% e del 70%.
 - **Dipende da:** T04.
 
-### [!] T14 – Chiusura dei giorni
+### [ ] T14 – Chiusura dei giorni
 - **Obiettivo:** la funzione pura che chiude uno o più giorni passati, anche dopo giorni senza aprire l'app.
 - **Riferimenti:** `modello-dati.md` 3.7 e sezione 5; `analisi-funzionale.md` «Regole di gioco» (Vita, Serie); `CLAUDE.md` scelta minore 3.
 - **Da fare:** in `src/rules/closeDays.ts`: `closeDays({lastClosedDay, today, missions, missionDays, hero, inventory, settings})` che, per ogni giorno intero tra l'ultimo chiuso e oggi, calcola il riepilogo (`scheduled_count`, `done_count`, `scheduled_xp`, `missed_xp`, `hp_lost`, `is_rest_day`, `shield_used`…), consuma lo scudo nel primo giorno mancato, aggiorna le serie, gestisce esausto e ritorno a 13. Restituisce l'elenco dei riepiloghi e delle variazioni, senza scrivere niente.
