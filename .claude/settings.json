@@ -1,5 +1,20 @@
 {
   "model": "opus",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/check-commit-lang.sh",
+            "if": "Bash(git commit*)",
+            "statusMessage": "Checking commit message language…"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Edit",
