@@ -404,6 +404,7 @@ export function listTodayMissions(db: Db, day: GameDay): Mission[] {
   // Completions that decide whether a mission is still due: this week's for the habits counted
   // per week, and every earlier one for the tasks.
   const taskIds = candidates.filter((mission) => mission.kind === 'task').map((m) => m.id);
+  const thisWeek = weekStartOf(day, weekStart);
   const done = db
     .select({ missionId: missionDays.missionId, gameDay: missionDays.gameDay })
     .from(missionDays)
@@ -418,7 +419,7 @@ export function listTodayMissions(db: Db, day: GameDay): Mission[] {
       ),
     )
     .all()
-    .filter((row) => taskIds.includes(row.missionId) || row.gameDay >= weekStartOf(day, weekStart));
+    .filter((row) => taskIds.includes(row.missionId) || row.gameDay >= thisWeek);
   return candidates.filter((mission) =>
     isDueToday(mission, day, {
       weekStart,
