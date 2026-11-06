@@ -13,6 +13,7 @@ import {
 import { COMPANION_STAGES } from '../rules/companion';
 import { DAY_PLAN, HP, SHOP } from '../rules/config';
 import type { Frequency } from '../rules/frequency';
+import type { EventType } from './repositories/events';
 import { DIFFICULTIES, STAT_KEYS, type GameDay, type StatPoints } from '../rules/types';
 
 // The tables of the data model (modello-dati.md, sections 3 and 4). Names are snake_case in the
@@ -304,7 +305,7 @@ export const events = sqliteTable(
     seq: integer('seq').primaryKey({ autoIncrement: true }),
     /** UUID v7, sortable in time. */
     id: text('id').notNull().unique(),
-    type: text('type').notNull(),
+    type: text('type').$type<EventType>().notNull(),
     /** Version of the format of this event type. */
     v: integer('v').notNull().default(1),
     occurredAt: integer('occurred_at').notNull(),

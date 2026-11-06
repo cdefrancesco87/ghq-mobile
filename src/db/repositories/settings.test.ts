@@ -1,6 +1,7 @@
 import {
   SETTING_DEFAULTS,
   dayChangeOn,
+  gameDayOf,
   getDeviceId,
   getSetting,
   setDayChange,
@@ -120,5 +121,30 @@ describe('getDeviceId', () => {
     const id = getDeviceId(db, NOW);
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(getDeviceId(db, NOW + 1000)).toBe(id);
+  });
+});
+
+describe('gameDayOf', () => {
+  const ROME = 60;
+  const at = (day: number, hour: number, minute = 0) => Date.UTC(2026, 10, day, hour - 1, minute);
+
+  it('uses the day change time in force', () => {
+    const setting = { value: '06:00', next: null, from_day: null };
+    expect(gameDayOf(at(6, 1), ROME, setting)).toBe('2026-11-05');
+    expect(gameDayOf(at(6, 6), ROME, setting)).toBe('2026-11-06');
+  });
+
+  it('ends the day in progress with the old time when the new one is earlier', () => {
+    const earlier = { value: '06:00', next: '05:00', from_day: '2026-11-07' as const };
+    expect(gameDayOf(at(7, 5, 30), ROME, earlier)).toBe('2026-11-06');
+    expect(gameDayOf(at(7, 6), ROME, earlier)).toBe('2026-11-07');
+    expect(gameDayOf(at(8, 5), ROME, earlier)).toBe('2026-11-08');
+  });
+
+  it('never goes back to the day before when the new time is later', () => {
+    const later = { value: '05:00', next: '06:00', from_day: '2026-11-07' as const };
+    expect(gameDayOf(at(7, 5, 30), ROME, later)).toBe('2026-11-07');
+    expect(gameDayOf(at(8, 5, 30), ROME, later)).toBe('2026-11-07');
+    expect(gameDayOf(at(8, 6), ROME, later)).toBe('2026-11-08');
   });
 });

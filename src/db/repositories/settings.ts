@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { z } from 'zod';
 
-import { addDays, isGameDay } from '../../rules/gameDay';
+import { addDays, isGameDay, toGameDay } from '../../rules/gameDay';
 import { GAME_MODES, type GameDay } from '../../rules/types';
 import { settings } from '../schema';
 import type { Db } from '../types';
@@ -127,6 +127,26 @@ export function dayChangeOn(setting: DayChangeSetting, day: GameDay): string {
   return setting.next !== null && setting.from_day !== null && day >= setting.from_day
     ? setting.next
     : setting.value;
+}
+
+/**
+ * The game day of an instant with the day change setting. With a pending change, the day in
+ * progress still ends at the old time and the new time counts from `from_day`; the game day never
+ * goes back to a day before `from_day`, even when the new time is later than the old one.
+ *
+ * @param tzOffsetMinutes Minutes east of UTC (local time = UTC + offset).
+ */
+export function gameDayOf(
+  instantMs: number,
+  tzOffsetMinutes: number,
+  setting: DayChangeSetting,
+): GameDay {
+  const byCurrent = toGameDay(instantMs, tzOffsetMinutes, setting.value);
+  if (setting.next === null || setting.from_day === null || byCurrent < setting.from_day) {
+    return byCurrent;
+  }
+  const byNext = toGameDay(instantMs, tzOffsetMinutes, setting.next);
+  return byNext > setting.from_day ? byNext : setting.from_day;
 }
 
 /**
