@@ -20,3 +20,48 @@ export function createTestDb(): Db {
   migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
   return db;
 }
+
+export interface HeroTotals {
+  readonly xp: number;
+  readonly coins: number;
+  readonly hp: number;
+  /** Stat points different from 0. */
+  readonly stats: Readonly<Record<string, number>>;
+}
+
+/** XP, coins, hit points and stat points of the hero, as stored in `hero` and `hero_stats`. */
+export function heroTotals(db: Db): HeroTotals {
+  const hero = db.select().from(schema.hero).get();
+  const stats: Record<string, number> = {};
+  for (const row of db.select().from(schema.heroStats).all()) {
+    if (row.points !== 0) {
+      stats[row.statKey] = row.points;
+    }
+  }
+  return { xp: hero?.xpTotal ?? 0, coins: hero?.coins ?? 0, hp: hero?.hp ?? 0, stats };
+}
+
+/**
+ * The same totals as the sum of the changes in the event log: they must always match the hero
+ * (modello-dati.md, 4.3).
+ */
+export function totalsFromLog(db: Db): HeroTotals {
+  let xp = 0;
+  let coins = 0;
+  let hp = 0;
+  const stats: Record<string, number> = {};
+  for (const event of db.select().from(schema.events).all()) {
+    xp += event.dXp;
+    coins += event.dCoins;
+    hp += event.dHp;
+    for (const [stat, points] of Object.entries(event.dStats ?? {})) {
+      stats[stat] = (stats[stat] ?? 0) + (points ?? 0);
+    }
+  }
+  for (const stat of Object.keys(stats)) {
+    if (stats[stat] === 0) {
+      delete stats[stat];
+    }
+  }
+  return { xp, coins, hp, stats };
+}

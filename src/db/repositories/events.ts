@@ -9,7 +9,11 @@ import { gameDayOf, getDeviceId, getSetting } from './settings';
 // The common brick of every game action: one row in the append-only event log, written in the
 // same transaction as the state tables (modello-dati.md, section 4).
 
-/** The event types of the data model (modello-dati.md, 4.2). */
+/**
+ * The event types of the data model (modello-dati.md, 4.2), plus `hero.created`: the creation of
+ * the profile, which brings the starting hit points into the log so that the log always adds up
+ * to the hero.
+ */
 export const EVENT_TYPES = [
   'mission.created',
   'mission.updated',
@@ -32,6 +36,7 @@ export const EVENT_TYPES = [
   'boss.defeated',
   'boss.deadline_missed',
   'boss.archived',
+  'hero.created',
   'hero.level_up',
   'hero.exhausted',
   'hero.renamed',
