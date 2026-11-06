@@ -7,12 +7,17 @@ $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 Set-Location (Join-Path $PSScriptRoot '..')
 $prompt = Get-Content -Raw -Encoding UTF8 'docs/prompt-loop.md'
-$round = 1
 
 while ($true) {
-    Write-Host "=== Giro $round ==="
+    # Sonnet once T26 is done, Opus before. Checked every round: the backlog changes.
+    if (Select-String -Path 'docs/backlog-task.md' -Pattern '^### \[x\] T26' -Quiet) {
+        $model = 'sonnet'
+    } else {
+        $model = 'opus'
+    }
+    Write-Host ">>> Giro con $model"
     # The prompt goes through stdin: multi-line arguments with quotes break on Windows.
-    $output = ($prompt | claude -p | Out-String)
+    $output = ($prompt | claude -p --model $model --effort high | Out-String)
     $status = $LASTEXITCODE
     Write-Host $output
 
@@ -23,5 +28,4 @@ while ($true) {
     if ($output -match 'LOOP FINITO|LOOP FERMO') {
         exit 0
     }
-    $round++
 }

@@ -5,11 +5,16 @@ set -uo pipefail
 
 cd "$(dirname "$0")/.."
 prompt="$(cat docs/prompt-loop.md)"
-round=1
 
 while true; do
-  echo "=== Giro $round ==="
-  output="$(claude -p "$prompt")"
+  # Sonnet once T26 is done, Opus before. Checked every round: the backlog changes.
+  if grep -q '^### \[x\] T26' docs/backlog-task.md; then
+    model=sonnet
+  else
+    model=opus
+  fi
+  echo ">>> Giro con $model"
+  output="$(claude -p "$prompt" --model "$model" --effort high)"
   status=$?
   echo "$output"
 
@@ -20,5 +25,4 @@ while true; do
   if grep -qE 'LOOP FINITO|LOOP FERMO' <<<"$output"; then
     exit 0
   fi
-  round=$((round + 1))
 done
