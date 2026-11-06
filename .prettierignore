@@ -6,3 +6,5 @@ CLAUDE.md
 package-lock.json
 assets/
 drizzle/
+# Exact copy of docs/riferimenti/temi.json, kept as it is to compare it with the original.
+src/theme/temi.json
