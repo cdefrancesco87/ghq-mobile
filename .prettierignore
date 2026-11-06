@@ -1,0 +1,7 @@
+# Project documents are copies of Claudio's originals: never reformat them.
+docs/
+CLAUDE.md
+# Tool settings, generated files and assets.
+.claude/
+package-lock.json
+assets/
