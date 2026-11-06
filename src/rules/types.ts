@@ -33,3 +33,7 @@ export interface Deltas {
   readonly hp: number;
   readonly stats: StatPoints;
 }
+
+/** Game mode of the `game_mode` setting: the full game or the Essential mode. */
+export const GAME_MODES = ['full', 'essential'] as const;
+export type GameMode = (typeof GAME_MODES)[number];
