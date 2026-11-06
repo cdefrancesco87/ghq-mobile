@@ -121,6 +121,11 @@ export const BOSS = {
   deadlineStealMax: 500,
   /** Warning this many days before the deadline. */
   deadlineWarningDays: 3,
+  /** Highest number of active bosses at the same time. */
+  maxActive: 3,
+  /** A boss has from minSteps to maxSteps steps. */
+  minSteps: 2,
+  maxSteps: 20,
 } as const;
 
 export const COMPANION = {
