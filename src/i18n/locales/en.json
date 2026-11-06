@@ -268,6 +268,20 @@
       "open_stats": "Open the statistics"
     }
   },
+  "nav": {
+    "today": "Today",
+    "habits": "Habits",
+    "new": "New quest",
+    "goals": "Goals",
+    "stats": "Statistics",
+    "profile": "Profile",
+    "companion": "Companion",
+    "shop": "Shop",
+    "settings": "Settings",
+    "onboarding": "First launch",
+    "editor": "Quest editor",
+    "placeholder": "This screen is coming soon."
+  },
   "skipReasons": {
     "illness": "Illness",
     "travel": "Travel",

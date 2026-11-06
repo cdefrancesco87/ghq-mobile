@@ -268,6 +268,20 @@
       "open_stats": "Öffne die Statistik"
     }
   },
+  "nav": {
+    "today": "Heute",
+    "habits": "Gewohnheiten",
+    "new": "Neue Mission",
+    "goals": "Ziele",
+    "stats": "Statistiken",
+    "profile": "Profil",
+    "companion": "Begleiter",
+    "shop": "Laden",
+    "settings": "Einstellungen",
+    "onboarding": "Erster Start",
+    "editor": "Missionseditor",
+    "placeholder": "Dieser Bildschirm kommt bald."
+  },
   "skipReasons": {
     "illness": "Krankheit",
     "travel": "Reise",

@@ -2,24 +2,43 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { Text } from 'react-native';
 
+import { AppProviders } from '@/features/shell/AppProviders';
+import { useBootstrap } from '@/features/shell/useBootstrap';
 import { FONT_FILES } from '@/theme/fonts';
 
-// The splash screen stays until the fonts of the themes are ready.
+// The splash screen stays until the fonts of the themes and the data are ready.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts(FONT_FILES);
+  const bootstrap = useBootstrap();
+  // If a font cannot be loaded the app still starts, with the system font.
+  const fontsReady = loaded || error !== null;
+  const dataReady = bootstrap.i18n !== null || bootstrap.status === 'error';
 
   useEffect(() => {
-    if (loaded || error) {
+    if (fontsReady && dataReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [fontsReady, dataReady]);
 
-  // If a font cannot be loaded the app still starts, with the system font.
-  if (!loaded && !error) {
+  if (bootstrap.status === 'error') {
+    // The database did not open or a migration failed: better to say so than to start half empty.
+    return <Text>{String(bootstrap.error)}</Text>;
+  }
+  if (!fontsReady || bootstrap.i18n === null) {
     return null;
   }
-  return <Stack />;
+  return (
+    <AppProviders i18n={bootstrap.i18n}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="editor"
+          options={{ presentation: 'formSheet', sheetAllowedDetents: [0.9] }}
+        />
+      </Stack>
+    </AppProviders>
+  );
 }

@@ -268,6 +268,20 @@
       "open_stats": "Ouvre les statistiques"
     }
   },
+  "nav": {
+    "today": "Aujourd'hui",
+    "habits": "Habitudes",
+    "new": "Nouvelle mission",
+    "goals": "Objectifs",
+    "stats": "Statistiques",
+    "profile": "Profil",
+    "companion": "Compagnon",
+    "shop": "Boutique",
+    "settings": "Réglages",
+    "onboarding": "Premier lancement",
+    "editor": "Éditeur de mission",
+    "placeholder": "Cet écran arrive bientôt."
+  },
   "skipReasons": {
     "illness": "Maladie",
     "travel": "Voyage",
