@@ -1,0 +1,34 @@
+{
+  "model": "opus",
+  "env": {
+    "CLAUDE_CODE_EFFORT_LEVEL": "max"
+  },
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git stash *)",
+      "Bash(git init*)",
+      "Bash(mkdir *)",
+      "Bash(mv *)",
+      "Bash(cp *)",
+      "Bash(ls*)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(npx eas *)",
+      "Bash(eas *)",
+      "Bash(npx eas-cli *)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)"
+    ]
+  }
+}
