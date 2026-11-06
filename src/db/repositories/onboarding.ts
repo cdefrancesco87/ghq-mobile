@@ -7,6 +7,7 @@ import { STAT_KEYS } from '../../rules/types';
 import { boss, bossSteps, companion, hero, heroStats, missions } from '../schema';
 import type { Db } from '../types';
 import { appendEvent } from './events';
+import { goalColumns } from './missions';
 import { setSetting, type SettingValue } from './settings';
 
 // The first launch (analisi-funzionale.md, section 1): the hero, the stats, the egg, the chosen
@@ -61,27 +62,6 @@ function templatesFor(keys: readonly string[]): MissionTemplate[] {
     }
     return template;
   });
-}
-
-function goalColumns(goal: MissionTemplate['goal']) {
-  switch (goal.type) {
-    case 'none':
-      return { goalType: 'none', goalTarget: null, goalUnit: null, goalStep: null } as const;
-    case 'quantity':
-      return {
-        goalType: 'quantity',
-        goalTarget: goal.target,
-        goalUnit: goal.unit,
-        goalStep: goal.increment,
-      } as const;
-    case 'duration':
-      return {
-        goalType: 'duration',
-        goalTarget: goal.target,
-        goalUnit: 'minute',
-        goalStep: goal.increment,
-      } as const;
-  }
 }
 
 /** True when the first launch has already created the profile. */

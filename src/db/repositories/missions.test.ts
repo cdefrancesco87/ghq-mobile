@@ -1,0 +1,396 @@
+import { asc, eq } from 'drizzle-orm';
+
+import { appendEvent, notDeleted } from '@/db/repositories/events';
+import {
+  archiveMission,
+  createMission,
+  deleteMission,
+  listTodayMissions,
+  pauseMission,
+  restoreMission,
+  resumeMission,
+  updateMission,
+} from '@/db/repositories/missions';
+import { setSetting } from '@/db/repositories/settings';
+import {
+  dayPlan,
+  events,
+  missionDays,
+  missionReminders,
+  missions,
+  scheduledReminders,
+} from '@/db/schema';
+import type { Db } from '@/db/types';
+import type { Frequency } from '@/rules/frequency';
+
+import { createTestDb } from '../../../test/db';
+
+const NOW = Date.UTC(2026, 10, 6, 8, 0); // 09:00 in Rome on Friday 6 November
+const CONTEXT = { now: NOW, tzOffset: 60 };
+
+function eventsOf(db: Db, missionId: string): string[] {
+  return db
+    .select({ type: events.type })
+    .from(events)
+    .where(eq(events.missionId, missionId))
+    .orderBy(asc(events.seq))
+    .all()
+    .map((row) => row.type);
+}
+
+function markDone(db: Db, missionId: string, gameDay: `${number}-${number}-${number}`): void {
+  db.insert(missionDays)
+    .values({ missionId, gameDay, status: 'done', source: 'app', doneAt: NOW, updatedAt: NOW })
+    .run();
+}
+
+function todayIds(db: Db, day: `${number}-${number}-${number}`): string[] {
+  return listTodayMissions(db, day).map((mission) => mission.id);
+}
+
+describe('createMission', () => {
+  it('saves a daily medium habit with just a name (US-EDT-01)', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: '  Leggi  ' }, CONTEXT);
+    expect(mission).toMatchObject({
+      name: 'Leggi',
+      kind: 'habit',
+      frequency: { type: 'daily' },
+      difficulty: 'medium',
+      goalType: 'none',
+      statPrimary: null,
+      status: 'active',
+      sortOrder: 1,
+      createdAt: NOW,
+    });
+    expect(db.select().from(missionReminders).all()).toEqual([]);
+    expect(eventsOf(db, mission.id)).toEqual(['mission.created']);
+  });
+
+  it('saves every field of the editor', () => {
+    const db = createTestDb();
+    const mission = createMission(
+      db,
+      {
+        name: 'Bevi',
+        difficulty: 'easy',
+        frequency: { type: 'weekdays', days: [1, 3, 5] },
+        goal: { type: 'quantity', target: 2, unit: 'liter', increment: 0.25 },
+        statPrimary: 'constitution',
+        statSecondary: 'discipline',
+        categoryKey: 'health',
+        notes: 'Con la borraccia',
+      },
+      CONTEXT,
+    );
+    expect(mission).toMatchObject({
+      difficulty: 'easy',
+      frequency: { type: 'weekdays', days: [1, 3, 5] },
+      goalType: 'quantity',
+      goalTarget: 2,
+      goalUnit: 'liter',
+      goalStep: 0.25,
+      statPrimary: 'constitution',
+      statSecondary: 'discipline',
+      categoryKey: 'health',
+      notes: 'Con la borraccia',
+    });
+  });
+
+  it('saves a task with an optional due day and no frequency', () => {
+    const db = createTestDb();
+    const task = createMission(
+      db,
+      { name: 'Dentista', kind: 'task', dueDay: '2026-11-10' },
+      CONTEXT,
+    );
+    expect(task).toMatchObject({ kind: 'task', frequency: null, dueDay: '2026-11-10' });
+    const noDate = createMission(db, { name: 'Bollette', kind: 'task' }, CONTEXT);
+    expect(noDate).toMatchObject({ frequency: null, dueDay: null, sortOrder: 2 });
+  });
+
+  it('validates the frequency with Zod and rejects wrong missions, writing nothing', () => {
+    const db = createTestDb();
+    const wrong: Parameters<typeof createMission>[1][] = [
+      { name: 'Corri', frequency: { type: 'weekdays', days: [8] } as unknown as Frequency },
+      { name: 'Corri', frequency: { type: 'hourly' } as unknown as Frequency },
+      { name: '   ' },
+      { name: 'Dentista', kind: 'task', frequency: { type: 'daily' } },
+      { name: 'Corri', dueDay: '2026-11-10' },
+      { name: 'Dentista', kind: 'task', dueDay: '2026-02-30' },
+      { name: 'Leggi', statPrimary: 'wisdom', statSecondary: 'wisdom' },
+      { name: 'Leggi', goal: { type: 'quantity', target: 0, unit: 'page', increment: 5 } },
+    ];
+    for (const input of wrong) {
+      expect(() => createMission(db, input, CONTEXT)).toThrow();
+    }
+    expect(db.select().from(missions).all()).toEqual([]);
+    expect(db.select().from(events).all()).toEqual([]);
+  });
+});
+
+describe('updateMission', () => {
+  it('changes the mission and records which fields changed', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Leggi' }, CONTEXT);
+    const updated = updateMission(
+      db,
+      mission.id,
+      { difficulty: 'hard', statPrimary: 'intelligence', name: 'Leggi 30 pagine' },
+      { ...CONTEXT, now: NOW + 1000 },
+    );
+    expect(updated).toMatchObject({
+      difficulty: 'hard',
+      statPrimary: 'intelligence',
+      name: 'Leggi 30 pagine',
+      updatedAt: NOW + 1000,
+    });
+    expect(eventsOf(db, mission.id)).toEqual(['mission.created', 'mission.updated']);
+    const updateEvent = db.select().from(events).orderBy(asc(events.seq)).all()[1];
+    expect(updateEvent.payload).toEqual({ fields: ['difficulty', 'name', 'statPrimary'] });
+  });
+
+  it('counts the new difficulty only from the next completions: the past stays as it was', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Leggi' }, CONTEXT);
+    markDone(db, mission.id, '2026-11-05');
+    appendEvent(db, {
+      type: 'mission.completed',
+      occurredAt: NOW,
+      tzOffset: 60,
+      source: 'app',
+      missionId: mission.id,
+      deltas: { xp: 25, coins: 5, hp: 1 },
+    });
+    const pastEvents = db.select().from(events).all();
+    const pastDays = db.select().from(missionDays).all();
+    updateMission(db, mission.id, { difficulty: 'hard' }, CONTEXT);
+    expect(db.select().from(events).all().slice(0, pastEvents.length)).toEqual(pastEvents);
+    expect(db.select().from(missionDays).all()).toEqual(pastDays);
+  });
+
+  it('validates the result and rejects changes that are not valid', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Leggi', statPrimary: 'intelligence' }, CONTEXT);
+    expect(() =>
+      updateMission(
+        db,
+        mission.id,
+        { frequency: { type: 'monthly', day: 40 } as unknown as Frequency },
+        CONTEXT,
+      ),
+    ).toThrow();
+    expect(() =>
+      updateMission(db, mission.id, { statSecondary: 'intelligence' }, CONTEXT),
+    ).toThrow();
+    expect(() => updateMission(db, 'missing', { name: 'Altro' }, CONTEXT)).toThrow();
+    expect(eventsOf(db, mission.id)).toEqual(['mission.created']);
+  });
+});
+
+describe('pause, resume, archive and restore', () => {
+  it('pauses a mission until an end day, when it comes back by itself', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    const paused = pauseMission(db, mission.id, '2026-11-10', CONTEXT);
+    expect(paused).toMatchObject({ status: 'paused', pausedUntil: '2026-11-10' });
+    expect(todayIds(db, '2026-11-09')).toEqual([]);
+    expect(todayIds(db, '2026-11-10')).toEqual([mission.id]);
+    expect(eventsOf(db, mission.id)).toEqual(['mission.created', 'mission.paused']);
+  });
+
+  it('pauses a mission without an end day and resumes it', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    pauseMission(db, mission.id, null, CONTEXT);
+    expect(todayIds(db, '2026-12-31')).toEqual([]);
+    expect(resumeMission(db, mission.id, CONTEXT)).toMatchObject({
+      status: 'active',
+      pausedUntil: null,
+    });
+    expect(todayIds(db, '2026-11-06')).toEqual([mission.id]);
+    expect(eventsOf(db, mission.id)).toEqual([
+      'mission.created',
+      'mission.paused',
+      'mission.resumed',
+    ]);
+  });
+
+  it('rejects a pause that ends today or before, and resuming a mission that is not paused', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    expect(() => pauseMission(db, mission.id, '2026-11-06', CONTEXT)).toThrow(RangeError);
+    expect(() => resumeMission(db, mission.id, CONTEXT)).toThrow(RangeError);
+  });
+
+  it('archives a mission and restores it', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    expect(archiveMission(db, mission.id, CONTEXT)).toMatchObject({
+      status: 'archived',
+      archivedAt: NOW,
+    });
+    expect(todayIds(db, '2026-11-06')).toEqual([]);
+    expect(restoreMission(db, mission.id, CONTEXT)).toMatchObject({
+      status: 'active',
+      archivedAt: null,
+    });
+    expect(todayIds(db, '2026-11-06')).toEqual([mission.id]);
+    expect(eventsOf(db, mission.id)).toEqual([
+      'mission.created',
+      'mission.archived',
+      'mission.restored',
+    ]);
+  });
+
+  it('restores only archived missions', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    expect(() => restoreMission(db, mission.id, CONTEXT)).toThrow(RangeError);
+  });
+});
+
+describe('deleteMission', () => {
+  it('hides the mission everywhere but keeps its history and its events', () => {
+    const db = createTestDb();
+    const kept = createMission(db, { name: 'Leggi' }, CONTEXT);
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    markDone(db, mission.id, '2026-11-05');
+    db.insert(missionReminders).values({ id: 'r1', missionId: mission.id, time: '08:00' }).run();
+    db.insert(scheduledReminders)
+      .values({ osId: 'os-1', missionId: mission.id, gameDay: '2026-11-06', fireAt: NOW })
+      .run();
+    db.insert(dayPlan)
+      .values([
+        { gameDay: '2026-11-05', missionId: mission.id, position: 0 },
+        { gameDay: '2026-11-06', missionId: mission.id, position: 0 },
+      ])
+      .run();
+
+    const result = deleteMission(db, mission.id, CONTEXT);
+
+    expect(result).toEqual({ cancelledNotificationIds: ['os-1'] });
+    expect(db.select().from(missions).where(eq(missions.id, mission.id)).get()?.deletedAt).toBe(
+      NOW,
+    );
+    expect(db.select({ id: missions.id }).from(missions).where(notDeleted(missions)).all()).toEqual(
+      [{ id: kept.id }],
+    );
+    expect(todayIds(db, '2026-11-06')).toEqual([kept.id]);
+    expect(db.select().from(missionReminders).all()).toEqual([]);
+    expect(db.select().from(scheduledReminders).all()).toEqual([]);
+    expect(db.select({ day: dayPlan.gameDay }).from(dayPlan).all()).toEqual([
+      { day: '2026-11-05' },
+    ]);
+    expect(db.select().from(missionDays).all()).toHaveLength(1);
+    expect(eventsOf(db, mission.id)).toEqual(['mission.created', 'mission.deleted']);
+  });
+
+  it('refuses every action on a deleted mission', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    deleteMission(db, mission.id, CONTEXT);
+    expect(() => deleteMission(db, mission.id, CONTEXT)).toThrow(RangeError);
+    expect(() => updateMission(db, mission.id, { name: 'Altro' }, CONTEXT)).toThrow(RangeError);
+    expect(() => pauseMission(db, mission.id, null, CONTEXT)).toThrow(RangeError);
+    expect(() => archiveMission(db, mission.id, CONTEXT)).toThrow(RangeError);
+  });
+});
+
+describe('listTodayMissions', () => {
+  it('lists the habits due today by frequency and the tasks due or overdue, in order', () => {
+    const db = createTestDb();
+    const fridays = createMission(
+      db,
+      { name: 'Venerdì', frequency: { type: 'weekdays', days: [5] } },
+      CONTEXT,
+    );
+    createMission(db, { name: 'Lunedì', frequency: { type: 'weekdays', days: [1] } }, CONTEXT);
+    const overdue = createMission(
+      db,
+      { name: 'Bollette', kind: 'task', dueDay: '2026-11-02' },
+      CONTEXT,
+    );
+    createMission(db, { name: 'Dentista', kind: 'task', dueDay: '2026-11-10' }, CONTEXT);
+    const done = createMission(db, { name: 'Fatta', kind: 'task', dueDay: '2026-11-01' }, CONTEXT);
+    markDone(db, done.id, '2026-11-03');
+    expect(todayIds(db, '2026-11-06')).toEqual([fridays.id, overdue.id]);
+  });
+
+  it('hides a times-per-week habit once it reached its number in the week', () => {
+    const db = createTestDb();
+    const twice = createMission(
+      db,
+      { name: 'Palestra', frequency: { type: 'times_per_week', times: 2 } },
+      CONTEXT,
+    );
+    markDone(db, twice.id, '2026-11-02');
+    expect(todayIds(db, '2026-11-04')).toEqual([twice.id]);
+    markDone(db, twice.id, '2026-11-04');
+    expect(todayIds(db, '2026-11-05')).toEqual([]);
+    expect(todayIds(db, '2026-11-09')).toEqual([twice.id]);
+  });
+
+  it('lists nothing on a rest day (design 10.5)', () => {
+    const db = createTestDb();
+    createMission(db, { name: 'Leggi' }, CONTEXT);
+    setSetting(db, 'rest_days', [7], NOW);
+    expect(todayIds(db, '2026-11-08')).toEqual([]);
+    expect(todayIds(db, '2026-11-09')).toHaveLength(1);
+  });
+});
+
+describe('edge cases', () => {
+  it('keeps the goal of a measurable mission when other fields change', () => {
+    const db = createTestDb();
+    const water = createMission(
+      db,
+      { name: 'Bevi', goal: { type: 'quantity', target: 2, unit: 'liter', increment: 0.25 } },
+      CONTEXT,
+    );
+    const timer = createMission(
+      db,
+      { name: 'Medita', goal: { type: 'duration', target: 10, increment: 5 } },
+      CONTEXT,
+    );
+    expect(updateMission(db, water.id, { name: 'Bevi acqua' }, CONTEXT)).toMatchObject({
+      goalType: 'quantity',
+      goalTarget: 2,
+      goalUnit: 'liter',
+      goalStep: 0.25,
+    });
+    expect(updateMission(db, timer.id, { difficulty: 'easy' }, CONTEXT)).toMatchObject({
+      goalType: 'duration',
+      goalTarget: 10,
+      goalUnit: 'minute',
+      goalStep: 5,
+    });
+  });
+
+  it('rejects unknown difficulties and stats', () => {
+    const db = createTestDb();
+    expect(() =>
+      createMission(db, { name: 'Leggi', difficulty: 'epic' as never }, CONTEXT),
+    ).toThrow(RangeError);
+    expect(() =>
+      createMission(db, { name: 'Leggi', statPrimary: 'luck' as never }, CONTEXT),
+    ).toThrow(RangeError);
+  });
+
+  it('refuses to pause or archive again an archived mission', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    archiveMission(db, mission.id, CONTEXT);
+    expect(() => pauseMission(db, mission.id, null, CONTEXT)).toThrow(RangeError);
+    expect(() => archiveMission(db, mission.id, CONTEXT)).toThrow(RangeError);
+  });
+
+  it('rejects a day that does not exist', () => {
+    const db = createTestDb();
+    expect(() => listTodayMissions(db, '2026-02-30')).toThrow(RangeError);
+  });
+
+  it('lists nothing when there are no missions', () => {
+    expect(listTodayMissions(createTestDb(), '2026-11-06')).toEqual([]);
+  });
+});
