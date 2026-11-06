@@ -36,7 +36,10 @@
         }
       ],
       "expo-sqlite",
-      "expo-localization"
+      "expo-localization",
+      "expo-notifications",
+      "expo-task-manager",
+      "expo-dev-client"
     ],
     "experiments": {
       "typedRoutes": true,

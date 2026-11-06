@@ -4,6 +4,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { Text } from 'react-native';
 
+// Defines the task of the notification actions when the bundle loads, even in the background.
+import '@/features/notifications/backgroundTask';
+import { useReminderActions } from '@/features/notifications/useReminderActions';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { useBootstrap } from '@/features/shell/useBootstrap';
 import { FONT_FILES } from '@/theme/fonts';
@@ -14,6 +17,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [loaded, error] = useFonts(FONT_FILES);
   const bootstrap = useBootstrap();
+  useReminderActions();
   // If a font cannot be loaded the app still starts, with the system font.
   const fontsReady = loaded || error !== null;
   const dataReady = bootstrap.i18n !== null || bootstrap.status === 'error';
