@@ -75,27 +75,36 @@ export const settings = sqliteTable('settings', {
   updatedAt: integer('updated_at').notNull(),
 });
 
-export const boss = sqliteTable('boss', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  /** `starter` is the quest of the first launch. */
-  kind: text('kind', { enum: ['normal', 'starter'] })
-    .notNull()
-    .default('normal'),
-  difficulty: text('difficulty', { enum: DIFFICULTIES }).notNull(),
-  /** Stat that gets 10 points at every step, if any. */
-  statKey: text('stat_key', { enum: STAT_KEYS }),
-  hpMax: integer('hp_max').notNull(),
-  hp: integer('hp').notNull(),
-  deadlineDay: text('deadline_day').$type<GameDay>(),
-  /** The warning 3 days before the deadline has been sent. */
-  deadlineWarned: integer('deadline_warned', { mode: 'boolean' }).notNull().default(false),
-  status: text('status', { enum: ['active', 'defeated', 'archived'] })
-    .notNull()
-    .default('active'),
-  defeatedAt: integer('defeated_at'),
-  ...timestamps,
-});
+export const boss = sqliteTable(
+  'boss',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    /** `starter` is the quest of the first launch. */
+    kind: text('kind', { enum: ['normal', 'starter'] })
+      .notNull()
+      .default('normal'),
+    difficulty: text('difficulty', { enum: DIFFICULTIES }).notNull(),
+    /** Stat that gets 10 points at every step, if any. */
+    statKey: text('stat_key', { enum: STAT_KEYS }),
+    hpMax: integer('hp_max').notNull(),
+    hp: integer('hp').notNull(),
+    deadlineDay: text('deadline_day').$type<GameDay>(),
+    /** The warning 3 days before the deadline has been sent. */
+    deadlineWarned: integer('deadline_warned', { mode: 'boolean' }).notNull().default(false),
+    status: text('status', { enum: ['active', 'defeated', 'archived'] })
+      .notNull()
+      .default('active'),
+    defeatedAt: integer('defeated_at'),
+    ...timestamps,
+  },
+  (t) => [
+    // Finds the active bosses quickly; the limit of 3 is checked in the code (canCreateBoss).
+    index('boss_active_idx')
+      .on(t.createdAt)
+      .where(sql`${t.status} = 'active'`),
+  ],
+);
 
 export const bossSteps = sqliteTable(
   'boss_steps',

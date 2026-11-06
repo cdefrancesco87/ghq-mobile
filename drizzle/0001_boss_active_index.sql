@@ -1,0 +1,1 @@
+CREATE INDEX `boss_active_idx` ON `boss` (`created_at`) WHERE "boss"."status" = 'active';
