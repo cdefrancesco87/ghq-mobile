@@ -247,6 +247,7 @@ function finishCompletion(
     statSecondary: mission.statSecondary,
   });
   const change = changeHero(tx, rewards, input.now);
+  const before = missionDayOf(tx, mission.id, day);
   appendEvent(tx, {
     type: 'mission.completed',
     occurredAt: input.now,
@@ -257,7 +258,12 @@ function finishCompletion(
     bossId: mission.bossId,
     gameDay: day,
     deltas: change.deltas,
-    payload: { value },
+    // What an undo needs to restore (undo.ts): the mission day and the streak before.
+    payload: {
+      value,
+      before: before === undefined ? null : { status: before.status, value: before.value },
+      streakBefore: { streak: mission.streak, best: mission.streakBest },
+    },
   });
   recordLevelUp(tx, change, clock);
   writeMissionDay(tx, {
@@ -269,11 +275,15 @@ function finishCompletion(
     source: input.source,
     updatedAt: input.now,
   });
-  const streak = nextMissionStreak({ streak: mission.streak, best: mission.streakBest }, 'done');
-  tx.update(missions)
-    .set({ streak: streak.streak, streakBest: streak.best })
-    .where(eq(missions.id, mission.id))
-    .run();
+  // Tasks have no streak and the weekly missions count the weeks at the closing of the days
+  // (CLAUDE.md, choices 9 and 10).
+  if (mission.kind === 'habit' && mission.frequency?.type !== 'times_per_week') {
+    const streak = nextMissionStreak({ streak: mission.streak, best: mission.streakBest }, 'done');
+    tx.update(missions)
+      .set({ streak: streak.streak, streakBest: streak.best })
+      .where(eq(missions.id, mission.id))
+      .run();
+  }
   countCompletion(tx, clock);
   if (mission.bossId !== null) {
     damageBoss(tx, mission.bossId, rewards.bossDamage, clock);

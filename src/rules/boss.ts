@@ -1,6 +1,7 @@
 import { roundXp } from './completion';
-import { BOSS, STATS } from './config';
+import { BOSS, STARTER_QUEST_REWARD, STATS } from './config';
 import { diffDays } from './gameDay';
+import { xpToNext } from './level';
 import {
   DIFFICULTIES,
   STAT_KEYS,
@@ -103,6 +104,18 @@ export function shouldWarnDeadline(
 export function canCreateBoss(activeCount: number): boolean {
   assertNonNegativeInteger(activeCount, 'Active bosses');
   return activeCount < BOSS.maxActive;
+}
+
+/**
+ * Reward of the quest of the first launch (CLAUDE.md, choice 12): exactly the XP missing to reach
+ * level 2 (at most 200) and the coins of a potion; no stat points.
+ */
+export function starterQuestReward(hero: { level: number; xpInLevel: number }): VictoryReward {
+  const xp =
+    hero.level < STARTER_QUEST_REWARD.xpToLevel
+      ? Math.max(0, xpToNext(hero.level) - hero.xpInLevel)
+      : 0;
+  return { xp, coins: STARTER_QUEST_REWARD.coins };
 }
 
 /** Stat points of a completed step: 10 to the stat of the boss, if it has one. */

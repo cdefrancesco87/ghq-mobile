@@ -4,6 +4,7 @@ import {
   canCreateBoss,
   deadlineSteal,
   shouldWarnDeadline,
+  starterQuestReward,
   stepStatPoints,
   victoryReward,
   type BossHealth,
@@ -145,5 +146,17 @@ describe('stepStatPoints', () => {
 
   it('rejects an unknown stat', () => {
     expect(() => stepStatPoints('luck' as StatKey)).toThrow(RangeError);
+  });
+});
+
+describe('starterQuestReward', () => {
+  it('gives the XP missing to level 2 and the coins of a potion', () => {
+    expect(starterQuestReward({ level: 1, xpInLevel: 0 })).toEqual({ xp: 200, coins: 50 });
+    expect(starterQuestReward({ level: 1, xpInLevel: 35 })).toEqual({ xp: 165, coins: 50 });
+  });
+
+  it('gives no XP to a hero already at level 2 or above', () => {
+    expect(starterQuestReward({ level: 2, xpInLevel: 10 })).toEqual({ xp: 0, coins: 50 });
+    expect(starterQuestReward({ level: 7, xpInLevel: 0 })).toEqual({ xp: 0, coins: 50 });
   });
 });

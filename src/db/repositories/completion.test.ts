@@ -11,7 +11,7 @@ import {
 } from '@/db/repositories/completion';
 import { appendEvent } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
-import { deleteMission } from '@/db/repositories/missions';
+import { createMission, deleteMission } from '@/db/repositories/missions';
 import { createProfile } from '@/db/repositories/onboarding';
 import {
   boss,
@@ -156,6 +156,25 @@ describe('completeMission', () => {
     const db = newGame(['drink_water', 'journal']);
     complete(db, missionId(db, 'drink_water'));
     expect(db.select().from(missionDays).get()).toMatchObject({ status: 'done', value: 2 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('leaves the streak of weekly missions and tasks to the closing of the days', () => {
+    const db = newGame(['run', 'journal']);
+    const run = missionId(db, 'run');
+    complete(db, run);
+    const task = createMission(
+      db,
+      { name: 'Rinnova passaporto', kind: 'task', dueDay: '2026-11-06' },
+      { now: at(FRIDAY, 9), tzOffset: 60 },
+    );
+    complete(db, task.id);
+    for (const id of [run, task.id]) {
+      expect(db.select().from(missions).where(eq(missions.id, id)).get()).toMatchObject({
+        streak: 0,
+        streakBest: 0,
+      });
+    }
     expectHeroMatchesLog(db);
   });
 

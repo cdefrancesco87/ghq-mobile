@@ -128,6 +128,14 @@ export const BOSS = {
   maxSteps: 20,
 } as const;
 
+/** Victory of the quest of the first launch (CLAUDE.md, choice 12): not the formula of the bosses. */
+export const STARTER_QUEST_REWARD = {
+  /** The XP missing to reach this level. */
+  xpToLevel: 2,
+  /** The price of a potion. */
+  coins: SHOP.potion.price,
+} as const;
+
 export const COMPANION = {
   /** The egg hatches into a puppy at this number of completions. */
   puppyAtCompletions: 1,
