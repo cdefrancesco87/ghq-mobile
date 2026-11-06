@@ -24,9 +24,13 @@ export const MAX_TEMPLATES = 5;
  * DRAFT to be reviewed by Claudio: the documents do not give its difficulty.
  */
 export const STARTER_QUEST = {
-  name: 'starter_quest',
+  name: 'starter_quest.name',
   difficulty: 'easy',
-  steps: ['starter_quest.create_habit', 'starter_quest.complete_habit', 'starter_quest.open_stats'],
+  steps: [
+    'starter_quest.steps.create_habit',
+    'starter_quest.steps.complete_habit',
+    'starter_quest.steps.open_stats',
+  ],
 } as const;
 
 export interface ProfileInput {

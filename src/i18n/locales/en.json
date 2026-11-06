@@ -1,0 +1,277 @@
+{
+  "lexicon": {
+    "hp": "Health",
+    "hp_arcade": "LIFE",
+    "hp_fantasy": "Health",
+    "hp_cyberpunk": "Integrity",
+    "hp_lovecraft": "Vitality",
+    "hp_minimal": "Energy",
+    "xp": "Experience",
+    "xp_arcade": "EXP",
+    "xp_fantasy": "Experience",
+    "xp_cyberpunk": "Reputation",
+    "xp_lovecraft": "Forbidden knowledge",
+    "xp_minimal": "XP",
+    "coins": "Coins",
+    "coins_arcade": "Tokens",
+    "coins_fantasy": "Gold",
+    "coins_cyberpunk": "Credits",
+    "coins_lovecraft": "Relics",
+    "coins_minimal": "Coins",
+    "missions": "Missions",
+    "missions_arcade": "Stages",
+    "missions_fantasy": "Quests",
+    "missions_cyberpunk": "Contracts",
+    "missions_lovecraft": "Rituals",
+    "missions_minimal": "Habits",
+    "boss": "Boss",
+    "boss_arcade": "Boss",
+    "boss_fantasy": "Nemesis",
+    "boss_cyberpunk": "Firewall",
+    "boss_lovecraft": "Horror",
+    "boss_minimal": "Big goal",
+    "streak": "Streak",
+    "streak_arcade": "Combo",
+    "streak_fantasy": "Sacred flame",
+    "streak_cyberpunk": "Uptime",
+    "streak_lovecraft": "Vigil",
+    "streak_minimal": "Streak",
+    "level": "Level",
+    "level_arcade": "LV",
+    "level_fantasy": "Rank",
+    "level_cyberpunk": "Tier",
+    "level_lovecraft": "Circle",
+    "level_minimal": "Level",
+    "companion": "Companion",
+    "companion_arcade": "Blob",
+    "companion_fantasy": "Familiar (Brace)",
+    "companion_cyberpunk": "Drone (BIT-0)",
+    "companion_lovecraft": "Glub",
+    "companion_minimal": "Goccia",
+    "dayPlan": "Day plan",
+    "dayPlan_arcade": "Top 3",
+    "dayPlan_fantasy": "Oaths of the day",
+    "dayPlan_cyberpunk": "Net priorities",
+    "dayPlan_lovecraft": "Omens of the day",
+    "dayPlan_minimal": "Priorities",
+    "fullDay": "Full day",
+    "fullDay_arcade": "Perfect!",
+    "fullDay_fantasy": "Glorious day",
+    "fullDay_cyberpunk": "Full sync",
+    "fullDay_lovecraft": "The seal holds",
+    "fullDay_minimal": "Full day",
+    "potion": "Potion",
+    "potion_arcade": "Power-up",
+    "potion_fantasy": "Potion",
+    "potion_cyberpunk": "Stim",
+    "potion_lovecraft": "Tonic",
+    "potion_minimal": "Recharge",
+    "shield": "Streak shield",
+    "shield_arcade": "Continue",
+    "shield_fantasy": "Shield",
+    "shield_cyberpunk": "Backup",
+    "shield_lovecraft": "Amulet",
+    "shield_minimal": "Streak protection",
+    "exhausted": "Exhausted",
+    "exhausted_arcade": "Stunned",
+    "exhausted_fantasy": "Exhausted",
+    "exhausted_cyberpunk": "Rebooting",
+    "exhausted_lovecraft": "Delirious",
+    "exhausted_minimal": "Recovering",
+    "trophyHall": "Trophy hall",
+    "trophyHall_arcade": "Hall of Fame",
+    "trophyHall_fantasy": "Trophy hall",
+    "trophyHall_cyberpunk": "Bounty archive",
+    "trophyHall_lovecraft": "Forbidden collection",
+    "trophyHall_minimal": "Milestones",
+    "skipToday": "Skip today",
+    "skipToday_arcade": "Pause",
+    "skipToday_fantasy": "Rest today",
+    "skipToday_cyberpunk": "Standby",
+    "skipToday_lovecraft": "Postpone the rite",
+    "skipToday_minimal": "Skip today"
+  },
+  "stats": {
+    "strength": "Strength",
+    "strength_arcade": "Strength",
+    "strength_fantasy": "Strength",
+    "strength_cyberpunk": "Movement",
+    "strength_lovecraft": "Strength",
+    "strength_minimal": "Movement",
+    "constitution": "Constitution",
+    "constitution_arcade": "Stamina",
+    "constitution_fantasy": "Fortitude",
+    "constitution_cyberpunk": "Body",
+    "constitution_lovecraft": "Endurance",
+    "constitution_minimal": "Health",
+    "intelligence": "Intelligence",
+    "intelligence_arcade": "Intelligence",
+    "intelligence_fantasy": "Intelligence",
+    "intelligence_cyberpunk": "Intelligence",
+    "intelligence_lovecraft": "Intelligence",
+    "intelligence_minimal": "Mind",
+    "wisdom": "Wisdom",
+    "wisdom_arcade": "Focus",
+    "wisdom_fantasy": "Wisdom",
+    "wisdom_cyberpunk": "Mind",
+    "wisdom_lovecraft": "Lucidity",
+    "wisdom_minimal": "Balance",
+    "charisma": "Charisma",
+    "charisma_arcade": "Charisma",
+    "charisma_fantasy": "Charm",
+    "charisma_cyberpunk": "Empathy",
+    "charisma_lovecraft": "Persuasion",
+    "charisma_minimal": "Relationships",
+    "discipline": "Discipline",
+    "discipline_arcade": "Consistency",
+    "discipline_fantasy": "Order",
+    "discipline_cyberpunk": "Willpower",
+    "discipline_lovecraft": "Method",
+    "discipline_minimal": "Order"
+  },
+  "templates": {
+    "drink_water": {
+      "name": "Drink 2 liters of water"
+    },
+    "healthy_meal": {
+      "name": "Healthy meal"
+    },
+    "bed_by_eleven": {
+      "name": "In bed by 11 pm"
+    },
+    "run": {
+      "name": "Run 30 min"
+    },
+    "steps": {
+      "name": "10,000 steps"
+    },
+    "gym": {
+      "name": "Gym"
+    },
+    "read_pages": {
+      "name": "Read 20 pages"
+    },
+    "meditation": {
+      "name": "Meditate 10 min"
+    },
+    "journal": {
+      "name": "Write the journal"
+    },
+    "no_social_evening": {
+      "name": "No social media in the evening"
+    },
+    "call_friend": {
+      "name": "Call a friend"
+    },
+    "study_hour": {
+      "name": "Study 1 hour"
+    },
+    "english_lesson": {
+      "name": "English lesson"
+    },
+    "inbox_zero": {
+      "name": "Inbox zero"
+    },
+    "family_dinner": {
+      "name": "Family dinner"
+    },
+    "tidy_desk": {
+      "name": "Tidy the desk"
+    },
+    "track_expenses": {
+      "name": "Track expenses"
+    }
+  },
+  "templateCategories": {
+    "health": "Health",
+    "mind": "Mind",
+    "work_study": "Work and study",
+    "home": "Home"
+  },
+  "titles": {
+    "arcade": {
+      "newbie": "Newbie",
+      "player": "Player",
+      "pro": "Pro",
+      "veteran": "Veteran",
+      "combo_master": "Combo Master",
+      "high_scorer": "High Scorer",
+      "champion": "Champion",
+      "boss_slayer": "Boss Slayer",
+      "grand_master": "Grand Master",
+      "hall_of_famer": "Hall of Famer",
+      "legend": "Legend"
+    },
+    "fantasy": {
+      "squire": "Squire",
+      "knight": "Knight",
+      "paladin": "Paladin",
+      "champion": "Champion",
+      "guardian": "Guardian",
+      "captain": "Captain",
+      "lord": "Lord",
+      "warden": "Warden",
+      "hero": "Hero",
+      "king": "King",
+      "legend": "Legend"
+    },
+    "cyberpunk": {
+      "street_kid": "Street Kid",
+      "runner": "Runner",
+      "netrunner": "Netrunner",
+      "fixer": "Fixer",
+      "solo": "Solo",
+      "edgerunner": "Edgerunner",
+      "ghost": "Ghost",
+      "icon": "Icon",
+      "kingpin": "Kingpin",
+      "living_legend": "Living Legend",
+      "myth": "Myth"
+    },
+    "lovecraft": {
+      "curious": "Curious",
+      "scholar": "Scholar",
+      "investigator": "Investigator",
+      "occultist": "Occultist",
+      "archivist": "Archivist",
+      "seer": "Seer",
+      "adept": "Adept",
+      "keeper": "Keeper",
+      "arcanist": "Arcanist",
+      "elder": "Elder",
+      "dreamer": "Dreamer"
+    },
+    "minimal": {
+      "beginner": "Beginner",
+      "steady": "Steady",
+      "expert": "Expert",
+      "dedicated": "Dedicated",
+      "reliable": "Reliable",
+      "disciplined": "Disciplined",
+      "accomplished": "Accomplished",
+      "master": "Master",
+      "mentor": "Mentor",
+      "role_model": "Role Model",
+      "legend": "Legend"
+    }
+  },
+  "starter_quest": {
+    "name": "Starter quest",
+    "name_arcade": "TUTORIAL STAGE",
+    "name_fantasy": "The first quest",
+    "name_cyberpunk": "Entry contract",
+    "name_lovecraft": "The first rite",
+    "name_minimal": "First steps",
+    "steps": {
+      "create_habit": "Create your first habit",
+      "complete_habit": "Complete it",
+      "open_stats": "Open the statistics"
+    }
+  },
+  "skipReasons": {
+    "illness": "Illness",
+    "travel": "Travel",
+    "rest": "Rest",
+    "other": "Other"
+  }
+}

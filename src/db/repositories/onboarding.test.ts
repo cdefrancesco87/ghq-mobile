@@ -111,7 +111,7 @@ describe('createProfile', () => {
     createProfile(db, input(), CONTEXT);
     const quest = db.select().from(boss).get();
     expect(quest).toMatchObject({
-      name: 'starter_quest',
+      name: 'starter_quest.name',
       kind: 'starter',
       difficulty: 'easy',
       statKey: null,
@@ -122,9 +122,9 @@ describe('createProfile', () => {
     });
     const steps = db.select().from(bossSteps).orderBy(asc(bossSteps.position)).all();
     expect(steps.map(({ position, title, doneAt }) => ({ position, title, doneAt }))).toEqual([
-      { position: 0, title: 'starter_quest.create_habit', doneAt: NOW },
-      { position: 1, title: 'starter_quest.complete_habit', doneAt: null },
-      { position: 2, title: 'starter_quest.open_stats', doneAt: null },
+      { position: 0, title: 'starter_quest.steps.create_habit', doneAt: NOW },
+      { position: 1, title: 'starter_quest.steps.complete_habit', doneAt: null },
+      { position: 2, title: 'starter_quest.steps.open_stats', doneAt: null },
     ]);
   });
 

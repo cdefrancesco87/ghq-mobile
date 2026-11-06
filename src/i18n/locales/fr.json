@@ -1,0 +1,277 @@
+{
+  "lexicon": {
+    "hp": "Vie",
+    "hp_arcade": "VIE",
+    "hp_fantasy": "Santé",
+    "hp_cyberpunk": "Intégrité",
+    "hp_lovecraft": "Vitalité",
+    "hp_minimal": "Énergie",
+    "xp": "Expérience",
+    "xp_arcade": "EXP",
+    "xp_fantasy": "Expérience",
+    "xp_cyberpunk": "Réputation",
+    "xp_lovecraft": "Savoir interdit",
+    "xp_minimal": "XP",
+    "coins": "Pièces",
+    "coins_arcade": "Jetons",
+    "coins_fantasy": "Or",
+    "coins_cyberpunk": "Crédits",
+    "coins_lovecraft": "Reliques",
+    "coins_minimal": "Pièces",
+    "missions": "Missions",
+    "missions_arcade": "Stages",
+    "missions_fantasy": "Exploits",
+    "missions_cyberpunk": "Contrats",
+    "missions_lovecraft": "Rituels",
+    "missions_minimal": "Habitudes",
+    "boss": "Boss",
+    "boss_arcade": "Boss",
+    "boss_fantasy": "Némésis",
+    "boss_cyberpunk": "Pare-feu",
+    "boss_lovecraft": "Horreur",
+    "boss_minimal": "Grand objectif",
+    "streak": "Série",
+    "streak_arcade": "Combo",
+    "streak_fantasy": "Flamme sacrée",
+    "streak_cyberpunk": "Uptime",
+    "streak_lovecraft": "Veille",
+    "streak_minimal": "Série",
+    "level": "Niveau",
+    "level_arcade": "LV",
+    "level_fantasy": "Rang",
+    "level_cyberpunk": "Tier",
+    "level_lovecraft": "Cercle",
+    "level_minimal": "Niveau",
+    "companion": "Compagnon",
+    "companion_arcade": "Blob",
+    "companion_fantasy": "Familier (Brace)",
+    "companion_cyberpunk": "Drone (BIT-0)",
+    "companion_lovecraft": "Glub",
+    "companion_minimal": "Goccia",
+    "dayPlan": "Plan du jour",
+    "dayPlan_arcade": "Top 3",
+    "dayPlan_fantasy": "Serments du jour",
+    "dayPlan_cyberpunk": "Priorités réseau",
+    "dayPlan_lovecraft": "Présages du jour",
+    "dayPlan_minimal": "Priorités",
+    "fullDay": "Journée complète",
+    "fullDay_arcade": "Perfect!",
+    "fullDay_fantasy": "Journée glorieuse",
+    "fullDay_cyberpunk": "Sync complète",
+    "fullDay_lovecraft": "Le sceau tient",
+    "fullDay_minimal": "Journée complète",
+    "potion": "Potion",
+    "potion_arcade": "Power-up",
+    "potion_fantasy": "Potion",
+    "potion_cyberpunk": "Stim",
+    "potion_lovecraft": "Tonique",
+    "potion_minimal": "Recharge",
+    "shield": "Bouclier de série",
+    "shield_arcade": "Continue",
+    "shield_fantasy": "Bouclier",
+    "shield_cyberpunk": "Sauvegarde",
+    "shield_lovecraft": "Amulette",
+    "shield_minimal": "Protection de série",
+    "exhausted": "Épuisé",
+    "exhausted_arcade": "Sonné",
+    "exhausted_fantasy": "Épuisé",
+    "exhausted_cyberpunk": "Redémarrage",
+    "exhausted_lovecraft": "En plein délire",
+    "exhausted_minimal": "En récupération",
+    "trophyHall": "Salle des trophées",
+    "trophyHall_arcade": "Hall of Fame",
+    "trophyHall_fantasy": "Salle des trophées",
+    "trophyHall_cyberpunk": "Archives des primes",
+    "trophyHall_lovecraft": "Collection interdite",
+    "trophyHall_minimal": "Jalons",
+    "skipToday": "Passer aujourd'hui",
+    "skipToday_arcade": "Pause",
+    "skipToday_fantasy": "Se reposer aujourd'hui",
+    "skipToday_cyberpunk": "Veille",
+    "skipToday_lovecraft": "Reporter le rite",
+    "skipToday_minimal": "Passer aujourd'hui"
+  },
+  "stats": {
+    "strength": "Force",
+    "strength_arcade": "Force",
+    "strength_fantasy": "Force",
+    "strength_cyberpunk": "Mouvement",
+    "strength_lovecraft": "Force",
+    "strength_minimal": "Mouvement",
+    "constitution": "Constitution",
+    "constitution_arcade": "Endurance",
+    "constitution_fantasy": "Trempe",
+    "constitution_cyberpunk": "Corps",
+    "constitution_lovecraft": "Résistance",
+    "constitution_minimal": "Santé",
+    "intelligence": "Intelligence",
+    "intelligence_arcade": "Intelligence",
+    "intelligence_fantasy": "Intelligence",
+    "intelligence_cyberpunk": "Intelligence",
+    "intelligence_lovecraft": "Intelligence",
+    "intelligence_minimal": "Esprit",
+    "wisdom": "Sagesse",
+    "wisdom_arcade": "Concentration",
+    "wisdom_fantasy": "Sagesse",
+    "wisdom_cyberpunk": "Esprit",
+    "wisdom_lovecraft": "Lucidité",
+    "wisdom_minimal": "Équilibre",
+    "charisma": "Charisme",
+    "charisma_arcade": "Charisme",
+    "charisma_fantasy": "Charme",
+    "charisma_cyberpunk": "Empathie",
+    "charisma_lovecraft": "Persuasion",
+    "charisma_minimal": "Relations",
+    "discipline": "Discipline",
+    "discipline_arcade": "Constance",
+    "discipline_fantasy": "Ordre",
+    "discipline_cyberpunk": "Volonté",
+    "discipline_lovecraft": "Méthode",
+    "discipline_minimal": "Ordre"
+  },
+  "templates": {
+    "drink_water": {
+      "name": "Boire 2 litres d'eau"
+    },
+    "healthy_meal": {
+      "name": "Repas sain"
+    },
+    "bed_by_eleven": {
+      "name": "Au lit avant 23 h"
+    },
+    "run": {
+      "name": "Courir 30 min"
+    },
+    "steps": {
+      "name": "10 000 pas"
+    },
+    "gym": {
+      "name": "Salle de sport"
+    },
+    "read_pages": {
+      "name": "Lire 20 pages"
+    },
+    "meditation": {
+      "name": "Méditer 10 min"
+    },
+    "journal": {
+      "name": "Écrire son journal"
+    },
+    "no_social_evening": {
+      "name": "Pas de réseaux sociaux le soir"
+    },
+    "call_friend": {
+      "name": "Appeler un ami"
+    },
+    "study_hour": {
+      "name": "Étudier 1 heure"
+    },
+    "english_lesson": {
+      "name": "Cours d'anglais"
+    },
+    "inbox_zero": {
+      "name": "Inbox zéro"
+    },
+    "family_dinner": {
+      "name": "Dîner en famille"
+    },
+    "tidy_desk": {
+      "name": "Ranger le bureau"
+    },
+    "track_expenses": {
+      "name": "Noter ses dépenses"
+    }
+  },
+  "templateCategories": {
+    "health": "Santé",
+    "mind": "Esprit",
+    "work_study": "Travail et études",
+    "home": "Maison"
+  },
+  "titles": {
+    "arcade": {
+      "newbie": "Newbie",
+      "player": "Player",
+      "pro": "Pro",
+      "veteran": "Veteran",
+      "combo_master": "Combo Master",
+      "high_scorer": "High Scorer",
+      "champion": "Champion",
+      "boss_slayer": "Boss Slayer",
+      "grand_master": "Grand Master",
+      "hall_of_famer": "Hall of Famer",
+      "legend": "Legend"
+    },
+    "fantasy": {
+      "squire": "Écuyer",
+      "knight": "Chevalier",
+      "paladin": "Paladin",
+      "champion": "Champion",
+      "guardian": "Gardien",
+      "captain": "Capitaine",
+      "lord": "Seigneur",
+      "warden": "Sentinelle",
+      "hero": "Héros",
+      "king": "Roi",
+      "legend": "Légende"
+    },
+    "cyberpunk": {
+      "street_kid": "Gamin des rues",
+      "runner": "Runner",
+      "netrunner": "Netrunner",
+      "fixer": "Fixer",
+      "solo": "Solo",
+      "edgerunner": "Edgerunner",
+      "ghost": "Fantôme",
+      "icon": "Icône",
+      "kingpin": "Caïd",
+      "living_legend": "Légende vivante",
+      "myth": "Mythe"
+    },
+    "lovecraft": {
+      "curious": "Curieux",
+      "scholar": "Érudit",
+      "investigator": "Enquêteur",
+      "occultist": "Occultiste",
+      "archivist": "Archiviste",
+      "seer": "Voyant",
+      "adept": "Adepte",
+      "keeper": "Gardien",
+      "arcanist": "Arcaniste",
+      "elder": "Ancien",
+      "dreamer": "Rêveur"
+    },
+    "minimal": {
+      "beginner": "Débutant",
+      "steady": "Régulier",
+      "expert": "Expert",
+      "dedicated": "Engagé",
+      "reliable": "Fiable",
+      "disciplined": "Discipliné",
+      "accomplished": "Accompli",
+      "master": "Maître",
+      "mentor": "Mentor",
+      "role_model": "Modèle",
+      "legend": "Légende"
+    }
+  },
+  "starter_quest": {
+    "name": "Quête de départ",
+    "name_arcade": "TUTORIAL STAGE",
+    "name_fantasy": "Le premier exploit",
+    "name_cyberpunk": "Contrat d'entrée",
+    "name_lovecraft": "Le premier rite",
+    "name_minimal": "Premiers pas",
+    "steps": {
+      "create_habit": "Crée ta première habitude",
+      "complete_habit": "Accomplis-la",
+      "open_stats": "Ouvre les statistiques"
+    }
+  },
+  "skipReasons": {
+    "illness": "Maladie",
+    "travel": "Voyage",
+    "rest": "Repos",
+    "other": "Autre"
+  }
+}
