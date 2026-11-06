@@ -144,14 +144,34 @@ function missionResult(
   const doneToday = status === 'done';
   const frequency = mission.frequency;
 
-  // «N volte a settimana» (choice 9): judged on the last day of the week, by its completions.
+  // «N volte a settimana» (choices 9, 15, 16, 17): judged on the last day of the week.
   if (frequency?.type === 'times_per_week') {
     const start = weekStartOf(day, weekStart);
     if (addDays(start, 6) !== day) {
       return doneToday ? { mission, done: 1, missed: 0, occurrence: null } : null;
     }
-    const doneInWeek = new Set(completedDays.filter((d) => d >= start && d <= day)).size;
-    const missed = Math.max(0, frequency.times - doneInWeek);
+    // The first partial week starts after the week boundary (choice 16).
+    const isFirstPartialWeek = mission.createdDay > start;
+    const rangeStart: GameDay = isFirstPartialWeek ? mission.createdDay : start;
+
+    const doneInWeek = new Set(completedDays.filter((d) => d >= rangeStart && d <= day)).size;
+    // Each skip in the week reduces the required count by 1, minimum 0 (choice 17).
+    const skipsInWeek = rows.filter(
+      (row) => row.status === 'skipped' && row.gameDay >= rangeStart && row.gameDay <= day,
+    ).length;
+    const effectiveTimes = Math.max(0, frequency.times - skipsInWeek);
+
+    if (isFirstPartialWeek) {
+      // No HP loss in the first partial week; streak grows only if N is reached (choice 16).
+      return {
+        mission,
+        done: doneToday ? 1 : 0,
+        missed: 0,
+        occurrence: doneInWeek >= effectiveTimes ? 'done' : null,
+      };
+    }
+
+    const missed = Math.max(0, effectiveTimes - doneInWeek);
     return {
       mission,
       done: doneToday ? 1 : 0,
@@ -199,18 +219,21 @@ export function closeDays(input: CloseDaysInput): CloseDaysResult {
 
   for (const day of daysBetween(input.lastClosedDay, input.today)) {
     const isRestDay = settings.restDays.includes(weekday(day));
-    // On a rest day no mission is due (design 10.5).
-    const results = isRestDay
-      ? []
-      : missions.flatMap((mission) => {
-          const result = missionResult(
-            mission,
-            day,
-            rowsByMission.get(mission.id) ?? [],
-            settings.weekStart,
-          );
-          return result === null ? [] : [result];
-        });
+    // On a rest day no mission is due (design 10.5), except times_per_week on the last day of the
+    // week which is always evaluated even when that day is a rest day (choice 15).
+    const isLastDayOfWeek = addDays(weekStartOf(day, settings.weekStart), 6) === day;
+    const results = missions.flatMap((mission) => {
+      if (isRestDay && !(isLastDayOfWeek && mission.frequency?.type === 'times_per_week')) {
+        return [];
+      }
+      const result = missionResult(
+        mission,
+        day,
+        rowsByMission.get(mission.id) ?? [],
+        settings.weekStart,
+      );
+      return result === null ? [] : [result];
+    });
 
     let scheduledCount = 0;
     let doneCount = 0;

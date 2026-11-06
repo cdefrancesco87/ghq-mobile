@@ -99,4 +99,14 @@ describe('usePotion', () => {
     expect(() => usePotion(db, NOW)).toThrow(RangeError);
     expect(db.select().from(hero).get()?.hp).toBe(30);
   });
+
+  it('refuses at full hit points (choice 18)', () => {
+    const db = newGame(['journal']);
+    adjustHero(db, { coins: 50 }); // hp stays at 50 (max)
+    buyItem(db, 'potion', NOW);
+    expect(() => usePotion(db, NOW)).toThrow(RangeError);
+    expect(db.select().from(hero).get()?.hp).toBe(50);
+    expect(owned(db, 'potion')).toBe(1); // potion not consumed
+    expectHeroMatchesLog(db);
+  });
 });

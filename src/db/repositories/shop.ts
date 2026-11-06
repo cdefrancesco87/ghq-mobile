@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { ITEM_KEYS, SHOP_ITEMS, type ItemKey } from '../../content/shop';
-import { SHOP } from '../../rules/config';
+import { HP, SHOP } from '../../rules/config';
 import { inventory } from '../schema';
 import type { Db } from '../types';
 import { appendEvent } from './events';
@@ -57,11 +57,14 @@ export function buyItem(db: Db, itemKey: ItemKey, clock: ActionClock): void {
   });
 }
 
-/** Uses a potion: +10 hit points, never above the maximum (US-NEG-02). */
+/** Uses a potion: +10 hit points, never above the maximum; refused at full HP (choice 18). */
 export function usePotion(db: Db, clock: ActionClock): { hp: number } {
   return db.transaction((tx) => {
     if (owned(tx, 'potion') === 0) {
       throw new RangeError('There is no potion in the inventory');
+    }
+    if (loadHero(tx).hp >= HP.max) {
+      throw new RangeError('The hero is already at full hit points');
     }
     addToInventory(tx, 'potion', -1);
     const change = changeHero(tx, { hp: SHOP.potion.hp }, clock.now);

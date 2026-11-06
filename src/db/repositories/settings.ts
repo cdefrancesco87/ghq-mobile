@@ -21,6 +21,19 @@ const weekday = z.literal([1, 2, 3, 4, 5, 6, 7]);
 export const LANGUAGES = ['it', 'en', 'de', 'fr', 'es'] as const;
 
 /**
+ * The language to use at first launch (CLAUDE.md, choice 19): the device language if it is one
+ * of the five supported ones, otherwise English.
+ */
+export function defaultLanguage(
+  locales: readonly { readonly languageCode: string | null }[],
+): SettingValue<'language'> {
+  const code = locales[0]?.languageCode;
+  return (LANGUAGES as readonly string[]).includes(code ?? '')
+    ? (code as SettingValue<'language'>)
+    : 'en';
+}
+
+/**
  * The themes of temi.json. `minimal` follows the light or dark mode of the phone («Automatico»);
  * the two Minimal variants fix one of them («Chiaro», «Scuro»).
  */

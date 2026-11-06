@@ -1,6 +1,7 @@
 import {
   SETTING_DEFAULTS,
   dayChangeOn,
+  defaultLanguage,
   gameDayOf,
   getDeviceId,
   getSetting,
@@ -121,6 +122,24 @@ describe('getDeviceId', () => {
     const id = getDeviceId(db, NOW);
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(getDeviceId(db, NOW + 1000)).toBe(id);
+  });
+});
+
+describe('defaultLanguage', () => {
+  it('returns the device language when it is one of the five supported ones (choice 19)', () => {
+    expect(defaultLanguage([{ languageCode: 'it' }])).toBe('it');
+    expect(defaultLanguage([{ languageCode: 'de' }])).toBe('de');
+    expect(defaultLanguage([{ languageCode: 'fr' }])).toBe('fr');
+    expect(defaultLanguage([{ languageCode: 'es' }])).toBe('es');
+    expect(defaultLanguage([{ languageCode: 'en' }])).toBe('en');
+    expect(defaultLanguage([{ languageCode: 'it' }, { languageCode: 'en' }])).toBe('it');
+  });
+
+  it('falls back to English for unsupported or missing locales (choice 19)', () => {
+    expect(defaultLanguage([{ languageCode: 'ja' }])).toBe('en');
+    expect(defaultLanguage([{ languageCode: 'pt' }, { languageCode: 'fr' }])).toBe('en');
+    expect(defaultLanguage([{ languageCode: null }])).toBe('en');
+    expect(defaultLanguage([])).toBe('en');
   });
 });
 
