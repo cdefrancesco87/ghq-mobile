@@ -16,14 +16,14 @@ import {
 } from '@/db/repositories/completion';
 import { createMission, listTodayMissions, type NewMission } from '@/db/repositories/missions';
 import { rebuildHeroFromEvents } from '@/db/repositories/rebuild';
-import { gameDayOf, getSetting } from '@/db/repositories/settings';
+import { gameDayOf, getSetting, setSetting } from '@/db/repositories/settings';
 import { buyItem, usePotion } from '@/db/repositories/shop';
 import { undoEvent } from '@/db/repositories/undo';
 import { boss, bossSteps, events, hero, inventory, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { HERO_LEVELS, HP, SHOP } from '@/rules/config';
 import type { Frequency } from '@/rules/frequency';
-import { addDays } from '@/rules/gameDay';
+import { addDays, weekday } from '@/rules/gameDay';
 import { DIFFICULTIES, STAT_KEYS, type GameDay } from '@/rules/types';
 
 import { heroTotals, totalsFromLog } from './db';
@@ -107,7 +107,15 @@ interface Counts {
   potions: number;
   bossSteps: number;
   closed: number;
+  /** «N volte a settimana» missions created after the first day of the week (choice 16). */
+  weeklyMidWeek: number;
+  /** Skips of «N volte a settimana» missions (choice 17). */
+  weeklySkips: number;
+  /** Potions refused at full hit points (choice 18). */
+  fullHpRefusals: number;
 }
+
+const isWeekly = (frequency: Frequency | null) => frequency?.type === 'times_per_week';
 
 /** The actions of one game day, at random hours between 08:00 and 22:00. */
 function playDay(db: Db, random: Random, date: number, counts: Counts): void {
@@ -116,7 +124,10 @@ function playDay(db: Db, random: Random, date: number, counts: Counts): void {
 
   const missionCount = db.select().from(missions).where(isNull(missions.deletedAt)).all().length;
   if (missionCount < MAX_MISSIONS && random.chance(0.15)) {
-    createMission(db, randomMission(random, today, missionCount), clock(8));
+    const created = createMission(db, randomMission(random, today, missionCount), clock(8));
+    if (isWeekly(created.frequency) && weekday(today) !== getSetting(db, 'week_start')) {
+      counts.weeklyMidWeek++;
+    }
   }
 
   if (random.chance(0.05)) {
@@ -143,7 +154,8 @@ function playDay(db: Db, random: Random, date: number, counts: Counts): void {
   }
   for (const mission of due) {
     const hour = random.integer(10, 21);
-    if (random.chance(0.05)) {
+    // The «N volte a settimana» missions are skipped more often, to lower their number (choice 17).
+    if (random.chance(isWeekly(mission.frequency) ? 0.15 : 0.05)) {
       if (
         attempt(() =>
           skipMission(db, {
@@ -154,6 +166,9 @@ function playDay(db: Db, random: Random, date: number, counts: Counts): void {
         )
       ) {
         counts.skipped++;
+        if (isWeekly(mission.frequency)) {
+          counts.weeklySkips++;
+        }
       }
     } else if (random.chance(0.65)) {
       // A measurable mission gets one or two taps, or is completed at its target in one go.
@@ -208,12 +223,39 @@ function playDay(db: Db, random: Random, date: number, counts: Counts): void {
       counts.bought++;
     }
   }
-  const { hp } = db.select().from(hero).get()!;
-  if (hp < 30 && owned(db, 'potion') > 0 && random.chance(0.6)) {
+  const atFullHp = db.select().from(hero).get()!.hp === HP.max;
+  if (atFullHp && owned(db, 'potion') === 0) {
+    attempt(() => buyItem(db, 'potion', clock(21)));
+  }
+  const before = db.select().from(hero).get()!;
+  if (before.hp === HP.max && owned(db, 'potion') > 0) {
+    // At full hit points the potion is refused and nothing changes (choice 18).
+    const potions = owned(db, 'potion');
+    const logged = db.select().from(events).all().length;
+    expect(attempt(() => usePotion(db, clock(21)))).toBe(false);
+    expect(db.select().from(hero).get()).toEqual(before);
+    expect(owned(db, 'potion')).toBe(potions);
+    expect(db.select().from(events).all()).toHaveLength(logged);
+    counts.fullHpRefusals++;
+  } else if (before.hp < 30 && owned(db, 'potion') > 0 && random.chance(0.6)) {
     if (attempt(() => usePotion(db, clock(21)))) {
       counts.potions++;
     }
   }
+}
+
+/** The quest of the first launch gives at most the 200 XP to level 2 and 50 coins (choice 12). */
+function expectStarterReward(db: Db): void {
+  const starter = db.select().from(boss).where(eq(boss.kind, 'starter')).get()!;
+  expect(starter.status).toBe('defeated');
+  const victory = db
+    .select()
+    .from(events)
+    .where(and(eq(events.type, 'boss.defeated'), eq(events.bossId, starter.id)))
+    .get()!;
+  expect(victory.dCoins).toBe(50);
+  expect(victory.dXp).toBeGreaterThanOrEqual(0);
+  expect(victory.dXp).toBeLessThanOrEqual(200);
 }
 
 function expectInvariants(db: Db): void {
@@ -230,6 +272,14 @@ function expectInvariants(db: Db): void {
 function simulate(seed: number): Counts {
   const random = generator(seed);
   const db = newGame(['drink_water', 'run', 'journal']);
+  // Sunday, the last day of the week from Monday, is a rest day (choice 15).
+  setSetting(db, 'rest_days', [7], clockAt(FRIDAY, 9).now);
+  // Friday is in the middle of the week: its first week is partial (choice 16).
+  createMission(
+    db,
+    { name: 'Palestra', frequency: { type: 'times_per_week', times: 3 } },
+    clockAt(FRIDAY, 9),
+  );
   const counts: Counts = {
     completed: 0,
     undone: 0,
@@ -238,6 +288,9 @@ function simulate(seed: number): Counts {
     potions: 0,
     bossSteps: 0,
     closed: 0,
+    weeklyMidWeek: 1,
+    weeklySkips: 0,
+    fullHpRefusals: 0,
   };
   for (let date = FRIDAY; date < FRIDAY + DAYS; date++) {
     // Some days the app is not opened at all: the next opening closes them together.
@@ -256,6 +309,7 @@ function simulate(seed: number): Counts {
   counts.closed += closePendingDays(db, clockAt(FRIDAY + DAYS, 7)).length;
   expectInvariants(db);
   expect(rebuildHeroFromEvents(db, clockAt(FRIDAY + DAYS, 8).now)).toEqual({ repaired: false });
+  expectStarterReward(db);
   return counts;
 }
 
@@ -263,8 +317,8 @@ describe('a simulated game of 90 days', () => {
   it.each([1, 42, 2026])('keeps the hero equal to the event log with seed %i', (seed) => {
     const counts = simulate(seed);
     expect(counts.closed).toBe(DAYS);
-    for (const count of Object.values(counts)) {
-      expect(count).toBeGreaterThan(0);
+    for (const [name, count] of Object.entries(counts)) {
+      expect({ name, played: count > 0 }).toEqual({ name, played: true });
     }
   });
 });
