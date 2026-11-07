@@ -1,7 +1,10 @@
+import { getLocales } from 'expo-localization';
 import { create } from 'zustand';
 
 import {
   SETTING_DEFAULTS,
+  defaultLanguage,
+  getLanguage,
   getSetting,
   setSetting,
   type SettingKey,
@@ -36,7 +39,15 @@ function readAll(read: <K extends StoredKey>(key: K) => SettingValue<K>): AppSet
   return Object.fromEntries(KEYS.map((key) => [key, read(key)])) as AppSettings;
 }
 
-const DEFAULTS = readAll((key) => SETTING_DEFAULTS[key]);
+/** The settings of a database: the language follows the phone until one is saved (choice 19). */
+function readFrom(db: Db): AppSettings {
+  return { ...readAll((key) => getSetting(db, key)), language: getLanguage(db, getLocales()) };
+}
+
+const DEFAULTS: AppSettings = {
+  ...readAll((key) => SETTING_DEFAULTS[key]),
+  language: defaultLanguage(getLocales()),
+};
 
 export interface SettingsState {
   readonly settings: AppSettings;
@@ -48,11 +59,11 @@ export interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>()((set) => ({
   settings: DEFAULTS,
-  load: (db) => set({ settings: readAll((key) => getSetting(db, key)) }),
+  load: (db) => set({ settings: readFrom(db) }),
   update: (key, value) => {
     const { db, clock } = getSession();
     setSetting(db, key, value, clock().now);
-    set({ settings: readAll((other) => getSetting(db, other)) });
+    set({ settings: readFrom(db) });
   },
   reset: () => set({ settings: DEFAULTS }),
 }));

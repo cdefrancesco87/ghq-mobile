@@ -279,7 +279,9 @@ export function closeDays(input: CloseDaysInput): CloseDaysResult {
       }
     }
 
-    const hpLost = hpLoss({ scheduledXp, missedXp, isRestDay, gameMode: settings.gameMode });
+    // On a rest day the only results are the weekly evaluations of its last day: the rest protects
+    // the missions on fixed days, not the debt of the week (choice 15).
+    const hpLost = hpLoss({ scheduledXp, missedXp, isRestDay: false, gameMode: settings.gameMode });
     // Choice 3: the close of the exhausted day gives back 13 hit points.
     const wasExhausted = hero.exhaustedDay === day;
     const hp = wasExhausted ? HP.afterExhaustion : applyHp(hero.hp, -hpLost);

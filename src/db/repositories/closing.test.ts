@@ -1,9 +1,11 @@
 import { asc, eq } from 'drizzle-orm';
 
 import { closePendingDays } from '@/db/repositories/closing';
-import { completeMission } from '@/db/repositories/completion';
+import { completeMission, skipMission } from '@/db/repositories/completion';
 import { appendEvent, type EventType } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
+import { createMission } from '@/db/repositories/missions';
+import { setSetting } from '@/db/repositories/settings';
 import { buyItem } from '@/db/repositories/shop';
 import { daySummaries, events, hero, inventory, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
@@ -119,4 +121,29 @@ describe('closePendingDays', () => {
     expect(db.select().from(hero).get()).toMatchObject({ hp: 13, exhaustedDay: '2026-11-07' });
     expectHeroMatchesLog(db);
   });
+
+  it.each([
+    { doneDays: [3], hpLost: 10, streak: 0 },
+    { doneDays: [3, 5], hpLost: 0, streak: 1 },
+  ])(
+    'judges a weekly habit with a skip on a rest Sunday ($doneDays done)',
+    ({ doneDays, hpLost, streak }) => {
+      // Monday 2 November: 3 times a week, Sunday is a rest day, one skip on Wednesday.
+      const db = newGame(['journal'], 2);
+      setSetting(db, 'rest_days', [7], at(2, 9));
+      const gym = createMission(
+        db,
+        { name: 'Palestra', frequency: { type: 'times_per_week', times: 3 } },
+        clockAt(2, 9),
+      );
+      doneDays.forEach((day) => complete(db, gym.id, day));
+      skipMission(db, { missionId: gym.id, reason: 'illness', ...clockAt(4, 10) });
+      closePendingDays(db, clockAt(9, 10));
+      expect(
+        db.select().from(daySummaries).where(eq(daySummaries.gameDay, '2026-11-08')).get(),
+      ).toMatchObject({ isRestDay: true, hpLost });
+      expect(db.select().from(missions).where(eq(missions.id, gym.id)).get()?.streak).toBe(streak);
+      expectHeroMatchesLog(db);
+    },
+  );
 });

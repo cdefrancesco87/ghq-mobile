@@ -104,9 +104,24 @@ describe('usePotion', () => {
     const db = newGame(['journal']);
     adjustHero(db, { coins: 50 }); // hp stays at 50 (max)
     buyItem(db, 'potion', NOW);
-    expect(() => usePotion(db, NOW)).toThrow(RangeError);
-    expect(db.select().from(hero).get()?.hp).toBe(50);
+    const before = db.select().from(hero).get();
+    const count = db.select().from(events).all().length;
+    expect(() => usePotion(db, NOW)).toThrow(
+      expect.objectContaining({ name: 'RangeError', code: 'potion_full_hp' }),
+    );
+    expect(db.select().from(hero).get()).toEqual(before);
+    expect(db.select().from(events).all()).toHaveLength(count);
     expect(owned(db, 'potion')).toBe(1); // potion not consumed
+    expectHeroMatchesLog(db);
+  });
+
+  it('heals up to the maximum from 3 below it, for the 50 coins of the potion', () => {
+    const db = newGame(['journal']);
+    adjustHero(db, { coins: 50, hp: -3 });
+    buyItem(db, 'potion', NOW);
+    expect(usePotion(db, NOW)).toEqual({ hp: 50 });
+    expect(db.select().from(hero).get()).toMatchObject({ hp: 50, coins: 0 });
+    expect(owned(db, 'potion')).toBe(0);
     expectHeroMatchesLog(db);
   });
 });

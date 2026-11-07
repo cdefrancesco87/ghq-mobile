@@ -1,7 +1,8 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { ITEM_KEYS, SHOP_ITEMS, type ItemKey } from '../../content/shop';
-import { HP, SHOP } from '../../rules/config';
+import { SHOP } from '../../rules/config';
+import { canUsePotion } from '../../rules/shop';
 import { inventory } from '../schema';
 import type { Db } from '../types';
 import { appendEvent } from './events';
@@ -57,14 +58,26 @@ export function buyItem(db: Db, itemKey: ItemKey, clock: ActionClock): void {
   });
 }
 
+/** A refused shop action, with a code the screens can tell apart from the other refusals. */
+export class ShopRefusal extends RangeError {
+  override name = 'RangeError';
+
+  constructor(
+    readonly code: 'potion_full_hp',
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
 /** Uses a potion: +10 hit points, never above the maximum; refused at full HP (choice 18). */
 export function usePotion(db: Db, clock: ActionClock): { hp: number } {
   return db.transaction((tx) => {
     if (owned(tx, 'potion') === 0) {
       throw new RangeError('There is no potion in the inventory');
     }
-    if (loadHero(tx).hp >= HP.max) {
-      throw new RangeError('The hero is already at full hit points');
+    if (!canUsePotion(loadHero(tx).hp)) {
+      throw new ShopRefusal('potion_full_hp', 'The hero is already at full hit points');
     }
     addToInventory(tx, 'potion', -1);
     const change = changeHero(tx, { hp: SHOP.potion.hp }, clock.now);

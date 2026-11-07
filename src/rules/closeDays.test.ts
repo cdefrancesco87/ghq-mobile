@@ -419,19 +419,29 @@ describe('closeDays', () => {
       expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 3, best: 3 }]);
     });
 
-    it('breaks the mission streak on the last rest day when N was not reached (choice 15)', () => {
+    it('loses hp and breaks the mission streak on the last rest day below N (choice 15)', () => {
       const result = closeDays(
         input({
           lastClosedDay: '2026-11-01',
           today: '2026-11-09',
           missions: [weekly({ streak: 2, streakBest: 2 })],
+          inventory: { shields: 1 },
           settings: { gameMode: 'full', weekStart: 1, restDays: [7] },
-          // 1 of 3 done: streak breaks on rest-day Sunday
-          missionDays: done('w', '2026-11-03'),
+          // 2 of 3 done: the missing time costs hit points even on rest-day Sunday.
+          missionDays: done('w', '2026-11-03', '2026-11-05'),
         }),
       );
-      expect(result.days[6].summary).toMatchObject({ isRestDay: true, hpLost: 0 });
+      expect(result.days[6].summary).toMatchObject({
+        isRestDay: true,
+        missedXp: 25,
+        hpLost: 10,
+        shieldUsed: false,
+      });
+      expect(result.days[6].hpDelta).toBe(-10);
       expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 0, best: 2 }]);
+      // The rest day keeps the hero streak and the shield.
+      expect(result.days[6].heroStreak.streak).toBe(result.days[5].heroStreak.streak);
+      expect(result.inventory.shields).toBe(1);
     });
 
     it('does not lose hp and does not break the streak on the first partial week (choice 16)', () => {
@@ -472,6 +482,97 @@ describe('closeDays', () => {
       );
       expect(result.days[6].summary).toMatchObject({ hpLost: 0, missedXp: 0 });
       expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 1, best: 1 }]);
+    });
+
+    it('keeps the streak on a first partial week from Friday below N (choice 16)', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [
+            mission('w', {
+              frequency: { type: 'times_per_week', times: 4 },
+              createdDay: '2026-11-06',
+              streak: 0,
+              streakBest: 0,
+            }),
+          ],
+          missionDays: done('w', '2026-11-07'),
+        }),
+      );
+      expect(result.days.every((day) => day.summary.hpLost === 0)).toBe(true);
+      expect(result.missionStreaks).toEqual([]);
+    });
+
+    it('counts the skips of a first partial week from Friday (choices 16 and 17)', () => {
+      // 3 required, 1 skip → 2; 2 done on Saturday and Sunday: the streak grows.
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [
+            mission('w', {
+              frequency: { type: 'times_per_week', times: 3 },
+              createdDay: '2026-11-06',
+              streak: 0,
+              streakBest: 0,
+            }),
+          ],
+          missionDays: [
+            { missionId: 'w', gameDay: '2026-11-06', status: 'skipped' },
+            ...done('w', '2026-11-07', '2026-11-08'),
+          ],
+        }),
+      );
+      expect(result.days[6].summary.hpLost).toBe(0);
+      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 1, best: 1 }]);
+    });
+
+    it('treats a mission created on the first day of the week as a normal week (choice 16)', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [weekly({ createdDay: '2026-11-02', streak: 0, streakBest: 0 })],
+          missionDays: done('w', '2026-11-03'),
+        }),
+      );
+      expect(result.days[6].summary).toMatchObject({ missedXp: 50, hpLost: 10 });
+    });
+
+    it('succeeds with N = 3, 1 skip and 2 completions (choice 17)', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [weekly({ streak: 2, streakBest: 2 })],
+          missionDays: [
+            ...done('w', '2026-11-02', '2026-11-04'),
+            { missionId: 'w', gameDay: '2026-11-06', status: 'skipped' },
+          ],
+        }),
+      );
+      expect(result.days[6].summary).toMatchObject({ missedXp: 0, hpLost: 0 });
+      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 3, best: 3 }]);
+    });
+
+    it('succeeds with N = 2, 3 skips and no completion (choice 17)', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [
+            weekly({ frequency: { type: 'times_per_week', times: 2 }, streak: 1, streakBest: 1 }),
+          ],
+          missionDays: (['2026-11-02', '2026-11-03', '2026-11-04'] as const).map((gameDay) => ({
+            missionId: 'w',
+            gameDay,
+            status: 'skipped' as const,
+          })),
+        }),
+      );
+      expect(result.days[6].summary).toMatchObject({ missedXp: 0, hpLost: 0 });
+      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 2, best: 2 }]);
     });
 
     it('reduces required times by skips in the week, minimum 0 (choice 17)', () => {

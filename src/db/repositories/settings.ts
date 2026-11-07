@@ -125,6 +125,14 @@ export function getSetting<K extends KeyWithDefault>(db: Db, key: K): SettingVal
   return readValid(db, key) ?? SETTING_DEFAULTS[key];
 }
 
+/** The saved language, or the language of the phone while none was saved (choice 19). */
+export function getLanguage(
+  db: Db,
+  locales: readonly { readonly languageCode: string | null }[],
+): SettingValue<'language'> {
+  return readValid(db, 'language') ?? defaultLanguage(locales);
+}
+
 /** Writes a setting after validating it with its Zod schema; a value that is not valid throws. */
 export function setSetting<K extends EditableKey>(
   db: Db,

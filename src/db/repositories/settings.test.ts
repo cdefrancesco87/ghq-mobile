@@ -4,6 +4,7 @@ import {
   defaultLanguage,
   gameDayOf,
   getDeviceId,
+  getLanguage,
   getSetting,
   setDayChange,
   setSetting,
@@ -140,6 +141,21 @@ describe('defaultLanguage', () => {
     expect(defaultLanguage([{ languageCode: 'pt' }, { languageCode: 'fr' }])).toBe('en');
     expect(defaultLanguage([{ languageCode: null }])).toBe('en');
     expect(defaultLanguage([])).toBe('en');
+  });
+});
+
+describe('getLanguage', () => {
+  it('gives the device language while no language was saved (choice 19)', () => {
+    const db = createTestDb();
+    expect(getLanguage(db, [{ languageCode: 'it' }])).toBe('it');
+    expect(getLanguage(db, [{ languageCode: 'ja' }])).toBe('en');
+    expect(getLanguage(db, [])).toBe('en');
+  });
+
+  it('always prefers the saved language', () => {
+    const db = createTestDb();
+    setSetting(db, 'language', 'de', NOW);
+    expect(getLanguage(db, [{ languageCode: 'it' }])).toBe('de');
   });
 });
 
