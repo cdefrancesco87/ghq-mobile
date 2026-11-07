@@ -65,8 +65,9 @@ Valgono finché Claudio non decide diversamente. Ogni costante va in `src/rules/
 12. **Quest di partenza**: la vittoria dà esattamente gli XP che mancano per arrivare al livello 2 (al massimo 200) e 50 monete, il prezzo di una pozione. Non usa la formula dei boss normali e non dà punti statistica.
 13. **Umore del compagno**: se oggi c'è almeno una missione completata, l'umore è felice. Altrimenti si usano le soglie sugli ultimi 3 giorni (sopra il 70% felice, tra 30 e 70 normale, sotto il 30 triste). Così vale quanto dicono US-COMP e il design 6.3: «Completa una missione oggi e tornerà felice».
 14. **Vita del boss**: resta passi × 20, come nelle regole approvate. La difficoltà del boss cambia solo la ricompensa. La frase della sezione 5 dell'analisi («calcolata dai passi e dalla difficoltà») è un refuso da correggere nei documenti.
-15. **«N volte a settimana» — valutazione di fine settimana**: si valuta sempre alla chiusura dell'ultimo giorno della settimana, anche se quel giorno è di riposo. L'HP persa rimane 0 (riposo), la serie della missione cambia normalmente.
-16. **«N volte a settimana» — prima settimana parziale**: se la missione è stata creata dopo il primo giorno della settimana, nella prima settimana non si perde vita; se i completamenti raggiungono N la serie cresce di 1, altrimenti non cambia (non si spezza).
-17. **«N volte a settimana» — salti**: ogni «Salta oggi» nella settimana riduce di 1 il numero richiesto (minimo 0). I salti si contano a partire dalla data di creazione della missione nella prima settimana parziale.
-18. **Pozione a vita piena**: la pozione non si può usare se la vita è già al massimo (50). L'azione è rifiutata con un errore.
-19. **Lingua predefinita**: la lingua del dispositivo se è tra it, en, de, fr, es, altrimenti en. `defaultLanguage(locales)` in `src/db/repositories/settings.ts` implementa questa logica.
+15. **«N volte a settimana» e riposo**: si valuta sempre alla chiusura dell'ultimo giorno della settimana, anche se è di riposo.
+16. **«N volte a settimana» creata a metà settimana**: nella prima settimana parziale non si perde vita; se arriva a N la serie cresce, altrimenti non si spezza.
+17. **«Salta oggi» e «N volte a settimana»**: ogni salto riduce di 1 il numero richiesto in quella settimana (minimo 0).
+18. **Pozione**: non si può usare a vita piena.
+19. **Lingua predefinita**: quella del dispositivo se è tra it, en, de, fr, es, altrimenti en.
+20. **Confermate da Claudio**: annullamento rifiutato se le monete da restituire sono già spese; furto del boss dal giorno dopo la scadenza, una volta per scadenza; `tz_offset` in minuti a est di UTC anche nel registro; `paused_until` primo giorno di nuovo attivo; `theme` = `minimal` vale Minimal automatico; riepilogo serale acceso alle 21:00; `week_start` intero 1–7 (1 = lunedì); evento `hero.created`.
