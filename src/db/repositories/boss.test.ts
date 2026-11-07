@@ -163,6 +163,36 @@ describe('completeBossStep', () => {
     expectHeroMatchesLog(db);
   });
 
+  it.each([
+    { start: 100, xp: 100, level: 2 },
+    { start: 250, xp: 0, level: 2 },
+  ])('gives only the XP missing to level 2 from $start XP', ({ start, xp, level }) => {
+    const db = newGame(['journal']);
+    const change = changeHero(db, { xp: start }, at(6, 8));
+    appendEvent(db, {
+      type: 'bonus.plan',
+      occurredAt: at(6, 8),
+      tzOffset: TZ,
+      source: 'system',
+      gameDay: '2026-11-05',
+      deltas: change.deltas,
+    });
+    const quest = starterQuest(db);
+    const [, second, third] = stepIds(db, quest.id);
+    completeBossStep(db, second, NOW);
+    completeBossStep(db, third, NOW);
+    expect(db.select().from(hero).get()).toMatchObject({ level, xpTotal: start + xp, coins: 50 });
+    expect(eventsOf(db, 'boss.defeated')[0]).toMatchObject({ dXp: xp, dCoins: 50 });
+    expect(
+      db
+        .select()
+        .from(heroStats)
+        .all()
+        .every((row) => row.points === 0),
+    ).toBe(true);
+    expectHeroMatchesLog(db);
+  });
+
   it('refuses a step already done or of a boss that is not active', () => {
     const db = newGame(['journal']);
     const thesis = createBoss(db, THESIS, NOW);

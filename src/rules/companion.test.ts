@@ -61,6 +61,7 @@ describe('moodFor', () => {
     expect(moodFor([], 5)).toBe('happy');
     // Would be sad from last 3 days alone (2 of 10 = 20%), but today has a completion.
     expect(moodFor(days([4, 1], [3, 1], [3, 0]), 1)).toBe('happy');
+    expect(moodFor(days([4, 1], [3, 0], [3, 0]), 1)).toBe('happy'); // 1 of 10
   });
 
   it('falls back to the last 3 days when nothing is completed today', () => {
