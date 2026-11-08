@@ -4,7 +4,7 @@ Good Habits Quest Mobile (GHQ Mobile) è un habit tracker per iOS e Android che 
 
 ## Come si lavora in questo repository
 
-- Il lavoro è diviso in task piccoli in `docs/backlog-task.md`. Si eseguono con il loop descritto in `docs/prompt-loop.md`: **un task per giro**, nell'ordine, solo se le dipendenze sono fatte.
+- Il lavoro è diviso in task piccoli in `docs/backlog-task.md` (T01–T33, fondamenta) e `docs/backlog-schermate.md` (T34 in poi, schermate). Si eseguono con il loop descritto in `docs/prompt-loop.md`: **un task per giro**, nell'ordine, solo se le dipendenze sono fatte.
 - I documenti di progetto sono in `docs/riferimenti/`. Sono una copia: la fonte di verità è la cartella di progetto di Claudio. Non modificarli; se trovi un errore o un'incoerenza, scrivilo nel diario del backlog.
 - Rispondi e scrivi i diari in italiano. Il codice, i nomi di file, tabelle, variabili e i commit sono in inglese (`snake_case` nel database, `camelCase` in TypeScript), come stabilito nel modello dati.
 - **Non inventare regole di gioco.** I valori stanno in `docs/riferimenti/xp-e-monete.md`, `statistiche-eroe.md` e nella sezione «Regole di gioco» di `analisi-funzionale.md`. I punti segnati «Proposta» non sono approvati: **non implementarli**. Se un task richiede una regola che i documenti non definiscono e che non è tra le «Scelte minori già fissate» qui sotto, segna il task bloccato.
