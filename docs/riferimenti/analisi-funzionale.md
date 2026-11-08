@@ -304,7 +304,7 @@ I grandi obiettivi diventano boss: si dividono in passi, e ogni passo o missione
 - Elenco dei boss attivi (massimo 3 in contemporanea) e, sotto, la Sala dei trofei con i boss sconfitti.
 - Creazione di un boss: nome dell'obiettivo, passi ordinati (da 2 a 20), scadenza facoltativa, difficoltà, statistica facoltativa (riceve 10 punti a ogni passo), missioni ricorrenti collegate.
 - Scheda del boss: sprite del boss nel tema, vita residua, passi fatti sul totale, prossimo passo, missioni collegate, giorni alla scadenza.
-- La vita del boss è calcolata dai passi e dalla difficoltà (vedi Regole di gioco); ogni passo completato e ogni missione collegata infliggono danno.
+- La vita del boss è calcolata dai passi, 20 per passo; la difficoltà cambia solo la ricompensa (vedi Regole di gioco); ogni passo completato e ogni missione collegata infliggono danno.
 - Alla vittoria: schermata di celebrazione, bonus di XP e monete, trofeo nella Sala dei trofei.
 - Se la scadenza passa, il boss resta in campo: ruba il 10% delle monete dell'eroe, al massimo 500, sbeffeggiandolo. I passi fatti restano e l'utente può fissare una nuova scadenza o archiviare l'obiettivo. 3 giorni prima della scadenza, viene mandato un reminder.
 - **Prima versione, bassa priorità: Main Quest**: un obiettivo fissato in cima al piano del giorno. **Prima versione, bassa priorità: catene di quest**: obiettivi in sequenza, ognuno sblocca il successivo.

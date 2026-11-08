@@ -15,6 +15,7 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 | 30/10 | Usare superpowers soprattutto in fase di codice; niente agenti in parallelo di default | Consumo di token | Thread Modello dati |
 | 06/11 | Cartella di progetto come fonte di verità, Drive come copia sempre aggiornata | I thread leggono e scrivono la cartella direttamente; Drive è più comodo da consultare | [00-indice.md](00-indice.md) |
 
+| 06/11 | (Claude) Backlog di 33 task preliminari da eseguire in loop con Claude Code, un task per giro; fuori dal loop i passi che richiedono Claudio | Richiesta di Claudio | [sviluppo/README.md](sviluppo/README.md) |
 ## Funzionalità e regole di gioco
 
 | Data | Decisione | Motivo | Dove |
@@ -43,6 +44,20 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 | 30/10 | Sprite personalizzati per il ritratto dell'eroe come idea futura | Richiesta di Claudio | Analisi, idee non prioritizzate |
 | 30/10 | Nessuna integrazione con i calendari (RRULE tolto) | Non c'era un requisito | Thread Modello dati |
 | 06/11 | Eliminare una missione è una cancellazione logica (US-ABI-03 corretta) | Allineamento al modello dati | Analisi, sez. 3 |
+| 06/11 | Scudo della serie: si consuma solo in un giorno con zero completamenti e salva tutte le serie | Sbloccare la chiusura dei giorni (T14) | [regole-per-sbloccare-t14.md](sviluppo/regole-per-sbloccare-t14.md) |
+| 06/11 | «N volte a settimana»: nessuna penalità nei giorni intermedi, valutazione a fine settimana; la serie conta le settimane riuscite | Come sopra | idem |
+| 06/11 | Attività singole scadute: tolgono vita una volta sola, il giorno della scadenza | Come sopra | idem |
+| 06/11 | Giorno senza missioni previste: vale come giorno di riposo | Come sopra | idem |
+| 06/11 | Quest di partenza: XP fino al livello 2 e 50 monete | Il «primo livello» non era raggiungibile con la formula dei boss | idem |
+| 06/11 | Umore del compagno: felice se oggi c'è almeno un completamento, altrimenti soglie sui 3 giorni | Allineare regole, US-COMP e design 6.3 | idem |
+| 06/11 | Vita del boss: passi × 20, la difficoltà cambia solo la ricompensa | Refuso nella sezione 5 dell'analisi, corretto | Analisi, sez. 5 |
+| 06/11 | «N volte a settimana»: si valuta sempre a fine settimana, anche se l'ultimo giorno è di riposo | Altrimenti chi riposa la domenica non viene mai valutato | [scelte-aperte-dopo-t33.md](sviluppo/scelte-aperte-dopo-t33.md) |
+| 06/11 | «N volte a settimana» creata a metà settimana: la prima settimana non toglie vita; se arriva a N la serie cresce, altrimenti non si spezza | Le penalità non devono scoraggiare | idem |
+| 06/11 | Ogni «Salta oggi» riduce di 1 il numero richiesto nella settimana di una «N volte a settimana» | Il salto deve servire anche su queste missioni | idem |
+| 06/11 | Annullamento rifiutato se le monete da restituire sono già state spese | Evita il trucco completo-compro-annullo | idem |
+| 06/11 | Il boss ruba dal giorno dopo la scadenza, una volta per scadenza | Confermata la scelta del loop | idem |
+| 06/11 | La pozione non si può usare a vita piena | Evita di sprecare 50 monete | idem |
+| 06/11 | Impostazioni: lingua del dispositivo se tra le 5 (altrimenti inglese), tema Minimal automatico, riepilogo serale acceso alle 21:00, settimana da lunedì | Confermate con una correzione alla lingua | idem |
 
 ## Stack tecnologico (tutte del 30/10)
 
@@ -68,6 +83,7 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 | Frequenza in un campo JSON tipizzato con Zod | Copre le 6 frequenze senza migrazioni | scelta 3 |
 | Eliminazione logica con `deleted_at`; dove mostrare le eliminate è da decidere | I progressi non si perdono | scelta 4 |
 | (Claude) Date come `AAAA-MM-GG`, istanti in ms UTC più fuso; contenuti fissi nel codice; impostazioni chiave-valore | Motivate nel documento | scelte 5–7 |
+| 06/11: `tz_offset` in minuti a est di UTC (anche nel registro); `paused_until` è il primo giorno di nuovo attivo; `week_start` intero 1–7 (1 = lunedì); nuovo evento `hero.created` | Confermate le scelte del loop | [scelte-aperte-dopo-t33.md](sviluppo/scelte-aperte-dopo-t33.md) |
 
 ## Design
 
@@ -86,11 +102,31 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 | 30/10 | Il numero delle notifiche compare anche sull'icona dell'app | Coerenza con il widget | Design, sez. 11.7 |
 | 31/10 | Ridisegno solo dei compagni, con un soggetto diverso per ogni tema | I soggetti attuali non convincono | Thread Ridisegnare gli sprite |
 | 31/10 | Arcade: una faccina pixel disegnata da noi (non emoji di sistema) | Umore leggibilissimo a 48 px | Thread Ridisegnare gli sprite |
+| 08/11 | Ruoli di colore completi per i 6 temi (`colori-v2.json`, poi `temi.json` v2 come unica fonte; il codice si adegua) | Lacuna L01: metà dei ruoli di A4 mancava | design/lacune-design-schermate.md, design/claude-design/ |
+| 08/11 | Asset, mockup e animazioni prodotti con Claude Design in 9 lotti | Ciò che non si definisce a parole | design/design-da-disegnare.md, design/claude-design/ |
+| 08/11 | Compagni: Golem di muschio (Fantasy), Axolotl neon (Cyberpunk), Falena dai mille occhi (Lovecraft), Nuvola (Minimal) | Lotto 0: sagome più leggibili a 48 px | design/consegne/0/ |
+| 08/11 | Faccina Arcade: evolve per risoluzione (8×8 → 16×16 → 32×32 in un riquadro da 64) | Lotto 0: la più semplice, resta una faccina | design/consegne/0/ |
+| 08/11 | Lovecraft: tacche della difficoltà a cerchi e stellina come indicatore della barra, come nel brief | Design allineato agli altri temi | design/consegne/1/ |
+| 08/11 | Colori: colori-v2 per l'interfaccia, palette sprite (18 colori per tema, allineata a colori-v2 dove coincide) per la pixel art | colori-v2 non ha le sfumature e i colori che servono ai disegni | design/consegne/0/palette-sprite.json |
+| 08/11 | 10 icone in più (lotto 1-bis): indietro, avanti, chiudi, lucchetto, avviso, esausto, riposo, notifiche bloccate, quantità, sole | Usate dalle schermate ma assenti dal lotto 1 | design/consegne/1/ |
+| 08/11 | Misure e forme dei componenti nei 6 temi, con 7 correzioni (ruolo «Etichetta barra», `fatto` di Minimal chiaro #2b9a66, numero di priorità in Numeri, anello quadrato in Arcade, stati premuto/spento senza colori nuovi, intestazione grande in Titolo schermata, neon Cyberpunk solo su voce attiva e fogli) | Lotto 2; sostituiscono L02 e L05 | design/consegne/2/misure.md |
+| 08/11 | Boss: approvati i 16 nomi; tutti ridisegnati a figura intera nello stile dei difficili v2 (Disco volante, Drago rosso, Mech ICE, L'Antico) | Claudio: i primi difficili «sono brutti», i nuovi «molto belli» | design/consegne/3/ |
+| 08/11 | Nomi dei compagni: Pixel (Arcade), Rocky (Fantasy), Glitchy (Cyberpunk), Lumin (Lovecraft), Cloudy (Minimal); l'utente può rinominarli | Scelti da Claudio | design/temi.json |
+| 08/11 | Nomi propri dei boss: Arcade Dring, Gloop, Rocket, Zorg; Fantasy Snooze, Spore, Grunk, Ignis; Cyberpunk Bugsy, Cubit, Blaze, Titan; Lovecraft Shade, Peeper, Jelly, Krakko (quest, facile, medio, difficile). La descrizione resta dopo il nome | Scelti da Claudio, stesso stile dei compagni | design/consegne/3/esito.md |
+| 08/11 | Logo: si usa il segnaposto (spilla con la spunta) del lotto 4; il definitivo si disegna più avanti | Claudio | design/consegne/4/ |
+| 08/11 | Lotto 4 approvato. Habitat: vasca illuminata dal basso a Cyberpunk (Glitchy), scrittoio con lampada a olio a Lovecraft (Lumin); stadi Uovo, Cucciolo, Adulto in tutti i temi | Compagni nuovi; Claudio: «sì ai cambi» | design/design-sezioni.md 6.10, design/consegne/4/ |
+| 08/11 | Barra di navigazione a 4 voci con il [+] al centro: Oggi, Abitudini, [+], Obiettivi, Profilo. Statistiche si apre da Profilo e dalla scheda dell'eroe | Con 6 posti il [+] stava al 42% della larghezza (Claudio) | design/design-sezioni.md A6, design/consegne/5/ |
 
 ## In attesa di decisione
 
-- Come evolve la faccina di Arcade: per risoluzione (consigliata), per power-up o per corpo.
-- Soggetti dei compagni per Fantasy, Cyberpunk, Lovecraft e Minimal (proposte in design/compagni/ricerca-candidati-compagni.md).
 - Valori di badge, regali e prezzi delle ricompense personali.
 - Proposte ancora aperte nella proposta XP e monete (limite ai cambi di difficoltà, XP dimezzati dopo 10 missioni facili, penalità per ritardi e completamenti a posteriori).
 - Se e dove mostrare le missioni eliminate.
+
+- 08/11: lotto 5, B2 approvata; B3a–B10 consegnate in consegne/5 (frame/ e tavole/), in attesa di feedback.
+- 08/11: lotto 6 avviato; gruppo D01–D06 consegnato in consegne/6.
+- 08/11: lotto 6 completo (D01–D43) consegnato in consegne/6, in attesa di feedback di Claudio.
+- 08/11: lotto 7 (storyboard 5 temi) consegnato in consegne/7; canvas con lotti 5–7 pubblicato.
+- 08/11: lotto 8 (piedistallo, badge, regali, corona, 2 sprite intermedi per tema) consegnato in consegne/8; intermedi sono bozze per resampling.
+- 08/11: Claudio: sprite intermedi (lotto 8) restano placeholder per ora, come il logo; da rifinire in seguito.
+- 08/11: pacchetto mockup per Claude Code in sviluppo/mockup-per-claude-code/ (+zip); il thread «Secondo backlog: schermate» riallinea backlog-schermate.md ai frame. Da copiare nel repo in docs/riferimenti/mockup/.
