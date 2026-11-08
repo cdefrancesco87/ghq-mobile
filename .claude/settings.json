@@ -44,8 +44,14 @@
       "Bash(git push*--delete*)",
       "Bash(git push*origin main*)",
       "Bash(git push*:main*)",
+      "Bash(git push*+*)",
+      "Bash(git push* :*)",
+      "Bash(git push*--mirror*)",
       "Bash(gh pr merge*)",
-      "Bash(npx eas-cli@*)"
+      "Bash(gh * pr merge*)",
+      "Bash(npx eas-cli@*)",
+      "Bash(npx*eas-cli*)",
+      "Bash(npm exec*eas*)"
     ]
   },
   "hooks": {

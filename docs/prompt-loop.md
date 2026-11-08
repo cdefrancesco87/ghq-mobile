@@ -21,10 +21,13 @@ You are in the GHQ Mobile development loop. In this round run **one single task*
    - add one line at the end of the Diario of the file containing the task, in Italian: date, task code, what you did in one sentence, any minor choices or content to review;
    - commit all the task's files with the message `Txx: <task title>`;
    - push the branch with `git push -u origin <branch>` and open a PR with `gh pr create`, targeting `main`, or the previous task's branch if the task started from it. Do not merge.
+   - if the PR targets another task's branch, first check with `git ls-remote origin <base-branch>` that it is on the remote; if not, push it first (it is allowed).
+   - give `gh pr create` a `--title` and a single-line `--body` (or `--fill`): no heredoc, no `$(...)`.
+   - if the push or the PR fails for a reason other than permissions (network, credentials), stop and write "LOOP FERMO" with the error; the commit stays on the branch.
 10. If verification still fails after 3 attempts, or a decision is needed that the documents and `CLAUDE.md` do not provide:
     - set the work aside with `git stash push -u -m "Txx blocked"`, so the branch stays green;
     - mark the task `[!]` and write in the Diario of its file the exact reason and what would unblock it;
-    - commit only the backlog with the message `Txx: blocked`.
+    - commit only the backlog with the message `Txx: blocked`. Do not push and do not open a PR for a blocked task.
 11. In the backlog change only task states and the Diario. Do not rewrite task text.
 12. If a command is denied for missing permission, stop immediately: write "LOOP FERMO" and the exact command to approve. Do not retry the task in later rounds.
 13. Be concise: no summaries of files or code in the terminal. End the round with three lines: task run, outcome, next available task.
