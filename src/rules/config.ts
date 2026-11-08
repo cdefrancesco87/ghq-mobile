@@ -1,4 +1,4 @@
-import type { Difficulty } from './types';
+import type { Difficulty, Language } from './types';
 
 // Every game value that may need tuning, in one place. The values come from
 // docs/riferimenti: xp-e-monete.md, statistiche-eroe.md and the «Regole di gioco» section of
@@ -151,3 +151,6 @@ export const MOOD = {
   /** Sad below this share. */
   sadBelow: 0.3,
 } as const;
+
+/** Language of the first launch when no device language is supported (CLAUDE.md, choice 19). */
+export const FALLBACK_LANGUAGE: Language = 'en';

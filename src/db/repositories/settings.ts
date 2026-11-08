@@ -3,7 +3,9 @@ import { uuidv7 } from 'uuidv7';
 import { z } from 'zod';
 
 import { addDays, isGameDay, toGameDay } from '../../rules/gameDay';
-import { GAME_MODES, type GameDay } from '../../rules/types';
+import { FALLBACK_LANGUAGE } from '../../rules/config';
+import { pickLanguage } from '../../rules/language';
+import { GAME_MODES, LANGUAGES, type GameDay } from '../../rules/types';
 import { settings } from '../schema';
 import type { Db } from '../types';
 
@@ -18,20 +20,7 @@ const dayChangeTime = z
 const gameDay = z.custom<GameDay>(isGameDay, 'Expected a game day (YYYY-MM-DD)');
 const weekday = z.literal([1, 2, 3, 4, 5, 6, 7]);
 
-export const LANGUAGES = ['it', 'en', 'de', 'fr', 'es'] as const;
-
-/**
- * The language to use at first launch (CLAUDE.md, choice 19): the device language if it is one
- * of the five supported ones, otherwise English.
- */
-export function defaultLanguage(
-  locales: readonly { readonly languageCode: string | null }[],
-): SettingValue<'language'> {
-  const code = locales[0]?.languageCode;
-  return (LANGUAGES as readonly string[]).includes(code ?? '')
-    ? (code as SettingValue<'language'>)
-    : 'en';
-}
+export { LANGUAGES };
 
 /**
  * The themes of temi.json. `minimal` follows the light or dark mode of the phone («Automatico»);
@@ -83,7 +72,8 @@ type KeyWithDefault = Exclude<SettingKey, 'device_id'>;
 type EditableKey = Exclude<SettingKey, 'device_id' | 'day_change'>;
 
 export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K> } = {
-  language: 'en',
+  /** Only a fallback: the first launch uses the language of the phone (getLanguage). */
+  language: FALLBACK_LANGUAGE,
   theme: 'minimal',
   game_mode: 'full',
   day_change: { value: '06:00', next: null, from_day: null },
@@ -125,12 +115,13 @@ export function getSetting<K extends KeyWithDefault>(db: Db, key: K): SettingVal
   return readValid(db, key) ?? SETTING_DEFAULTS[key];
 }
 
-/** The saved language, or the language of the phone while none was saved (choice 19). */
-export function getLanguage(
-  db: Db,
-  locales: readonly { readonly languageCode: string | null }[],
-): SettingValue<'language'> {
-  return readValid(db, 'language') ?? defaultLanguage(locales);
+/**
+ * The saved language, or the language of the phone while none was saved (choice 19).
+ *
+ * @param localeTags The device locales in order of preference, e.g. `['pt-BR', 'fr-FR']`.
+ */
+export function getLanguage(db: Db, localeTags: readonly string[]): SettingValue<'language'> {
+  return readValid(db, 'language') ?? pickLanguage(localeTags);
 }
 
 /** Writes a setting after validating it with its Zod schema; a value that is not valid throws. */

@@ -1,7 +1,6 @@
 import {
   SETTING_DEFAULTS,
   dayChangeOn,
-  defaultLanguage,
   gameDayOf,
   getDeviceId,
   getLanguage,
@@ -126,36 +125,19 @@ describe('getDeviceId', () => {
   });
 });
 
-describe('defaultLanguage', () => {
-  it('returns the device language when it is one of the five supported ones (choice 19)', () => {
-    expect(defaultLanguage([{ languageCode: 'it' }])).toBe('it');
-    expect(defaultLanguage([{ languageCode: 'de' }])).toBe('de');
-    expect(defaultLanguage([{ languageCode: 'fr' }])).toBe('fr');
-    expect(defaultLanguage([{ languageCode: 'es' }])).toBe('es');
-    expect(defaultLanguage([{ languageCode: 'en' }])).toBe('en');
-    expect(defaultLanguage([{ languageCode: 'it' }, { languageCode: 'en' }])).toBe('it');
-  });
-
-  it('falls back to English for unsupported or missing locales (choice 19)', () => {
-    expect(defaultLanguage([{ languageCode: 'ja' }])).toBe('en');
-    expect(defaultLanguage([{ languageCode: 'pt' }, { languageCode: 'fr' }])).toBe('en');
-    expect(defaultLanguage([{ languageCode: null }])).toBe('en');
-    expect(defaultLanguage([])).toBe('en');
-  });
-});
-
 describe('getLanguage', () => {
   it('gives the device language while no language was saved (choice 19)', () => {
     const db = createTestDb();
-    expect(getLanguage(db, [{ languageCode: 'it' }])).toBe('it');
-    expect(getLanguage(db, [{ languageCode: 'ja' }])).toBe('en');
+    expect(getLanguage(db, ['it-IT'])).toBe('it');
+    expect(getLanguage(db, ['pt-BR', 'fr-FR'])).toBe('fr');
+    expect(getLanguage(db, ['ja-JP'])).toBe('en');
     expect(getLanguage(db, [])).toBe('en');
   });
 
   it('always prefers the saved language', () => {
     const db = createTestDb();
     setSetting(db, 'language', 'de', NOW);
-    expect(getLanguage(db, [{ languageCode: 'it' }])).toBe('de');
+    expect(getLanguage(db, ['it-IT'])).toBe('de');
   });
 });
 

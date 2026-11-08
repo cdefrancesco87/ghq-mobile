@@ -37,3 +37,7 @@ export interface Deltas {
 /** Game mode of the `game_mode` setting: the full game or the Essential mode. */
 export const GAME_MODES = ['full', 'essential'] as const;
 export type GameMode = (typeof GAME_MODES)[number];
+
+/** Languages of the app, as stored in the `language` setting. */
+export const LANGUAGES = ['it', 'en', 'de', 'fr', 'es'] as const;
+export type Language = (typeof LANGUAGES)[number];

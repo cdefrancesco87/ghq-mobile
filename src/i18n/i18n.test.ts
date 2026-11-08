@@ -3,9 +3,14 @@ import { TITLE_KEYS, TITLE_THEMES } from '@/content/titles';
 import { SKIP_REASONS } from '@/db/repositories/completion';
 import { STARTER_QUEST } from '@/db/repositories/onboarding';
 import { LANGUAGES } from '@/db/repositories/settings';
-import { RESOURCES, createI18n, pickLanguage, type Language } from '@/i18n';
+import { RESOURCES, createI18n, deviceLanguage, type Language } from '@/i18n';
 import { STAT_KEYS } from '@/rules/types';
 import temi from '@/theme/temi.json';
+
+let mockLocaleTags: string[] = [];
+jest.mock('expo-localization', () => ({
+  getLocales: () => mockLocaleTags.map((languageTag) => ({ languageTag })),
+}));
 
 type Tree = { readonly [key: string]: string | Tree };
 
@@ -135,15 +140,18 @@ describe('createI18n', () => {
   });
 });
 
-describe('pickLanguage', () => {
-  it('takes the language of the phone when it is one of the five', () => {
-    expect(pickLanguage([{ languageCode: 'de' }])).toBe('de');
-    expect(pickLanguage([{ languageCode: 'it' }, { languageCode: 'en' }])).toBe('it');
+describe('deviceLanguage', () => {
+  it('takes the first supported language of the phone (choice 19)', () => {
+    mockLocaleTags = ['de-DE'];
+    expect(deviceLanguage()).toBe('de');
+    mockLocaleTags = ['pt-BR', 'fr-FR'];
+    expect(deviceLanguage()).toBe('fr');
   });
 
-  it('falls back to English for any other language', () => {
-    expect(pickLanguage([{ languageCode: 'ja' }, { languageCode: 'fr' }])).toBe('en');
-    expect(pickLanguage([{ languageCode: null }])).toBe('en');
-    expect(pickLanguage([])).toBe('en');
+  it('falls back to English when no language of the phone is supported (choice 19)', () => {
+    mockLocaleTags = ['ja-JP'];
+    expect(deviceLanguage()).toBe('en');
+    mockLocaleTags = [];
+    expect(deviceLanguage()).toBe('en');
   });
 });

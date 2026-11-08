@@ -1,9 +1,7 @@
-import { getLocales } from 'expo-localization';
 import { create } from 'zustand';
 
 import {
   SETTING_DEFAULTS,
-  defaultLanguage,
   getLanguage,
   getSetting,
   setSetting,
@@ -11,6 +9,7 @@ import {
   type SettingValue,
 } from '../db/repositories/settings';
 import type { Db } from '../db/types';
+import { deviceLanguage, deviceLocaleTags } from '../i18n';
 import { getSession } from './session';
 
 // The settings read on every screen. The theme has its own store (theme.ts); `device_id` is an
@@ -41,12 +40,15 @@ function readAll(read: <K extends StoredKey>(key: K) => SettingValue<K>): AppSet
 
 /** The settings of a database: the language follows the phone until one is saved (choice 19). */
 function readFrom(db: Db): AppSettings {
-  return { ...readAll((key) => getSetting(db, key)), language: getLanguage(db, getLocales()) };
+  return {
+    ...readAll((key) => getSetting(db, key)),
+    language: getLanguage(db, deviceLocaleTags()),
+  };
 }
 
 const DEFAULTS: AppSettings = {
   ...readAll((key) => SETTING_DEFAULTS[key]),
-  language: defaultLanguage(getLocales()),
+  language: deviceLanguage(),
 };
 
 export interface SettingsState {

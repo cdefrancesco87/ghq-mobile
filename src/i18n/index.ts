@@ -3,6 +3,8 @@ import { getLocales } from 'expo-localization';
 import { initReactI18next } from 'react-i18next';
 
 import type { SettingValue } from '../db/repositories/settings';
+import { FALLBACK_LANGUAGE } from '../rules/config';
+import { pickLanguage } from '../rules/language';
 import de from './locales/de.json';
 import en from './locales/en.json';
 import es from './locales/es.json';
@@ -24,23 +26,17 @@ export const RESOURCES = {
   es: { translation: es },
 } as const satisfies Record<Language, { translation: object }>;
 
-const FALLBACK_LANGUAGE: Language = 'en';
-
-function isLanguage(code: string | null | undefined): code is Language {
-  return code != null && code in RESOURCES;
+/** The device locales in order of preference, e.g. `['pt-BR', 'fr-FR']`. */
+export function deviceLocaleTags(): string[] {
+  return getLocales().map((locale) => locale.languageTag);
 }
 
-/** The language of the phone if it is one of the five, otherwise English (US-ONB first step). */
-export function pickLanguage(
-  locales: readonly { readonly languageCode: string | null }[],
-): Language {
-  const code = locales[0]?.languageCode;
-  return isLanguage(code) ? code : FALLBACK_LANGUAGE;
-}
-
-/** The language to preselect at the first launch. */
+/**
+ * The language to preselect at the first launch: the first language of the phone among the five,
+ * otherwise English (CLAUDE.md, choice 19).
+ */
 export function deviceLanguage(): Language {
-  return pickLanguage(getLocales());
+  return pickLanguage(deviceLocaleTags());
 }
 
 /** A new i18next instance, ready for react-i18next, in the given language. */
