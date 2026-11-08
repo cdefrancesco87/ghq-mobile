@@ -2,9 +2,10 @@ import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { useTranslation } from 'react-i18next';
 
+import { Icon } from '@/features/shared/Icon';
+import type { IconName } from '@/features/shared/icons';
 import { useAppStore } from '@/stores/app';
 import { useTheme } from '@/theme/ThemeProvider';
-import { Icon, type IconName } from './icons';
 import { NavLabel } from './NavLabel';
 import { NewTabButton } from './NewTabButton';
 
@@ -12,11 +13,11 @@ import { NewTabButton } from './NewTabButton';
 // from the Profile screen (design decision 08/11).
 
 const TABS: readonly { readonly name: string; readonly icon: IconName }[] = [
-  { name: 'today', icon: 'today' },
-  { name: 'habits', icon: 'habits' },
-  { name: 'new', icon: 'new' },
-  { name: 'goals', icon: 'goals' },
-  { name: 'profile', icon: 'profile' },
+  { name: 'today', icon: 'oggi' },
+  { name: 'habits', icon: 'abitudini' },
+  { name: 'new', icon: 'aggiungi' },
+  { name: 'goals', icon: 'boss' },
+  { name: 'profile', icon: 'profilo' },
 ];
 
 export function TabsLayout() {

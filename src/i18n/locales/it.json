@@ -400,6 +400,49 @@
       "easy": "Facile",
       "medium": "Media",
       "hard": "Difficile"
+    },
+    "appName": "Good Habits Quest",
+    "companionSprite": {
+      "egg": "{{name}}, {{stage}}",
+      "grown": "{{name}}, {{stage}}, {{mood}}",
+      "stage": {
+        "egg": "uovo",
+        "baby": "cucciolo",
+        "adult": "adulto"
+      },
+      "mood": {
+        "happy": "felice",
+        "normal": "normale",
+        "sad": "triste",
+        "cheering": "esultante"
+      }
+    },
+    "bossSprite": {
+      "minimal": "{{goal}}, {{difficulty}}",
+      "arcade": {
+        "quest": "Dring, sveglia ribelle",
+        "easy": "Gloop, blob saltellante",
+        "medium": "Rocket, robot a razzo",
+        "hard": "Zorg, disco volante"
+      },
+      "fantasy": {
+        "quest": "Snooze, pipistrello dormiglione",
+        "easy": "Spore, fungo velenoso",
+        "medium": "Grunk, orco zannuto",
+        "hard": "Ignis, drago rosso"
+      },
+      "cyberpunk": {
+        "quest": "Bugsy, bug",
+        "easy": "Cubit, cubetto glitch",
+        "medium": "Blaze, muro di fuoco",
+        "hard": "Titan, mech ICE"
+      },
+      "lovecraft": {
+        "quest": "Shade, fiammella d'ombra",
+        "easy": "Peeper, bolla dai molti occhi",
+        "medium": "Jelly, medusa del vuoto",
+        "hard": "Krakko, l'Antico"
+      }
     }
   },
   "skipReasons": {

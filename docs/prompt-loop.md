@@ -27,3 +27,5 @@ You are in the GHQ Mobile development loop. In this round run **one single task*
 11. In the backlog change only task states and the Diario. Do not rewrite task text.
 12. If a command is denied for missing permission, stop immediately: write "LOOP FERMO" and the exact command to approve. Do not retry the task in later rounds.
 13. Be concise: no summaries of files or code in the terminal. End the round with three lines: task run, outcome, next available task.
+14. Never use sed, awk or perl. To list or trim output use find -printf, grep -o or ls. Edit files only with the Edit tool.
+15. Run one simple command per call: no &&, ;, pipes, or shell variables. Use Glob, Grep and Read instead of find, ls and grep when possible.

@@ -3,8 +3,8 @@ import type { BottomTabBarButtonProps } from 'expo-router/js-tabs';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/features/shared/Icon';
 import { useTheme } from '@/theme/ThemeProvider';
-import { Icon } from './icons';
 
 const SIZE = 56;
 
@@ -22,7 +22,7 @@ export function NewTabButton({ style }: BottomTabBarButtonProps) {
         onPress={() => router.push('/editor')}
         style={[styles.button, { backgroundColor: colors.primary }]}
       >
-        <Icon name="new" color={colors.onPrimary} />
+        <Icon name="aggiungi" color={colors.onPrimary} />
       </Pressable>
     </View>
   );
