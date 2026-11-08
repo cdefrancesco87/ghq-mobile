@@ -62,11 +62,12 @@ async function openApp(
   );
 }
 
-/** The accessibility labels of the tabs in the bar, in order (react-navigation writes them). */
+/** The full accessibility labels of the tabs in the bar, in order (the visible text may be cut). */
 function tabLabels(): string[] {
   return screen
-    .queryAllByLabelText(/, tab, \d of \d$/)
-    .map((tab) => String(tab.props.accessibilityLabel));
+    .queryAllByLabelText(/^(Oggi|Abitudini|Obiettivi|Profilo)$/)
+    .filter((node) => node.props.accessible !== false && node.props.onClick !== undefined)
+    .map((tab) => String(tab.props.accessibilityLabel ?? tab.props['aria-label']));
 }
 
 beforeEach(() => {
@@ -82,20 +83,26 @@ describe('navigation', () => {
 
     expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
     // The bar has 5 slots; the [+] in the middle is the 3rd. Stats is a stack route, not a tab.
-    expect(tabLabels()).toEqual([
-      'Oggi, tab, 1 of 5',
-      'Abitudini, tab, 2 of 5',
-      'Obiettivi, tab, 4 of 5',
-      'Profilo, tab, 5 of 5',
-    ]);
+    expect(tabLabels()).toEqual(['Oggi', 'Abitudini', 'Obiettivi', 'Profilo']);
     expect(screen.getByRole('button', { name: 'Nuova missione' })).toBeOnTheScreen();
+  });
+
+  it('keeps the tab labels on one line, truncated, with the font scale capped at 1.3', async () => {
+    await openApp(newGame(['drink_water']));
+    await screen.findByRole('header', { name: 'Oggi' });
+
+    for (const label of ['Oggi', 'Abitudini', 'Obiettivi', 'Profilo']) {
+      const text = screen.getAllByText(label).find((node) => node.props.numberOfLines === 1);
+      expect(text?.props.maxFontSizeMultiplier).toBe(1.3);
+      expect(text?.props.ellipsizeMode).toBe('tail');
+    }
   });
 
   it('changes screen from the bar', async () => {
     await openApp(newGame(['drink_water']));
     await screen.findByRole('header', { name: 'Oggi' });
 
-    await fireEvent.press(screen.getByLabelText(/^Abitudini, tab/));
+    await fireEvent.press(screen.getByLabelText('Abitudini'));
 
     expect(await screen.findByRole('header', { name: 'Abitudini' })).toBeOnTheScreen();
   });

@@ -1,5 +1,5 @@
 {
-  "nota": "Theme tokens for Good Habits Quest. The same 18 colour roles in every theme; typography and form from design-sezioni.md A3–A4; lexicon from L04.",
+  "nota": "Theme tokens for Good Habits Quest. The same 18 colour roles in every theme; typography and form from design-sezioni.md A3–A4. The lexicon terms (singular, plural, gender) live in the language files; only the companion names are here.",
   "temi": {
     "arcade": {
       "colori": {
@@ -207,13 +207,6 @@
     }
   },
   "lessico": {
-    "vita":       {"arcade": "VITA", "fantasy": "Salute", "cyberpunk": "Integrità", "lovecraft": "Vitalità", "minimal": "Energia"},
-    "esperienza": {"arcade": "EXP", "fantasy": "Esperienza", "cyberpunk": "Reputazione", "lovecraft": "Conoscenza proibita", "minimal": "XP"},
-    "monete":     {"arcade": "Gettoni", "fantasy": "Oro", "cyberpunk": "Crediti", "lovecraft": "Reliquie", "minimal": "Monete"},
-    "missioni":   {"arcade": "Stage", "fantasy": "Imprese", "cyberpunk": "Contratti", "lovecraft": "Rituali", "minimal": "Abitudini"},
-    "boss":       {"arcade": "Boss", "fantasy": "Nemesi", "cyberpunk": "Firewall", "lovecraft": "Orrore", "minimal": "Grande obiettivo"},
-    "serie":      {"arcade": "Combo", "fantasy": "Fiamma sacra", "cyberpunk": "Uptime", "lovecraft": "Veglia", "minimal": "Serie"},
-    "livello":    {"arcade": "LV", "fantasy": "Rango", "cyberpunk": "Tier", "lovecraft": "Circolo", "minimal": "Livello"},
     "compagno":   {"arcade": "Pixel", "fantasy": "Rocky", "cyberpunk": "Glitchy", "lovecraft": "Lumin", "minimal": "Cloudy"}
   }
 }

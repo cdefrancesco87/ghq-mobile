@@ -3,9 +3,9 @@ import { Tabs } from 'expo-router/js-tabs';
 import { useTranslation } from 'react-i18next';
 
 import { useAppStore } from '@/stores/app';
-import { textStyleOf } from '@/theme/fonts';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon, type IconName } from './icons';
+import { NavLabel } from './NavLabel';
 import { NewTabButton } from './NewTabButton';
 
 // The tab bar: Today, Habits, [+], Goals, Profile. Statistics is a stack route accessible
@@ -21,7 +21,7 @@ const TABS: readonly { readonly name: string; readonly icon: IconName }[] = [
 
 export function TabsLayout() {
   const { t } = useTranslation();
-  const { colors, typography } = useTheme();
+  const { colors } = useTheme();
   const hasProfile = useAppStore((state) => state.hasProfile);
 
   // Without a profile the app is at its first launch.
@@ -35,7 +35,6 @@ export function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        tabBarLabelStyle: textStyleOf(typography.navLabel),
       }}
     >
       {TABS.map(({ name, icon }) => (
@@ -44,6 +43,8 @@ export function TabsLayout() {
           name={name}
           options={{
             title: t(`nav.${name}`),
+            tabBarAccessibilityLabel: t(`nav.${name}`),
+            tabBarLabel: ({ color, children }) => <NavLabel color={color}>{children}</NavLabel>,
             tabBarIcon: ({ color }) => <Icon name={icon} color={color} />,
             ...(name === 'new' ? { tabBarButton: NewTabButton } : {}),
           }}
