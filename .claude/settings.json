@@ -48,10 +48,12 @@
       "Bash(git push* :*)",
       "Bash(git push*--mirror*)",
       "Bash(gh pr merge*)",
-      "Bash(gh * pr merge*)",
+      "Bash(gh -R * pr merge*)",
+      "Bash(gh --repo * pr merge*)",
       "Bash(npx eas-cli@*)",
       "Bash(npx*eas-cli*)",
-      "Bash(npm exec*eas*)"
+      "Bash(npm exec*eas-cli*)",
+      "Bash(npm exec -- eas*)"
     ]
   },
   "hooks": {
