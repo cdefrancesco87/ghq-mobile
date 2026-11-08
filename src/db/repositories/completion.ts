@@ -22,6 +22,7 @@ import { damageBoss, markStepDone } from './boss';
 import { appendEvent } from './events';
 import { changeHero, loadHero, recordLevelUp, type ActionClock } from './hero';
 import { listTodayMissions, type Mission } from './missions';
+import { withMoments, type WithMoments } from './moments';
 import { gameDayOf, getSetting } from './settings';
 
 // Completing, progressing and skipping a mission, and the day plan (modello-dati.md 3.5, 3.6 and
@@ -55,7 +56,7 @@ export interface SkipInput extends Omit<CompletionInput, 'source'> {
 
 export type DayBonus = 'bonus.full_day' | 'bonus.plan';
 
-export interface CompletionResult {
+export interface CompletionResult extends WithMoments {
   /**
    * `completed`: the rewards were given. `progressed`: a measurable mission moved without
    * rewards. `already_done`: the mission was already done today. `already_recorded`: the same
@@ -67,7 +68,7 @@ export interface CompletionResult {
   readonly cancelledNotificationIds: readonly string[];
 }
 
-const NOTHING = { bonuses: [], cancelledNotificationIds: [] } as const;
+const NOTHING = { bonuses: [], cancelledNotificationIds: [], moments: [] } as const;
 
 function today(tx: Db, { now, tzOffset }: { now: number; tzOffset: number }): GameDay {
   return gameDayOf(now, tzOffset, getSetting(tx, 'day_change'));
@@ -236,7 +237,7 @@ function finishCompletion(
   day: GameDay,
   value: number | null,
   input: CompletionInput,
-): CompletionResult {
+): Omit<CompletionResult, 'moments'> {
   const clock: ActionClock = { now: input.now, tzOffset: input.tzOffset, source: input.source };
   const current = loadHero(tx);
   const rewards = completionDeltas({
@@ -317,12 +318,14 @@ export function completeMission(db: Db, input: CompletionInput): CompletionResul
     if (missionDay?.status === 'skipped') {
       throw new RangeError('The mission was skipped today');
     }
-    return finishCompletion(
-      tx,
-      mission,
-      day,
-      mission.goalType === 'none' ? null : mission.goalTarget,
-      input,
+    return withMoments(tx, () =>
+      finishCompletion(
+        tx,
+        mission,
+        day,
+        mission.goalType === 'none' ? null : mission.goalTarget,
+        input,
+      ),
     );
   });
 }
@@ -352,7 +355,7 @@ export function progressMission(db: Db, input: ProgressInput): CompletionResult 
     });
     const done = missionDay?.status === 'done';
     if (!done && progress.completesNow) {
-      return finishCompletion(tx, mission, day, progress.value, input);
+      return withMoments(tx, () => finishCompletion(tx, mission, day, progress.value, input));
     }
     writeMissionDay(tx, {
       missionId: mission.id,

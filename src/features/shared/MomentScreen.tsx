@@ -1,0 +1,313 @@
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SvgXml } from 'react-native-svg';
+
+import { TITLE_KEYS } from '@/content/titles';
+import { useTheme } from '@/theme/ThemeProvider';
+import { announceOnIos } from './announce';
+import { Button } from './Button';
+import { CompanionSprite } from './CompanionSprite';
+import { iconXml, type IconName } from './icons';
+import type { Moment } from './moments';
+import { ThemedText } from './ThemedText';
+import { MIN_TOUCH } from './touch';
+
+/** The storyboards C2a–C5a: the screen dims, the emblem bounces in, the text comes last. */
+const EMBLEM_DELAY_MS = 500;
+const EMBLEM_GROW_MS = 230;
+const EMBLEM_SETTLE_MS = 120;
+const DETAIL_DELAY_MS = 1250;
+const DETAIL_MS = 250;
+/** With «Riduci movimento» only one fade (A7). */
+const REDUCED_FADE_MS = 150;
+
+const EMBLEM_SIZE = 140;
+const EMBLEM_ICON_SIZE = 64;
+const LEVEL_FONT_SIZE = 96;
+const SPRITE_SIZE = 160;
+const EDGE = 16;
+
+const CONFETTI_DELAY_MS = 1000;
+const CONFETTI_MS = 800;
+const CONFETTI_STAGGER_MS = 40;
+const CONFETTI_SIZE = 8;
+/** Where the 8 sober pieces of confetti fall, as fractions of the width (C2b). */
+const CONFETTI = [0.1, 0.22, 0.34, 0.46, 0.58, 0.7, 0.82, 0.94] as const;
+
+interface MomentTexts {
+  readonly title: string;
+  readonly detail?: string;
+}
+
+function useMomentTexts(moment: Moment): MomentTexts {
+  const { t } = useTranslation();
+  const { family } = useTheme();
+  switch (moment.kind) {
+    case 'level_up':
+      return {
+        title: t('shared.moments.levelUp', {
+          term: t('lexicon.level', { context: family }),
+          level: moment.level,
+        }),
+        detail:
+          moment.titleIndex === null
+            ? undefined
+            : t('shared.moments.newTitle', {
+                title: t(`titles.${family}.${TITLE_KEYS[family][moment.titleIndex]}`),
+              }),
+      };
+    case 'boss_defeated':
+      return {
+        title: t('lexicon.victory', { context: family }),
+        detail: t('shared.moments.reward', {
+          xp: moment.xp,
+          xpTerm: t('lexicon.xp_pl', { context: family }),
+          coins: moment.coins,
+          coinsTerm: t('lexicon.coins_pl', { context: family }),
+        }),
+      };
+    case 'companion_stage':
+      return {
+        title: t('shared.moments.companionGrown', {
+          name: t('lexicon.companion', { context: family }),
+        }),
+        detail: t(`shared.moments.companionStage.${moment.stage}`),
+      };
+    case 'badge':
+      return { title: t('shared.moments.badge') };
+  }
+}
+
+/** A circle in every theme (mockup D35B, storyboard C2c). */
+function IconEmblem({ name }: { readonly name: IconName }) {
+  const { colors, family } = useTheme();
+  return (
+    <View
+      testID="moment-icon-emblem"
+      style={[styles.iconEmblem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    >
+      <SvgXml
+        xml={iconXml(name, family)}
+        width={EMBLEM_ICON_SIZE}
+        height={EMBLEM_ICON_SIZE}
+        color={colors.coinsText}
+      />
+    </View>
+  );
+}
+
+function Emblem({ moment }: { readonly moment: Moment }) {
+  const { colors } = useTheme();
+  switch (moment.kind) {
+    case 'level_up':
+      return (
+        <ThemedText
+          variant="display"
+          color={colors.primary}
+          numberOfLines={1}
+          style={styles.levelNumber}
+        >
+          {moment.level}
+        </ThemedText>
+      );
+    case 'boss_defeated':
+      return <IconEmblem name="trofeo" />;
+    case 'companion_stage':
+      return <CompanionSprite stage={moment.stage} mood="happy" size={SPRITE_SIZE} />;
+    case 'badge':
+      return <IconEmblem name="badge" />;
+  }
+}
+
+/** A piece of confetti: squares in Arcade and Cyberpunk, gold dust in Fantasy and Lovecraft. */
+function Confetto({ index, fraction }: { readonly index: number; readonly fraction: number }) {
+  const { colors, family } = useTheme();
+  const { width, height } = useWindowDimensions();
+  const fall = useSharedValue(0);
+  const palette = [colors.primary, colors.done, colors.coins, colors.danger];
+  const dust = family === 'fantasy' || family === 'lovecraft';
+
+  useEffect(() => {
+    fall.set(
+      withDelay(
+        CONFETTI_DELAY_MS + index * CONFETTI_STAGGER_MS,
+        withTiming(1, { duration: CONFETTI_MS, easing: Easing.in(Easing.quad) }),
+      ),
+    );
+  }, [fall, index]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: fall.get() === 0 ? 0 : 1 - fall.get(),
+    transform: [{ translateY: (height / 2) * fall.get() }],
+  }));
+
+  return (
+    <Animated.View
+      testID="moment-particle"
+      style={[
+        styles.confetto,
+        {
+          left: width * fraction,
+          backgroundColor: dust ? colors.coins : palette[index % palette.length],
+          borderRadius: dust ? CONFETTI_SIZE / 2 : 0,
+        },
+        style,
+      ]}
+    />
+  );
+}
+
+export interface MomentScreenProps {
+  readonly moment: Moment;
+  readonly reduceMotion: boolean;
+  /** Goes to the next moment of the queue. */
+  readonly onSkip: () => void;
+}
+
+/** A full-screen moment: a touch anywhere moves on (design-sezioni.md A7, mockup D35). */
+export function MomentScreen({ moment, reduceMotion, onSkip }: MomentScreenProps) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { top, bottom } = useSafeAreaInsets();
+  const { title, detail } = useMomentTexts(moment);
+  const label = detail === undefined ? title : `${title}. ${detail}`;
+  const emblemOpacity = useSharedValue(0);
+  const emblemScale = useSharedValue(reduceMotion ? 1 : 0.6);
+  const detailOpacity = useSharedValue(0);
+
+  useEffect(() => announceOnIos(label), [label]);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      const fade = withTiming(1, { duration: REDUCED_FADE_MS });
+      emblemOpacity.set(fade);
+      detailOpacity.set(fade);
+      return;
+    }
+    emblemOpacity.set(withDelay(EMBLEM_DELAY_MS, withTiming(1, { duration: EMBLEM_SETTLE_MS })));
+    emblemScale.set(
+      withDelay(
+        EMBLEM_DELAY_MS,
+        withSequence(
+          withTiming(1.1, { duration: EMBLEM_GROW_MS, easing: Easing.out(Easing.quad) }),
+          withTiming(1, { duration: EMBLEM_SETTLE_MS }),
+        ),
+      ),
+    );
+    detailOpacity.set(withDelay(DETAIL_DELAY_MS, withTiming(1, { duration: DETAIL_MS })));
+  }, [detailOpacity, emblemOpacity, emblemScale, reduceMotion]);
+
+  const emblemStyle = useAnimatedStyle(() => ({
+    opacity: emblemOpacity.get(),
+    transform: [{ scale: emblemScale.get() }],
+  }));
+  const titleStyle = useAnimatedStyle(() => ({
+    opacity: emblemOpacity.get(),
+    transform: [{ scale: emblemScale.get() }],
+  }));
+  const detailStyle = useAnimatedStyle(() => ({ opacity: detailOpacity.get() }));
+
+  return (
+    <View style={styles.root}>
+      {/* Only for the finger: the screen reader finds «Salta» and «Continua». */}
+      <Pressable
+        testID="moment-backdrop"
+        onPress={onSkip}
+        accessible={false}
+        importantForAccessibility="no"
+        style={StyleSheet.absoluteFill}
+      />
+      {moment.kind === 'boss_defeated' && !reduceMotion
+        ? CONFETTI.map((fraction, index) => (
+            <Confetto key={fraction} index={index} fraction={fraction} />
+          ))
+        : null}
+      <Pressable
+        testID="moment-skip"
+        onPress={onSkip}
+        accessibilityRole="button"
+        accessibilityLabel={t('shared.moments.skip')}
+        style={[styles.skip, { top: top + EDGE }]}
+      >
+        <ThemedText color={colors.textMuted}>{t('shared.moments.skip')}</ThemedText>
+      </Pressable>
+      <View pointerEvents="none" style={styles.content}>
+        <Animated.View testID={`moment-${moment.kind}`} style={emblemStyle}>
+          <Emblem moment={moment} />
+        </Animated.View>
+        <Animated.View
+          accessible
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+          accessibilityLabel={label}
+          style={[styles.texts, titleStyle]}
+        >
+          <ThemedText variant="display" style={styles.centered}>
+            {title}
+          </ThemedText>
+          {detail === undefined ? null : (
+            <Animated.View style={detailStyle}>
+              <ThemedText color={colors.textMuted} style={styles.centered}>
+                {detail}
+              </ThemedText>
+            </Animated.View>
+          )}
+        </Animated.View>
+      </View>
+      <Button
+        testID="moment-continue"
+        label={t('shared.moments.continue')}
+        onPress={onSkip}
+        style={[styles.continue, { bottom: bottom + EDGE }]}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  skip: {
+    position: 'absolute',
+    right: EDGE,
+    minWidth: MIN_TOUCH,
+    minHeight: MIN_TOUCH,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+    paddingHorizontal: EDGE,
+  },
+  texts: { alignItems: 'center', gap: 8 },
+  centered: { textAlign: 'center' },
+  levelNumber: { fontSize: LEVEL_FONT_SIZE, lineHeight: LEVEL_FONT_SIZE * 1.2 },
+  iconEmblem: {
+    width: EMBLEM_SIZE,
+    height: EMBLEM_SIZE,
+    borderRadius: EMBLEM_SIZE / 2,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confetto: {
+    position: 'absolute',
+    top: 0,
+    width: CONFETTI_SIZE,
+    height: CONFETTI_SIZE,
+    pointerEvents: 'none',
+  },
+  continue: { position: 'absolute', left: EDGE, right: EDGE },
+});

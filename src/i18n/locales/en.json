@@ -449,6 +449,25 @@
       "medium": "Medium",
       "hard": "Hard"
     },
+    "celebration": {
+      "xp": "+{{xp}} {{xpTerm}}",
+      "coins": "+{{coins}}",
+      "label": "{{gain}}, +{{coins}} {{coinsTerm}}",
+      "timestamp": "ts {{time}}"
+    },
+    "moments": {
+      "skip": "Skip",
+      "continue": "Continue",
+      "levelUp": "{{term}} {{level}}!",
+      "newTitle": "New title: {{title}}",
+      "reward": "+{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+      "companionGrown": "{{name}} has grown!",
+      "companionStage": {
+        "baby": "Now it's a baby",
+        "adult": "Now it's an adult"
+      },
+      "badge": "Badge unlocked"
+    },
     "appName": "Good Habits Quest",
     "companionSprite": {
       "egg": "{{name}}, {{stage}}",

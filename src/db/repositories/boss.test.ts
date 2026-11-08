@@ -120,7 +120,7 @@ describe('completeBossStep', () => {
   it('deals 20 damage and gives 10 points to the boss stat', () => {
     const db = newGame(['journal']);
     const thesis = createBoss(db, THESIS, NOW);
-    expect(completeBossStep(db, stepIds(db, thesis.id)[1], NOW)).toEqual({ defeated: false });
+    expect(completeBossStep(db, stepIds(db, thesis.id)[1], NOW)).toMatchObject({ defeated: false });
     expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(40);
     expect(db.select().from(heroStats).where(eq(heroStats.statKey, 'wisdom')).get()?.points).toBe(
       10,
@@ -149,8 +149,11 @@ describe('completeBossStep', () => {
     const db = newGame(['journal']);
     const quest = starterQuest(db);
     const [, second, third] = stepIds(db, quest.id);
-    completeBossStep(db, second, NOW);
-    expect(completeBossStep(db, third, NOW)).toEqual({ defeated: true });
+    expect(completeBossStep(db, second, NOW)).toEqual({ defeated: false, moments: [] });
+    const victory = completeBossStep(db, third, NOW);
+    expect(victory.defeated).toBe(true);
+    expect(victory.moments.map((event) => event.type)).toEqual(['boss.defeated', 'hero.level_up']);
+    expect(victory.moments[0]).toMatchObject({ dXp: 200, dCoins: 50 });
     expect(db.select().from(hero).get()).toMatchObject({ level: 2, xpTotal: 200, coins: 50 });
     expect(eventsOf(db, 'hero.level_up')).toHaveLength(1);
     expect(
