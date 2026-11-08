@@ -49,7 +49,6 @@ export function TabsLayout() {
           }}
         />
       ))}
-      <Tabs.Screen name="stats" options={{ href: null }} />
     </Tabs>
   );
 }

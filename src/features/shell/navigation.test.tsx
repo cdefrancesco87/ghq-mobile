@@ -13,7 +13,7 @@ import Goals from '../../../app/(tabs)/goals';
 import Habits from '../../../app/(tabs)/habits';
 import New from '../../../app/(tabs)/new';
 import Profile from '../../../app/(tabs)/profile';
-import Stats from '../../../app/(tabs)/stats';
+import Stats from '../../../app/stats';
 import Today from '../../../app/(tabs)/today';
 import Companion from '../../../app/companion';
 import Editor from '../../../app/editor';
@@ -39,7 +39,7 @@ const ROUTES: Record<string, ComponentType> = {
   '(tabs)/habits': Habits,
   '(tabs)/new': New,
   '(tabs)/goals': Goals,
-  '(tabs)/stats': Stats,
+  stats: Stats,
   '(tabs)/profile': Profile,
 };
 
@@ -127,6 +127,14 @@ describe('navigation', () => {
 
     expect(await screen.findByRole('header', { name: 'Primo avvio' })).toBeOnTheScreen();
     expect(tabLabels()).toEqual([]);
+  });
+
+  it('reaches stats as a stack route (not a tab)', async () => {
+    await openApp(newGame(['drink_water']));
+    await screen.findByRole('header', { name: 'Oggi' });
+
+    await act(() => router.push('/stats'));
+    expect(await screen.findByRole('header', { name: 'Statistiche' })).toBeOnTheScreen();
   });
 
   it('has a placeholder for companion, shop and settings', async () => {
