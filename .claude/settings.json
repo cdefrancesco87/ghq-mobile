@@ -16,7 +16,10 @@
       "Bash(mkdir *)",
       "Bash(mv *)",
       "Bash(cp *)",
-      "Bash(ls*)"
+      "Bash(ls*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout -b:*)", 
+      "Bash(rm -rf dist-check)"
     ],
     "deny": [
       "Bash(npx eas *)",
