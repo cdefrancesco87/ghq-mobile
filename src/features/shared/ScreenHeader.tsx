@@ -9,9 +9,9 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 
 import { useTheme } from '@/theme/ThemeProvider';
+import { Icon } from './Icon';
 import { ThemedText } from './ThemedText';
 
 export const HEADER_LARGE_HEIGHT = 96;
@@ -108,16 +108,7 @@ export function ScreenHeader({
             accessibilityLabel={t('shared.back')}
             style={styles.back}
           >
-            <Svg width={24} height={24} viewBox="0 0 24 24">
-              <Path
-                d="M15 5l-7 7 7 7"
-                fill="none"
-                stroke={colors.text}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
+            <Icon name="indietro" />
           </Pressable>
         )}
         <Animated.View

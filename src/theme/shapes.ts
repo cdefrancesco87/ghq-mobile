@@ -31,7 +31,15 @@ export interface BarShape {
   readonly glow: number;
 }
 
+/** The stroke of the line icons (`docs/mockup/asset/lotto1/linea/`, one per theme). */
+export interface IconStroke {
+  readonly width: number;
+  readonly linecap: 'round' | 'square';
+  readonly linejoin: 'round' | 'miter';
+}
+
 export interface ThemeShapes {
+  readonly icon: IconStroke;
   readonly card: FrameShape;
   /** Buttons, fields and the segmented control. */
   readonly control: FrameShape;
@@ -46,6 +54,7 @@ const PILL = 999;
 
 export const SHAPES: Readonly<Record<ThemeFamily, ThemeShapes>> = {
   minimal: {
+    icon: { width: 1.75, linecap: 'round', linejoin: 'round' },
     card: { kind: 'rounded', radius: 18, borderWidth: 1 },
     control: { kind: 'rounded', radius: 14, borderWidth: 1 },
     chip: { kind: 'rounded', radius: PILL, borderWidth: 1 },
@@ -53,6 +62,8 @@ export const SHAPES: Readonly<Record<ThemeFamily, ThemeShapes>> = {
     bar: { height: 8, radius: 4, outlineWidth: 0, segments: null, glow: 0 },
   },
   arcade: {
+    // DRAFT: Arcade has pixel icons; this stroke is only for the placeholders without one.
+    icon: { width: 2, linecap: 'square', linejoin: 'miter' },
     card: { kind: 'pixel', width: 3 },
     control: { kind: 'pixel', width: 2 },
     chip: { kind: 'pixel', width: 2 },
@@ -66,6 +77,7 @@ export const SHAPES: Readonly<Record<ThemeFamily, ThemeShapes>> = {
     },
   },
   fantasy: {
+    icon: { width: 1.5, linecap: 'round', linejoin: 'round' },
     card: { kind: 'rounded', radius: 8, borderWidth: 1, innerRuleAt: 3 },
     control: { kind: 'rounded', radius: 8, borderWidth: 1 },
     chip: { kind: 'rounded', radius: 8, borderWidth: 1 },
@@ -73,6 +85,7 @@ export const SHAPES: Readonly<Record<ThemeFamily, ThemeShapes>> = {
     bar: { height: 10, radius: 5, outlineWidth: 1, segments: null, glow: 0 },
   },
   cyberpunk: {
+    icon: { width: 1.75, linecap: 'square', linejoin: 'miter' },
     card: { kind: 'cut', cut: 12, borderWidth: 1 },
     control: { kind: 'cut', cut: 8, borderWidth: 1 },
     chip: { kind: 'cut', cut: 6, borderWidth: 1 },
@@ -86,6 +99,7 @@ export const SHAPES: Readonly<Record<ThemeFamily, ThemeShapes>> = {
     },
   },
   lovecraft: {
+    icon: { width: 1.25, linecap: 'round', linejoin: 'round' },
     card: { kind: 'rounded', radius: 0, borderWidth: 1, innerRuleAt: 3 },
     control: { kind: 'rounded', radius: 0, borderWidth: 1 },
     chip: { kind: 'rounded', radius: 0, borderWidth: 1 },
