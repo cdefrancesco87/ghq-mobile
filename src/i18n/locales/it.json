@@ -390,6 +390,18 @@
     "editor": "Editor missione",
     "placeholder": "Questa schermata arriverà presto."
   },
+  "shared": {
+    "close": "Chiudi",
+    "back": "Indietro",
+    "cancel": "Annulla",
+    "undo": "Annulla",
+    "barValue": "{{label}} {{value}} su {{max}}",
+    "difficulty": {
+      "easy": "Facile",
+      "medium": "Media",
+      "hard": "Difficile"
+    }
+  },
   "skipReasons": {
     "illness": "Malattia",
     "travel": "Viaggio",
