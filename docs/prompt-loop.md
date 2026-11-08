@@ -19,7 +19,8 @@ You are in the GHQ Mobile development loop. In this round run **one single task*
 9. If everything passes:
    - mark the task `[x]`;
    - add one line at the end of the Diario of the file containing the task, in Italian: date, task code, what you did in one sentence, any minor choices or content to review;
-   - commit all the task's files with the message `Txx: <task title>`. Do not push.
+   - commit all the task's files with the message `Txx: <task title>`;
+   - push the branch with `git push -u origin <branch>` and open a PR with `gh pr create`, targeting `main`, or the previous task's branch if the task started from it. Do not merge.
 10. If verification still fails after 3 attempts, or a decision is needed that the documents and `CLAUDE.md` do not provide:
     - set the work aside with `git stash push -u -m "Txx blocked"`, so the branch stays green;
     - mark the task `[!]` and write in the Diario of its file the exact reason and what would unblock it;

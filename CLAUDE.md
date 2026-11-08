@@ -8,7 +8,7 @@ Good Habits Quest Mobile (GHQ Mobile) is a habit tracker for iOS and Android tha
 - Project documents are in `docs/riferimenti/`. They are a copy: the source of truth is Claudio's project folder. Do not modify them; if you find an error or an inconsistency, write it in the backlog journal.
 - Reply and write the journals in Italian. Code, file names, tables, variables and commits are in English (`snake_case` in the database, `camelCase` in TypeScript), as set out in the data model.
 - **Do not invent game rules.** Values live in `docs/riferimenti/xp-e-monete.md`, `statistiche-eroe.md` and in the "Regole di gioco" section of `analisi-funzionale.md`. Items marked "Proposta" are not approved: **do not implement them**. If a task requires a rule that the documents do not define and that is not among the "Minor decisions already fixed" below, mark the task as blocked.
-- Never `git push`, never `eas` commands (build, submit, update, login): Claudio runs those.
+- Never `eas` commands (build, submit, update, login): Claudio runs those.
 
 ## Branches and commits
 
@@ -18,7 +18,8 @@ Good Habits Quest Mobile (GHQ Mobile) is a habit tracker for iOS and Android tha
 - Small commits in English on the task's branch. `npm run check` must pass before the last commit.
 - Do not merge into `main`, do not rebase other branches, do not delete branches: Claudio handles integration.
 - At the end of the task, write the branch name in the backlog journal.
-- The rule above still applies: never `git push`, never `eas` commands.
+- When the work on a branch is finished and `npm run check` passes, push that branch and open a PR. The PR targets `main`, or the previous task's branch if the task started from it. Never push to `main`, never force-push, never delete remote branches.
+- The rule above still applies: never `eas` commands.
 
 ## Stack (decided, do not change it)
 
