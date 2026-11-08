@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Un task per giro, ogni giro con un contesto nuovo.
-# Opus fino al T26 (regole e database), Sonnet dopo.
 cd "$(dirname "$0")/.."
+model=opus
 while true; do
-  if grep -q '^### \[x\] T26' docs/backlog-task.md; then model=sonnet; else model=opus; fi
   echo ">>> Giro con $model"
   out=$(claude -p "$(cat docs/prompt-loop.md)" --model "$model" --effort high 2>&1); code=$?
   echo "$out"
