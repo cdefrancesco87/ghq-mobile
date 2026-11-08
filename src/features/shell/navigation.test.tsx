@@ -64,10 +64,11 @@ async function openApp(
 
 /** The full accessibility labels of the tabs in the bar, in order (the visible text may be cut). */
 function tabLabels(): string[] {
-  return screen
-    .queryAllByLabelText(/^(Oggi|Abitudini|Obiettivi|Profilo)$/)
-    .filter((node) => node.props.accessible !== false && node.props.onClick !== undefined)
-    .map((tab) => String(tab.props.accessibilityLabel ?? tab.props['aria-label']));
+  return ['today', 'habits', 'goals', 'profile']
+    .map((name) => screen.queryByTestId(`tab-${name}`))
+    .flatMap((tab) =>
+      tab ? [String(tab.props.accessibilityLabel ?? tab.props['aria-label'])] : [],
+    );
 }
 
 beforeEach(() => {
@@ -85,6 +86,7 @@ describe('navigation', () => {
     // The bar has 5 slots; the [+] in the middle is the 3rd. Stats is a stack route, not a tab.
     expect(tabLabels()).toEqual(['Oggi', 'Abitudini', 'Obiettivi', 'Profilo']);
     expect(screen.getByRole('button', { name: 'Nuova missione' })).toBeOnTheScreen();
+    expect(screen.getByTestId('tab-new')).toBeOnTheScreen();
   });
 
   it('keeps the tab labels on one line, truncated, with the font scale capped at 1.3', async () => {
@@ -102,7 +104,7 @@ describe('navigation', () => {
     await openApp(newGame(['drink_water']));
     await screen.findByRole('header', { name: 'Oggi' });
 
-    await fireEvent.press(screen.getByLabelText('Abitudini'));
+    await fireEvent.press(screen.getByTestId('tab-habits'));
 
     expect(await screen.findByRole('header', { name: 'Abitudini' })).toBeOnTheScreen();
   });
