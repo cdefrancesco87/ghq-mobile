@@ -110,6 +110,25 @@ describe.each(THEMES_UNDER_TEST)('MissionRow in %s', (theme) => {
     expect(screen.queryByText('+25')).toBeNull();
   });
 
+  it.each([
+    [105, 100],
+    [-3, 0],
+  ])('list: a rate of %i shows %i in the text and in the label', async (rate, shown) => {
+    await renderThemed(<MissionRow {...list} completionRate={rate} />, { theme });
+
+    expect(screen.getByText(`${shown}%`)).toBeOnTheScreen();
+    const label: string = screen.getByTestId('row-body').props.accessibilityLabel;
+    expect(label).toContain(`${shown}%`);
+    expect(label).not.toContain(`${rate}%`);
+  });
+
+  it('keeps the icon in a column of 24, whatever the size of the drawing', async () => {
+    await renderThemed(<MissionRow {...today} icon="salute" />, { theme });
+    expect(styleOf('row-icon').width).toBe(24);
+    await renderThemed(<MissionRow {...today} icon="missioni" testID="other" />, { theme });
+    expect(styleOf('other-icon').width).toBe(24);
+  });
+
   it('done: muted, struck-through text with the time and no XP', async () => {
     const { colors } = await renderThemed(<MissionRow {...done} />, { theme });
 

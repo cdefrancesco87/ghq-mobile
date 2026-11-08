@@ -18,6 +18,8 @@ const LARGE_TEXT_NAME_LINES = 3;
 const PRIORITY_NUMBER_SCALE = 1.6;
 const RATE_RING_SIZE = 16;
 const RATE_RING_STROKE = 3;
+/** The column of the icon: in Arcade a pixel drawing is 24 and a line drawing 20. */
+const ICON_COLUMN_WIDTH = 24;
 
 /** An action of the screen reader: the same as the swipe and the menu of the row. */
 export interface MissionRowAction {
@@ -94,6 +96,7 @@ export function MissionRow(props: MissionRowProps) {
   ) : null;
   const notches =
     props.variant === 'done' ? null : <Difficulty difficulty={difficulty} showWord={false} />;
+  const rate = props.variant === 'list' ? Math.min(Math.max(props.completionRate, 0), 100) : 0;
   const listValues =
     props.variant === 'list' ? (
       <>
@@ -103,11 +106,11 @@ export function MissionRow(props: MissionRowProps) {
         </View>
         <View style={styles.value}>
           <ProgressRing
-            progress={props.completionRate / 100}
+            progress={rate / 100}
             size={RATE_RING_SIZE}
             strokeWidth={RATE_RING_STROKE}
           />
-          <ThemedText variant="numbers">{`${props.completionRate}%`}</ThemedText>
+          <ThemedText variant="numbers">{`${rate}%`}</ThemedText>
         </View>
       </>
     ) : null;
@@ -141,7 +144,7 @@ export function MissionRow(props: MissionRowProps) {
             {String(props.position)}
           </ThemedText>
         ) : (
-          <View testID={`${testID}-icon`}>
+          <View testID={`${testID}-icon`} style={styles.icon}>
             <Icon name={props.icon} size={20} color={colors.textMuted} />
           </View>
         )}
@@ -200,7 +203,7 @@ export function MissionRow(props: MissionRowProps) {
           detail,
           difficulty: difficultyWord,
           streak: streakWords(props.streak, props.streakUnit ?? 'days'),
-          rate: props.completionRate,
+          rate,
         });
       case 'done':
         return t('shared.missionRow.doneLabel', { name, difficulty: difficultyWord, doneAt });
@@ -240,6 +243,7 @@ export function MissionRow(props: MissionRowProps) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
   body: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  icon: { width: ICON_COLUMN_WIDTH, alignItems: 'center' },
   texts: { flex: 1, gap: 2 },
   meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 8 },
   detail: { flexShrink: 1 },
