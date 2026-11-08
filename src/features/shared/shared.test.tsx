@@ -270,6 +270,36 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('Sheet has a handle of the minimum size, even without a title', async () => {
+    await renderThemed(
+      <Sheet visible onClose={jest.fn()}>
+        <Text>Contenuto</Text>
+      </Sheet>,
+      { theme },
+    );
+
+    expect(touchHeight('sheet-handle')).toBeGreaterThanOrEqual(MIN_TOUCH);
+  });
+
+  it('Sheet offers the screen reader one close button, working on iOS and Android', async () => {
+    const onClose = jest.fn();
+    await renderThemed(
+      <Sheet visible onClose={onClose}>
+        <Text>Contenuto</Text>
+      </Sheet>,
+      { theme },
+    );
+
+    // Throws if the backdrop is a second «Chiudi» (Android does not hide it behind the modal).
+    const handle = screen.getByRole('button', { name: 'Chiudi', includeHiddenElements: true });
+    expect(handle.props.testID).toBe('sheet-handle');
+    expect(handle.props.accessibilityActions).toEqual([{ name: 'activate' }]);
+    await fireEvent(handle, 'accessibilityTap');
+    expect(onClose).toHaveBeenCalledTimes(1);
+    await fireEvent(handle, 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
   it('Sheet is half of the screen at most, or all of it below the safe area', async () => {
     await renderThemed(
       <>
@@ -368,6 +398,29 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
     expect(onConfirm).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByRole('button', { name: 'Elimina' }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('ConfirmDialog closes from the backdrop, which is not a second «Annulla»', async () => {
+    const onCancel = jest.fn();
+    await renderThemed(
+      <ConfirmDialog
+        visible
+        title="Eliminare «Corsa»?"
+        message="La cronologia della missione si perde."
+        confirmLabel="Elimina"
+        onConfirm={jest.fn()}
+        onCancel={onCancel}
+      />,
+      { theme },
+    );
+
+    // Throws if the backdrop is a second «Annulla» (Android does not hide it behind the modal).
+    const cancel = screen.getByRole('button', { name: 'Annulla', includeHiddenElements: true });
+    expect(cancel.props.testID).toBe('confirm-dialog-cancel');
+    await fireEvent.press(
+      screen.getByTestId('confirm-dialog-backdrop', { includeHiddenElements: true }),
+    );
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   it('ConfirmDialog stacks the buttons with very large text, the main action on top', async () => {

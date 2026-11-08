@@ -10,6 +10,7 @@ import { SCRIM, SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Frame } from './Frame';
 import { ThemedText } from './ThemedText';
+import { MIN_TOUCH } from './touch';
 
 /** Openings and closings last 250 ms (design-sezioni.md A7). */
 export const SHEET_DURATION_MS = 250;
@@ -17,6 +18,8 @@ export const SHEET_DURATION_MS = 250;
 /** How far or how fast a sheet must be dragged down to close. */
 const DISMISS_DISTANCE = 96;
 const DISMISS_VELOCITY = 800;
+
+const ACTIVATE_ACTIONS = [{ name: 'activate' }];
 
 export function shouldDismissSheet(translationY: number, velocityY: number): boolean {
   'worklet';
@@ -90,11 +93,12 @@ export function Sheet({
       onRequestClose={onClose}
     >
       <GestureHandlerRootView style={styles.root}>
+        {/* Only for the finger: the screen reader closes the sheet from the handle. */}
         <Pressable
           testID={`${testID}-backdrop`}
           onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel={t('shared.close')}
+          accessible={false}
+          importantForAccessibility="no"
           style={[StyleSheet.absoluteFill, { backgroundColor: SCRIM }]}
         />
         <Animated.View
@@ -124,7 +128,10 @@ export function Sheet({
               accessible
               accessibilityRole="button"
               accessibilityLabel={t('shared.close')}
+              // iOS activates through the tap, Android only through the `activate` action.
               onAccessibilityTap={onClose}
+              accessibilityActions={ACTIVATE_ACTIONS}
+              onAccessibilityAction={onClose}
               style={styles.handleArea}
             >
               <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
@@ -151,7 +158,7 @@ export function Sheet({
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   panel: { overflow: 'hidden' },
-  handleArea: { paddingTop: 8, paddingBottom: 8, paddingHorizontal: 16 },
+  handleArea: { minHeight: MIN_TOUCH, paddingTop: 8, paddingBottom: 8, paddingHorizontal: 16 },
   handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2 },
   title: { marginTop: 12 },
   fullContent: { flex: 1 },

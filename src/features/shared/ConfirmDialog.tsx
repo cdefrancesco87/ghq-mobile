@@ -57,11 +57,12 @@ export function ConfirmDialog({
       onRequestClose={onCancel}
     >
       <View style={styles.root}>
+        {/* Only for the finger: the screen reader has the cancel button. */}
         <Pressable
           testID={`${testID}-backdrop`}
           onPress={onCancel}
-          accessibilityRole="button"
-          accessibilityLabel={cancelLabel ?? t('shared.cancel')}
+          accessible={false}
+          importantForAccessibility="no"
           style={[StyleSheet.absoluteFill, { backgroundColor: SCRIM }]}
         />
         <View
