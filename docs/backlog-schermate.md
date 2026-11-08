@@ -60,7 +60,7 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 - **Fatto quando:** un test controlla che ogni chiave di icona usata nell'app abbia un file o un segnaposto dichiarato; un test verifica la descrizione di accessibilità del compagno in 2 temi.
 - **Dipende da:** T34.
 
-### [ ] T36 – Riga missione
+### [~] T36 – Riga missione
 - **Obiettivo:** la riga usata da Oggi, Abitudini, Piano del giorno e widget.
 - **Riferimenti:** `design-sezioni.md` A6 («Riga missione»), 2.5, 3.2, 3.11; `analisi-funzionale.md` sezione 2 (Expected output). Mockup: B2 (riga missione nei 6 temi), D07, D42 in `docs/mockup/`.
 - **Da fare:**
