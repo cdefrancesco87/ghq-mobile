@@ -25,7 +25,9 @@
       "Bash(find:*)", 
       "Bash(ls:*)", 
       "Bash(wc:*)", 
-      "Bash(git stash list)"
+      "Bash(git stash list)",
+      "Bash(grep:*)",
+      "Bash(rg:*)"
     ],
     "deny": [
       "Bash(npx eas *)",
