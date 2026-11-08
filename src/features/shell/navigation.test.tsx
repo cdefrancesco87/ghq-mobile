@@ -81,13 +81,12 @@ describe('navigation', () => {
     await openApp(newGame(['drink_water']));
 
     expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
-    // The bar has 6 slots; the [+] in the middle is the 3rd.
+    // The bar has 5 slots; the [+] in the middle is the 3rd. Stats is a stack route, not a tab.
     expect(tabLabels()).toEqual([
-      'Oggi, tab, 1 of 6',
-      'Abitudini, tab, 2 of 6',
-      'Obiettivi, tab, 4 of 6',
-      'Statistiche, tab, 5 of 6',
-      'Profilo, tab, 6 of 6',
+      'Oggi, tab, 1 of 5',
+      'Abitudini, tab, 2 of 5',
+      'Obiettivi, tab, 4 of 5',
+      'Profilo, tab, 5 of 5',
     ]);
     expect(screen.getByRole('button', { name: 'Nuova missione' })).toBeOnTheScreen();
   });
@@ -96,9 +95,9 @@ describe('navigation', () => {
     await openApp(newGame(['drink_water']));
     await screen.findByRole('header', { name: 'Oggi' });
 
-    await fireEvent.press(screen.getByLabelText(/^Statistiche, tab/));
+    await fireEvent.press(screen.getByLabelText(/^Abitudini, tab/));
 
-    expect(await screen.findByRole('header', { name: 'Statistiche' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Abitudini' })).toBeOnTheScreen();
   });
 
   it('opens the editor from the [+]', async () => {

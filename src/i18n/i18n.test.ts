@@ -67,7 +67,7 @@ describe('language files', () => {
   it('gives every term of the lexicon a variant for every theme', () => {
     for (const language of LANGUAGES) {
       const lexicon = RESOURCES[language].translation.lexicon as Record<string, string>;
-      expect(baseTerms(lexicon)).toHaveLength(15);
+      expect(baseTerms(lexicon)).toHaveLength(19);
       for (const term of baseTerms(lexicon)) {
         for (const family of TITLE_THEMES) {
           expect(lexicon[`${term}_${family}`]).toEqual(expect.any(String));

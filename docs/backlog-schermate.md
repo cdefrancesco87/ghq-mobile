@@ -24,7 +24,7 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 
 ## Fase 4 – Basi delle schermate (Must)
 
-### [ ] T33b – Allineare tema, lessico e navigazione al design
+### [x] T33b – Allineare tema, lessico e navigazione al design
 - **Obiettivo:** portare il codice delle fondamenta (T27, T28, T29, T31) sul design approvato, prima di costruirci sopra le schermate.
 - **Riferimenti:** `docs/riferimenti/colori-v2.json`; `docs/riferimenti/temi.json` (forme, caratteri, lessico aggiornati); `docs/riferimenti/misure-componenti.md`; `docs/riferimenti/lacune-design-schermate.md` (L01, L03, L04); `design-sezioni.md` A3, A4, A6; `docs/mockup/LEGGIMI.md`.
 - **Da fare:**
@@ -509,3 +509,4 @@ Una riga per task chiuso o bloccato: data, codice, cosa è stato fatto, scelte m
 
 | Data | Task | Esito | Note |
 | --- | --- | --- | --- |
+| 2026-11-08 | T33b | ✅ fatto | `temi.json` v2: 18 ruoli uniformi (più `vitaTesto`/`fattoTesto`/`moneteTesto`/`pericoloTesto`/`infoTesto`) in tutti e 6 i temi, da `colori-v2.json`; nomi compagni aggiornati (Pixel, Rocky, Glitchy, Lumin, Cloudy). `themes.ts`: interfaccia `ThemeColors` allargata con i 5 ruoli `*Text` e heatmap a 4 livelli; `colorsOf` semplificato (legge tutti i ruoli dal JSON, nessuna derivazione); aggiunto `navLabel` alla tipografia con i valori di `misure-componenti.md`. Tutti i `TEXT_PAIRS` ora usano le varianti `*Text`; nessun pair sotto 4,5:1 (13 voci rimossi da `KNOWN_LOW_CONTRAST`). Lessico: 4 nuove chiavi (`victory`, `screenProfile`, `screenStats`, `editMission`) in tutte e 5 le lingue (de, fr, es in bozza – C14); contatore `baseTerms` 15 → 19. Navigazione: `stats` tolto da `TABS`, aggiunto `<Tabs.Screen name="stats" options={{ href: null }} />`; test naviga ora tra Oggi e Abitudini. `tabBarLabelStyle` ora usa `typography.navLabel`. **Contenuti da rivedere (C14):** testi di `victory`, `screenProfile`, `screenStats`, `editMission` in de, fr, es. Branch: `task/T33b-align-theme-lexicon-navigation`. |

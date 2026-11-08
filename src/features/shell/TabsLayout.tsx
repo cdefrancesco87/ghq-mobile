@@ -8,15 +8,14 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { Icon, type IconName } from './icons';
 import { NewTabButton } from './NewTabButton';
 
-// The tab bar is the same in every theme: Today, Habits, [+], Goals, Statistics, Profile
-// (analisi-funzionale.md, «Mappa dell'app»; design-sezioni.md A6).
+// The tab bar: Today, Habits, [+], Goals, Profile. Statistics is a stack route accessible
+// from the Profile screen (design decision 08/11).
 
 const TABS: readonly { readonly name: string; readonly icon: IconName }[] = [
   { name: 'today', icon: 'today' },
   { name: 'habits', icon: 'habits' },
   { name: 'new', icon: 'new' },
   { name: 'goals', icon: 'goals' },
-  { name: 'stats', icon: 'stats' },
   { name: 'profile', icon: 'profile' },
 ];
 
@@ -36,7 +35,7 @@ export function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        tabBarLabelStyle: textStyleOf(typography.caption),
+        tabBarLabelStyle: textStyleOf(typography.navLabel),
       }}
     >
       {TABS.map(({ name, icon }) => (
@@ -50,6 +49,7 @@ export function TabsLayout() {
           }}
         />
       ))}
+      <Tabs.Screen name="stats" options={{ href: null }} />
     </Tabs>
   );
 }
