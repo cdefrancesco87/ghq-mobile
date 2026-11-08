@@ -1,5 +1,5 @@
 import type { SettingValue } from '../db/repositories/settings';
-import { contrastRatio, mixColours, relativeLuminance } from './contrast';
+import { relativeLuminance } from './contrast';
 import temi from './temi.json';
 
 // The six themes as typed tokens (design-temi.md; design-sezioni.md A3 and A4). The screens use
@@ -34,15 +34,25 @@ export interface ThemeColors {
   /** Text on the primary colour. */
   readonly onPrimary: string;
   readonly hp: string;
+  /** Text colour for HP values (accessible on background and surface). */
+  readonly hpText: string;
   readonly xp: string;
   readonly coins: string;
+  /** Text colour for coin values (accessible on background and surface). */
+  readonly coinsText: string;
   readonly done: string;
+  /** Text colour for done state (accessible on background and surface). */
+  readonly doneText: string;
   readonly skipped: string;
   readonly danger: string;
+  /** Text colour for danger messages (accessible on background and surface). */
+  readonly dangerText: string;
   readonly info: string;
+  /** Text colour for info messages (accessible on background and surface). */
+  readonly infoText: string;
   readonly boss: string;
-  /** Five levels for Statistics, from the track to the full colour. */
-  readonly heatmap: readonly [string, string, string, string, string];
+  /** Four levels for the heatmap, from empty (level 0) to full (level 3). */
+  readonly heatmap: readonly [string, string, string, string];
 }
 
 export interface TextStyleToken {
@@ -56,7 +66,7 @@ export interface TextStyleToken {
   readonly tabularNums: boolean;
 }
 
-/** The seven typographic roles of design-sezioni.md A3. */
+/** The eight typographic roles of design-sezioni.md A3 and misure-componenti.md. */
 export interface Typography {
   readonly display: TextStyleToken;
   readonly screenTitle: TextStyleToken;
@@ -65,6 +75,8 @@ export interface Typography {
   readonly label: TextStyleToken;
   readonly numbers: TextStyleToken;
   readonly caption: TextStyleToken;
+  /** Label under tab-bar icons. */
+  readonly navLabel: TextStyleToken;
 }
 
 export interface ThemeTokens {
@@ -80,57 +92,42 @@ export interface ThemeTokens {
 
 type RawColours = Readonly<Record<string, string | undefined>>;
 
-/**
- * The A4 roles of a theme. Roles missing in temi.json (DRAFT): surface high = surface; border =
- * muted text; track = the darker row surface or the border; XP = primary; done = XP; coins = gold
- * or primary; boss = violet or primary; skipped = muted text; danger = hit points; info = primary;
- * on primary = the background or the text, whichever stands out more on the primary; the heatmap
- * goes from the track to the done colour in five even steps.
- */
 function colorsOf(key: ThemeKey, raw: RawColours): ThemeColors {
   const required = (role: string): string => {
     const value = raw[role];
     if (value === undefined) {
-      throw new Error(`temi.json: the theme ${key} has no colour «${role}»`);
+      throw new Error(`temi.json: theme ${key} has no colour «${role}»`);
     }
     return value;
   };
-  const background = required('sfondo');
-  const surface = required('superficie');
-  const text = required('testo');
-  const textMuted = required('testoTenue');
-  const primary = required('primario');
-  const hp = required('vita');
-  const border = raw.bordo ?? textMuted;
-  const track = raw.traccia ?? raw.superficieRiga ?? border;
-  const xp = raw.esperienza ?? primary;
-  const done = raw.fatto ?? xp;
-  const onPrimary =
-    contrastRatio(background, primary) >= contrastRatio(text, primary) ? background : text;
   return {
-    background,
-    surface,
-    surfaceHigh: surface,
-    border,
-    track,
-    text,
-    textMuted,
-    primary,
-    onPrimary,
-    hp,
-    xp,
-    coins: raw.monete ?? raw.oro ?? primary,
-    done,
-    skipped: textMuted,
-    danger: hp,
-    info: raw.info ?? primary,
-    boss: raw.boss ?? raw.viola ?? primary,
+    background: required('sfondo'),
+    surface: required('superficie'),
+    surfaceHigh: required('superficieAlta'),
+    border: required('bordo'),
+    track: required('traccia'),
+    text: required('testo'),
+    textMuted: required('testoTenue'),
+    primary: required('primario'),
+    onPrimary: required('suPrimario'),
+    hp: required('vita'),
+    hpText: required('vitaTesto'),
+    xp: required('esperienza'),
+    coins: required('monete'),
+    coinsText: required('moneteTesto'),
+    done: required('fatto'),
+    doneText: required('fattoTesto'),
+    skipped: required('saltato'),
+    danger: required('pericolo'),
+    dangerText: required('pericoloTesto'),
+    info: required('info'),
+    infoText: required('infoTesto'),
+    boss: required('boss'),
     heatmap: [
-      track,
-      mixColours(track, done, 0.25),
-      mixColours(track, done, 0.5),
-      mixColours(track, done, 0.75),
-      done,
+      required('heatmap0'),
+      required('heatmap1'),
+      required('heatmap2'),
+      required('heatmap3'),
     ],
   };
 }
@@ -165,6 +162,7 @@ const TYPOGRAPHY: Readonly<Record<ThemeFamily, Typography>> = {
     label: style('Manrope', '600', 14),
     numbers: style('Manrope', '700', 15, { tabularNums: true }),
     caption: style('Manrope', '500', 12),
+    navLabel: style('Manrope', '600', 11),
   },
   arcade: {
     display: style('Press Start 2P', '400', 20),
@@ -174,6 +172,7 @@ const TYPOGRAPHY: Readonly<Record<ThemeFamily, Typography>> = {
     label: style('VT323', '400', 20, { uppercase: true }),
     numbers: style('Press Start 2P', '400', 11),
     caption: style('VT323', '400', 18),
+    navLabel: style('VT323', '400', 14, { uppercase: true }),
   },
   fantasy: {
     display: style('Cinzel', '700', 30),
@@ -183,6 +182,7 @@ const TYPOGRAPHY: Readonly<Record<ThemeFamily, Typography>> = {
     label: style('Alegreya', '500', 15),
     numbers: style('Alegreya', '500', 16, { tabularNums: true }),
     caption: style('Alegreya', '400', 14, { italic: true }),
+    navLabel: style('Alegreya', '500', 13),
   },
   cyberpunk: {
     display: style('Chakra Petch', '700', 30, { uppercase: true }),
@@ -192,6 +192,7 @@ const TYPOGRAPHY: Readonly<Record<ThemeFamily, Typography>> = {
     label: style('Share Tech Mono', '400', 14, { uppercase: true }),
     numbers: style('Share Tech Mono', '400', 15),
     caption: style('Share Tech Mono', '400', 12),
+    navLabel: style('Chakra Petch', '600', 11, { uppercase: true }),
   },
   lovecraft: {
     display: style('IM Fell English SC', '400', 30),
@@ -201,6 +202,7 @@ const TYPOGRAPHY: Readonly<Record<ThemeFamily, Typography>> = {
     label: style('Crimson Pro', '600', 15),
     numbers: style('Crimson Pro', '600', 16, { tabularNums: true }),
     caption: style('Crimson Pro', '400', 14, { italic: true }),
+    navLabel: style('Crimson Pro', '600', 13),
   },
 };
 
@@ -235,14 +237,18 @@ export const TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
   ['textMuted', 'background'],
   ['textMuted', 'surface'],
   ['onPrimary', 'primary'],
-  ['hp', 'background'],
-  ['hp', 'surface'],
+  ['hpText', 'background'],
+  ['hpText', 'surface'],
   ['xp', 'background'],
   ['xp', 'surface'],
-  ['coins', 'background'],
-  ['coins', 'surface'],
-  ['done', 'background'],
-  ['done', 'surface'],
+  ['coinsText', 'background'],
+  ['coinsText', 'surface'],
+  ['doneText', 'background'],
+  ['doneText', 'surface'],
+  ['dangerText', 'background'],
+  ['dangerText', 'surface'],
+  ['infoText', 'background'],
+  ['infoText', 'surface'],
 ];
 
 /**

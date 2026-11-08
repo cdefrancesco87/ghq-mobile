@@ -13,7 +13,7 @@ import Goals from '../../../app/(tabs)/goals';
 import Habits from '../../../app/(tabs)/habits';
 import New from '../../../app/(tabs)/new';
 import Profile from '../../../app/(tabs)/profile';
-import Stats from '../../../app/(tabs)/stats';
+import Stats from '../../../app/stats';
 import Today from '../../../app/(tabs)/today';
 import Companion from '../../../app/companion';
 import Editor from '../../../app/editor';
@@ -39,7 +39,7 @@ const ROUTES: Record<string, ComponentType> = {
   '(tabs)/habits': Habits,
   '(tabs)/new': New,
   '(tabs)/goals': Goals,
-  '(tabs)/stats': Stats,
+  stats: Stats,
   '(tabs)/profile': Profile,
 };
 
@@ -62,11 +62,13 @@ async function openApp(
   );
 }
 
-/** The accessibility labels of the tabs in the bar, in order (react-navigation writes them). */
+/** The full accessibility labels of the tabs in the bar, in order (the visible text may be cut). */
 function tabLabels(): string[] {
-  return screen
-    .queryAllByLabelText(/, tab, \d of \d$/)
-    .map((tab) => String(tab.props.accessibilityLabel));
+  return ['today', 'habits', 'goals', 'profile']
+    .map((name) => screen.queryByTestId(`tab-${name}`))
+    .flatMap((tab) =>
+      tab ? [String(tab.props.accessibilityLabel ?? tab.props['aria-label'])] : [],
+    );
 }
 
 beforeEach(() => {
@@ -81,24 +83,30 @@ describe('navigation', () => {
     await openApp(newGame(['drink_water']));
 
     expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
-    // The bar has 6 slots; the [+] in the middle is the 3rd.
-    expect(tabLabels()).toEqual([
-      'Oggi, tab, 1 of 6',
-      'Abitudini, tab, 2 of 6',
-      'Obiettivi, tab, 4 of 6',
-      'Statistiche, tab, 5 of 6',
-      'Profilo, tab, 6 of 6',
-    ]);
+    // The bar has 5 slots; the [+] in the middle is the 3rd. Stats is a stack route, not a tab.
+    expect(tabLabels()).toEqual(['Oggi', 'Abitudini', 'Obiettivi', 'Profilo']);
     expect(screen.getByRole('button', { name: 'Nuova missione' })).toBeOnTheScreen();
+    expect(screen.getByTestId('tab-new')).toBeOnTheScreen();
+  });
+
+  it('keeps the tab labels on one line, truncated, with the font scale capped at 1.3', async () => {
+    await openApp(newGame(['drink_water']));
+    await screen.findByRole('header', { name: 'Oggi' });
+
+    for (const label of ['Oggi', 'Abitudini', 'Obiettivi', 'Profilo']) {
+      const text = screen.getAllByText(label).find((node) => node.props.numberOfLines === 1);
+      expect(text?.props.maxFontSizeMultiplier).toBe(1.3);
+      expect(text?.props.ellipsizeMode).toBe('tail');
+    }
   });
 
   it('changes screen from the bar', async () => {
     await openApp(newGame(['drink_water']));
     await screen.findByRole('header', { name: 'Oggi' });
 
-    await fireEvent.press(screen.getByLabelText(/^Statistiche, tab/));
+    await fireEvent.press(screen.getByTestId('tab-habits'));
 
-    expect(await screen.findByRole('header', { name: 'Statistiche' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Abitudini' })).toBeOnTheScreen();
   });
 
   it('opens the editor from the [+]', async () => {
@@ -128,6 +136,14 @@ describe('navigation', () => {
 
     expect(await screen.findByRole('header', { name: 'Primo avvio' })).toBeOnTheScreen();
     expect(tabLabels()).toEqual([]);
+  });
+
+  it('reaches stats as a stack route (not a tab)', async () => {
+    await openApp(newGame(['drink_water']));
+    await screen.findByRole('header', { name: 'Oggi' });
+
+    await act(() => router.push('/stats'));
+    expect(await screen.findByRole('header', { name: 'Statistiche' })).toBeOnTheScreen();
   });
 
   it('has a placeholder for companion, shop and settings', async () => {

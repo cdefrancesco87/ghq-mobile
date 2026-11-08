@@ -1,75 +1,85 @@
-# GHQ Mobile – istruzioni per Claude Code
+# GHQ Mobile – instructions for Claude Code
 
-Good Habits Quest Mobile (GHQ Mobile) è un habit tracker per iOS e Android che trasforma le abitudini in un gioco di ruolo leggero: offline, senza account, senza server. Lo sviluppa Claudio, che viene da Angular e lavora su Windows e Linux (niente Mac).
+Good Habits Quest Mobile (GHQ Mobile) is a habit tracker for iOS and Android that turns habits into a light role-playing game: offline, no account, no server. It is developed by Claudio, who comes from Angular and works on Windows and Linux (no Mac).
 
-## Come si lavora in questo repository
+## How we work in this repository
 
-- Il lavoro è diviso in task piccoli in `docs/backlog-task.md` (T01–T33, fondamenta) e `docs/backlog-schermate.md` (T34 in poi, schermate). Si eseguono con il loop descritto in `docs/prompt-loop.md`: **un task per giro**, nell'ordine, solo se le dipendenze sono fatte.
-- I documenti di progetto sono in `docs/riferimenti/`. Sono una copia: la fonte di verità è la cartella di progetto di Claudio. Non modificarli; se trovi un errore o un'incoerenza, scrivilo nel diario del backlog.
-- Rispondi e scrivi i diari in italiano. Il codice, i nomi di file, tabelle, variabili e i commit sono in inglese (`snake_case` nel database, `camelCase` in TypeScript), come stabilito nel modello dati.
-- **Non inventare regole di gioco.** I valori stanno in `docs/riferimenti/xp-e-monete.md`, `statistiche-eroe.md` e nella sezione «Regole di gioco» di `analisi-funzionale.md`. I punti segnati «Proposta» non sono approvati: **non implementarli**. Se un task richiede una regola che i documenti non definiscono e che non è tra le «Scelte minori già fissate» qui sotto, segna il task bloccato.
-- Mai `git push`, mai comandi `eas` (build, submit, update, login): li lancia Claudio.
+- Work is split into small tasks in `docs/backlog-task.md` (T01–T33, foundations) and `docs/backlog-schermate.md` (T34 onwards, screens). They are executed with the loop described in `docs/prompt-loop.md`: **one task per round**, in order, only if the dependencies are done.
+- Project documents are in `docs/riferimenti/`. They are a copy: the source of truth is Claudio's project folder. Do not modify them; if you find an error or an inconsistency, write it in the backlog journal.
+- Reply and write the journals in Italian. Code, file names, tables, variables and commits are in English (`snake_case` in the database, `camelCase` in TypeScript), as set out in the data model.
+- **Do not invent game rules.** Values live in `docs/riferimenti/xp-e-monete.md`, `statistiche-eroe.md` and in the "Regole di gioco" section of `analisi-funzionale.md`. Items marked "Proposta" are not approved: **do not implement them**. If a task requires a rule that the documents do not define and that is not among the "Minor decisions already fixed" below, mark the task as blocked.
+- Never `git push`, never `eas` commands (build, submit, update, login): Claudio runs those.
 
-## Stack (deciso, non cambiarlo)
+## Branches and commits
 
-React Native con Expo (TypeScript strict), Expo Router, Zustand, SQLite con expo-sqlite e Drizzle ORM, Zod, expo-notifications con expo-task-manager, i18next con react-i18next ed expo-localization, react-native-reanimated, expo-image, react-native-svg, expo-font. Test con Jest (preset jest-expo) e React Native Testing Library; nei test il database gira su better-sqlite3. Development build, non Expo Go. Dettagli in `docs/riferimenti/stack-tecnologico.md`.
+- **Never develop directly on `main`.** Before starting a task, create a dedicated branch: `task/T05-short-description` (task number + English description, kebab-case).
+- The branch starts from an up-to-date `main`. If the task depends on a previous one that is not yet merged into `main`, it starts from that task's branch, and you note this in the backlog journal.
+- One branch per task, never two tasks on the same branch.
+- Small commits in English on the task's branch. `npm run check` must pass before the last commit.
+- Do not merge into `main`, do not rebase other branches, do not delete branches: Claudio handles integration.
+- At the end of the task, write the branch name in the backlog journal.
+- The rule above still applies: never `git push`, never `eas` commands.
 
-## Struttura delle cartelle
+## Stack (decided, do not change it)
+
+React Native with Expo (TypeScript strict), Expo Router, Zustand, SQLite with expo-sqlite and Drizzle ORM, Zod, expo-notifications with expo-task-manager, i18next with react-i18next and expo-localization, react-native-reanimated, expo-image, react-native-svg, expo-font. Tests with Jest (jest-expo preset) and React Native Testing Library; in tests the database runs on better-sqlite3. Development build, not Expo Go. Details in `docs/riferimenti/stack-tecnologico.md`.
+
+## Folder structure
 
 ```
-app/                 rotte di Expo Router (schermate sottili: leggono e chiamano azioni)
-src/rules/           regole di gioco: funzioni pure, nessun import di React, Expo o database
-src/db/              schema.ts, client.ts, repositories/ (una funzione per azione di gioco)
-src/features/<nome>/ componenti e hook di una sezione (today, habits, editor, boss, ...)
-src/theme/           token dei temi da temi.json e ThemeProvider
-src/i18n/            i18next e file delle lingue (it, en, de, fr, es)
-src/content/         contenuti fissi in JSON/TS tipizzato: modelli di missione, negozio, titoli, badge
-src/stores/          store Zustand (eroe, impostazioni, tema)
-drizzle/             migrazioni SQL generate da drizzle-kit
-test/                helper dei test (database in memoria, orologio finto)
-docs/                backlog, prompt del loop, riferimenti
+app/                 Expo Router routes (thin screens: they read and call actions)
+src/rules/           game rules: pure functions, no React, Expo or database imports
+src/db/              schema.ts, client.ts, repositories/ (one function per game action)
+src/features/<name>/ components and hooks for a section (today, habits, editor, boss, ...)
+src/theme/           theme tokens from temi.json and ThemeProvider
+src/i18n/            i18next and language files (it, en, de, fr, es)
+src/content/         fixed content as typed JSON/TS: quest templates, shop, titles, badges
+src/stores/          Zustand stores (hero, settings, theme)
+drizzle/             SQL migrations generated by drizzle-kit
+test/                test helpers (in-memory database, fake clock)
+docs/                backlog, loop prompt, references
 ```
 
-Regole di architettura (dal modello dati, sezione 7):
+Architecture rules (from the data model, section 7):
 
-- Una schermata non scrive mai nelle tabelle: chiama un'azione in `src/db/repositories/`.
-- Un'azione chiede alle funzioni di `src/rules/` le variazioni, apre **una** transazione, aggiorna le tabelle di stato e aggiunge l'evento al registro `events`.
-- Le funzioni dei repository ricevono il database come parametro, con un tipo compatibile sia con expo-sqlite sia con better-sqlite3 (entrambi sincroni in Drizzle), così gli stessi repository girano nell'app e nei test.
-- Ogni query sulle missioni nelle schermate usa `notDeleted(missions)`.
-- Orologio e fuso orario si passano come parametri (o con un `Clock` iniettabile): niente `Date.now()` dentro `src/rules/`.
+- A screen never writes to the tables: it calls an action in `src/db/repositories/`.
+- An action asks the functions in `src/rules/` for the changes, opens **one** transaction, updates the state tables and appends the event to the `events` log.
+- Repository functions receive the database as a parameter, with a type compatible with both expo-sqlite and better-sqlite3 (both synchronous in Drizzle), so the same repositories run in the app and in tests.
+- Every query on quests in screens uses `notDeleted(missions)`.
+- Clock and time zone are passed as parameters (or via an injectable `Clock`): no `Date.now()` inside `src/rules/`.
 
-## Comandi
+## Commands
 
-- `npm run typecheck` – TypeScript senza emettere file
-- `npm run lint` – ESLint (configurazione Expo) e Prettier in controllo
+- `npm run typecheck` – TypeScript without emitting files
+- `npm run lint` – ESLint (Expo configuration) and Prettier in check mode
 - `npm test` – Jest
-- `npm run check` – i tre comandi sopra in sequenza; **deve passare alla fine di ogni task**
-- `npx drizzle-kit generate` – nuova migrazione dopo una modifica a `src/db/schema.ts`
-- `npx expo export --platform android --output-dir dist-check` – verifica che il bundle JavaScript si costruisca (non serve un telefono); cancellare `dist-check/` dopo
+- `npm run check` – the three commands above in sequence; **must pass at the end of every task**
+- `npx drizzle-kit generate` – new migration after a change to `src/db/schema.ts`
+- `npx expo export --platform android --output-dir dist-check` – checks that the JavaScript bundle builds (no phone needed); delete `dist-check/` afterwards
 
-## Scelte minori già fissate
+## Minor decisions already fixed
 
-Valgono finché Claudio non decide diversamente. Ogni costante va in `src/rules/config.ts`, così si ritocca in un punto solo.
+These hold until Claudio decides otherwise. Every constant goes in `src/rules/config.ts`, so it can be tuned in one place.
 
-1. **Arrotondamenti**: gli XP di un completamento si calcolano come base × moltiplicatore di serie × 0,5 se esausto, e si arrotondano una volta sola alla fine con `Math.round`. Punti della statistica secondaria: 30% per difetto (`Math.floor`). Monete della vittoria sul boss: `Math.floor(xp / 5)`. Monete rubate dal boss: `Math.min(Math.floor(monete × 0,1), 500)`. Vita persa al cambio di giornata: `Math.round(10 × XP mancati ÷ XP previsti)`.
-2. **Moltiplicatore di serie**: usa la serie dell'eroe al momento del completamento (assunzione da confermare con Claudio: l'analisi non dice se è la serie dell'eroe o della missione).
-3. **Esausto**: se alla chiusura del giorno D la vita arriva a 0, l'eroe è esausto nel giorno D+1 (`exhausted_day = D+1`, XP dimezzati); alla chiusura di D+1 la vita torna a 13.
-4. **Bonus immediati**: «giornata completa» (+10 monete, +5 vita) e «Piano completato» (+25 XP) si danno nel momento in cui l'ultima missione o priorità viene completata, con un proprio evento; se un annullamento rende il giorno di nuovo incompleto, il bonus si annulla con lui.
-5. **Annullamento**: riporta indietro anche il livello dell'eroe se gli XP scendono sotto la soglia (il livello può scendere).
-6. **Settimana**: per «N volte a settimana» e per il limite di 3 «Salta oggi», la settimana inizia dal giorno impostato in `week_start` (predefinito lunedì).
-7. **Contenuti in bozza**: quando un task chiede contenuti non ancora definiti (modelli di missione oltre ai 3 citati, titoli dell'eroe, testi in tedesco, francese e spagnolo), scrivili come bozza, segnala nel diario «contenuto da rivedere da Claudio» e prosegui.
-8. **Scudo della serie**: si consuma solo in un giorno che spezzerebbe la serie dell'eroe, cioè un giorno non di riposo, con almeno una missione prevista e nessuna missione completata. Quel giorno salva la serie dell'eroe e le serie di tutte le missioni mancate. Nei giorni con almeno un completamento lo scudo non si consuma: le serie delle singole missioni mancate si spezzano normalmente e la vita si perde normalmente.
-9. **Missioni «N volte a settimana»**: nei giorni della settimana non tolgono vita e non spezzano la serie. Si valutano alla chiusura dell'ultimo giorno della settimana: se i completamenti sono meno di N, quel giorno conta come mancate (N − fatti) occorrenze, ognuna con gli XP della missione nel calcolo della vita persa, sempre con il tetto di 10 punti al giorno. La serie della missione conta le settimane riuscite: cresce di 1 per ogni settimana con almeno N completamenti e si spezza con una settimana sotto N.
-10. **Attività singole scadute**: tolgono vita una sola volta, alla chiusura del giorno di scadenza, come una missione prevista e non fatta. Nei giorni dopo restano in Oggi come «Scaduta» senza altre penalità. Non hanno serie.
-11. **Giorno senza missioni previste** (non di riposo): si comporta come un giorno di riposo. La serie dell'eroe si mantiene senza crescere, nessuna vita persa, lo scudo non si consuma.
-12. **Quest di partenza**: la vittoria dà esattamente gli XP che mancano per arrivare al livello 2 (al massimo 200) e 50 monete, il prezzo di una pozione. Non usa la formula dei boss normali e non dà punti statistica.
-13. **Umore del compagno**: se oggi c'è almeno una missione completata, l'umore è felice. Altrimenti si usano le soglie sugli ultimi 3 giorni (sopra il 70% felice, tra 30 e 70 normale, sotto il 30 triste). Così vale quanto dicono US-COMP e il design 6.3: «Completa una missione oggi e tornerà felice».
-14. **Vita del boss**: resta passi × 20, come nelle regole approvate. La difficoltà del boss cambia solo la ricompensa. La frase della sezione 5 dell'analisi («calcolata dai passi e dalla difficoltà») è un refuso da correggere nei documenti.
-15. **«N volte a settimana» e riposo**: si valuta sempre alla chiusura dell'ultimo giorno della settimana, anche se è di riposo.
-16. **«N volte a settimana» creata a metà settimana**: nella prima settimana parziale non si perde vita; se arriva a N la serie cresce, altrimenti non si spezza.
-17. **«Salta oggi» e «N volte a settimana»**: ogni salto riduce di 1 il numero richiesto in quella settimana (minimo 0).
-18. **Pozione**: non si può usare a vita piena.
-19. **Lingua predefinita**: quella del dispositivo se è tra it, en, de, fr, es, altrimenti en.
-20. **Confermate da Claudio**: annullamento rifiutato se le monete da restituire sono già spese; furto del boss dal giorno dopo la scadenza, una volta per scadenza; `tz_offset` in minuti a est di UTC anche nel registro; `paused_until` primo giorno di nuovo attivo; `theme` = `minimal` vale Minimal automatico; riepilogo serale acceso alle 21:00; `week_start` intero 1–7 (1 = lunedì); evento `hero.created`.
+1. **Rounding**: the XP of a completion is computed as base × streak multiplier × 0.5 if exhausted, and rounded once at the end with `Math.round`. Secondary stat points: 30% rounded down (`Math.floor`). Coins for a boss victory: `Math.floor(xp / 5)`. Coins stolen by the boss: `Math.min(Math.floor(coins × 0.1), 500)`. Health lost at day rollover: `Math.round(10 × missed XP ÷ expected XP)`.
+2. **Streak multiplier**: uses the hero's streak at the time of completion (assumption to be confirmed with Claudio: the analysis does not say whether it is the hero's streak or the quest's).
+3. **Exhausted**: if at the close of day D health reaches 0, the hero is exhausted on day D+1 (`exhausted_day = D+1`, XP halved); at the close of D+1 health returns to 13.
+4. **Immediate bonuses**: "day complete" (+10 coins, +5 health) and "Plan complete" (+25 XP) are granted the moment the last quest or priority is completed, with their own event; if an undo makes the day incomplete again, the bonus is undone with it.
+5. **Undo**: also rolls back the hero's level if XP drops below the threshold (the level can go down).
+6. **Week**: for "N times a week" and for the limit of 3 "Skip today", the week starts from the day set in `week_start` (default Monday).
+7. **Draft content**: when a task asks for content not yet defined (quest templates beyond the 3 mentioned, hero titles, German, French and Spanish texts), write it as a draft, flag "content to be reviewed by Claudio" in the journal, and carry on.
+8. **Streak shield**: consumed only on a day that would break the hero's streak, i.e. a non-rest day with at least one expected quest and no quest completed. That day saves the hero's streak and the streaks of all missed quests. On days with at least one completion the shield is not consumed: the streaks of individual missed quests break normally and health is lost normally.
+9. **"N times a week" quests**: during the days of the week they neither remove health nor break the streak. They are evaluated at the close of the last day of the week: if completions are fewer than N, that day counts as (N − done) missed occurrences, each with the quest's XP in the health-loss calculation, always with the cap of 10 points per day. The quest's streak counts successful weeks: it grows by 1 for every week with at least N completions and breaks with a week below N.
+10. **Overdue single tasks**: remove health only once, at the close of the due day, like an expected and missed quest. On the following days they remain in Today as "Scaduta" (overdue) with no further penalties. They have no streak.
+11. **Day with no expected quests** (not a rest day): behaves like a rest day. The hero's streak is kept without growing, no health lost, the shield is not consumed.
+12. **Starter quest**: victory gives exactly the XP missing to reach level 2 (at most 200) and 50 coins, the price of a potion. It does not use the regular boss formula and gives no stat points.
+13. **Companion mood**: if at least one quest is completed today, the mood is happy. Otherwise the thresholds over the last 3 days apply (above 70% happy, between 30 and 70 normal, below 30 sad). This matches US-COMP and design 6.3: "Complete a quest today and it will be happy again".
+14. **Boss health**: stays steps × 20, as in the approved rules. The boss difficulty only changes the reward. The sentence in section 5 of the analysis ("calculated from steps and difficulty") is a typo to be fixed in the documents.
+15. **"N times a week" and rest**: always evaluated at the close of the last day of the week, even if it is a rest day.
+16. **"N times a week" created mid-week**: in the first partial week no health is lost; if it reaches N the streak grows, otherwise it does not break.
+17. **"Skip today" and "N times a week"**: each skip reduces the required number by 1 in that week (minimum 0).
+18. **Potion**: cannot be used at full health.
+19. **Default language**: the device's language if it is one of it, en, de, fr, es, otherwise en.
+20. **Confirmed by Claudio**: undo refused if the coins to be returned are already spent; boss theft from the day after the deadline, once per deadline; `tz_offset` in minutes east of UTC also in the log; `paused_until` is the first day of being active again; `theme` = `minimal` means automatic Minimal; evening summary on at 21:00; `week_start` integer 1–7 (1 = Monday); `hero.created` event.
 
-- Design: prima di ogni task di schermata leggi docs/mockup/LEGGIMI.md e i frame citati nel task (i mockup prevalgono su design-sezioni.md).
+- Design: before every screen task, read docs/mockup/LEGGIMI.md and the frames cited in the task (the mockups take precedence over design-sezioni.md).

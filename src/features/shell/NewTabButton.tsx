@@ -16,6 +16,7 @@ export function NewTabButton({ style }: BottomTabBarButtonProps) {
   return (
     <View style={[style, styles.slot]}>
       <Pressable
+        testID="tab-new"
         accessibilityRole="button"
         accessibilityLabel={t('nav.new')}
         onPress={() => router.push('/editor')}

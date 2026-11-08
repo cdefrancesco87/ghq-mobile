@@ -17,38 +17,27 @@ function shape(value: unknown): unknown {
 const FROM_TEMI: Record<string, keyof ThemeColors> = {
   sfondo: 'background',
   superficie: 'surface',
+  superficieAlta: 'surfaceHigh',
   bordo: 'border',
   traccia: 'track',
   testo: 'text',
   testoTenue: 'textMuted',
   primario: 'primary',
+  suPrimario: 'onPrimary',
   vita: 'hp',
+  vitaTesto: 'hpText',
   esperienza: 'xp',
   fatto: 'done',
+  fattoTesto: 'doneText',
   monete: 'coins',
+  moneteTesto: 'coinsText',
+  saltato: 'skipped',
   boss: 'boss',
+  pericolo: 'danger',
+  pericoloTesto: 'dangerText',
   info: 'info',
+  infoTesto: 'infoText',
 };
-
-/**
- * Text pairs below 4.5:1 with the colours of temi.json (and the draft coins of Fantasy). They
- * are in the Diary; the colours are not changed here (design-sezioni.md A4 proposes the fixes).
- */
-const KNOWN_LOW_CONTRAST = [
-  'arcade hp/background',
-  'arcade hp/surface',
-  'arcade done/surface',
-  'fantasy coins/background',
-  'fantasy coins/surface',
-  'lovecraft hp/background',
-  'lovecraft hp/surface',
-  'minimal-chiaro hp/background',
-  'minimal-chiaro hp/surface',
-  'minimal-chiaro coins/background',
-  'minimal-chiaro coins/surface',
-  'minimal-chiaro done/background',
-  'minimal-chiaro done/surface',
-];
 
 describe('themes', () => {
   it('has the six themes of temi.json', () => {
@@ -121,14 +110,13 @@ describe('themes', () => {
     }
   });
 
-  it('lists exactly the declared text pairs that stay below 4.5:1', () => {
+  it('keeps every declared text pair above 4.5:1 in every theme', () => {
     const low = THEME_KEYS.flatMap((key) =>
       TEXT_PAIRS.filter(
-        ([text, background]) =>
-          contrastRatio(THEMES[key].colors[text], THEMES[key].colors[background]) < 4.5,
-      ).map(([text, background]) => `${key} ${text}/${background}`),
+        ([text, bg]) => contrastRatio(THEMES[key].colors[text], THEMES[key].colors[bg]) < 4.5,
+      ).map(([text, bg]) => `${key} ${text}/${bg}`),
     );
-    expect(low).toEqual(KNOWN_LOW_CONTRAST);
+    expect(low).toEqual([]);
   });
 });
 
