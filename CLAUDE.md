@@ -71,3 +71,5 @@ Valgono finché Claudio non decide diversamente. Ogni costante va in `src/rules/
 18. **Pozione**: non si può usare a vita piena.
 19. **Lingua predefinita**: quella del dispositivo se è tra it, en, de, fr, es, altrimenti en.
 20. **Confermate da Claudio**: annullamento rifiutato se le monete da restituire sono già spese; furto del boss dal giorno dopo la scadenza, una volta per scadenza; `tz_offset` in minuti a est di UTC anche nel registro; `paused_until` primo giorno di nuovo attivo; `theme` = `minimal` vale Minimal automatico; riepilogo serale acceso alle 21:00; `week_start` intero 1–7 (1 = lunedì); evento `hero.created`.
+
+- Design: prima di ogni task di schermata leggi docs/mockup/LEGGIMI.md e i frame citati nel task (i mockup prevalgono su design-sezioni.md).
