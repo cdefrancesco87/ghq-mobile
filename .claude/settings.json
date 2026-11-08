@@ -19,7 +19,13 @@
       "Bash(ls*)",
       "Bash(git switch:*)",
       "Bash(git checkout -b:*)",
-      "Bash(rm -rf dist-check)"
+      "Bash(rm -rf dist-check)",
+      "Bash(cp:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)", 
+      "Bash(ls:*)", 
+      "Bash(wc:*)", 
+      "Bash(git stash list)"
     ],
     "deny": [
       "Bash(npx eas *)",
