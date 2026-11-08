@@ -138,7 +138,13 @@ export function Sheet({
               />
               <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
               {title === undefined ? null : (
-                <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.title}>
+                // Not accessible by default on Android: touching it would read the button behind it.
+                <ThemedText
+                  accessible
+                  variant="sectionTitle"
+                  accessibilityRole="header"
+                  style={styles.title}
+                >
                   {title}
                 </ThemedText>
               )}

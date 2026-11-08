@@ -303,6 +303,8 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
     expect(onClose).toHaveBeenCalledTimes(2);
     // An accessible parent would hide the title from the screen reader.
     expect(within(close).queryByText('Nuova missione')).toBeNull();
+    // On Android a text is not accessible by default: touching it would read «Chiudi» behind it.
+    expect(screen.getByText('Nuova missione').props.accessible).toBe(true);
   });
 
   it('Sheet is half of the screen at most, or all of it below the safe area', async () => {
