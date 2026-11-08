@@ -1,0 +1,79 @@
+{
+  "nota": "Lessico v2 (L04, approvata 08/11). Voci: singolare, plurale, genere (m/f). it e en definitive; de, fr, es in bozza (scelta minore 7). Etichette della barra non tematizzate. Temi: arcade, fantasy, cyberpunk, lovecraft, minimal. I nomi dei compagni restano in temi.json.",
+  "it": {
+    "vita": {
+      "arcade": {"s": "VITA", "p": "VITE", "g": "f"},
+      "fantasy": {"s": "Salute", "p": "Salute", "g": "f"},
+      "cyberpunk": {"s": "Integrità", "p": "Integrità", "g": "f"},
+      "lovecraft": {"s": "Vitalità", "p": "Vitalità", "g": "f"},
+      "minimal": {"s": "Energia", "p": "Energie", "g": "f"}
+    },
+    "esperienza": {
+      "arcade": {"s": "EXP", "p": "EXP", "g": "f"},
+      "fantasy": {"s": "Esperienza", "p": "Esperienza", "g": "f"},
+      "cyberpunk": {"s": "Reputazione", "p": "Reputazione", "g": "f"},
+      "lovecraft": {"s": "Conoscenza proibita", "p": "Conoscenze proibite", "g": "f"},
+      "minimal": {"s": "XP", "p": "XP", "g": "m"}
+    },
+    "monete": {
+      "arcade": {"s": "Gettone", "p": "Gettoni", "g": "m"},
+      "fantasy": {"s": "Oro", "p": "Oro", "g": "m"},
+      "cyberpunk": {"s": "Credito", "p": "Crediti", "g": "m"},
+      "lovecraft": {"s": "Reliquia", "p": "Reliquie", "g": "f"},
+      "minimal": {"s": "Moneta", "p": "Monete", "g": "f"}
+    },
+    "missioni": {
+      "arcade": {"s": "Stage", "p": "Stage", "g": "m"},
+      "fantasy": {"s": "Impresa", "p": "Imprese", "g": "f"},
+      "cyberpunk": {"s": "Contratto", "p": "Contratti", "g": "m"},
+      "lovecraft": {"s": "Rituale", "p": "Rituali", "g": "m"},
+      "minimal": {"s": "Abitudine", "p": "Abitudini", "g": "f"}
+    },
+    "boss": {
+      "arcade": {"s": "Boss", "p": "Boss", "g": "m"},
+      "fantasy": {"s": "Nemesi", "p": "Nemesi", "g": "f"},
+      "cyberpunk": {"s": "Firewall", "p": "Firewall", "g": "m"},
+      "lovecraft": {"s": "Orrore", "p": "Orrori", "g": "m"},
+      "minimal": {"s": "Grande obiettivo", "p": "Grandi obiettivi", "g": "m"}
+    },
+    "serie": {
+      "arcade": {"s": "Combo", "p": "Combo", "g": "f"},
+      "fantasy": {"s": "Fiamma sacra", "p": "Fiamme sacre", "g": "f"},
+      "cyberpunk": {"s": "Uptime", "p": "Uptime", "g": "m"},
+      "lovecraft": {"s": "Veglia", "p": "Veglie", "g": "f"},
+      "minimal": {"s": "Serie", "p": "Serie", "g": "f"}
+    },
+    "livello": {
+      "arcade": {"s": "LV", "p": "LV", "g": "m"},
+      "fantasy": {"s": "Rango", "p": "Ranghi", "g": "m"},
+      "cyberpunk": {"s": "Tier", "p": "Tier", "g": "m"},
+      "lovecraft": {"s": "Circolo", "p": "Circoli", "g": "m"},
+      "minimal": {"s": "Livello", "p": "Livelli", "g": "m"}
+    },
+    "titoli": {
+      "vittoria": {"arcade": "YOU WIN!", "fantasy": "Vittoria!", "cyberpunk": "ACCESSO OTTENUTO", "lovecraft": "L'Orrore è ricacciato", "minimal": "Obiettivo raggiunto"},
+      "profilo": {"arcade": "PLAYER 1", "fantasy": "Scheda dell'eroe", "cyberpunk": "Dossier", "lovecraft": "Diario dell'investigatore", "minimal": "Profilo"},
+      "statistiche": {"arcade": "HIGH SCORE", "fantasy": "Statistiche", "cyberpunk": "Statistiche", "lovecraft": "Statistiche", "minimal": "Statistiche"},
+      "modifica": "«Modifica» + singolare di `missioni` o `boss` del tema (es. «Modifica impresa»)",
+      "missioniDiOggi": "plurale di `missioni` + «di oggi» (da confermare nei frame)"
+    }
+  },
+  "en": {
+    "_stato": "proposta in inglese, da rivedere in T28",
+    "vita": {"arcade": {"s": "LIFE", "p": "LIVES", "g": "f"}, "fantasy": {"s": "Health", "p": "Health", "g": "f"}, "cyberpunk": {"s": "Integrity", "p": "Integrity", "g": "f"}, "lovecraft": {"s": "Vitality", "p": "Vitality", "g": "f"}, "minimal": {"s": "Energy", "p": "Energy", "g": "f"}},
+    "esperienza": {"arcade": {"s": "EXP", "p": "EXP", "g": "f"}, "fantasy": {"s": "Experience", "p": "Experience", "g": "f"}, "cyberpunk": {"s": "Reputation", "p": "Reputation", "g": "f"}, "lovecraft": {"s": "Forbidden knowledge", "p": "Forbidden knowledge", "g": "f"}, "minimal": {"s": "XP", "p": "XP", "g": "m"}},
+    "monete": {"arcade": {"s": "Token", "p": "Tokens", "g": "m"}, "fantasy": {"s": "Gold", "p": "Gold", "g": "m"}, "cyberpunk": {"s": "Credit", "p": "Credits", "g": "m"}, "lovecraft": {"s": "Relic", "p": "Relics", "g": "f"}, "minimal": {"s": "Coin", "p": "Coins", "g": "f"}},
+    "missioni": {"arcade": {"s": "Stage", "p": "Stages", "g": "m"}, "fantasy": {"s": "Deed", "p": "Deeds", "g": "f"}, "cyberpunk": {"s": "Contract", "p": "Contracts", "g": "m"}, "lovecraft": {"s": "Ritual", "p": "Rituals", "g": "m"}, "minimal": {"s": "Habit", "p": "Habits", "g": "f"}},
+    "boss": {"arcade": {"s": "Boss", "p": "Bosses", "g": "m"}, "fantasy": {"s": "Nemesis", "p": "Nemeses", "g": "f"}, "cyberpunk": {"s": "Firewall", "p": "Firewalls", "g": "m"}, "lovecraft": {"s": "Horror", "p": "Horrors", "g": "m"}, "minimal": {"s": "Big goal", "p": "Big goals", "g": "m"}},
+    "serie": {"arcade": {"s": "Combo", "p": "Combos", "g": "f"}, "fantasy": {"s": "Sacred flame", "p": "Sacred flames", "g": "f"}, "cyberpunk": {"s": "Uptime", "p": "Uptime", "g": "m"}, "lovecraft": {"s": "Vigil", "p": "Vigils", "g": "f"}, "minimal": {"s": "Streak", "p": "Streaks", "g": "f"}},
+    "livello": {"arcade": {"s": "LV", "p": "LV", "g": "m"}, "fantasy": {"s": "Rank", "p": "Ranks", "g": "m"}, "cyberpunk": {"s": "Tier", "p": "Tiers", "g": "m"}, "lovecraft": {"s": "Circle", "p": "Circles", "g": "m"}, "minimal": {"s": "Level", "p": "Levels", "g": "m"}},
+    "titoli": {
+      "vittoria": {"arcade": "YOU WIN!", "fantasy": "Victory!", "cyberpunk": "ACCESS GRANTED", "lovecraft": "The Horror is banished", "minimal": "Goal reached"},
+      "profilo": {"arcade": "PLAYER 1", "fantasy": "Hero sheet", "cyberpunk": "Dossier", "lovecraft": "Investigator's journal", "minimal": "Profile"},
+      "statistiche": {"arcade": "HIGH SCORE", "fantasy": "Statistics", "cyberpunk": "Statistics", "lovecraft": "Statistics", "minimal": "Statistics"}
+    }
+  },
+  "de": {"_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it"},
+  "fr": {"_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it"},
+  "es": {"_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it"}
+}

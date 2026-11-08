@@ -24,14 +24,14 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 
 ## Fase 4 – Basi delle schermate (Must)
 
-### [x] T33b – Allineare tema, lessico e navigazione al design
+### [ ] T33b – Allineare tema, lessico e navigazione al design
 - **Obiettivo:** portare il codice delle fondamenta (T27, T28, T29, T31) sul design approvato, prima di costruirci sopra le schermate.
-- **Riferimenti:** `docs/riferimenti/colori-v2.json`; `docs/riferimenti/temi.json` (forme, caratteri, lessico aggiornati); `docs/riferimenti/misure-componenti.md`; `docs/riferimenti/lacune-design-schermate.md` (L01, L03, L04); `design-sezioni.md` A3, A4, A6; `docs/mockup/LEGGIMI.md`.
+- **Riferimenti:** `docs/riferimenti/colori-v2.json`; `docs/riferimenti/temi.json` (forme, caratteri, lessico aggiornati); `docs/riferimenti/misure-componenti.md`; `docs/riferimenti/lessico-v2.json`; `docs/riferimenti/lacune-design-schermate.md` (L01); `design-sezioni.md` A3, A4, A6, A11; `docs/mockup/LEGGIMI.md`.
 - **Da fare:**
   - **Temi:** componi `src/theme/temi.json` v2 unendo i 18 ruoli uguali in ogni tema di `colori-v2.json` (più `vitaTesto`, `fattoTesto`, `moneteTesto`, `pericoloTesto`, `infoTesto`) con caratteri, `forma`, lessico e nomi di compagni e boss di `docs/riferimenti/temi.json`; adegua tipi e `ThemeProvider`. Porta tutto il codice sui 18 ruoli: i ruoli non uniformi (Arcade `superficieRiga`, Fantasy `oro` e `navigazione`, Cyberpunk `viola`) spariscono; il testo sui colori grafici usa la versione `…Testo`. Heatmap a 4 livelli (0–3).
   - **Test del tema:** aggiorna parità dei token e coppie testo/sfondo (contrasto 4,5:1 per testo, 3:1 per elementi grafici); togli dal Diario del T27 le coppie corrette dalla v2.
-  - **Lessico (T28):** singolare, plurale e, dove serve, genere per lingua; chiavi per vittoria, titoli di Profilo e Statistiche, «Modifica + termine»; nomi dei compagni e dei boss; la lista di ciò che serve è nella lacuna L04. Il test «ogni chiave in tutte e 5 le lingue» resta.
-  - **Navigazione (T31):** barra a 4 voci più il [+] centrato (Oggi, Abitudini, [+], Obiettivi, Profilo); le etichette della barra non si tematizzano; Statistiche diventa una rotta in pila (non una scheda); scala del testo ferma a 1,3 nella barra con troncamento (L03). Riscrivi il test «5 voci» per 4 voci più il [+].
+  - **Lessico (T28):** sostituisci il lessico con `lessico-v2.json` (approvato, A11.2): ogni voce ha singolare, plurale e genere (m/f) per lingua e per tema; italiano definitivo, inglese proposto, tedesco, francese e spagnolo in bozza (completali, scelta minore 7 e Diario). Aggiungi le chiavi di A11.2: parola della vittoria, titolo del Profilo e di Statistiche, «Modifica» + termine al singolare, «Missioni di oggi» = plurale + «di oggi». I nomi dei compagni e dei boss restano in `temi.json`. Il test «ogni chiave in tutte e 5 le lingue» resta e controlla anche singolare e plurale.
+  - **Navigazione (T31):** barra a 4 voci più il [+] centrato (Oggi, Abitudini, [+], Obiettivi, Profilo); le etichette della barra non si tematizzano; Statistiche diventa una rotta in pila (non una scheda); etichette su una riga con scala ferma a 1,3 e troncate con «…», etichetta completa al lettore di schermo (A11.1). Riscrivi il test «5 voci» per 4 voci più il [+].
   - **Caratteri (T29):** verifica che quelli del tema siano gli stessi di `temi.json`; annota nel Diario le differenze.
   - Le icone e gli sprite non si toccano qui: arrivano nel T35.
 - **Fatto quando:** `npm run check` passa; i test verificano 18 ruoli in tutti e 6 i temi, la barra con 4 voci più il [+] e Statistiche raggiungibile come rotta; nel codice non resta nessun ruolo di colore fuori dai 18 (ricerca con Grep dei nomi vecchi).
@@ -46,7 +46,7 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
   - `Bar` (vita, esperienza, boss, statistica) sempre con il numero accanto, forma per tema;
   - `Difficulty` (1–3 tacche più la parola), `Chip`, `SegmentedControl`, `ScreenHeader` (titolo grande che si riduce scorrendo);
   - `Sheet` (foglio dal basso con maniglia, mezza altezza e tutta altezza) con `Modal` di React Native, Reanimated e react-native-gesture-handler (`npx expo install`);
-  - `ActionSheet` (menu a pressione lunga e scelte rapide), `ConfirmDialog` (solo per azioni che non si annullano), `UndoToast` (avviso in basso con «Annulla» per 5 secondi, uno alla volta), `EmptyState` (compagno, frase, una sola azione).
+  - `ActionSheet` (menu a pressione lunga e scelte rapide), `useLargeText()` (vero con `fontScale ≥ 1,3`, soglia unica di A11.1: tutti i layout alternativi la usano e nessun task ne inventa un'altra), `ConfirmDialog` (solo per azioni che non si annullano), `UndoToast` (avviso in basso con «Annulla» per 5 secondi, uno alla volta), `EmptyState` (compagno, frase, una sola azione).
 - **Fatto quando:** i test con React Native Testing Library verificano ogni componente in Minimal e in Arcade, l'altezza minima delle aree toccabili, l'etichetta di accessibilità di `Bar` («Vita 32 su 50») e la scadenza di `UndoToast` dopo 5 secondi con i timer finti.
 - **Dipende da:** T33b.
 
@@ -68,7 +68,8 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
   - Controllo di completamento 48×48 a destra, con l'anello di avanzamento per le misurabili; XP in palio; categoria come icona; nome su due righe al massimo con «…».
   - `describeFrequency(frequency, t)` che scrive la frequenza leggibile per le 6 forme e la scadenza delle attività singole.
   - Etichetta di accessibilità completa («Meditazione, media, 25 XP, da fare. Tocca due volte per completare») e azioni del lettore di schermo passate dal genitore.
-- **Fatto quando:** i test coprono le 4 varianti, `describeFrequency` con ogni forma e l'etichetta di accessibilità.
+- **Testo molto grande:** Con `useLargeText()` il controllo resta a destra, XP e difficoltà vanno sotto il nome e il nome può andare su 3 righe (A11.1); in Arcade il corpo si arrotonda per difetto al multiplo di 2.
+- **Fatto quando:** i test coprono le 4 varianti, `describeFrequency` con ogni forma e l'etichetta di accessibilità. Un test con `fontScale` 1,3 verifica il layout alternativo.
 - **Dipende da:** T35.
 
 ### [ ] T37 – Celebrazioni e momenti a schermo intero
@@ -106,7 +107,8 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
   - Intestazione con data e saluto nel tono del tema; scheda dell'eroe con compagno (64, 40 in Minimal; il tocco apre la sua scheda), nome, titolo, livello, barre di vita ed esperienza, chip della serie e delle monete (il tocco sulle monete apre il Negozio; un tocco sulla serie o un collegamento apre Statistiche, che non è più nella barra).
   - Barra fissa sottile con livello, vita ed esperienza quando si scorre.
   - Stati particolari: fascia «Esausto», avviso dello scudo chiudibile, giorno di riposo o senza missioni con `EmptyState`.
-- **Fatto quando:** i test della query coprono giorno normale, riposo, eroe esausto, scudo usato e missioni eliminate escluse; i test della schermata coprono la scheda dell'eroe, la barra fissa e l'ordine di lettura.
+- **Testo molto grande:** Con `useLargeText()` la scheda dell'eroe va su due righe e la barra fissa mostra solo il livello (2.11, A11.1).
+- **Fatto quando:** i test della query coprono giorno normale, riposo, eroe esausto, scudo usato e missioni eliminate escluse; i test della schermata coprono la scheda dell'eroe, la barra fissa e l'ordine di lettura. Un test con `fontScale` 1,3 verifica il layout alternativo.
 - **Dipende da:** T37.
 
 ### [ ] T40 – Oggi: missioni e completamento
@@ -142,7 +144,8 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
   - Nome (Salva spento se vuoto, contatore oltre 60, avviso non bloccante per un nome già usato), tipo (Abitudine, Attività singola), difficoltà (3 pulsanti con gli XP, Media preselezionata), statistica principale (6 pulsanti con l'invito se manca).
   - Barra fissa sopra la tastiera con l'anteprima delle ricompense (valori base da `completionDeltas` senza serie) e Salva; Invio salva.
   - Al salvataggio `createMission`, chiusura del foglio, risalto della riga in Oggi e «Missione creata · Annulla» (Annulla elimina la missione appena creata con `deleteMission`).
-- **Fatto quando:** un test scrive solo il nome, preme Invio e trova un'abitudine giornaliera media senza promemoria (US-EDT-01, un tocco dopo il nome); altri test coprono anteprima che cambia con la difficoltà, statistica mancante e nome duplicato.
+- **Testo molto grande:** Con `useLargeText()` il foglio si apre subito a tutta altezza e i pulsanti di difficoltà vanno uno sotto l'altro (4.15, A11.1).
+- **Fatto quando:** un test scrive solo il nome, preme Invio e trova un'abitudine giornaliera media senza promemoria (US-EDT-01, un tocco dopo il nome); altri test coprono anteprima che cambia con la difficoltà, statistica mancante e nome duplicato. Un test con `fontScale` 1,3 verifica il layout alternativo.
 - **Dipende da:** T36.
 
 ### [ ] T44 – Editor missione: altre opzioni e modifica
@@ -214,7 +217,8 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 - **Obiettivo:** spendere le monete in modo chiaro e usare gli oggetti.
 - **Riferimenti:** `analisi-funzionale.md` sezione 7, US-NEG-01, US-NEG-02; `design-sezioni.md` 7.1–7.5, 7.7, 7.8, 7.10; `CLAUDE.md` scelta minore 18. Mockup: B6, D27, D28 in `docs/mockup/`.
 - **Da fare:** saldo grande e benvenuto del tema; schede Negozio e Inventario con i nomi del tema; griglia a 2 colonne (1 con testo molto grande) con pozione e scudo (lo scudo è Should ma è la stessa scheda): sprite, nome, descrizione, prezzo, «Ne hai 1», «Ti mancano 20 monete», «Ne hai già 2, il massimo»; foglio di conferma «Compra per 50» con il saldo dopo e, per la pozione, «Usa subito»; inventario con quantità, Usa per la pozione (spento a vita piena), spiegazione dello scudo, stato vuoto. Saldo annunciato dopo ogni acquisto.
-- **Fatto quando:** i test coprono acquisto, monete insufficienti, terzo scudo rifiutato, pozione usata e rifiutata a vita piena, saldo aggiornato nella scheda dell'eroe.
+- **Testo molto grande:** Con `useLargeText()` la griglia passa a una colonna (7.10, A11.1).
+- **Fatto quando:** i test coprono acquisto, monete insufficienti, terzo scudo rifiutato, pozione usata e rifiutata a vita piena, saldo aggiornato nella scheda dell'eroe. Un test con `fontScale` 1,3 verifica il layout alternativo.
 - **Dipende da:** T39.
 
 ### [ ] T52 – Statistiche: riepilogo e andamento delle missioni
@@ -228,21 +232,24 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 - **Obiettivo:** l'andamento di una missione, da Statistiche, Abitudini e Oggi.
 - **Riferimenti:** `analisi-funzionale.md` US-STAT-02, US-EDT-03; `design-sezioni.md` 8.5, 8.12. Mockup: D31 in `docs/mockup/`.
 - **Da fare:** schermata intera con Modifica in alto; icona, nome, frequenza e difficoltà; riquadri con serie, record e percentuale nel periodo; grafico a colonne per settimana o mese con react-native-svg, assi numerati e valore al tocco; per le misurabili il grafico dei valori giornalieri con la linea tratteggiata dell'obiettivo; storico della missione dal registro; note. Descrizione testuale e tabella dei valori per il lettore di schermo; con testo molto grande i grafici diventano elenchi.
-- **Fatto quando:** i test coprono una missione semplice e una misurabile, il cambio di periodo e la descrizione accessibile del grafico.
+- **Testo molto grande:** Con `useLargeText()` i grafici diventano elenchi di valori (8.12, A11.1).
+- **Fatto quando:** i test coprono una missione semplice e una misurabile, il cambio di periodo e la descrizione accessibile del grafico. Un test con `fontScale` 1,3 verifica il layout alternativo.
 - **Dipende da:** T52.
 
 ### [ ] T54 – Profilo
 - **Obiettivo:** chi è l'eroe, la scheda del personaggio e i collegamenti.
 - **Riferimenti:** `analisi-funzionale.md` sezione 9, US-PROF-01, US-PROF-03, US-PROF-04; `design-sezioni.md` 9.1–9.5, 9.7, 9.8, 9.11; `statistiche-eroe.md`. Mockup: B7, D33 in `docs/mockup/`.
 - **Da fare:** emblema del tema con l'iniziale; nome con matita fino a 24 caratteri (`renameHero` con evento `hero.renamed`, in TDD se manca); titolo, livello e «320 di 500 XP al livello 8»; serie, completamenti totali, boss sconfitti; scheda del personaggio a griglia 2×3 con icona, nome del tema, «Lv 4», barra, «Max» al livello 10 e frase iniziale a 0; foglio di dettaglio con punti, punti mancanti, ultimi guadagni dal registro e missioni che la alimentano; collegamenti a Statistiche, Compagno, Negozio, Sala dei trofei (segnaposto fino al T65), Impostazioni, più l'ingranaggio in alto.
-- **Fatto quando:** i test coprono titolo per livello, statistiche a 0 e al massimo, dettaglio con gli ultimi guadagni, cambio del nome con evento, griglia a una colonna con testo molto grande.
+- **Testo molto grande:** Con `useLargeText()` la griglia della scheda del personaggio diventa un elenco a una colonna (9.11, A11.1).
+- **Fatto quando:** i test coprono titolo per livello, statistiche a 0 e al massimo, dettaglio con gli ultimi guadagni, cambio del nome con evento, griglia a una colonna con testo molto grande. Un test con `fontScale` 1,3 verifica il layout alternativo.
 - **Dipende da:** T50.
 
 ### [ ] T55 – Impostazioni
 - **Obiettivo:** le scelte Must in una sola pagina a gruppi.
 - **Riferimenti:** `analisi-funzionale.md` sezione 10, US-IMP-01; `design-sezioni.md` 10.1, 10.2, 10.3, 10.5, 10.6, 10.9, 10.10, 10.12. Mockup: D03, D36 in `docs/mockup/`.
 - **Da fare:** pagina a gruppi (Aspetto, Giornata, Notifiche, Dati, Informazioni; Gioco e Accessibilità arrivano nei task Should) con campo Cerca; righe alte 52 con valore a destra; titolo del tema. Tema: pagina con `ThemeCarousel`, «Usa questo tema», chip di Minimal, «Stessi dati, nuova veste». Lingua: foglio con cambio immediato. Giornata: cambio dalle 00:00 alle 06:00 a passi di 30 minuti con l'esempio, primo giorno della settimana, giorni di riposo, ogni cambio «Dal …» (vale da domani). Notifiche: interruttore generale o «Notifiche bloccate dal telefono» con il pulsante verso le impostazioni del sistema; riepilogo serale (interruttore e orario salvati, l'invio arriva nel T73); Non disturbare con la sua pagina di intervalli. Informazioni: versione, privacy, licenze. Ogni cambio che tocca i promemoria richiama lo scheduler del T45.
-- **Fatto quando:** i test coprono cambio di tema, lingua, cambio di giornata valido da domani, giorni di riposo, intervallo di Non disturbare aggiunto e tolto con lo scheduler richiamato, ricerca delle righe.
+- **Testo molto grande:** Con `useLargeText()` il valore di ogni riga va sotto il nome invece che a destra (10.12, A11.1).
+- **Fatto quando:** i test coprono cambio di tema, lingua, cambio di giornata valido da domani, giorni di riposo, intervallo di Non disturbare aggiunto e tolto con lo scheduler richiamato, ricerca delle righe. Un test con `fontScale` 1,3 verifica il layout alternativo.
 - **Dipende da:** T45, T38.
 
 ### [ ] T56 – Elimina tutti i dati
@@ -491,7 +498,7 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 
 | # | Cosa | Quando | Sblocca |
 | --- | --- | --- | --- |
-| C12 | Copiare nel repository `docs/backlog-schermate.md`, il nuovo `docs/prompt-loop.md` e i file nuovi di `docs/riferimenti/` (`temi.json`, `colori-v2.json`, `misure-componenti.md`, `lacune-design-schermate.md`, `design-sezioni.md`, `registro-decisioni.md`) senza sovrascrivere `docs/backlog-task.md` (ha gli stati e il Diario); copiare la cartella `sviluppo/mockup-per-claude-code/` in `docs/mockup/` (36 MB, solo riferimento; se pesa troppo per Git, tenerla fuori dal commit e dirlo nel Diario); applicare prima il prompt delle decisioni aperte (scelte minori 15–19) | Prima di riavviare il loop | T33b, T34, T35 |
+| C12 | Copiare nel repository `docs/backlog-schermate.md`, il nuovo `docs/prompt-loop.md` e i file nuovi di `docs/riferimenti/` (`temi.json`, `colori-v2.json`, `lessico-v2.json`, `misure-componenti.md`, `lacune-design-schermate.md`, `design-sezioni.md`, `registro-decisioni.md`) senza sovrascrivere `docs/backlog-task.md` (ha gli stati e il Diario); copiare la cartella `sviluppo/mockup-per-claude-code/` in `docs/mockup/` (36 MB, solo riferimento; se pesa troppo per Git, tenerla fuori dal commit e dirlo nel Diario); applicare prima il prompt delle decisioni aperte (scelte minori 15–19) | Prima di riavviare il loop | T33b, T34, T35 |
 | C13 | Decidere e aggiungere a `CLAUDE.md` come scelte minori: (a) vita del boss quando si aggiungono o tolgono passi dopo la creazione e come si elimina un boss (il modello dati non ha `deleted_at` né `boss.deleted`) → scelta 21; (b) ricompense dei completamenti dimenticati (proposta aperta di C06); (c) monete per badge; (d) prezzi di regali e ricompense personali | Prima di T49, T68, T70, T86 | quei task |
 | C14 | Rivedere i contenuti in bozza delle schermate: saluti, frasi e fumetti del compagno, battute del boss, testi delle notifiche, nomi degli stadi, elenco dei badge, chiavi nuove in tedesco, francese e spagnolo (elenco nel Diario) | Man mano, dopo T50, T65, T70, T73 | – |
 | C15 | Far preparare gli ultimi asset: logo e icona dell'app definitivi, sprite intermedi di evoluzione, icone vere di scudo e pozione, elenco dei titoli dell'eroe per livello, scala per daltonici; poi ricopiarli in `assets/` | Quando servono | rifiniture, T82, T85 |
@@ -509,4 +516,3 @@ Una riga per task chiuso o bloccato: data, codice, cosa è stato fatto, scelte m
 
 | Data | Task | Esito | Note |
 | --- | --- | --- | --- |
-| 2026-11-08 | T33b | ✅ fatto | `temi.json` v2: 18 ruoli uniformi (più `vitaTesto`/`fattoTesto`/`moneteTesto`/`pericoloTesto`/`infoTesto`) in tutti e 6 i temi, da `colori-v2.json`; nomi compagni aggiornati (Pixel, Rocky, Glitchy, Lumin, Cloudy). `themes.ts`: interfaccia `ThemeColors` allargata con i 5 ruoli `*Text` e heatmap a 4 livelli; `colorsOf` semplificato (legge tutti i ruoli dal JSON, nessuna derivazione); aggiunto `navLabel` alla tipografia con i valori di `misure-componenti.md`. Tutti i `TEXT_PAIRS` ora usano le varianti `*Text`; nessun pair sotto 4,5:1 (13 voci rimossi da `KNOWN_LOW_CONTRAST`). Lessico: 4 nuove chiavi (`victory`, `screenProfile`, `screenStats`, `editMission`) in tutte e 5 le lingue (de, fr, es in bozza – C14); aggiunta chiave `boss_pl` (plurale per schermata lista boss: «Orrori», «Grandi obiettivi», ecc.) in tutte e 5 le lingue (de, fr, es in bozza – C14); contatore `baseTerms` 15 → 20. Il genere grammaticale (es. «in una Nemesi») è rimandato: nessuna schermata lo usa ancora, e il formato di memorizzazione non è deciso. Navigazione: `stats` spostato da `app/(tabs)/stats.tsx` a `app/stats.tsx` (rotta in pila vera, non tab nascosta); test aggiunto «reaches stats as a stack route». `tabBarLabelStyle` ora usa `typography.navLabel`. **Contenuti da rivedere (C14):** testi di `victory`, `screenProfile`, `screenStats`, `editMission`, `boss_pl` in de, fr, es. Branch: `task/T33b-align-theme-lexicon-navigation`. |

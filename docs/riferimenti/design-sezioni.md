@@ -171,7 +171,28 @@ Il lessico della proposta precedente resta valido. Propongo questi nomi per i te
 | Sala dei trofei | Hall of Fame | Sala dei trofei | Archivio taglie | Collezione proibita | Traguardi |
 | Salta oggi | Pausa | Riposa oggi | Standby | Rimanda il rito | Salta oggi |
 
-  
+
+### A11. Regole di dettaglio
+
+Approvate da Claudio l'08/11 (lacune L03 e L04). Le altre regole di dettaglio (L02, L05, L09–L17, L23–L24) restano da approvare e verranno aggiunte qui.
+
+**A11.1 Testo molto grande (L03).**
+
+  - Soglia unica: con `fontScale ≥ 1,3` si attivano tutti i layout alternativi già descritti nelle sezioni. Sotto 1,3 il layout è quello normale.
+  - Barra di navigazione (4 voci + \[+\]): etichette su una riga, scala ferma a 1,3, troncate con «…». L'etichetta completa resta per il lettore di schermo.
+  - Riga missione: il controllo resta a destra; XP e difficoltà vanno sotto il nome; il nome può andare su 3 righe.
+  - Scheda del boss compatta in Oggi: lo sprite sparisce e il resto va in colonna.
+  - Press Start 2P (Arcade): il corpo si arrotonda per difetto al multiplo di 2.
+
+**A11.2 Lessico (L04).**
+
+  - Ogni voce del lessico ha `singolare`, `plurale` e `genere` (m/f), per lingua. L'italiano è definitivo; inglese proposto, tedesco, francese e spagnolo da fare in T28 (scelta minore 7). File: `design/lessico-v2.json`.
+  - Le etichette della barra di navigazione **non** si tematizzano: Oggi, Abitudini, Obiettivi, Profilo (e Statistiche dove compare). Servono a orientarsi, e «Conoscenza proibita» non ci starebbe. Si tematizzano i titoli delle schermate.
+  - Parola della vittoria: Arcade «YOU WIN!», Fantasy «Vittoria!», Cyberpunk «ACCESSO OTTENUTO», Lovecraft «L'Orrore è ricacciato», Minimal «Obiettivo raggiunto».
+  - Titolo del Profilo: «PLAYER 1», «Scheda dell'eroe», «Dossier», «Diario dell'investigatore», «Profilo». Titolo di Statistiche: «HIGH SCORE» in Arcade, «Statistiche» negli altri.
+  - Titolo di Modifica: «Modifica» + il nome del tema al singolare (es. «Modifica impresa»).
+  - Titolo «Missioni di oggi»: plurale di `missioni` + «di oggi» (es. «Imprese di oggi»). Da confermare nei frame.
+
 
 ## 1. Primo avvio
 
