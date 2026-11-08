@@ -14,6 +14,18 @@ type Bodies = Readonly<Record<string, string | undefined>>;
 const LINE: Bodies = LINE_ICON_BODIES;
 const PIXEL: Bodies = PIXEL_ICON_BODIES;
 
+const CATEGORY_ICONS: Readonly<Record<string, IconName | undefined>> = {
+  health: 'salute',
+  mind: 'mente',
+  work_study: 'lavoro-studio',
+  home: 'casa',
+};
+
+/** The default icon of a mission: that of its category (design-sezioni.md 4, Categoria e icona). */
+export function categoryIcon(categoryKey: string | null): IconName {
+  return (categoryKey === null ? undefined : CATEGORY_ICONS[categoryKey]) ?? 'missioni';
+}
+
 /** Every icon of the app. */
 export const ICON_NAMES = [...new Set([...Object.keys(LINE), ...Object.keys(PIXEL)])] as IconName[];
 
