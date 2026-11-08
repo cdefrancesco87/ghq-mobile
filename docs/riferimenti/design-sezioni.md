@@ -127,7 +127,7 @@ Ogni tema definisce gli stessi ruoli di colore; lo sviluppo usa solo i ruoli, ma
 
 ### A6. Componenti comuni
 
-  - **Barra di navigazione.** In basso, sempre visibile: Oggi, Abitudini, \[+\], Obiettivi, Statistiche, Profilo. Icona sopra un'etichetta sempre visibile; la voce attiva usa il colore primario e un indicatore (pillola in Minimal, cornice pixel in Arcade, rombo in Fantasy, linea neon in Cyberpunk, sigillo in Lovecraft). ★ Il \[+\] è un pulsante rotondo di 56 al centro della barra, leggermente rialzato, colore primario. In alternativa un pulsante flottante sopra la barra a destra, che però copre l'ultima riga degli elenchi.
+  - **Barra di navigazione.** In basso, sempre visibile: Oggi, Abitudini, \[+\], Obiettivi, Profilo (decisione dell'08/11: con 4 voci il \[+\] sta davvero al centro). Statistiche si apre da Profilo e dalla scheda dell'eroe in Oggi. Icona sopra un'etichetta sempre visibile; la voce attiva usa il colore primario e un indicatore (pillola in Minimal, cornice pixel in Arcade, rombo in Fantasy, linea neon in Cyberpunk, sigillo in Lovecraft). ★ Il \[+\] è un pulsante rotondo di 56 al centro della barra, leggermente rialzato, colore primario. In alternativa un pulsante flottante sopra la barra a destra, che però copre l'ultima riga degli elenchi.
   - **Intestazione di schermata.** Titolo grande che, scorrendo, si riduce a una barra compatta con il titolo piccolo.
   - **Scheda.** Superficie con il bordo del tema: angoli arrotondati 18 in Minimal, cornice pixel in Arcade, filetto oro in Fantasy, angoli tagliati in Cyberpunk, doppio filetto in Lovecraft.
   - **Riga missione** (usata in Oggi, Abitudini, widget): a sinistra l'icona della categoria; al centro nome e, sotto, frequenza o avanzamento (es. «1,2 di 2 L») con la difficoltà; a destra gli XP in palio e il controllo di completamento (48×48). Le missioni misurabili hanno un anello di avanzamento attorno al controllo; quelle a durata hanno un pulsante play al posto della spunta.
@@ -665,7 +665,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★ e le modifiche su umori 
 
 ### 6.10 Varianti per tema
 
-  - ★ Ogni tema dà un nome proprio agli stadi. Arcade: Uovo, Blob, Re Blob, in un livello a piattaforme. Fantasy: Uovo, Draghetto, Drago, accanto a un caminetto. Cyberpunk: Capsula, Drone, Drone d'assalto, in una stazione di ricarica. Lovecraft: Uovo, Larva, Glub degli abissi, in una vasca illuminata dal basso. Minimal: Seme, Cucciolo, Adulto, su un cerchio morbido senza decorazioni. In alternativa Uovo, Cucciolo e Adulto in tutti i temi.
+  - ★ Ogni tema ha il suo compagno e il suo habitat. Arcade: Pixel, una faccina pixel che cresce di risoluzione (8, 16, 32 px), in un livello a piattaforme. Fantasy: Rocky, golem di muschio, accanto a un caminetto. Cyberpunk: Glitchy, axolotl neon, in una vasca illuminata dal basso. Lovecraft: Lumin, falena dai mille occhi, su uno scrittoio con la lampada a olio. Minimal: Cloudy, una nuvola, su un cerchio morbido senza decorazioni. Gli stadi sono Uovo, Cucciolo e Adulto in tutti i temi. Disegni in design/consegne/3/ e design/consegne/4/.
   - Gli habitat sono fermi o quasi (una fiamma, una luce, l'acqua) e si spengono con Riduci movimento.
 
 ### 6.11 Modalità Essenziale

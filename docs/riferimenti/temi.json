@@ -5,41 +5,41 @@
       "colori": {"sfondo": "#1a1c2c", "superficie": "#333c57", "superficieRiga": "#262b44", "testo": "#f4f4f4", "testoTenue": "#94b0c2", "primario": "#ffcd75", "vita": "#b13e53", "esperienza": "#a7f070", "fatto": "#38b764", "boss": "#5d275d", "info": "#41a6f6"},
       "font": {"titoli": "Press Start 2P", "testo": "VT323", "numeri": "Press Start 2P"},
       "forma": {"raggio": 0, "bordo": "cornice pixel 3px (box-shadow a gradini)", "barre": "a segmenti"},
-      "icone": "icone-pixel", "sprite": "sprite/arcade", "compagno": "slime (Blob, Re Blob)",
+      "icone": "icone-pixel", "sprite": "sprite/arcade", "compagno": "faccina pixel per risoluzione (Pixel)",
       "effetti": "scanline CRT opzionali, suoni chiptune, nessuna sfumatura"
     },
     "fantasy": {
       "colori": {"sfondo": "#efe3c8", "superficie": "#f8f0dc", "bordo": "#d9bf86", "oro": "#b8862b", "testo": "#2b1d0e", "testoTenue": "#6b5a43", "primario": "#8c1c13", "vita": "#a8322a", "esperienza": "#2f6b60", "boss": "#3b2614", "navigazione": "#2b1d0e"},
       "font": {"titoli": "Cinzel", "testo": "Alegreya"},
       "forma": {"raggio": 8, "bordo": "1px oro con filetto interno; medaglioni a bordo doppio", "barre": "arrotondate con contorno"},
-      "icone": "icone-linea/fantasy (tratto 1,5 tondo)", "sprite": "sprite/fantasy", "compagno": "draghetto (Brace)",
+      "icone": "icone-linea/fantasy (tratto 1,5 tondo)", "sprite": "sprite/fantasy", "compagno": "golem di muschio (Rocky)",
       "effetti": "spunta come sigillo di ceralacca, ornamento a rombo nei titoli"
     },
     "cyberpunk": {
       "colori": {"sfondo": "#0a0a12", "superficie": "#12121f", "bordo": "#2a2a40", "testo": "#d1f7ff", "testoTenue": "#7a8aa8", "primario": "#f9f002", "vita": "#ff2a6d", "esperienza": "#05d9e8", "viola": "#b847ff"},
       "font": {"titoli": "Chakra Petch", "testo": "Chakra Petch", "numeri": "Share Tech Mono"},
       "forma": {"raggio": 0, "bordo": "angoli tagliati (clip-path) e filo neon 1px", "barre": "sottili a segmenti con alone"},
-      "icone": "icone-linea/cyberpunk (tratto 1,75 squadrato)", "sprite": "sprite/cyberpunk", "compagno": "drone (BIT-0)",
+      "icone": "icone-linea/cyberpunk (tratto 1,75 squadrato)", "sprite": "sprite/cyberpunk", "compagno": "axolotl neon (Glitchy)",
       "effetti": "griglia di fondo, titoli con sdoppiamento magenta/ciano, timestamp a ogni completamento"
     },
     "lovecraft": {
       "colori": {"sfondo": "#0c1412", "superficie": "#14201d", "bordo": "#2c3d38", "testo": "#d8cfb8", "testoTenue": "#8f9a8c", "primario": "#4fa38c", "vita": "#8a6bb0", "esperienza": "#4fa38c", "boss": "#8a2f2f"},
       "font": {"titoli": "IM Fell English SC", "testo": "Crimson Pro"},
       "forma": {"raggio": 0, "bordo": "doppio filetto sottile", "barre": "sottili, piatte"},
-      "icone": "icone-linea/lovecraft (tratto 1,25 tondo)", "sprite": "sprite/lovecraft", "compagno": "cucciolo informe (Glub)",
+      "icone": "icone-linea/lovecraft (tratto 1,25 tondo)", "sprite": "sprite/lovecraft", "compagno": "falena dai mille occhi (Lumin)",
       "effetti": "vignettatura, caselle tratteggiate, sigillo a stella sui rituali compiuti, testi in corsivo dal tono inquieto"
     },
     "minimal-chiaro": {
       "colori": {"sfondo": "#f7f7f5", "superficie": "#ffffff", "bordo": "#e6e6e1", "traccia": "#eeeeea", "testo": "#1f2328", "testoTenue": "#656d76", "primario": "#3e63dd", "primarioTenue": "#e8edfc", "vita": "#e5484d", "fatto": "#30a46c", "monete": "#c07f00"},
       "font": {"titoli": "Manrope 800", "testo": "Manrope", "numeri": "Manrope, cifre tabellari"},
       "forma": {"raggio": 14, "raggioCard": 18, "barre": "a pillola"},
-      "icone": "icone-linea/minimal (tratto 1,75 tondo)", "sprite": "nessuno nelle schermate; compagno-minimal", "compagno": "Goccia (vettoriale)"
+      "icone": "icone-linea/minimal (tratto 1,75 tondo)", "sprite": "nessuno nelle schermate; compagno-minimal", "compagno": "nuvola (Cloudy, vettoriale)"
     },
     "minimal-scuro": {
       "colori": {"sfondo": "#111214", "superficie": "#1b1c1f", "bordo": "#2c2e33", "traccia": "#2a2b30", "testo": "#ececee", "testoTenue": "#9b9ea6", "primario": "#6e8bff", "primarioTenue": "#1e2540", "vita": "#ff6369", "fatto": "#4cc38a", "monete": "#ffc53d"},
       "font": {"titoli": "Manrope 800", "testo": "Manrope", "numeri": "Manrope, cifre tabellari"},
       "forma": {"raggio": 14, "raggioCard": 18, "barre": "a pillola"},
-      "icone": "icone-linea/minimal", "compagno": "Goccia (vettoriale)"
+      "icone": "icone-linea/minimal", "compagno": "nuvola (Cloudy, vettoriale)"
     }
   },
   "lessico": {
@@ -50,6 +50,6 @@
     "boss":       {"arcade": "Boss", "fantasy": "Nemesi", "cyberpunk": "Firewall", "lovecraft": "Orrore", "minimal": "Grande obiettivo"},
     "serie":      {"arcade": "Combo", "fantasy": "Fiamma sacra", "cyberpunk": "Uptime", "lovecraft": "Veglia", "minimal": "Serie"},
     "livello":    {"arcade": "LV", "fantasy": "Rango", "cyberpunk": "Tier", "lovecraft": "Circolo", "minimal": "Livello"},
-    "compagno":   {"arcade": "Blob", "fantasy": "Famiglio (Brace)", "cyberpunk": "Drone (BIT-0)", "lovecraft": "Glub", "minimal": "Goccia"}
+    "compagno":   {"arcade": "Pixel", "fantasy": "Rocky", "cyberpunk": "Glitchy", "lovecraft": "Lumin", "minimal": "Cloudy"}
   }
 }
