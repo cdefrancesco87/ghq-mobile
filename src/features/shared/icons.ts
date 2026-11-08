@@ -28,15 +28,22 @@ function pixelXml(body: string): string {
   return `${SVG} viewBox="0 0 12 12" fill="currentColor">${body}</svg>`;
 }
 
+/** Arcade prefers the pixel drawing and the other themes the line drawing, when it has both. */
+function drawsInPixels(name: IconName, family: ThemeFamily): boolean {
+  return PIXEL[name] !== undefined && (family === 'arcade' || LINE[name] === undefined);
+}
+
 /**
- * The SVG of an icon, in `currentColor`: Arcade prefers the pixel drawing and the other themes the
- * line drawing; when an icon has only one of the two, every theme shows that one.
+ * The SVG of an icon, in `currentColor`: when an icon has only one of the two drawings, every theme
+ * shows that one.
  */
 export function iconXml(name: IconName, family: ThemeFamily): string {
-  const line = LINE[name];
-  const pixel = PIXEL[name];
-  if (pixel !== undefined && (family === 'arcade' || line === undefined)) {
-    return pixelXml(pixel);
-  }
-  return lineXml(line as string, family);
+  return drawsInPixels(name, family)
+    ? pixelXml(PIXEL[name] as string)
+    : lineXml(LINE[name] as string, family);
+}
+
+/** The side of an icon: a pixel drawing is always shown at 24 (2×), to stay sharp (A5). */
+export function iconSide(name: IconName, family: ThemeFamily, size: IconSize): IconSize {
+  return drawsInPixels(name, family) ? 24 : size;
 }

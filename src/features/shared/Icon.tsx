@@ -2,7 +2,7 @@ import { View, type ColorValue } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { iconXml, type IconName, type IconSize } from './icons';
+import { iconSide, iconXml, type IconName, type IconSize } from './icons';
 
 export interface IconProps {
   readonly name: IconName;
@@ -18,6 +18,7 @@ export interface IconProps {
 export function Icon({ name, size = 24, color, accessibilityLabel, testID }: IconProps) {
   const { colors, family } = useTheme();
   const decorative = accessibilityLabel === undefined;
+  const side = iconSide(name, family, size);
   return (
     <View
       testID={testID}
@@ -27,7 +28,7 @@ export function Icon({ name, size = 24, color, accessibilityLabel, testID }: Ico
       accessibilityElementsHidden={decorative}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'yes'}
     >
-      <SvgXml xml={iconXml(name, family)} width={size} height={size} color={color ?? colors.text} />
+      <SvgXml xml={iconXml(name, family)} width={side} height={side} color={color ?? colors.text} />
     </View>
   );
 }

@@ -11,7 +11,7 @@ import { BossSprite } from './BossSprite';
 import { CompanionSprite } from './CompanionSprite';
 import { LINE_ICON_BODIES, PIXEL_ICON_BODIES, VECTOR_SVGS } from './generated/svgData';
 import { Icon } from './Icon';
-import { ICON_NAMES, iconXml, type IconName } from './icons';
+import { ICON_NAMES, iconSide, iconXml, type IconName } from './icons';
 import { Logo } from './Logo';
 import { EVOLUTION_STEPS, LOGO_PLACEHOLDERS, evolutionSpriteKey } from './placeholders';
 import { hasSprite } from './Sprite';
@@ -98,6 +98,21 @@ describe('iconXml', () => {
 
   it('falls back on the only drawing an icon has', () => {
     expect(iconXml('profilo', 'arcade')).toContain('viewBox="0 0 24 24"');
+  });
+});
+
+describe('iconSide', () => {
+  it('keeps a pixel drawing at 24 in Arcade, whatever the size asked', () => {
+    for (const size of [24, 20, 16] as const) {
+      expect(iconSide('cerca', 'arcade', size)).toBe(24);
+    }
+  });
+
+  it('keeps the size asked for a line drawing, also in Arcade', () => {
+    for (const size of [24, 20, 16] as const) {
+      expect(iconSide('cerca', 'minimal', size)).toBe(size);
+      expect(iconSide('profilo', 'arcade', size)).toBe(size);
+    }
   });
 
   it('never carries the metadata of the files', () => {
