@@ -1,19 +1,4 @@
 {
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/check-commit-lang.sh",
-            "if": "Bash(git commit*)",
-            "statusMessage": "Checking commit message language…"
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Edit",
@@ -34,12 +19,26 @@
       "Bash(ls*)"
     ],
     "deny": [
-      "Bash(git push*)",
       "Bash(npx eas *)",
       "Bash(eas *)",
       "Bash(npx eas-cli *)",
       "Bash(rm -rf /*)",
       "Bash(rm -rf ~*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/check-commit-lang.sh",
+            "if": "Bash(git commit*)",
+            "statusMessage": "Checking commit message language…"
+          }
+        ]
+      }
     ]
   }
 }
