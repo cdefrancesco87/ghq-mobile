@@ -22,7 +22,7 @@ const GLYPH_CENTER = GLYPH_SIZE / 2;
 const GLYPH_CUT = 6;
 const RING_SIZE = 40;
 const CHECK = 'M8 14.5l4 4 8-9';
-const STAR = 'M14 1.5l3.7 8 8.8 1-6.5 6 1.7 8.6-7.7-4.3-7.7 4.3 1.7-8.6-6.5-6 8.8-1z';
+export const STAR = 'M14 1.5l3.7 8 8.8 1-6.5 6 1.7 8.6-7.7-4.3-7.7 4.3 1.7-8.6-6.5-6 8.8-1z';
 
 function checkMark(color: string) {
   return <Path d={CHECK} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />;
@@ -56,8 +56,15 @@ function emptyGlyph(family: ThemeFamily, color: string) {
 }
 
 /** The sign of a done mission: a wax seal in Fantasy, a star seal in Lovecraft (temi.json). */
-function doneGlyph(family: Exclude<ThemeFamily, 'arcade'>, colors: ThemeColors) {
+export function doneGlyph(family: ThemeFamily, colors: ThemeColors) {
   switch (family) {
+    case 'arcade':
+      return (
+        <>
+          <Path d="M0 0H28V28H0Z" fill={colors.done} />
+          {checkMark(colors.background)}
+        </>
+      );
     case 'minimal':
       return (
         <>
@@ -84,7 +91,7 @@ function doneGlyph(family: Exclude<ThemeFamily, 'arcade'>, colors: ThemeColors) 
   }
 }
 
-function Glyph({ children }: { readonly children: ReactNode }) {
+export function Glyph({ children }: { readonly children: ReactNode }) {
   return (
     <Svg width={GLYPH_SIZE} height={GLYPH_SIZE} viewBox={`0 0 ${GLYPH_SIZE} ${GLYPH_SIZE}`}>
       {children}

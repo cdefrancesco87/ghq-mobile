@@ -24,6 +24,7 @@ import { appNotifications, boss, bossSteps, events, missions } from '../schema';
 import type { Db } from '../types';
 import { appendEvent, notDeleted } from './events';
 import { changeHero, loadHero, recordLevelUp, type ActionClock } from './hero';
+import { withMoments, type WithMoments } from './moments';
 import { gameDayOf, getSetting } from './settings';
 
 // The bosses (analisi-funzionale.md, section 5; modello-dati.md, 3.8): creation, steps, damage
@@ -242,8 +243,8 @@ export function completeBossStep(
   db: Db,
   stepId: string,
   clock: ActionClock,
-): { defeated: boolean } {
-  return db.transaction((tx) => markStepDone(tx, stepId, clock));
+): { defeated: boolean } & WithMoments {
+  return db.transaction((tx) => withMoments(tx, () => markStepDone(tx, stepId, clock)));
 }
 
 /** Archives an active boss: it leaves the list, its steps stay (US-BOSS-03). */

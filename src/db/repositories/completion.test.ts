@@ -435,6 +435,51 @@ describe('level up and refusals', () => {
     expectHeroMatchesLog(db);
   });
 
+  it('returns the events of the full-screen moments, in the order they happened', () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    db.transaction((tx) => {
+      const change = changeHero(tx, { xp: 195 }, at(FRIDAY, 9));
+      appendEvent(tx, {
+        type: 'mission.backfilled',
+        occurredAt: at(FRIDAY, 9),
+        tzOffset: 60,
+        source: 'backfill',
+        deltas: change.deltas,
+      });
+    });
+    const result = complete(db, missionId(db, 'journal'));
+    expect(result.moments.map((event) => event.type)).toEqual([
+      'hero.level_up',
+      'companion.stage_up',
+    ]);
+    expect(result.moments[0]).toMatchObject({ payload: { from: 1, to: 2 } });
+    expect(result.moments[1]).toMatchObject({ payload: { from: 'egg', to: 'baby' } });
+  });
+
+  it('returns no moments when a completion brings none or changes nothing', () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    complete(db, missionId(db, 'journal'));
+    const second = complete(db, missionId(db, 'healthy_meal'));
+    expect(second.status).toBe('completed');
+    expect(second.moments).toEqual([]);
+    expect(complete(db, missionId(db, 'journal')).moments).toEqual([]);
+  });
+
+  it('returns no moments for the progress of a measurable mission', () => {
+    const db = newGame(['drink_water', 'journal']);
+    const input = {
+      missionId: missionId(db, 'drink_water'),
+      source: 'app',
+      tzOffset: 60,
+    } as const;
+    const partial = progressMission(db, { ...input, now: at(FRIDAY, 10) });
+    expect(partial.status).toBe('progressed');
+    expect(partial.moments).toEqual([]);
+    const done = progressMission(db, { ...input, amount: 2, now: at(FRIDAY, 11) });
+    expect(done.status).toBe('completed');
+    expect(done.moments.map((event) => event.type)).toEqual(['companion.stage_up']);
+  });
+
   it('refuses to skip a mission already done or with an unknown reason', () => {
     const db = newGame(['journal', 'healthy_meal']);
     const journal = missionId(db, 'journal');
