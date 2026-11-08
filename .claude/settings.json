@@ -34,7 +34,9 @@
       "Bash(eas *)",
       "Bash(npx eas-cli *)",
       "Bash(rm -rf /*)",
-      "Bash(rm -rf ~*)"
+      "Bash(rm -rf ~*)",
+      "Bash(git push*)",
+      "Bash(npx eas-cli@*)"
     ]
   },
   "hooks": {
