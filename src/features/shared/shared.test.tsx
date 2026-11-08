@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { useState } from 'react';
 import { Dimensions, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { getAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -18,7 +18,7 @@ import { Difficulty } from './Difficulty';
 import { EmptyState } from './EmptyState';
 import { cutFramePath, cutSheetFillPath, cutSheetStrokePath } from './Frame';
 import { ScreenHeader } from './ScreenHeader';
-import { SegmentedControl } from './SegmentedControl';
+import { SegmentedControl, segmentThumbRadius } from './SegmentedControl';
 import { SHEET_DURATION_MS, Sheet, shouldDismissSheet } from './Sheet';
 import { ThemedText } from './ThemedText';
 import { MIN_TOUCH } from './touch';
@@ -183,7 +183,10 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
       { theme },
     );
 
-    expect(styleOf('period-week').minHeight).toBe(40);
+    expect(styleOf('period').minHeight).toBe(40);
+    expect(styleOf('period-week').minHeight).toBe(32);
+    expect(screen.getByTestId('period-week-thumb')).toBeOnTheScreen();
+    expect(screen.queryByTestId('period-month-thumb')).toBeNull();
     expect(touchHeight('period-week')).toBeGreaterThanOrEqual(MIN_TOUCH);
     expect(screen.getByRole('radio', { name: 'Settimana', checked: true })).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('radio', { name: 'Mese', checked: false }));
@@ -284,20 +287,22 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
   it('Sheet offers the screen reader one close button, working on iOS and Android', async () => {
     const onClose = jest.fn();
     await renderThemed(
-      <Sheet visible onClose={onClose}>
+      <Sheet visible onClose={onClose} title="Nuova missione">
         <Text>Contenuto</Text>
       </Sheet>,
       { theme },
     );
 
     // Throws if the backdrop is a second «Chiudi» (Android does not hide it behind the modal).
-    const handle = screen.getByRole('button', { name: 'Chiudi', includeHiddenElements: true });
-    expect(handle.props.testID).toBe('sheet-handle');
-    expect(handle.props.accessibilityActions).toEqual([{ name: 'activate' }]);
-    await fireEvent(handle, 'accessibilityTap');
+    const close = screen.getByRole('button', { name: 'Chiudi', includeHiddenElements: true });
+    expect(close.props.testID).toBe('sheet-close');
+    expect(close.props.accessibilityActions).toEqual([{ name: 'activate' }]);
+    await fireEvent(close, 'accessibilityTap');
     expect(onClose).toHaveBeenCalledTimes(1);
-    await fireEvent(handle, 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
+    await fireEvent(close, 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
     expect(onClose).toHaveBeenCalledTimes(2);
+    // An accessible parent would hide the title from the screen reader.
+    expect(within(close).queryByText('Nuova missione')).toBeNull();
   });
 
   it('Sheet is half of the screen at most, or all of it below the safe area', async () => {
@@ -636,6 +641,14 @@ describe('measures of the bars', () => {
 });
 
 describe('shapes of the other themes', () => {
+  it('the selected segment follows the corners of the control, without pixels or cuts', () => {
+    expect(segmentThumbRadius(SHAPES.minimal.control)).toBe(10);
+    expect(segmentThumbRadius(SHAPES.fantasy.control)).toBe(4);
+    expect(segmentThumbRadius(SHAPES.lovecraft.control)).toBe(0);
+    expect(segmentThumbRadius(SHAPES.arcade.control)).toBe(0);
+    expect(segmentThumbRadius(SHAPES.cyberpunk.control)).toBe(0);
+  });
+
   it('Cyberpunk draws its cut corners as a path, once the size is known', async () => {
     await renderThemed(
       <Card testID="card">

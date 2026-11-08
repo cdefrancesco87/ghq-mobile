@@ -123,17 +123,19 @@ export function Sheet({
             testID={`${testID}-frame`}
           />
           <GestureDetector gesture={drag}>
-            <View
-              testID={`${testID}-handle`}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={t('shared.close')}
-              // iOS activates through the tap, Android only through the `activate` action.
-              onAccessibilityTap={onClose}
-              accessibilityActions={ACTIVATE_ACTIONS}
-              onAccessibilityAction={onClose}
-              style={styles.handleArea}
-            >
+            <View testID={`${testID}-handle`} style={styles.handleArea}>
+              {/* Beside the title, not around it: an accessible parent would hide it. */}
+              <View
+                testID={`${testID}-close`}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('shared.close')}
+                // iOS activates through the tap, Android only through the `activate` action.
+                onAccessibilityTap={onClose}
+                accessibilityActions={ACTIVATE_ACTIONS}
+                onAccessibilityAction={onClose}
+                style={StyleSheet.absoluteFill}
+              />
               <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
               {title === undefined ? null : (
                 <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.title}>
