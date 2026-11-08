@@ -1,6 +1,9 @@
 /** @type {import('jest').Config} */
 module.exports = {
   preset: 'jest-expo',
+  // Reanimated and worklets run in JavaScript, without their native modules.
+  resolver: 'react-native-reanimated/jest/resolver',
+  setupFiles: ['react-native-gesture-handler/jestSetup.js', '<rootDir>/test/setup.ts'],
   // Same aliases as tsconfig.json (the more specific one first).
   moduleNameMapper: {
     '^@/assets/(.*)$': '<rootDir>/assets/$1',

@@ -390,6 +390,18 @@
     "editor": "Editor de misión",
     "placeholder": "Esta pantalla llegará pronto."
   },
+  "shared": {
+    "close": "Cerrar",
+    "back": "Atrás",
+    "cancel": "Cancelar",
+    "undo": "Deshacer",
+    "barValue": "{{label}} {{value}} de {{max}}",
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Media",
+      "hard": "Difícil"
+    }
+  },
   "skipReasons": {
     "illness": "Enfermedad",
     "travel": "Viaje",

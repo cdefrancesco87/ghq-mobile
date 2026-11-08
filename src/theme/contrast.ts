@@ -39,3 +39,8 @@ export function mixColours(from: string, to: string, amount: number): string {
   );
   return `#${mixed.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
 }
+
+/** The pressed state of a control: the same colour darkened by 18% (misure-componenti.md, 5). */
+export function pressedColour(hex: string): string {
+  return mixColours(hex, '#000000', 0.18);
+}

@@ -390,6 +390,18 @@
     "editor": "Missionseditor",
     "placeholder": "Dieser Bildschirm kommt bald."
   },
+  "shared": {
+    "close": "Schließen",
+    "back": "Zurück",
+    "cancel": "Abbrechen",
+    "undo": "Rückgängig",
+    "barValue": "{{label}} {{value}} von {{max}}",
+    "difficulty": {
+      "easy": "Leicht",
+      "medium": "Mittel",
+      "hard": "Schwer"
+    }
+  },
   "skipReasons": {
     "illness": "Krankheit",
     "travel": "Reise",

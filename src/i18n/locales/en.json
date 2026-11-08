@@ -390,6 +390,18 @@
     "editor": "Quest editor",
     "placeholder": "This screen is coming soon."
   },
+  "shared": {
+    "close": "Close",
+    "back": "Back",
+    "cancel": "Cancel",
+    "undo": "Undo",
+    "barValue": "{{label}} {{value}} of {{max}}",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    }
+  },
   "skipReasons": {
     "illness": "Illness",
     "travel": "Travel",
