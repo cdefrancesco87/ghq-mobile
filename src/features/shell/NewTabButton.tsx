@@ -22,7 +22,7 @@ export function NewTabButton({ style }: BottomTabBarButtonProps) {
         onPress={() => router.push('/editor')}
         style={[styles.button, { backgroundColor: colors.primary }]}
       >
-        <Icon name="nuovo" color={colors.onPrimary} />
+        <Icon name="aggiungi" color={colors.onPrimary} />
       </Pressable>
     </View>
   );

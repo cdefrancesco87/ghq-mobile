@@ -15,7 +15,7 @@ import { NewTabButton } from './NewTabButton';
 const TABS: readonly { readonly name: string; readonly icon: IconName }[] = [
   { name: 'today', icon: 'oggi' },
   { name: 'habits', icon: 'abitudini' },
-  { name: 'new', icon: 'nuovo' },
+  { name: 'new', icon: 'aggiungi' },
   { name: 'goals', icon: 'boss' },
   { name: 'profile', icon: 'profilo' },
 ];

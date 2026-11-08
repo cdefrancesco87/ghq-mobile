@@ -1,21 +1,17 @@
 import { SHAPES } from '@/theme/shapes';
 import type { ThemeFamily } from '@/theme/themes';
 import { LINE_ICON_BODIES, PIXEL_ICON_BODIES } from './generated/svgData';
-import { LINE_ICON_PLACEHOLDERS } from './placeholders';
 
 // The icons of design-sezioni.md A5. Their names are those of the files in assets/design/lotto1/.
 
-export type IconName =
-  | keyof typeof LINE_ICON_BODIES
-  | keyof typeof PIXEL_ICON_BODIES
-  | keyof typeof LINE_ICON_PLACEHOLDERS;
+export type IconName = keyof typeof LINE_ICON_BODIES | keyof typeof PIXEL_ICON_BODIES;
 
 /** The body sizes of A5: 24 in the tab bar and headers, 20 in rows, 16 in chips. */
 export type IconSize = 24 | 20 | 16;
 
 type Bodies = Readonly<Record<string, string | undefined>>;
 
-const LINE: Bodies = { ...LINE_ICON_BODIES, ...LINE_ICON_PLACEHOLDERS };
+const LINE: Bodies = LINE_ICON_BODIES;
 const PIXEL: Bodies = PIXEL_ICON_BODIES;
 
 /** Every icon of the app. */

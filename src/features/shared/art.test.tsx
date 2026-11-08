@@ -13,13 +13,7 @@ import { LINE_ICON_BODIES, PIXEL_ICON_BODIES, VECTOR_SVGS } from './generated/sv
 import { Icon } from './Icon';
 import { ICON_NAMES, iconXml, type IconName } from './icons';
 import { Logo } from './Logo';
-import {
-  EVOLUTION_STEPS,
-  LINE_ICONS_DRAWN_IN_PIXELS,
-  LINE_ICON_PLACEHOLDERS,
-  LOGO_PLACEHOLDERS,
-  evolutionSpriteKey,
-} from './placeholders';
+import { EVOLUTION_STEPS, LOGO_PLACEHOLDERS, evolutionSpriteKey } from './placeholders';
 import { hasSprite } from './Sprite';
 import { bossSpriteKey, companionSpriteKey, spriteSide, type BossKind } from './sprites';
 
@@ -47,11 +41,11 @@ function iconNamesInCode(): string[] {
 describe('icon files', () => {
   it('finds the icons of the tab bar in the code', () => {
     expect(iconNamesInCode()).toEqual(
-      expect.arrayContaining(['oggi', 'abitudini', 'nuovo', 'boss', 'profilo']),
+      expect.arrayContaining(['oggi', 'abitudini', 'aggiungi', 'boss', 'profilo']),
     );
   });
 
-  it('has a file or a declared placeholder for every icon used in the app', () => {
+  it('has a file for every icon used in the app', () => {
     for (const name of iconNamesInCode()) {
       expect(ICON_NAMES).toContain(name);
     }
@@ -71,17 +65,8 @@ describe('icon files', () => {
     }
   });
 
-  it('declares every icon without a line file', () => {
-    const withoutLine = ICON_NAMES.filter((name) => !(name in LINE_ICON_BODIES));
-    expect([...withoutLine].sort()).toEqual(
-      [...Object.keys(LINE_ICON_PLACEHOLDERS), ...LINE_ICONS_DRAWN_IN_PIXELS].sort(),
-    );
-  });
-
-  it('does not keep a placeholder for an icon that now has a line file', () => {
-    for (const name of Object.keys(LINE_ICON_PLACEHOLDERS)) {
-      expect(LINE_ICON_BODIES).not.toHaveProperty(name);
-    }
+  it('has a line file for every icon', () => {
+    expect(ICON_NAMES.filter((name) => !(name in LINE_ICON_BODIES))).toEqual([]);
   });
 });
 
@@ -102,13 +87,16 @@ describe('iconXml', () => {
     expect(iconXml('cerca', 'minimal')).toContain('viewBox="0 0 24 24"');
   });
 
-  it('draws the line placeholder of Today outside Arcade and its pixel file in Arcade', () => {
-    expect(iconXml('oggi', 'minimal')).toContain(LINE_ICON_PLACEHOLDERS.oggi);
+  it('draws Today from its line file outside Arcade and its pixel file in Arcade', () => {
+    expect(iconXml('oggi', 'minimal')).toContain(LINE_ICON_BODIES.oggi);
     expect(iconXml('oggi', 'arcade')).toContain('viewBox="0 0 12 12"');
   });
 
+  it('draws the shield with its line file outside Arcade', () => {
+    expect(iconXml('scudo', 'fantasy')).toContain(LINE_ICON_BODIES.scudo);
+  });
+
   it('falls back on the only drawing an icon has', () => {
-    expect(iconXml('scudo', 'fantasy')).toContain('viewBox="0 0 12 12"');
     expect(iconXml('profilo', 'arcade')).toContain('viewBox="0 0 24 24"');
   });
 
