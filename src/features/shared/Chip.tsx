@@ -14,8 +14,9 @@ export const CHIP_HEIGHT = 32;
 /** How far the number of a chip goes out of it: a list that clips must leave this room. */
 export const CHIP_BADGE_OVERLAP = 8;
 const BADGE_SIZE = 20;
-/** Even, as Press Start 2P needs to stay sharp. */
-const BADGE_FONT_SIZE = 14;
+const BADGE_FONT_SIZE = 11;
+/** In Cyberpunk the number is hard to read at the size of the other themes. */
+const BADGE_FONT_SIZE_CYBERPUNK = 14;
 
 export interface ChipProps {
   readonly label: string;
@@ -74,7 +75,13 @@ export function Chip({
                   variant="display"
                   color={BADGE_TEXT}
                   allowFontScaling={false}
-                  style={styles.badgeText}
+                  style={[
+                    styles.badgeText,
+                    {
+                      fontSize:
+                        family === 'cyberpunk' ? BADGE_FONT_SIZE_CYBERPUNK : BADGE_FONT_SIZE,
+                    },
+                  ]}
                 >
                   {badge}
                 </ThemedText>
@@ -108,5 +115,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontSize: BADGE_FONT_SIZE, includeFontPadding: false },
+  badgeText: { includeFontPadding: false },
 });

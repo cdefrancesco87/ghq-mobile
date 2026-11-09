@@ -528,6 +528,23 @@ describe('missions step', () => {
       expect(contrastRatio(BADGE_TEXT, BADGE_FILL)).toBeGreaterThanOrEqual(4.5);
     });
 
+    it.each(['minimal-chiaro', 'arcade', 'fantasy', 'lovecraft'] as const)(
+      'keeps the small number in %s',
+      async (theme) => {
+        const db = createTestDb();
+        saveOnboardingDraft(
+          db,
+          { ...loadOnboardingDraft(db), step: 4, name: 'Claudio', theme },
+          NOW,
+        );
+        await openApp(db);
+        await screen.findByText(/3 di 5/i);
+
+        const number = within(badgeOf('mind')!).getByText('2');
+        expect(StyleSheet.flatten(number.props.style).fontSize).toBe(11);
+      },
+    );
+
     it('is read with the name of the category', async () => {
       const db = createTestDb();
       saveOnboardingDraft(
