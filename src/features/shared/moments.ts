@@ -67,7 +67,13 @@ export function addMoments(queue: readonly Moment[], moments: readonly Moment[])
   const rank = (moment: Moment) => MOMENT_ORDER.indexOf(moment.kind);
   const [current, ...waiting] = queue;
   const seen = new Set(queue.map((moment) => moment.id));
-  const fresh = moments.filter((moment) => !seen.has(moment.id) && seen.add(moment.id));
+  const fresh: Moment[] = [];
+  for (const moment of moments) {
+    if (!seen.has(moment.id)) {
+      seen.add(moment.id);
+      fresh.push(moment);
+    }
+  }
   const sorted = [...waiting, ...fresh].sort((a, b) => rank(a) - rank(b));
   return current === undefined ? sorted : [current, ...sorted];
 }
