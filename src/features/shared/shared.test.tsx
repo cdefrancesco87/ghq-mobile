@@ -484,6 +484,17 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
       expect(onUndo).not.toHaveBeenCalled();
     });
 
+    it('without an undo it has no «Annulla» and still disappears after 5 seconds', async () => {
+      await openProvider();
+
+      await act(async () => toast.show({ message: 'Massimo 5' }));
+      expect(screen.getByText('Massimo 5')).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Annulla' })).toBeNull();
+
+      await act(async () => jest.advanceTimersByTime(UNDO_TOAST_MS));
+      expect(screen.queryByText('Massimo 5')).toBeNull();
+    });
+
     it('undoes from «Annulla», at least 48 high, and disappears', async () => {
       const onUndo = jest.fn();
       await openProvider();

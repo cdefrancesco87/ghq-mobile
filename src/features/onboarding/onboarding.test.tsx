@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { act, cleanup, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { act, cleanup, fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { AccessibilityInfo, BackHandler, Dimensions, StyleSheet } from 'react-native';
 
@@ -7,6 +7,7 @@ import { getLanguage, getSetting, setSetting } from '@/db/repositories/settings'
 import { hasProfile, loadOnboardingDraft, saveOnboardingDraft } from '@/db/repositories/onboarding';
 import { missions } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { UNDO_TOAST_MS } from '@/features/shared/UndoToast';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
 import { startApp, useAppStore } from '@/stores/app';
@@ -51,6 +52,7 @@ const ROUTES: Record<string, ComponentType> = {
 };
 
 const NOW = clockAt(FRIDAY, 10).now;
+const LIMIT = 'Massimo 5: potrai aggiungerne altre dopo';
 
 async function openApp(db: Db) {
   await startApp({ openDatabase: () => Promise.resolve(db), clock: () => clockAt(FRIDAY, 10) });
@@ -427,17 +429,66 @@ describe('missions step', () => {
     await press('onboarding-template-healthy_meal');
     await press('onboarding-template-bed_by_eleven');
     expect(screen.getByText('Continua · 5 di 5')).toBeOnTheScreen();
-    expect(screen.queryByTestId('onboarding-limit')).not.toBeOnTheScreen();
+    expect(screen.queryByText(LIMIT)).not.toBeOnTheScreen();
 
     await press('onboarding-template-run');
 
-    expect(screen.getByText('Massimo 5: potrai aggiungerne altre dopo')).toBeOnTheScreen();
+    expect(screen.getByText(LIMIT)).toBeOnTheScreen();
     expect(screen.getByText('Continua · 5 di 5')).toBeOnTheScreen();
     expect(screen.getByTestId('onboarding-template-run')).not.toBeChecked();
     expect(loadOnboardingDraft(db).templateKeys).toHaveLength(5);
+  });
 
-    await press('onboarding-template-healthy_meal');
-    expect(screen.queryByTestId('onboarding-limit')).not.toBeOnTheScreen();
+  describe('notice of the limit', () => {
+    async function refuseSixth(theme: ThemeKey = 'minimal-chiaro') {
+      const db = createTestDb();
+      saveOnboardingDraft(
+        db,
+        {
+          ...loadOnboardingDraft(db),
+          step: 4,
+          name: 'Claudio',
+          theme,
+          templateKeys: ['drink_water', 'read_pages', 'healthy_meal', 'bed_by_eleven', 'steps'],
+        },
+        NOW,
+      );
+      await openApp(db);
+      await screen.findByText(/5 di 5/);
+      jest.useFakeTimers();
+      await press('onboarding-template-run');
+    }
+
+    afterEach(() => jest.useRealTimers());
+
+    it('goes away by itself after 5 seconds, with nothing to press', async () => {
+      await refuseSixth();
+
+      expect(within(screen.getByTestId('undo-toast')).getByText(LIMIT)).toBeOnTheScreen();
+      expect(screen.queryByTestId('undo-toast-undo')).not.toBeOnTheScreen();
+
+      await act(async () => jest.advanceTimersByTime(UNDO_TOAST_MS - 1));
+      expect(screen.getByText(LIMIT)).toBeOnTheScreen();
+
+      await act(async () => jest.advanceTimersByTime(1));
+      expect(screen.queryByText(LIMIT)).not.toBeOnTheScreen();
+    });
+
+    it('takes the theme chosen in the flow', async () => {
+      await refuseSixth('arcade');
+
+      expect(StyleSheet.flatten(screen.getByText(LIMIT).props.style).color).toBe(
+        THEMES.arcade.colors.background,
+      );
+    });
+
+    it('does not follow on to the next step', async () => {
+      await refuseSixth();
+
+      await press('onboarding-continue');
+
+      expect(screen.queryByText(LIMIT)).not.toBeOnTheScreen();
+    });
   });
 
   it('shows the templates of a category and the choices of the others', async () => {

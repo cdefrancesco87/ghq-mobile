@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   MAX_TEMPLATES,
@@ -10,6 +10,7 @@ import {
   type MissionTemplate,
   type TemplateCategory,
 } from '@/content/templates';
+import { announceOnIos } from '@/features/shared/announce';
 import { Card } from '@/features/shared/Card';
 import { Chip } from '@/features/shared/Chip';
 import { Glyph, doneGlyph, emptyGlyph } from '@/features/shared/CompletionControl';
@@ -18,6 +19,7 @@ import { Difficulty } from '@/features/shared/Difficulty';
 import { Icon } from '@/features/shared/Icon';
 import { categoryIcon } from '@/features/shared/icons';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useUndoToast } from '@/features/shared/UndoToast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { OnboardingStep, StepButton } from './OnboardingStep';
 
@@ -45,18 +47,16 @@ export function MissionsStep({
   const { t, i18n } = useTranslation();
   const { family } = useTheme();
   const [category, setCategory] = useState<TemplateCategory>(TEMPLATE_CATEGORIES[0]);
-  const [refused, setRefused] = useState(false);
+  const toast = useUndoToast();
 
-  const limit = t('onboarding.missions.limit', { max: MAX_TEMPLATES });
   const toggle = (key: string) => {
     if (selected.includes(key)) {
-      setRefused(false);
       onChangeSelected(selected.filter((item) => item !== key));
     } else if (selected.length >= MAX_TEMPLATES) {
-      setRefused(true);
-      AccessibilityInfo.announceForAccessibility(limit);
+      const message = t('onboarding.missions.limit', { max: MAX_TEMPLATES });
+      toast.show({ message });
+      announceOnIos(message);
     } else {
-      setRefused(false);
       onChangeSelected([...selected, key]);
     }
   };
@@ -123,11 +123,6 @@ export function MissionsStep({
           />
         ))}
       </Card>
-      {refused ? (
-        <Card style={styles.limit} testID="onboarding-limit">
-          <ThemedText>{limit}</ThemedText>
-        </Card>
-      ) : null}
     </OnboardingStep>
   );
 }
@@ -175,7 +170,6 @@ function TemplateRow({ template, selected, first, onPress }: TemplateRowProps) {
 const styles = StyleSheet.create({
   categories: { paddingHorizontal: 16, gap: 8 },
   list: { marginHorizontal: 16, paddingVertical: 0 },
-  limit: { marginHorizontal: 16 },
   row: {
     minHeight: ROW_MIN_HEIGHT,
     flexDirection: 'row',

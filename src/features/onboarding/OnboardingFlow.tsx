@@ -9,6 +9,7 @@ import {
 } from '@/db/repositories/onboarding';
 import { SETTING_DEFAULTS, type OnboardingDraft } from '@/db/repositories/settings';
 import { ThemeCarousel } from '@/features/shared/ThemeCarousel';
+import { UndoToastProvider } from '@/features/shared/UndoToast';
 import { runAction, useAppStore } from '@/stores/app';
 import { getSession } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
@@ -100,14 +101,17 @@ export function OnboardingFlow() {
           </OnboardingStep>
         );
       case 4:
+        // Its own provider: the notice takes the theme of the flow and ends with the step.
         return (
-          <MissionsStep
-            selected={draft.templateKeys}
-            onChangeSelected={(templateKeys) => update({ templateKeys })}
-            onBack={() => update({ step: 3 })}
-            onSkip={() => update({ step: 5, templateKeys: RECOMMENDED_TEMPLATE_KEYS })}
-            onContinue={() => update({ step: 5 })}
-          />
+          <UndoToastProvider>
+            <MissionsStep
+              selected={draft.templateKeys}
+              onChangeSelected={(templateKeys) => update({ templateKeys })}
+              onBack={() => update({ step: 3 })}
+              onSkip={() => update({ step: 5, templateKeys: RECOMMENDED_TEMPLATE_KEYS })}
+              onContinue={() => update({ step: 5 })}
+            />
+          </UndoToastProvider>
         );
       case 5:
         return <NotificationsStep onBack={() => update({ step: 4 })} onFinish={finish} />;
