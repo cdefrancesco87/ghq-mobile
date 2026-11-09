@@ -38,6 +38,8 @@ export default function RootLayout() {
   return (
     <AppProviders i18n={bootstrap.i18n}>
       <Stack screenOptions={{ headerShown: false }}>
+        {/* The first launch arrives on Today with a fade (design-sezioni.md 1.7). */}
+        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         <Stack.Screen
           name="editor"
           options={{ presentation: 'formSheet', sheetAllowedDetents: [0.9] }}

@@ -2,8 +2,9 @@ import { eq } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { z } from 'zod';
 
+import { MAX_TEMPLATES, MISSION_TEMPLATES } from '../../content/templates';
 import { addDays, isGameDay, toGameDay } from '../../rules/gameDay';
-import { FALLBACK_LANGUAGE } from '../../rules/config';
+import { FALLBACK_LANGUAGE, HERO_NAME_MAX_LENGTH } from '../../rules/config';
 import { pickLanguage } from '../../rules/language';
 import { GAME_MODES, LANGUAGES, type GameDay } from '../../rules/types';
 import { settings } from '../schema';
@@ -60,16 +61,31 @@ export const settingSchemas = {
   backup: z.strictObject({ auto: z.boolean(), lastBackupAt: z.number().int().nullable() }),
   /** Created once at the first start (getDeviceId); it identifies the device in the event log. */
   device_id: z.string().min(1),
+  /** The choices of a first launch in progress: it resumes from here, then it is removed. */
+  onboarding_draft: z.strictObject({
+    step: z.literal([1, 2, 3, 4, 5]),
+    name: z.string().max(HERO_NAME_MAX_LENGTH),
+    theme: z.enum(THEMES),
+    templateKeys: z
+      .array(z.string())
+      .max(MAX_TEMPLATES)
+      .refine((keys) => new Set(keys).size === keys.length, 'Each template only once')
+      .refine(
+        (keys) => keys.every((key) => MISSION_TEMPLATES.some((item) => item.key === key)),
+        'Unknown template',
+      ),
+  }),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
 export type SettingValue<K extends SettingKey> = z.infer<(typeof settingSchemas)[K]>;
 export type DayChangeSetting = SettingValue<'day_change'>;
+export type OnboardingDraft = SettingValue<'onboarding_draft'>;
 
-/** Keys with a fixed default: the device id is created instead (getDeviceId). */
-type KeyWithDefault = Exclude<SettingKey, 'device_id'>;
+/** Keys without a fixed default: the device id is created, the draft exists only for a while. */
+type KeyWithDefault = Exclude<SettingKey, 'device_id' | 'onboarding_draft'>;
 /** Keys written with setSetting: the day change has its own rule (setDayChange). */
-type EditableKey = Exclude<SettingKey, 'device_id' | 'day_change'>;
+type EditableKey = Exclude<KeyWithDefault, 'day_change'>;
 
 export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K> } = {
   /** Only a fallback: the first launch uses the language of the phone (getLanguage). */
@@ -187,4 +203,17 @@ export function getDeviceId(db: Db, now: number): string {
   const deviceId = uuidv7();
   write(db, 'device_id', deviceId, now);
   return deviceId;
+}
+
+/** The draft of the first launch; null when there is none or it is not valid any more. */
+export function getOnboardingDraft(db: Db): OnboardingDraft | null {
+  return readValid(db, 'onboarding_draft') ?? null;
+}
+
+export function setOnboardingDraft(db: Db, draft: OnboardingDraft, now: number): void {
+  write(db, 'onboarding_draft', draft, now);
+}
+
+export function clearOnboardingDraft(db: Db): void {
+  db.delete(settings).where(eq(settings.key, 'onboarding_draft')).run();
 }

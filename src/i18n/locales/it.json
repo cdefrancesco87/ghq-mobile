@@ -386,11 +386,91 @@
     "companion": "Compagno",
     "shop": "Negozio",
     "settings": "Impostazioni",
-    "onboarding": "Primo avvio",
     "editor": "Editor missione",
     "placeholder": "Questa schermata arriverà presto."
   },
+  "onboarding": {
+    "stepLabel": "Passo {{step}} di {{total}}, {{name}}",
+    "steps": {
+      "language": "lingua",
+      "name": "nome dell'eroe",
+      "theme": "tema",
+      "missions": "prime missioni",
+      "notifications": "notifiche"
+    },
+    "continue": "Continua",
+    "skip": "Salta",
+    "language": {
+      "title": "Scegli la lingua"
+    },
+    "name": {
+      "title": "Come si chiama il tuo eroe?",
+      "placeholder": "Il tuo nome",
+      "hint": "Puoi cambiarlo quando vuoi dal Profilo",
+      "disabledReason": "Scrivi il nome dell'eroe per continuare"
+    },
+    "theme": {
+      "title": "Scegli il tema"
+    },
+    "missions": {
+      "title": "Scegli da {{min}} a {{max}} {{missions}} per iniziare",
+      "continue": "Continua · {{count}} di {{max}}",
+      "limit": "Massimo {{max}}: potrai aggiungerne altre dopo",
+      "disabledReason": "Scegli almeno una missione per continuare",
+      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}"
+    },
+    "notifications": {
+      "title": "Vuoi i promemoria?",
+      "body": "Ti ricordo le missioni all'ora che scegli e la sera ti dico com'è andata.",
+      "enable": "Attiva i promemoria",
+      "later": "Non ora",
+      "reminderTime": "8:00",
+      "reminderBody": "È ora! Dieci minuti per te.",
+      "summaryTime": "21:00",
+      "summaryTitle": "Com'è andata oggi?",
+      "summaryBody": "Hai completato 3 missioni su 4. Bel lavoro!"
+    }
+  },
   "shared": {
+    "greeting": "Ciao, {{name}}",
+    "greeting_arcade": "{{name}} · READY?",
+    "greeting_fantasy": "Salve, {{name}}",
+    "greeting_cyberpunk": "Online, {{name}}",
+    "greeting_lovecraft": "Ancora sveglio, {{name}}?",
+    "themeCarousel": {
+      "modes": {
+        "automatic": "Automatico",
+        "light": "Chiaro",
+        "dark": "Scuro"
+      },
+      "themes": {
+        "arcade": {
+          "name": "Arcade",
+          "tone": "Una sala giochi dove ogni giorno è uno stage",
+          "description": "Tema Arcade: cabinato a pixel, colori accesi, compagno Pixel"
+        },
+        "fantasy": {
+          "name": "Fantasy",
+          "tone": "Un'avventura scritta su pergamena",
+          "description": "Tema Fantasy: pergamena, colori caldi, compagno Rocky"
+        },
+        "cyberpunk": {
+          "name": "Cyberpunk",
+          "tone": "Contratti e neon in una città che non dorme",
+          "description": "Tema Cyberpunk: neon, sfondo scuro, compagno Glitchy"
+        },
+        "lovecraft": {
+          "name": "Lovecraft",
+          "tone": "Un grimorio di riti quotidiani",
+          "description": "Tema Lovecraft: inchiostro, toni cupi, compagno Lumin"
+        },
+        "minimal": {
+          "name": "Minimal",
+          "tone": "Pulito e leggero, come un buon quaderno",
+          "description": "Tema Minimal: pulito, chiaro o scuro, compagno Cloudy"
+        }
+      }
+    },
     "close": "Chiudi",
     "back": "Indietro",
     "cancel": "Annulla",

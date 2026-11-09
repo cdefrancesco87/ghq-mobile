@@ -39,6 +39,9 @@ export const HERO_LEVELS = {
   titleEveryLevels: 5,
 } as const;
 
+/** The name of the hero, up to this many characters (design-sezioni.md 1.3). */
+export const HERO_NAME_MAX_LENGTH = 20;
+
 export const STATS = {
   /** Share of the points given to the secondary stat, rounded down. */
   secondaryShare: 0.3,

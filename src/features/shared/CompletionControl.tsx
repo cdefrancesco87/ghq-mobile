@@ -29,7 +29,7 @@ function checkMark(color: string) {
 }
 
 /** The empty box of the theme: dashed in Lovecraft, with the corners cut in Cyberpunk. */
-function emptyGlyph(family: ThemeFamily, color: string) {
+export function emptyGlyph(family: ThemeFamily, color: string) {
   const line = { fill: 'none', stroke: color };
   switch (family) {
     case 'arcade':

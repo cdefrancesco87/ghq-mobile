@@ -386,11 +386,91 @@
     "companion": "Begleiter",
     "shop": "Laden",
     "settings": "Einstellungen",
-    "onboarding": "Erster Start",
     "editor": "Missionseditor",
     "placeholder": "Dieser Bildschirm kommt bald."
   },
+  "onboarding": {
+    "stepLabel": "Schritt {{step}} von {{total}}, {{name}}",
+    "steps": {
+      "language": "Sprache",
+      "name": "Name des Helden",
+      "theme": "Design",
+      "missions": "erste Missionen",
+      "notifications": "Benachrichtigungen"
+    },
+    "continue": "Weiter",
+    "skip": "Überspringen",
+    "language": {
+      "title": "Wähle die Sprache"
+    },
+    "name": {
+      "title": "Wie heißt dein Held?",
+      "placeholder": "Dein Name",
+      "hint": "Du kannst ihn jederzeit im Profil ändern",
+      "disabledReason": "Schreibe den Namen des Helden, um fortzufahren"
+    },
+    "theme": {
+      "title": "Wähle das Design"
+    },
+    "missions": {
+      "title": "Wähle {{min}} bis {{max}} {{missions}} für den Anfang",
+      "continue": "Weiter · {{count}} von {{max}}",
+      "limit": "Höchstens {{max}}: Du kannst später weitere hinzufügen",
+      "disabledReason": "Wähle mindestens eine Mission, um fortzufahren",
+      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}"
+    },
+    "notifications": {
+      "title": "Möchtest du Erinnerungen?",
+      "body": "Ich erinnere dich zur gewählten Uhrzeit an deine Missionen und sage dir abends, wie es gelaufen ist.",
+      "enable": "Erinnerungen aktivieren",
+      "later": "Nicht jetzt",
+      "reminderTime": "8:00",
+      "reminderBody": "Es ist Zeit! Zehn Minuten für dich.",
+      "summaryTime": "21:00",
+      "summaryTitle": "Wie war dein Tag?",
+      "summaryBody": "Du hast 3 von 4 Missionen abgeschlossen. Gut gemacht!"
+    }
+  },
   "shared": {
+    "greeting": "Hallo, {{name}}",
+    "greeting_arcade": "{{name}} · READY?",
+    "greeting_fantasy": "Sei gegrüßt, {{name}}",
+    "greeting_cyberpunk": "Online, {{name}}",
+    "greeting_lovecraft": "Noch wach, {{name}}?",
+    "themeCarousel": {
+      "modes": {
+        "automatic": "Automatisch",
+        "light": "Hell",
+        "dark": "Dunkel"
+      },
+      "themes": {
+        "arcade": {
+          "name": "Arcade",
+          "tone": "Eine Spielhalle, in der jeder Tag ein Stage ist",
+          "description": "Design Arcade: Pixel-Automat, kräftige Farben, Begleiter Pixel"
+        },
+        "fantasy": {
+          "name": "Fantasy",
+          "tone": "Ein Abenteuer, auf Pergament geschrieben",
+          "description": "Design Fantasy: Pergament, warme Farben, Begleiter Rocky"
+        },
+        "cyberpunk": {
+          "name": "Cyberpunk",
+          "tone": "Aufträge und Neon in einer Stadt, die nie schläft",
+          "description": "Design Cyberpunk: Neon, dunkler Hintergrund, Begleiter Glitchy"
+        },
+        "lovecraft": {
+          "name": "Lovecraft",
+          "tone": "Ein Grimoire täglicher Riten",
+          "description": "Design Lovecraft: Tinte, düstere Töne, Begleiter Lumin"
+        },
+        "minimal": {
+          "name": "Minimal",
+          "tone": "Klar und leicht, wie ein gutes Notizbuch",
+          "description": "Design Minimal: klar, hell oder dunkel, Begleiter Cloudy"
+        }
+      }
+    },
     "close": "Schließen",
     "back": "Zurück",
     "cancel": "Abbrechen",

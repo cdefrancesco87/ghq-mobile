@@ -4,6 +4,8 @@ import { pressedColour } from '@/theme/contrast';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Frame } from './Frame';
+import { Icon } from './Icon';
+import type { IconName } from './icons';
 import { ThemedText } from './ThemedText';
 import { hitSlopFor } from './touch';
 
@@ -14,10 +16,11 @@ export interface ChipProps {
   readonly onPress: () => void;
   readonly testID: string;
   readonly selected?: boolean;
+  readonly icon?: IconName;
 }
 
 /** A short choice, 32 high with the touch area of the platform (misure-componenti.md). */
-export function Chip({ label, onPress, testID, selected = false }: ChipProps) {
+export function Chip({ label, onPress, testID, selected = false, icon }: ChipProps) {
   const { colors, family } = useTheme();
   const shape = SHAPES[family];
   return (
@@ -41,6 +44,9 @@ export function Chip({ label, onPress, testID, selected = false }: ChipProps) {
               stroke={stroke}
               testID={`${testID}-frame`}
             />
+            {icon === undefined ? null : (
+              <Icon name={icon} size={16} color={selected ? colors.onPrimary : colors.text} />
+            )}
             <ThemedText variant="label" color={selected ? colors.onPrimary : colors.text}>
               {label}
             </ThemedText>
@@ -56,6 +62,8 @@ const styles = StyleSheet.create({
     minHeight: CHIP_HEIGHT,
     paddingHorizontal: 12,
     paddingVertical: 4,
+    flexDirection: 'row',
+    gap: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },

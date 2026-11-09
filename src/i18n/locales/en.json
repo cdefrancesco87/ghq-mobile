@@ -386,11 +386,91 @@
     "companion": "Companion",
     "shop": "Shop",
     "settings": "Settings",
-    "onboarding": "First launch",
     "editor": "Quest editor",
     "placeholder": "This screen is coming soon."
   },
+  "onboarding": {
+    "stepLabel": "Step {{step}} of {{total}}, {{name}}",
+    "steps": {
+      "language": "language",
+      "name": "hero name",
+      "theme": "theme",
+      "missions": "first missions",
+      "notifications": "notifications"
+    },
+    "continue": "Continue",
+    "skip": "Skip",
+    "language": {
+      "title": "Choose your language"
+    },
+    "name": {
+      "title": "What is your hero's name?",
+      "placeholder": "Your name",
+      "hint": "You can change it anytime from the Profile",
+      "disabledReason": "Write the hero's name to continue"
+    },
+    "theme": {
+      "title": "Choose the theme"
+    },
+    "missions": {
+      "title": "Choose {{min}} to {{max}} {{missions}} to start",
+      "continue": "Continue · {{count}} of {{max}}",
+      "limit": "{{max}} at most: you can add more later",
+      "disabledReason": "Choose at least one mission to continue",
+      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}"
+    },
+    "notifications": {
+      "title": "Do you want reminders?",
+      "body": "I'll remind you of your missions at the time you choose, and in the evening I'll tell you how it went.",
+      "enable": "Turn on reminders",
+      "later": "Not now",
+      "reminderTime": "8:00",
+      "reminderBody": "It's time! Ten minutes for you.",
+      "summaryTime": "21:00",
+      "summaryTitle": "How did today go?",
+      "summaryBody": "You completed 3 missions out of 4. Well done!"
+    }
+  },
   "shared": {
+    "greeting": "Hi, {{name}}",
+    "greeting_arcade": "{{name}} · READY?",
+    "greeting_fantasy": "Greetings, {{name}}",
+    "greeting_cyberpunk": "Online, {{name}}",
+    "greeting_lovecraft": "Still awake, {{name}}?",
+    "themeCarousel": {
+      "modes": {
+        "automatic": "Automatic",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "themes": {
+        "arcade": {
+          "name": "Arcade",
+          "tone": "An arcade hall where every day is a stage",
+          "description": "Arcade theme: pixel cabinet, bright colours, companion Pixel"
+        },
+        "fantasy": {
+          "name": "Fantasy",
+          "tone": "An adventure written on parchment",
+          "description": "Fantasy theme: parchment, warm colours, companion Rocky"
+        },
+        "cyberpunk": {
+          "name": "Cyberpunk",
+          "tone": "Contracts and neon in a city that never sleeps",
+          "description": "Cyberpunk theme: neon, dark background, companion Glitchy"
+        },
+        "lovecraft": {
+          "name": "Lovecraft",
+          "tone": "A grimoire of daily rites",
+          "description": "Lovecraft theme: ink, gloomy tones, companion Lumin"
+        },
+        "minimal": {
+          "name": "Minimal",
+          "tone": "Clean and light, like a good notebook",
+          "description": "Minimal theme: clean, light or dark, companion Cloudy"
+        }
+      }
+    },
     "close": "Close",
     "back": "Back",
     "cancel": "Cancel",

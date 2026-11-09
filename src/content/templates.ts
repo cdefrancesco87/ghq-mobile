@@ -9,6 +9,10 @@ import type { Difficulty, StatKey } from '../rules/types';
 // the difficulty of the examples in xp-e-monete.md; categories, frequencies, the other
 // difficulties and the goals are a proposal.
 
+/** From 1 to 5 templates at the first launch (US-ONB-03). */
+export const MIN_TEMPLATES = 1;
+export const MAX_TEMPLATES = 5;
+
 export const TEMPLATE_CATEGORIES = ['health', 'mind', 'work_study', 'home'] as const;
 export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 
