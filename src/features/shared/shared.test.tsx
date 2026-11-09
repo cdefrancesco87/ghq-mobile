@@ -669,6 +669,26 @@ describe('shapes of the other themes', () => {
     );
   });
 
+  it('a Cyberpunk frame fills a width that is not whole, so its right edge stays visible', async () => {
+    await renderThemed(
+      <Card testID="card">
+        <Text>Contenuto</Text>
+      </Card>,
+      { theme: 'cyberpunk' },
+    );
+
+    await fireEvent(screen.getByTestId('card-frame'), 'layout', {
+      nativeEvent: { layout: { width: 266.67, height: 100, x: 0, y: 0 } },
+    });
+
+    // react-native-svg truncates a number, and the view would end before the edge of the path.
+    const [svg] = screen.getByTestId('card-frame').children;
+    const { width, height } = StyleSheet.flatten(
+      (svg as unknown as { props: { style: StyleProp<ViewStyle> } }).props.style,
+    ) as ViewStyle;
+    expect([width, height]).toEqual(['100%', '100%']);
+  });
+
   it('a Cyberpunk sheet has only the top left corner cut and the top edge in xp', () => {
     expect(cutSheetFillPath(200, 100, 12)).toBe('M12 0 L200 0 L200 100 L0 100 L0 12 Z');
     expect(cutSheetStrokePath(200, 12, 1)).toBe('M0 12.5 L12 0.5 L200 0.5');
