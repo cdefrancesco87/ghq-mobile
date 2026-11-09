@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { pressedColour } from '@/theme/contrast';
 import { BADGE_FILL, BADGE_TEXT, SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
+import type { ThemeFamily } from '@/theme/themes';
 import { Frame } from './Frame';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
@@ -17,6 +18,20 @@ const BADGE_SIZE = 20;
 const BADGE_FONT_SIZE = 11;
 /** In Cyberpunk the number is hard to read at the size of the other themes. */
 const BADGE_FONT_SIZE_CYBERPUNK = 14;
+/**
+ * How far to move the number so that its figure sits in the centre: a font leaves it off centre by
+ * its own metrics. Measured on the figures 1 to 5 of each font, at the sizes above; `xOne` is for
+ * the 1, which is narrower than the others.
+ */
+const BADGE_NUDGE: Readonly<
+  Record<ThemeFamily, { readonly x: number; readonly xOne: number; readonly y: number }>
+> = {
+  minimal: { x: 0, xOne: 0.3, y: -0.25 },
+  arcade: { x: 0.7, xOne: 0, y: 0.7 },
+  fantasy: { x: 0, xOne: 0, y: 0.5 },
+  cyberpunk: { x: 0, xOne: 0.3, y: 0.1 },
+  lovecraft: { x: 0, xOne: 0, y: -0.6 },
+};
 
 export interface ChipProps {
   readonly label: string;
@@ -72,7 +87,8 @@ export function Chip({
             {badge > 0 ? (
               <View testID={`${testID}-badge`} style={styles.badge}>
                 <ThemedText
-                  variant="display"
+                  // IM Fell, the Lovecraft titles, has old style figures of different heights.
+                  variant={family === 'lovecraft' ? 'numbers' : 'display'}
                   color={BADGE_TEXT}
                   allowFontScaling={false}
                   style={[
@@ -80,6 +96,13 @@ export function Chip({
                     {
                       fontSize:
                         family === 'cyberpunk' ? BADGE_FONT_SIZE_CYBERPUNK : BADGE_FONT_SIZE,
+                      transform: [
+                        {
+                          translateX:
+                            badge === 1 ? BADGE_NUDGE[family].xOne : BADGE_NUDGE[family].x,
+                        },
+                        { translateY: BADGE_NUDGE[family].y },
+                      ],
                     },
                   ]}
                 >
@@ -115,5 +138,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { includeFontPadding: false },
+  badgeText: { includeFontPadding: false, fontVariant: [] },
 });

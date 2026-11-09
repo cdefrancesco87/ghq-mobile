@@ -545,6 +545,46 @@ describe('missions step', () => {
       },
     );
 
+    describe('centring of the number', () => {
+      async function numberAt(theme: ThemeKey, count: 1 | 2) {
+        const db = createTestDb();
+        saveOnboardingDraft(
+          db,
+          {
+            ...loadOnboardingDraft(db),
+            step: 4,
+            name: 'Claudio',
+            theme,
+            templateKeys: count === 1 ? ['read_pages'] : ['read_pages', 'meditation'],
+          },
+          NOW,
+        );
+        await openApp(db);
+        await screen.findByText(/di 5/i);
+        return StyleSheet.flatten(within(badgeOf('mind')!).getByText(String(count)).props.style);
+      }
+
+      it('uses figures of one height in Lovecraft', async () => {
+        const style = await numberAt('lovecraft', 2);
+        expect(style.fontFamily).toBe('CrimsonPro_600SemiBold');
+        expect(style.fontVariant).toEqual([]);
+      });
+
+      it('moves the number by what its font leaves off centre', async () => {
+        expect((await numberAt('arcade', 2)).transform).toEqual([
+          { translateX: 0.7 },
+          { translateY: 0.7 },
+        ]);
+      });
+
+      it('moves the 1 on its own, because it is narrower than the other figures', async () => {
+        expect((await numberAt('arcade', 1)).transform).toEqual([
+          { translateX: 0 },
+          { translateY: 0.7 },
+        ]);
+      });
+    });
+
     it('is read with the name of the category', async () => {
       const db = createTestDb();
       saveOnboardingDraft(
