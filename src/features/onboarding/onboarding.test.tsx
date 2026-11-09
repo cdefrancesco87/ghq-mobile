@@ -14,6 +14,8 @@ import { startApp, useAppStore } from '@/stores/app';
 import { useHeroStore } from '@/stores/hero';
 import { useSettingsStore } from '@/stores/settings';
 import { useThemeStore } from '@/stores/theme';
+import { contrastRatio } from '@/theme/contrast';
+import { BADGE_FILL, BADGE_TEXT } from '@/theme/shapes';
 import { THEMES, type ThemeKey } from '@/theme/themes';
 import TabsLayoutRoute from '../../../app/(tabs)/_layout';
 import Goals from '../../../app/(tabs)/goals';
@@ -498,7 +500,7 @@ describe('missions step', () => {
       await screen.findByText('Continua · 3 di 5');
 
       const style = StyleSheet.flatten(badgeOf('health')!.props.style);
-      expect(style.backgroundColor).toBe(THEMES.fantasy.colors.dangerText);
+      expect(style.backgroundColor).toBe(BADGE_FILL);
       expect(style.position).toBe('absolute');
       expect(style.top).toBeLessThan(0);
       expect(style.right).toBeLessThan(0);
@@ -506,6 +508,24 @@ describe('missions step', () => {
         screen.getByTestId('onboarding-categories').props.contentContainerStyle,
       ).paddingTop;
       expect(room).toBeGreaterThanOrEqual(-style.top);
+    });
+
+    it('writes the number in white and in a heavy font, readable in Cyberpunk', async () => {
+      const db = createTestDb();
+      saveOnboardingDraft(
+        db,
+        { ...loadOnboardingDraft(db), step: 4, name: 'Claudio', theme: 'cyberpunk' },
+        NOW,
+      );
+      await openApp(db);
+      await screen.findByText(/3 di 5/i);
+
+      const number = within(badgeOf('mind')!).getByText('2');
+      const style = StyleSheet.flatten(number.props.style);
+      expect(style.color).toBe(BADGE_TEXT);
+      expect(style.fontFamily).toBe('ChakraPetch_700Bold');
+      expect(style.fontSize).toBe(14);
+      expect(contrastRatio(BADGE_TEXT, BADGE_FILL)).toBeGreaterThanOrEqual(4.5);
     });
 
     it('is read with the name of the category', async () => {

@@ -110,3 +110,10 @@ export const SHAPES: Readonly<Record<ThemeFamily, ThemeShapes>> = {
 
 /** The dimmed layer behind sheets and dialogs: the same in every theme, it is not a colour role. */
 export const SCRIM = 'rgba(0, 0, 0, 0.45)';
+
+/**
+ * The number on a chip, as on a notification: the same in every theme, because in four of them
+ * white on the danger role stays under 4.5:1 (Arcade, Cyberpunk, Lovecraft, Minimal dark).
+ */
+export const BADGE_FILL = '#c62828';
+export const BADGE_TEXT = '#ffffff';

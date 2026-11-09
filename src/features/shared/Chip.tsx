@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { pressedColour } from '@/theme/contrast';
-import { SHAPES } from '@/theme/shapes';
+import { BADGE_FILL, BADGE_TEXT, SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Frame } from './Frame';
 import { Icon } from './Icon';
@@ -12,9 +12,10 @@ import { hitSlopFor } from './touch';
 export const CHIP_HEIGHT = 32;
 
 /** How far the number of a chip goes out of it: a list that clips must leave this room. */
-export const CHIP_BADGE_OVERLAP = 6;
-const BADGE_SIZE = 18;
-const BADGE_FONT_SIZE = 11;
+export const CHIP_BADGE_OVERLAP = 8;
+const BADGE_SIZE = 20;
+/** Even, as Press Start 2P needs to stay sharp. */
+const BADGE_FONT_SIZE = 14;
 
 export interface ChipProps {
   readonly label: string;
@@ -68,13 +69,10 @@ export function Chip({
               {label}
             </ThemedText>
             {badge > 0 ? (
-              <View
-                testID={`${testID}-badge`}
-                style={[styles.badge, { backgroundColor: colors.dangerText }]}
-              >
+              <View testID={`${testID}-badge`} style={styles.badge}>
                 <ThemedText
-                  variant="numbers"
-                  color={colors.onPrimary}
+                  variant="display"
+                  color={BADGE_TEXT}
                   allowFontScaling={false}
                   style={styles.badgeText}
                 >
@@ -106,6 +104,7 @@ const styles = StyleSheet.create({
     width: BADGE_SIZE,
     height: BADGE_SIZE,
     borderRadius: BADGE_SIZE / 2,
+    backgroundColor: BADGE_FILL,
     alignItems: 'center',
     justifyContent: 'center',
   },
