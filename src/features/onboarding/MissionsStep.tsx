@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState, type ComponentRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 
 import {
   MAX_TEMPLATES,
@@ -20,6 +28,7 @@ import { Icon } from '@/features/shared/Icon';
 import { categoryIcon } from '@/features/shared/icons';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useUndoToast } from '@/features/shared/UndoToast';
+import { useReduceMotion } from '@/features/shared/useReduceMotion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { OnboardingStep, StepButton } from './OnboardingStep';
 
@@ -34,9 +43,9 @@ export interface MissionsStepProps {
 }
 
 /**
- * The templates of a category, with the number chosen in each one on its chip. A choice stays in
- * its own category, so that a template never leaves the list when it is unchecked. Frequency and
- * difficulty change later (1.5).
+ * The templates of a category, with the number chosen in each one on its chip. A swipe on the list
+ * goes to the next or the previous category. A choice stays in its own category, so that a template
+ * never leaves the list when it is unchecked. Frequency and difficulty change later (1.5).
  */
 export function MissionsStep({
   selected,
@@ -49,6 +58,44 @@ export function MissionsStep({
   const { family } = useTheme();
   const [category, setCategory] = useState<TemplateCategory>(TEMPLATE_CATEGORIES[0]);
   const toast = useUndoToast();
+  const { width } = useWindowDimensions();
+  const reduceMotion = useReduceMotion();
+  const pages = useRef<ComponentRef<typeof ScrollView>>(null);
+  const chips = useRef<ComponentRef<typeof ScrollView>>(null);
+  const chipLayouts = useRef<Partial<Record<TemplateCategory, { x: number; width: number }>>>({});
+  const chipsWidth = useRef(0);
+  // While a tap brings a category into view, the categories it passes are not opened.
+  const pressedIndex = useRef<number | null>(null);
+
+  // The chip of the open category stays in view, as near the centre as the row allows.
+  const open = (next: TemplateCategory) => {
+    setCategory(next);
+    const chip = chipLayouts.current[next];
+    if (chip !== undefined) {
+      const centred = chip.x + chip.width / 2 - width / 2;
+      const x = Math.min(Math.max(centred, 0), Math.max(chipsWidth.current - width, 0));
+      chips.current?.scrollTo({ x, animated: !reduceMotion });
+    }
+  };
+  const onSwipe = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.min(
+      Math.max(Math.round(nativeEvent.contentOffset.x / width), 0),
+      TEMPLATE_CATEGORIES.length - 1,
+    );
+    if (pressedIndex.current === index) {
+      pressedIndex.current = null;
+    } else if (pressedIndex.current === null && TEMPLATE_CATEGORIES[index] !== category) {
+      open(TEMPLATE_CATEGORIES[index]);
+    }
+  };
+  const onPressCategory = (next: TemplateCategory) => {
+    if (next === category) {
+      return;
+    }
+    pressedIndex.current = TEMPLATE_CATEGORIES.indexOf(next);
+    pages.current?.scrollTo({ x: pressedIndex.current * width, animated: !reduceMotion });
+    open(next);
+  };
 
   const toggle = (key: string) => {
     if (selected.includes(key)) {
@@ -62,7 +109,6 @@ export function MissionsStep({
     }
   };
 
-  const visible = MISSION_TEMPLATES.filter((template) => template.category === category);
   const missionsWord = t('lexicon.missions_pl', {
     context: family === 'minimal' ? undefined : family,
   });
@@ -93,8 +139,12 @@ export function MissionsStep({
       }
     >
       <ScrollView
+        ref={chips}
         testID="onboarding-categories"
         horizontal
+        onContentSizeChange={(contentWidth) => {
+          chipsWidth.current = contentWidth;
+        }}
         showsHorizontalScrollIndicator={false}
         style={styles.categoriesList}
         contentContainerStyle={styles.categories}
@@ -105,34 +155,65 @@ export function MissionsStep({
             (template) => template.category === item && selected.includes(template.key),
           ).length;
           return (
-            <Chip
+            <View
               key={item}
-              testID={`onboarding-category-${item}`}
-              label={label}
-              accessibilityLabel={
-                count === 0
-                  ? undefined
-                  : t('onboarding.missions.categoryLabel', { name: label, count })
-              }
-              icon={categoryIcon(item)}
-              selected={item === category}
-              badge={count}
-              onPress={() => setCategory(item)}
-            />
+              onLayout={({ nativeEvent }) => {
+                chipLayouts.current[item] = nativeEvent.layout;
+              }}
+            >
+              <Chip
+                testID={`onboarding-category-${item}`}
+                label={label}
+                accessibilityLabel={
+                  count === 0
+                    ? undefined
+                    : t('onboarding.missions.categoryLabel', { name: label, count })
+                }
+                icon={categoryIcon(item)}
+                selected={item === category}
+                badge={count}
+                onPress={() => onPressCategory(item)}
+              />
+            </View>
           );
         })}
       </ScrollView>
-      <Card style={styles.list}>
-        {visible.map((template, index) => (
-          <TemplateRow
-            key={template.key}
-            template={template}
-            selected={selected.includes(template.key)}
-            first={index === 0}
-            onPress={() => toggle(template.key)}
-          />
+      <ScrollView
+        ref={pages}
+        testID="onboarding-template-pages"
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={onSwipe}
+        onScrollBeginDrag={() => {
+          pressedIndex.current = null;
+        }}
+      >
+        {TEMPLATE_CATEGORIES.map((item) => (
+          <View
+            key={item}
+            // The screen reader stays on the open category and changes it from the chips.
+            accessibilityElementsHidden={item !== category}
+            importantForAccessibility={item === category ? 'auto' : 'no-hide-descendants'}
+            style={{ width }}
+          >
+            <Card style={styles.list}>
+              {MISSION_TEMPLATES.filter((template) => template.category === item).map(
+                (template, index) => (
+                  <TemplateRow
+                    key={template.key}
+                    template={template}
+                    selected={selected.includes(template.key)}
+                    first={index === 0}
+                    onPress={() => toggle(template.key)}
+                  />
+                ),
+              )}
+            </Card>
+          </View>
         ))}
-      </Card>
+      </ScrollView>
     </OnboardingStep>
   );
 }

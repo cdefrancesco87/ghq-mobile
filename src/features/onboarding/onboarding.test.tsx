@@ -527,6 +527,77 @@ describe('missions step', () => {
     });
   });
 
+  describe('swiping between the categories', () => {
+    const width = () => Dimensions.get('window').width;
+    const swipeTo = (page: number) =>
+      fireEvent.scroll(screen.getByTestId('onboarding-template-pages'), {
+        nativeEvent: {
+          contentOffset: { x: page * width(), y: 0 },
+          contentSize: { width: 4 * width(), height: 500 },
+          layoutMeasurement: { width: width(), height: 500 },
+        },
+      });
+    const expectOpen = (category: string) =>
+      expect(
+        screen.getByRole('button', { selected: true, name: new RegExp(category) }),
+      ).toBeTruthy();
+
+    async function openStep() {
+      const db = createTestDb();
+      startAt(db, 4);
+      await openApp(db);
+      await screen.findByText('Continua · 3 di 5');
+    }
+
+    it('opens the next and the previous category, with its templates', async () => {
+      await openStep();
+      expectOpen('Salute');
+
+      await swipeTo(1);
+      expectOpen('Mente');
+      expect(screen.getByTestId('onboarding-template-journal')).toBeOnTheScreen();
+      expect(screen.queryByTestId('onboarding-template-gym')).not.toBeOnTheScreen();
+
+      await swipeTo(0);
+      expectOpen('Salute');
+      expect(screen.getByTestId('onboarding-template-gym')).toBeOnTheScreen();
+    });
+
+    it('does not open the categories a tap passes on its way', async () => {
+      await openStep();
+
+      await press('onboarding-category-home');
+      expectOpen('Casa');
+
+      await swipeTo(1);
+      await swipeTo(2);
+      expectOpen('Casa');
+
+      await swipeTo(3);
+      // The tap has arrived: swiping opens again.
+      await swipeTo(2);
+      expectOpen('Lavoro');
+    });
+
+    it('keeps the choices made in the other categories', async () => {
+      const db = createTestDb();
+      startAt(db, 4);
+      await openApp(db);
+      await screen.findByText('Continua · 3 di 5');
+
+      await swipeTo(2);
+      await press('onboarding-template-study_hour');
+
+      expect(loadOnboardingDraft(db).templateKeys).toEqual([
+        'drink_water',
+        'read_pages',
+        'meditation',
+        'study_hour',
+      ]);
+      expect(screen.getByText('Continua · 4 di 5')).toBeOnTheScreen();
+    });
+  });
+
   describe('notice of the limit', () => {
     async function refuseSixth(theme: ThemeKey = 'minimal-chiaro') {
       const db = createTestDb();
