@@ -84,6 +84,29 @@ describe('addMoments', () => {
     const queue = addMoments(momentsFromEvents([BADGE]), momentsFromEvents([STAGE_UP, LEVEL_UP]));
     expect(kinds(queue)).toEqual(['badge', 'level_up', 'companion_stage']);
   });
+
+  it('queues the same id once when it is added twice', () => {
+    const once = addMoments([], momentsFromEvents([BADGE]));
+    const twice = addMoments(once, momentsFromEvents([BADGE]));
+    expect(twice.map((moment) => moment.id)).toEqual(['badge']);
+  });
+
+  it('drops duplicates inside the same batch', () => {
+    const queue = addMoments([], momentsFromEvents([BADGE, BADGE]));
+    expect(queue.map((moment) => moment.id)).toEqual(['badge']);
+  });
+
+  it('does not queue again the moment on screen', () => {
+    const queue = addMoments(momentsFromEvents([BADGE]), momentsFromEvents([BADGE, STAGE_UP]));
+    expect(queue.map((moment) => moment.id)).toEqual(['badge', 'stage']);
+  });
+
+  it('keeps the order of arrival for different ids of the same kind', () => {
+    const first = event('badge.unlocked', 'badge-1');
+    const second = event('badge.unlocked', 'badge-2');
+    const queue = addMoments(momentsFromEvents([first]), momentsFromEvents([second, BADGE]));
+    expect(queue.map((moment) => moment.id)).toEqual(['badge-1', 'badge-2', 'badge']);
+  });
 });
 
 describe('useReduceMotion', () => {

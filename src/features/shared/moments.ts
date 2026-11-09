@@ -60,11 +60,14 @@ export function momentsFromEvents(events: readonly EventRow[]): Moment[] {
 
 /**
  * The queue with new moments, most important first. The first of a queue that is already moving
- * is on screen and stays there.
+ * is on screen and stays there. A moment whose id is already queued or on screen is not added
+ * again.
  */
 export function addMoments(queue: readonly Moment[], moments: readonly Moment[]): Moment[] {
   const rank = (moment: Moment) => MOMENT_ORDER.indexOf(moment.kind);
   const [current, ...waiting] = queue;
-  const sorted = [...waiting, ...moments].sort((a, b) => rank(a) - rank(b));
+  const seen = new Set(queue.map((moment) => moment.id));
+  const fresh = moments.filter((moment) => !seen.has(moment.id) && seen.add(moment.id));
+  const sorted = [...waiting, ...fresh].sort((a, b) => rank(a) - rank(b));
   return current === undefined ? sorted : [current, ...sorted];
 }
