@@ -439,6 +439,94 @@ describe('missions step', () => {
     expect(loadOnboardingDraft(db).templateKeys).toHaveLength(5);
   });
 
+  describe('number on the categories', () => {
+    const badgeOf = (category: string) =>
+      screen.queryByTestId(`onboarding-category-${category}-badge`);
+
+    it('counts the chosen templates of each category, and shows none at zero', async () => {
+      const db = createTestDb();
+      saveOnboardingDraft(
+        db,
+        {
+          ...loadOnboardingDraft(db),
+          step: 4,
+          name: 'Claudio',
+          templateKeys: ['drink_water', 'run', 'read_pages'],
+        },
+        NOW,
+      );
+      await openApp(db);
+      await screen.findByText('Continua · 3 di 5');
+
+      expect(within(badgeOf('health')!).getByText('2')).toBeOnTheScreen();
+      expect(within(badgeOf('mind')!).getByText('1')).toBeOnTheScreen();
+      expect(badgeOf('work_study')).not.toBeOnTheScreen();
+      expect(badgeOf('home')).not.toBeOnTheScreen();
+    });
+
+    it('follows the choices, also of a category that is not the one open', async () => {
+      const db = createTestDb();
+      saveOnboardingDraft(
+        db,
+        {
+          ...loadOnboardingDraft(db),
+          step: 4,
+          name: 'Claudio',
+          templateKeys: ['drink_water', 'read_pages'],
+        },
+        NOW,
+      );
+      await openApp(db);
+      await screen.findByText('Continua · 2 di 5');
+
+      await press('onboarding-template-run');
+      expect(within(badgeOf('health')!).getByText('2')).toBeOnTheScreen();
+
+      // The choices of the other categories stay in the list.
+      await press('onboarding-template-read_pages');
+      expect(badgeOf('mind')).not.toBeOnTheScreen();
+    });
+
+    it('is red, overlaps the corner and leaves room not to be clipped by the list', async () => {
+      const db = createTestDb();
+      saveOnboardingDraft(
+        db,
+        { ...loadOnboardingDraft(db), step: 4, name: 'Claudio', theme: 'fantasy' },
+        NOW,
+      );
+      await openApp(db);
+      await screen.findByText('Continua · 3 di 5');
+
+      const style = StyleSheet.flatten(badgeOf('health')!.props.style);
+      expect(style.backgroundColor).toBe(THEMES.fantasy.colors.dangerText);
+      expect(style.position).toBe('absolute');
+      expect(style.top).toBeLessThan(0);
+      expect(style.right).toBeLessThan(0);
+      const room = StyleSheet.flatten(
+        screen.getByTestId('onboarding-categories').props.contentContainerStyle,
+      ).paddingTop;
+      expect(room).toBeGreaterThanOrEqual(-style.top);
+    });
+
+    it('is read with the name of the category', async () => {
+      const db = createTestDb();
+      saveOnboardingDraft(
+        db,
+        {
+          ...loadOnboardingDraft(db),
+          step: 4,
+          name: 'Claudio',
+          templateKeys: ['drink_water', 'run'],
+        },
+        NOW,
+      );
+      await openApp(db);
+      await screen.findByText('Continua · 2 di 5');
+
+      expect(screen.getByRole('button', { name: 'Salute, selezionate: 2' })).toBeOnTheScreen();
+    });
+  });
+
   describe('notice of the limit', () => {
     async function refuseSixth(theme: ThemeKey = 'minimal-chiaro') {
       const db = createTestDb();

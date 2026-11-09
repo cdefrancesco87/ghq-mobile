@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { pressedColour } from '@/theme/contrast';
 import { SHAPES } from '@/theme/shapes';
@@ -11,16 +11,33 @@ import { hitSlopFor } from './touch';
 
 export const CHIP_HEIGHT = 32;
 
+/** How far the number of a chip goes out of it: a list that clips must leave this room. */
+export const CHIP_BADGE_OVERLAP = 6;
+const BADGE_SIZE = 18;
+const BADGE_FONT_SIZE = 11;
+
 export interface ChipProps {
   readonly label: string;
   readonly onPress: () => void;
   readonly testID: string;
   readonly selected?: boolean;
   readonly icon?: IconName;
+  /** A number on the top right corner, as on a notification; none at 0. */
+  readonly badge?: number;
+  /** The name for the screen reader, when the visible label is not enough. */
+  readonly accessibilityLabel?: string;
 }
 
 /** A short choice, 32 high with the touch area of the platform (misure-componenti.md). */
-export function Chip({ label, onPress, testID, selected = false, icon }: ChipProps) {
+export function Chip({
+  label,
+  onPress,
+  testID,
+  selected = false,
+  icon,
+  badge = 0,
+  accessibilityLabel,
+}: ChipProps) {
   const { colors, family } = useTheme();
   const shape = SHAPES[family];
   return (
@@ -29,7 +46,7 @@ export function Chip({ label, onPress, testID, selected = false, icon }: ChipPro
       onPress={onPress}
       hitSlop={hitSlopFor(CHIP_HEIGHT)}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
       style={styles.chip}
     >
@@ -50,6 +67,21 @@ export function Chip({ label, onPress, testID, selected = false, icon }: ChipPro
             <ThemedText variant="label" color={selected ? colors.onPrimary : colors.text}>
               {label}
             </ThemedText>
+            {badge > 0 ? (
+              <View
+                testID={`${testID}-badge`}
+                style={[styles.badge, { backgroundColor: colors.dangerText }]}
+              >
+                <ThemedText
+                  variant="numbers"
+                  color={colors.onPrimary}
+                  allowFontScaling={false}
+                  style={styles.badgeText}
+                >
+                  {badge}
+                </ThemedText>
+              </View>
+            ) : null}
           </>
         );
       }}
@@ -67,4 +99,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  badge: {
+    position: 'absolute',
+    top: -CHIP_BADGE_OVERLAP,
+    right: -CHIP_BADGE_OVERLAP,
+    width: BADGE_SIZE,
+    height: BADGE_SIZE,
+    borderRadius: BADGE_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { fontSize: BADGE_FONT_SIZE, includeFontPadding: false },
 });

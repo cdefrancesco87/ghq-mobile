@@ -417,7 +417,8 @@
       "continue": "Continua · {{count}} di {{max}}",
       "limit": "Massimo {{max}}: potrai aggiungerne altre dopo",
       "disabledReason": "Scegli almeno una missione per continuare",
-      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}"
+      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}",
+      "categoryLabel": "{{name}}, selezionate: {{count}}"
     },
     "notifications": {
       "title": "Vuoi i promemoria?",

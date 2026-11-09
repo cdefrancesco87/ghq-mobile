@@ -417,7 +417,8 @@
       "continue": "Continuer · {{count}} sur {{max}}",
       "limit": "{{max}} au maximum : tu pourras en ajouter d'autres plus tard",
       "disabledReason": "Choisis au moins une mission pour continuer",
-      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}"
+      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}",
+      "categoryLabel": "{{name}}, sélectionnées : {{count}}"
     },
     "notifications": {
       "title": "Tu veux des rappels ?",

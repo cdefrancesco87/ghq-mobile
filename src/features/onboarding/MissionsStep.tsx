@@ -12,7 +12,7 @@ import {
 } from '@/content/templates';
 import { announceOnIos } from '@/features/shared/announce';
 import { Card } from '@/features/shared/Card';
-import { Chip } from '@/features/shared/Chip';
+import { CHIP_BADGE_OVERLAP, Chip } from '@/features/shared/Chip';
 import { Glyph, doneGlyph, emptyGlyph } from '@/features/shared/CompletionControl';
 import { describeFrequency } from '@/features/shared/describeFrequency';
 import { Difficulty } from '@/features/shared/Difficulty';
@@ -97,20 +97,34 @@ export function MissionsStep({
       }
     >
       <ScrollView
+        testID="onboarding-categories"
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.categoriesList}
         contentContainerStyle={styles.categories}
       >
-        {TEMPLATE_CATEGORIES.map((item) => (
-          <Chip
-            key={item}
-            testID={`onboarding-category-${item}`}
-            label={t(`templateCategories.${item}`)}
-            icon={categoryIcon(item)}
-            selected={item === category}
-            onPress={() => setCategory(item)}
-          />
-        ))}
+        {TEMPLATE_CATEGORIES.map((item) => {
+          const label = t(`templateCategories.${item}`);
+          const count = MISSION_TEMPLATES.filter(
+            (template) => template.category === item && selected.includes(template.key),
+          ).length;
+          return (
+            <Chip
+              key={item}
+              testID={`onboarding-category-${item}`}
+              label={label}
+              accessibilityLabel={
+                count === 0
+                  ? undefined
+                  : t('onboarding.missions.categoryLabel', { name: label, count })
+              }
+              icon={categoryIcon(item)}
+              selected={item === category}
+              badge={count}
+              onPress={() => setCategory(item)}
+            />
+          );
+        })}
       </ScrollView>
       <Card style={styles.list}>
         {visible.map((template, index) => (
@@ -168,7 +182,9 @@ function TemplateRow({ template, selected, first, onPress }: TemplateRowProps) {
 }
 
 const styles = StyleSheet.create({
-  categories: { paddingHorizontal: 16, gap: 8 },
+  // The list clips what comes out of it: the room for the numbers does not move the chips.
+  categoriesList: { marginTop: -CHIP_BADGE_OVERLAP },
+  categories: { paddingHorizontal: 16, paddingTop: CHIP_BADGE_OVERLAP, gap: 8 },
   list: { marginHorizontal: 16, paddingVertical: 0 },
   row: {
     minHeight: ROW_MIN_HEIGHT,

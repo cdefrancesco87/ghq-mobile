@@ -417,7 +417,8 @@
       "continue": "Weiter · {{count}} von {{max}}",
       "limit": "Höchstens {{max}}: Du kannst später weitere hinzufügen",
       "disabledReason": "Wähle mindestens eine Mission, um fortzufahren",
-      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}"
+      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}",
+      "categoryLabel": "{{name}}, ausgewählt: {{count}}"
     },
     "notifications": {
       "title": "Möchtest du Erinnerungen?",
