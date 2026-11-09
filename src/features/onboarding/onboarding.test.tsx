@@ -464,7 +464,7 @@ describe('missions step', () => {
       expect(badgeOf('home')).not.toBeOnTheScreen();
     });
 
-    it('follows the choices, also of a category that is not the one open', async () => {
+    it('follows the choices made in each category', async () => {
       const db = createTestDb();
       saveOnboardingDraft(
         db,
@@ -482,7 +482,7 @@ describe('missions step', () => {
       await press('onboarding-template-run');
       expect(within(badgeOf('health')!).getByText('2')).toBeOnTheScreen();
 
-      // The choices of the other categories stay in the list.
+      await press('onboarding-category-mind');
       await press('onboarding-template-read_pages');
       expect(badgeOf('mind')).not.toBeOnTheScreen();
     });
@@ -579,20 +579,21 @@ describe('missions step', () => {
     });
   });
 
-  it('shows the templates of a category and the choices of the others', async () => {
+  it('shows only the templates of the open category, also those chosen elsewhere stay out', async () => {
     const db = createTestDb();
     startAt(db, 4);
     await openApp(db);
     await screen.findByText('Continua · 3 di 5');
     expect(screen.getByTestId('onboarding-template-gym')).toBeOnTheScreen();
-    expect(screen.getByTestId('onboarding-template-meditation')).toBeOnTheScreen();
+    expect(screen.queryByTestId('onboarding-template-meditation')).not.toBeOnTheScreen();
     expect(screen.queryByTestId('onboarding-template-journal')).not.toBeOnTheScreen();
 
     await press('onboarding-category-mind');
 
     expect(screen.getByTestId('onboarding-template-journal')).toBeOnTheScreen();
-    expect(screen.getByTestId('onboarding-template-drink_water')).toBeOnTheScreen();
+    expect(screen.queryByTestId('onboarding-template-drink_water')).not.toBeOnTheScreen();
     expect(screen.queryByTestId('onboarding-template-gym')).not.toBeOnTheScreen();
+    expect(loadOnboardingDraft(db).templateKeys).toContain('drink_water');
   });
 
   it('keeps «Continua» off with no template; «Salta» leaves the recommended ones', async () => {
@@ -602,6 +603,7 @@ describe('missions step', () => {
     await screen.findByText('Continua · 3 di 5');
 
     await press('onboarding-template-drink_water');
+    await press('onboarding-category-mind');
     await press('onboarding-template-read_pages');
     await press('onboarding-template-meditation');
 

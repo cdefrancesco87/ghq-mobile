@@ -34,8 +34,9 @@ export interface MissionsStepProps {
 }
 
 /**
- * The templates of a category and, after them, those already chosen in the other categories, so
- * that the choices stay in sight (mockup D04). Frequency and difficulty change later (1.5).
+ * The templates of a category, with the number chosen in each one on its chip. A choice stays in
+ * its own category, so that a template never leaves the list when it is unchecked. Frequency and
+ * difficulty change later (1.5).
  */
 export function MissionsStep({
   selected,
@@ -61,12 +62,7 @@ export function MissionsStep({
     }
   };
 
-  const visible = [
-    ...MISSION_TEMPLATES.filter((template) => template.category === category),
-    ...MISSION_TEMPLATES.filter(
-      (template) => template.category !== category && selected.includes(template.key),
-    ),
-  ];
+  const visible = MISSION_TEMPLATES.filter((template) => template.category === category);
   const missionsWord = t('lexicon.missions_pl', {
     context: family === 'minimal' ? undefined : family,
   });
