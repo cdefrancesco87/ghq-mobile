@@ -331,6 +331,61 @@ describe('theme step', () => {
     ).toBeOnTheScreen();
   });
 
+  describe('space of the sections', () => {
+    const SLOTS = [
+      'onboarding-title',
+      'theme-caption-name',
+      'theme-caption-tone',
+      'theme-modes',
+    ] as const;
+    const minHeightOf = (testID: string): unknown =>
+      StyleSheet.flatten(screen.getByTestId(testID).props.style).minHeight;
+
+    async function setFontScale(fontScale: number) {
+      await act(async () => {
+        Dimensions.set({
+          window: { width: 390, height: 844, scale: 3, fontScale },
+          screen: { width: 390, height: 844, scale: 3, fontScale },
+        });
+      });
+    }
+
+    afterEach(() => setFontScale(1));
+
+    async function slotsAt(theme: ThemeKey): Promise<unknown[]> {
+      const db = createTestDb();
+      saveOnboardingDraft(db, { ...loadOnboardingDraft(db), step: 3, name: 'Claudio', theme }, NOW);
+      await openApp(db);
+      await screen.findByRole('header', { name: 'Scegli il tema' });
+      const heights = SLOTS.map(minHeightOf);
+      await cleanup();
+      return heights;
+    }
+
+    it('keeps the same height in every theme, so that nothing moves', async () => {
+      const minimal = await slotsAt('minimal-chiaro');
+      expect(minimal.every((height) => typeof height === 'number' && height > 0)).toBe(true);
+      for (const theme of ['arcade', 'fantasy', 'cyberpunk', 'lovecraft'] as const) {
+        expect(await slotsAt(theme)).toEqual(minimal);
+      }
+    });
+
+    it('grows with the text size of the system', async () => {
+      const normal = await slotsAt('arcade');
+      await setFontScale(1.5);
+      const large = await slotsAt('arcade');
+      expect(large).toEqual(normal.map((height) => (height as number) * 1.5));
+    });
+
+    it('does not keep a height for the title of the other steps', async () => {
+      const db = createTestDb();
+      startAt(db, 2);
+      await openApp(db);
+      await screen.findByRole('header', { name: 'Come si chiama il tuo eroe?' });
+      expect(minHeightOf('onboarding-title')).toBeUndefined();
+    });
+  });
+
   it('fixes Minimal to light or dark with the chips', async () => {
     const db = createTestDb();
     startAt(db, 3);

@@ -12,9 +12,10 @@ import {
 
 import type { SettingValue } from '@/db/repositories/settings';
 import { SHAPES } from '@/theme/shapes';
+import { MAX_TEXT_SCALE, MAX_TITLE_SCALE, scaledTextHeight } from '@/theme/textScale';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import type { ThemeFamily } from '@/theme/themes';
-import { Chip } from './Chip';
+import { CHIP_HEIGHT, Chip } from './Chip';
 import { CompanionSprite } from './CompanionSprite';
 import { Glyph, emptyGlyph } from './CompletionControl';
 import { Frame } from './Frame';
@@ -38,6 +39,13 @@ const CARD_MIN_HEIGHT = 340;
 const CARD_GAP = 12;
 const EGG_SIZE = 64;
 const DOT_SIZE = 8;
+// Fonts and line counts change with the theme, so the sections under the cards keep one height:
+// the tallest of the themes on Android (the name in Manrope 17, two lines of tone in Chakra Petch
+// 16), and the row of chips even when only Minimal shows them.
+const CAPTION_NAME_HEIGHT = 26;
+const CAPTION_TONE_HEIGHT = 58;
+const MODES_PADDING_TOP = 8;
+const MODES_HEIGHT = CHIP_HEIGHT + MODES_PADDING_TOP;
 
 function familyOf(theme: ThemeSetting): ThemeFamily {
   return theme.startsWith('minimal') ? 'minimal' : (theme as ThemeFamily);
@@ -58,7 +66,7 @@ export interface ThemeCarouselProps {
 export function ThemeCarousel({ value, onChange, heroName }: ThemeCarouselProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const family = familyOf(value);
@@ -136,10 +144,24 @@ export function ThemeCarousel({ value, onChange, heroName }: ThemeCarouselProps)
         ))}
       </ScrollView>
       <View style={styles.caption}>
-        <ThemedText variant="sectionTitle" style={styles.centered}>
+        <ThemedText
+          testID="theme-caption-name"
+          variant="sectionTitle"
+          style={[
+            styles.centered,
+            { minHeight: scaledTextHeight(CAPTION_NAME_HEIGHT, fontScale, MAX_TITLE_SCALE) },
+          ]}
+        >
           {t(`shared.themeCarousel.themes.${family}.name`)}
         </ThemedText>
-        <ThemedText color={colors.textMuted} style={styles.centered}>
+        <ThemedText
+          testID="theme-caption-tone"
+          color={colors.textMuted}
+          style={[
+            styles.centered,
+            { minHeight: scaledTextHeight(CAPTION_TONE_HEIGHT, fontScale, MAX_TEXT_SCALE) },
+          ]}
+        >
           {t(`shared.themeCarousel.themes.${family}.tone`)}
         </ThemedText>
       </View>
@@ -158,19 +180,25 @@ export function ThemeCarousel({ value, onChange, heroName }: ThemeCarouselProps)
           />
         ))}
       </View>
-      {family === 'minimal' ? (
-        <View style={styles.modes}>
-          {MINIMAL_MODES.map(({ theme, mode }) => (
-            <Chip
-              key={mode}
-              testID={`theme-mode-${mode}`}
-              label={t(`shared.themeCarousel.modes.${mode}`)}
-              selected={value === theme}
-              onPress={() => chooseMode(theme)}
-            />
-          ))}
-        </View>
-      ) : null}
+      <View
+        testID="theme-modes"
+        style={[
+          styles.modes,
+          { minHeight: scaledTextHeight(MODES_HEIGHT, fontScale, MAX_TEXT_SCALE) },
+        ]}
+      >
+        {family === 'minimal'
+          ? MINIMAL_MODES.map(({ theme, mode }) => (
+              <Chip
+                key={mode}
+                testID={`theme-mode-${mode}`}
+                label={t(`shared.themeCarousel.modes.${mode}`)}
+                selected={value === theme}
+                onPress={() => chooseMode(theme)}
+              />
+            ))
+          : null}
+      </View>
     </View>
   );
 }
@@ -237,5 +265,5 @@ const styles = StyleSheet.create({
   centered: { textAlign: 'center' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 4 },
   dot: { width: DOT_SIZE, height: DOT_SIZE, borderRadius: DOT_SIZE / 2 },
-  modes: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: 8 },
+  modes: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: MODES_PADDING_TOP },
 });

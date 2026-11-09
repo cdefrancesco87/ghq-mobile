@@ -21,6 +21,8 @@ import { OnboardingStep, StepButton } from './OnboardingStep';
 
 /** Steps 1 and 2 are in Minimal; from here on the flow takes the chosen theme (design 1.1). */
 const FIRST_THEMED_STEP = 3;
+/** The tallest title of the themes on Android (Chakra Petch 22): the step does not move. */
+const THEME_TITLE_HEIGHT = 40;
 
 /**
  * The five steps of the first launch (design-sezioni.md 1.1). Every choice goes into the draft at
@@ -79,6 +81,7 @@ export function OnboardingFlow() {
           <OnboardingStep
             name="theme"
             title={t('onboarding.theme.title')}
+            titleMinHeight={THEME_TITLE_HEIGHT}
             onBack={() => update({ step: 2 })}
             onSkip={() => update({ step: 4, theme: SETTING_DEFAULTS.theme })}
             footer={

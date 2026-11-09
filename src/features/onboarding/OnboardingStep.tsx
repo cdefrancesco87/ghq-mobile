@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -15,6 +16,7 @@ import { Button, type ButtonProps } from '@/features/shared/Button';
 import { Icon } from '@/features/shared/Icon';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
+import { MAX_TITLE_SCALE, scaledTextHeight } from '@/theme/textScale';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export const STEP_NAMES = ['language', 'name', 'theme', 'missions', 'notifications'] as const;
@@ -34,6 +36,8 @@ export interface OnboardingStepProps {
   /** Under the indicator; a step that scrolls under its title writes it in `children`. */
   readonly title: string;
   readonly titleAlign?: 'center' | 'left';
+  /** The height kept for the title, on a step where its font can change. */
+  readonly titleMinHeight?: number;
   /** Shows the back arrow (from step 2). */
   readonly onBack?: () => void;
   /** Shows «Salta», which leaves the default choice. */
@@ -50,6 +54,7 @@ export function OnboardingStep({
   name,
   title,
   titleAlign = 'center',
+  titleMinHeight,
   onBack,
   onSkip,
   footer,
@@ -59,6 +64,7 @@ export function OnboardingStep({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { top, bottom } = useSafeAreaInsets();
+  const { fontScale } = useWindowDimensions();
   const position = STEP_NAMES.indexOf(name) + 1;
   const stepLabel = t('onboarding.stepLabel', {
     step: position,
@@ -138,13 +144,23 @@ export function OnboardingStep({
         keyboardShouldPersistTaps="handled"
       >
         {art === undefined ? null : <View style={styles.art}>{art}</View>}
-        <ThemedText
-          variant="screenTitle"
-          accessibilityRole="header"
-          style={[styles.title, { textAlign: titleAlign }]}
+        <View
+          testID="onboarding-title"
+          style={[
+            styles.title,
+            titleMinHeight === undefined
+              ? null
+              : { minHeight: scaledTextHeight(titleMinHeight, fontScale, MAX_TITLE_SCALE) },
+          ]}
         >
-          {title}
-        </ThemedText>
+          <ThemedText
+            variant="screenTitle"
+            accessibilityRole="header"
+            style={{ textAlign: titleAlign }}
+          >
+            {title}
+          </ThemedText>
+        </View>
         {children}
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(bottom, 16) }]}>{footer}</View>
@@ -171,7 +187,7 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   bodyContent: { paddingVertical: 16, gap: 16 },
   art: { alignItems: 'center', paddingTop: 16 },
-  title: { paddingHorizontal: 16 },
+  title: { paddingHorizontal: 16, justifyContent: 'center' },
   footer: { paddingHorizontal: 20, paddingTop: 8, gap: 4 },
   mainButton: { minHeight: CONTINUE_HEIGHT },
 });
