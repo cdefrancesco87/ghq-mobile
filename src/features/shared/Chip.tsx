@@ -18,6 +18,8 @@ const BADGE_SIZE = 20;
 const BADGE_FONT_SIZE = 11;
 /** In Cyberpunk the number is hard to read at the size of the other themes. */
 const BADGE_FONT_SIZE_CYBERPUNK = 14;
+/** Press Start 2P stays sharp only at even sizes (`textScale.ts`). */
+const BADGE_FONT_SIZE_ARCADE = 10;
 /**
  * How far to move the number so that its figure sits in the centre: a font leaves it off centre by
  * its own metrics. Measured on the figures 1 to 5 of each font, at the sizes above; `xOne` is for
@@ -95,7 +97,11 @@ export function Chip({
                     styles.badgeText,
                     {
                       fontSize:
-                        family === 'cyberpunk' ? BADGE_FONT_SIZE_CYBERPUNK : BADGE_FONT_SIZE,
+                        family === 'cyberpunk'
+                          ? BADGE_FONT_SIZE_CYBERPUNK
+                          : family === 'arcade'
+                            ? BADGE_FONT_SIZE_ARCADE
+                            : BADGE_FONT_SIZE,
                       transform: [
                         {
                           translateX:

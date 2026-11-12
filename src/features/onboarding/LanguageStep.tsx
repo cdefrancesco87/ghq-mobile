@@ -48,7 +48,7 @@ export function LanguageStep({ onContinue }: { readonly onContinue: () => void }
               onPress={() => choose(language)}
               accessibilityRole="radio"
               accessibilityLabel={LANGUAGE_NAMES[language]}
-              accessibilityState={{ selected: language === selected }}
+              accessibilityState={{ checked: language === selected }}
               style={[
                 styles.row,
                 index === 0 ? null : { borderTopWidth: 1, borderTopColor: colors.border },

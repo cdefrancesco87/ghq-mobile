@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, type ComponentRef, type ReactNode, type Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AccessibilityInfo,
@@ -46,6 +46,8 @@ export interface OnboardingStepProps {
   readonly footer: ReactNode;
   /** Above the title, in the centre: logo or companion. */
   readonly art?: ReactNode;
+  /** The scrolling body, for a step that brings its content back into view. */
+  readonly bodyRef?: Ref<ComponentRef<typeof ScrollView>>;
   readonly children?: ReactNode;
 }
 
@@ -59,6 +61,7 @@ export function OnboardingStep({
   onSkip,
   footer,
   art,
+  bodyRef,
   children,
 }: OnboardingStepProps) {
   const { t } = useTranslation();
@@ -139,6 +142,7 @@ export function OnboardingStep({
         ))}
       </View>
       <ScrollView
+        ref={bodyRef}
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
         keyboardShouldPersistTaps="handled"

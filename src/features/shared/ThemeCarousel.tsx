@@ -222,7 +222,7 @@ function ThemeCard({ family, heroName, width, selected, onPress }: ThemeCardProp
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityLabel={t(`shared.themeCarousel.themes.${family}.description`)}
-      accessibilityState={{ selected }}
+      accessibilityState={{ checked: selected }}
       style={[styles.card, { width }]}
     >
       <Frame

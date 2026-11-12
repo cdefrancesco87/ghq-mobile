@@ -60,6 +60,7 @@ export function MissionsStep({
   const toast = useUndoToast();
   const { width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
+  const body = useRef<ComponentRef<typeof ScrollView>>(null);
   const pages = useRef<ComponentRef<typeof ScrollView>>(null);
   const chips = useRef<ComponentRef<typeof ScrollView>>(null);
   const chipLayouts = useRef<Partial<Record<TemplateCategory, { x: number; width: number }>>>({});
@@ -67,9 +68,12 @@ export function MissionsStep({
   // While a tap brings a category into view, the categories it passes are not opened.
   const pressedIndex = useRef<number | null>(null);
 
-  // The chip of the open category stays in view, as near the centre as the row allows.
+  // The chip of the open category stays in view, as near the centre as the row allows. The pages
+  // are as tall as the longest category, so the step goes back to the top: a short category would
+  // otherwise open above the screen.
   const open = (next: TemplateCategory) => {
     setCategory(next);
+    body.current?.scrollTo({ y: 0, animated: !reduceMotion });
     const chip = chipLayouts.current[next];
     if (chip !== undefined) {
       const centred = chip.x + chip.width / 2 - width / 2;
@@ -114,6 +118,7 @@ export function MissionsStep({
   return (
     <OnboardingStep
       name="missions"
+      bodyRef={body}
       title={t('onboarding.missions.title', {
         min: MIN_TEMPLATES,
         max: MAX_TEMPLATES,

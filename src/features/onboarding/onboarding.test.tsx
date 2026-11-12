@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { act, cleanup, fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
-import { AccessibilityInfo, BackHandler, Dimensions, StyleSheet } from 'react-native';
+import { AccessibilityInfo, BackHandler, Dimensions, ScrollView, StyleSheet } from 'react-native';
 
 import { getLanguage, getSetting, setSetting } from '@/db/repositories/settings';
 import { hasProfile, loadOnboardingDraft, saveOnboardingDraft } from '@/db/repositories/onboarding';
@@ -192,13 +192,13 @@ describe('language step', () => {
     const db = createTestDb();
     await openApp(db);
     await screen.findByRole('header', { name: 'Scegli la lingua' });
-    expect(screen.getByTestId('onboarding-language-it')).toBeSelected();
+    expect(screen.getByTestId('onboarding-language-it')).toBeChecked();
 
     await press('onboarding-language-en');
 
     expect(await screen.findByRole('header', { name: 'Choose your language' })).toBeOnTheScreen();
     expect(screen.getByText('Continue')).toBeOnTheScreen();
-    expect(screen.getByTestId('onboarding-language-en')).toBeSelected();
+    expect(screen.getByTestId('onboarding-language-en')).toBeChecked();
     expect(getLanguage(db, [])).toBe('en');
   });
 });
@@ -272,7 +272,7 @@ describe('theme step', () => {
     startAt(db, 3);
     await openApp(db);
     await screen.findByRole('header', { name: 'Scegli il tema' });
-    expect(screen.getByTestId('theme-card-minimal')).toBeSelected();
+    expect(screen.getByTestId('theme-card-minimal')).toBeChecked();
     expect(screen.getByTestId('theme-mode-automatic')).toBeOnTheScreen();
 
     await fireEvent.scroll(screen.getByTestId('theme-carousel'), {
@@ -284,7 +284,7 @@ describe('theme step', () => {
     });
 
     expectBackground('arcade');
-    expect(screen.getByTestId('theme-card-arcade')).toBeSelected();
+    expect(screen.getByTestId('theme-card-arcade')).toBeChecked();
     expect(screen.queryByTestId('theme-mode-automatic')).not.toBeOnTheScreen();
     expect(loadOnboardingDraft(db).theme).toBe('arcade');
   });
@@ -528,7 +528,21 @@ describe('missions step', () => {
       expect(contrastRatio(BADGE_TEXT, BADGE_FILL)).toBeGreaterThanOrEqual(4.5);
     });
 
-    it.each(['minimal-chiaro', 'arcade', 'fantasy', 'lovecraft'] as const)(
+    it('writes the number at an even size in arcade, where the pixel font stays sharp', async () => {
+      const db = createTestDb();
+      saveOnboardingDraft(
+        db,
+        { ...loadOnboardingDraft(db), step: 4, name: 'Claudio', theme: 'arcade' },
+        NOW,
+      );
+      await openApp(db);
+      await screen.findByText(/3 di 5/i);
+
+      const number = within(badgeOf('mind')!).getByText('2');
+      expect(StyleSheet.flatten(number.props.style).fontSize).toBe(10);
+    });
+
+    it.each(['minimal-chiaro', 'fantasy', 'lovecraft'] as const)(
       'keeps the small number in %s',
       async (theme) => {
         const db = createTestDb();
@@ -638,6 +652,22 @@ describe('missions step', () => {
       await swipeTo(0);
       expectOpen('Salute');
       expect(screen.getByTestId('onboarding-template-gym')).toBeOnTheScreen();
+    });
+
+    it('brings the chips back into view when the category changes', async () => {
+      // The pages are as tall as the longest category: a short one would open above the screen.
+      const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo');
+      await openStep();
+      scrollTo.mockClear();
+
+      await press('onboarding-category-home');
+      expect(scrollTo).toHaveBeenCalledWith({ y: 0, animated: true });
+
+      scrollTo.mockClear();
+      await swipeTo(3);
+      await swipeTo(2);
+      expect(scrollTo).toHaveBeenCalledWith({ y: 0, animated: true });
+      scrollTo.mockRestore();
     });
 
     it('does not open the categories a tap passes on its way', async () => {
