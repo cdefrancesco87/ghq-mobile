@@ -1,12 +1,20 @@
 import { Stack } from 'expo-router';
 import { act, cleanup, fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
-import { AccessibilityInfo, BackHandler, Dimensions, ScrollView, StyleSheet } from 'react-native';
+import {
+  AccessibilityInfo,
+  AppState,
+  BackHandler,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 
 import { getLanguage, getSetting, setSetting } from '@/db/repositories/settings';
 import { hasProfile, loadOnboardingDraft, saveOnboardingDraft } from '@/db/repositories/onboarding';
 import { missions } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { DRAFT_SAVE_DELAY_MS } from '@/features/onboarding/OnboardingFlow';
 import { UNDO_TOAST_MS } from '@/features/shared/UndoToast';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
@@ -204,6 +212,8 @@ describe('language step', () => {
 });
 
 describe('name step', () => {
+  afterEach(() => jest.useRealTimers());
+
   it('keeps «Continua» off with an empty name, and says why', async () => {
     const db = createTestDb();
     startAt(db, 2, '');
@@ -245,14 +255,81 @@ describe('name step', () => {
     await openApp(db);
     await screen.findByRole('header', { name: 'Come si chiama il tuo eroe?' });
 
+    jest.useFakeTimers();
     await fireEvent.changeText(screen.getByTestId('onboarding-name'), 'x'.repeat(25));
+    await act(async () => jest.advanceTimersByTime(DRAFT_SAVE_DELAY_MS));
 
     expect(screen.getByTestId('onboarding-name').props.value).toHaveLength(20);
     expect(loadOnboardingDraft(db).name).toHaveLength(20);
   });
+
+  describe('saving the name', () => {
+    async function typeName(db: Db) {
+      startAt(db, 2, '');
+      await openApp(db);
+      await screen.findByRole('header', { name: 'Come si chiama il tuo eroe?' });
+      jest.useFakeTimers();
+      for (const name of ['C', 'Cl', 'Cla']) {
+        await fireEvent.changeText(screen.getByTestId('onboarding-name'), name);
+        await act(async () => jest.advanceTimersByTime(DRAFT_SAVE_DELAY_MS - 1));
+      }
+    }
+
+    it('waits for a pause in the typing before saving it', async () => {
+      const db = createTestDb();
+      await typeName(db);
+
+      expect(screen.getByTestId('onboarding-name').props.value).toBe('Cla');
+      expect(loadOnboardingDraft(db).name).toBe('');
+
+      await act(async () => jest.advanceTimersByTime(1));
+      expect(loadOnboardingDraft(db).name).toBe('Cla');
+    });
+
+    it.each([
+      ['«Continua»', 'onboarding-continue', 3],
+      ['the back arrow', 'onboarding-back', 1],
+    ])('saves it at once with %s, and the wait is over', async (_, testID, step) => {
+      const db = createTestDb();
+      await typeName(db);
+
+      await press(testID);
+      expect(loadOnboardingDraft(db)).toMatchObject({ step, name: 'Cla' });
+
+      // A save still waiting would bring the flow back to step 2.
+      await act(async () => jest.advanceTimersByTime(DRAFT_SAVE_DELAY_MS));
+      expect(loadOnboardingDraft(db)).toMatchObject({ step, name: 'Cla' });
+    });
+
+    it('saves it at once when the app goes to the background', async () => {
+      // Already a mock in the setup of React Native: only its calls are read.
+      const addListener = jest.spyOn(AppState, 'addEventListener');
+      addListener.mockClear();
+      const db = createTestDb();
+      await typeName(db);
+
+      await act(async () => {
+        for (const [type, listener] of addListener.mock.calls) {
+          if (type === 'change') {
+            listener('background');
+          }
+        }
+      });
+
+      expect(loadOnboardingDraft(db).name).toBe('Cla');
+    });
+  });
 });
 
 describe('theme step', () => {
+  afterEach(() => jest.useRealTimers());
+
+  /** The theme in the draft, once the carousel has paused (needs fake timers). */
+  async function savedTheme(db: Db) {
+    await act(async () => jest.advanceTimersByTime(DRAFT_SAVE_DELAY_MS));
+    return loadOnboardingDraft(db).theme;
+  }
+
   it('uses Minimal on steps 1 and 2 and the chosen theme from step 3', async () => {
     const db = createTestDb();
     saveOnboardingDraft(db, { ...loadOnboardingDraft(db), step: 2, theme: 'fantasy' }, NOW);
@@ -272,6 +349,7 @@ describe('theme step', () => {
     startAt(db, 3);
     await openApp(db);
     await screen.findByRole('header', { name: 'Scegli il tema' });
+    jest.useFakeTimers();
     expect(screen.getByTestId('theme-card-minimal')).toBeChecked();
     expect(screen.getByTestId('theme-mode-automatic')).toBeOnTheScreen();
 
@@ -286,7 +364,9 @@ describe('theme step', () => {
     expectBackground('arcade');
     expect(screen.getByTestId('theme-card-arcade')).toBeChecked();
     expect(screen.queryByTestId('theme-mode-automatic')).not.toBeOnTheScreen();
-    expect(loadOnboardingDraft(db).theme).toBe('arcade');
+    // The draft waits for the carousel to stop.
+    expect(loadOnboardingDraft(db).theme).toBe('minimal');
+    expect(await savedTheme(db)).toBe('arcade');
   });
 
   it('does not choose the cards a tap passes on its way to the centre', async () => {
@@ -294,6 +374,7 @@ describe('theme step', () => {
     startAt(db, 3);
     await openApp(db);
     await screen.findByRole('header', { name: 'Scegli il tema' });
+    jest.useFakeTimers();
     const carousel = screen.getByTestId('theme-carousel');
     const interval = Math.round(Dimensions.get('window').width * 0.65) + 12;
     const scrollTo = (x: number) =>
@@ -306,18 +387,18 @@ describe('theme step', () => {
       });
 
     await press('theme-card-fantasy');
-    expect(loadOnboardingDraft(db).theme).toBe('fantasy');
+    expect(await savedTheme(db)).toBe('fantasy');
 
     await scrollTo(3 * interval);
     await scrollTo(2 * interval);
-    expect(loadOnboardingDraft(db).theme).toBe('fantasy');
+    expect(await savedTheme(db)).toBe('fantasy');
 
     await scrollTo(interval);
-    expect(loadOnboardingDraft(db).theme).toBe('fantasy');
+    expect(await savedTheme(db)).toBe('fantasy');
 
     // The tap has arrived: scrolling chooses again.
     await scrollTo(2 * interval);
-    expect(loadOnboardingDraft(db).theme).toBe('cyberpunk');
+    expect(await savedTheme(db)).toBe('cyberpunk');
   });
 
   it('shows the name just written, the egg and two sample missions in every card', async () => {
@@ -395,12 +476,13 @@ describe('theme step', () => {
     startAt(db, 3);
     await openApp(db);
     await screen.findByRole('header', { name: 'Scegli il tema' });
+    jest.useFakeTimers();
 
     await press('theme-mode-dark');
 
     expectBackground('minimal-scuro');
     expect(screen.getByTestId('theme-mode-dark')).toBeSelected();
-    expect(loadOnboardingDraft(db).theme).toBe('minimal-scuro');
+    expect(await savedTheme(db)).toBe('minimal-scuro');
   });
 
   it('with «Salta» goes back to the default theme', async () => {
