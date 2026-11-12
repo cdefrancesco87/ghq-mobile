@@ -305,7 +305,7 @@ Stato: **approvata da Claudio il 30/10, con le scelte ★**. Obiettivo di design
 ### 2.4 Boss in corso
 
   - Scheda compatta: sprite del boss (48), nome dell'obiettivo, barra della vita del boss con numero, «Passi 3 di 8», prossimo passo con il suo controllo, giorni alla scadenza.
-  - Il prossimo passo si completa da qui con un tocco, con avviso e Annulla.
+  - Il prossimo passo si completa da qui con un tocco, con avviso e Annulla. L'ultimo passo, che dà la vittoria, non ha Annulla (12/11).
   - La scadenza diventa colore pericolo con icona quando mancano 3 giorni o meno.
   - ★ Con più boss attivi (fino a 3) la scheda scorre in orizzontale con indicatori a punti, partendo dal boss con la scadenza più vicina. In alternativa si mostra solo quello più vicino con «+2 altri».
   - Senza boss attivi: una riga «Trasforma un obiettivo in un boss» che porta a Obiettivi. Nei primi giorni qui compare la quest di partenza con i suoi 3 passi.
@@ -722,7 +722,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★ e le modifiche su umori 
 ### 6.14 Racconto della giornata (Should, 12/11)
 
   - **Fumetto del mattino.** Alla prima apertura della giornata di gioco, in Oggi, sotto la scheda dell'eroe e prima del Piano del giorno, il compagno (nella posa del suo umore) parla con un fumetto di al massimo due frasi: la prima su ieri, con i numeri in grassetto (es. «Ieri **4 missioni su 5** e **20 danni** a Glitch-Lord!»); la seconda è un incoraggiamento per oggi. Il fumetto entra con la stessa animazione del tocco sul compagno (6.4) e si chiude con un tocco ovunque sul fumetto o con la X; non torna fino a domani. Toccare il compagno dopo riporta le frasi normali di 6.4.
-  - **Situazioni**, in ordine di priorità quando ne valgono più d'una: Ritorno dalla pausa, Ritorno dopo assenza (2 o più giorni senza aprire l'app), Serie record (ieri la serie dell'eroe ha superato il suo massimo), Boss sconfitto ieri, Giornata piena, Giornata parziale, Giornata vuota, Giorno di riposo. Per ogni situazione c'è un insieme di frasi su ieri; l'incoraggiamento per oggi è un insieme a parte, uguale per tutte le situazioni. L'app sceglie a caso evitando le ultime 3 frasi usate.
+  - **Situazioni**, in ordine di priorità quando ne valgono più d'una: Ritorno dalla pausa, Ritorno dopo assenza (2 o più giorni senza aprire l'app), Serie record (ieri la serie dell'eroe ha superato il suo massimo), Boss sconfitto ieri, Giornata piena, Giornata parziale, Giornata vuota, Giorno di riposo. Serie record scatta solo il giorno in cui la serie supera per la prima volta il record che c'era all'inizio della serie, e solo se quel record era di almeno 3 giorni (12/11). Per ogni situazione c'è un insieme di frasi su ieri; l'incoraggiamento per oggi è un insieme a parte, uguale per tutte le situazioni. L'app sceglie a caso evitando le ultime 3 frasi usate per la stessa situazione e voce; se sono recenti tutte, usa quella usata meno di recente (12/11).
   - **Tono.** Segue il tema (lessico e voce del compagno: Pixel, Rocky, Glitchy, Lumin, Cloudy) e l'umore, che si vede dalla posa dello sprite; le frasi del mattino hanno una variante per umore (felice, normale, triste), decisa da Claudio il 12/11; quelle della sera no. Giornata vuota e Ritorno dopo assenza incoraggiano e non rimproverano mai, come in 6.4.
   - **Quando non compare:** il primo giorno d'uso (non c'è un ieri), durante la pausa generale, se ieri l'app non prevedeva nulla e non era giorno di riposo (nessuna missione ancora creata).
   - **Riepilogo serale.** La notifica di 11.5 è firmata dal compagno: titolo «Cloudy» (nome del compagno) e testo con la sua voce, es. «Ti mancano 2 missioni, c'è ancora tempo». Tre situazioni: Tutto fatto, Mancano alcune missioni (con i nomi, come in 11.5), Nessuna ancora fatta.
@@ -1071,7 +1071,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: tr
 3.  Cambio di livello di gioco con foglio di conferma (★) o immediato con Annulla.
 4.  Cambi della giornata validi da domani (★) o subito.
 5.  Impostazioni sobrie in tutti i temi (★) o decorate come il resto.
-5.  Pausa generale: inizio scelto dal calendario, anche oggi; le serie non sono protette (Claudio, 12/11).
+6.  Pausa generale: inizio scelto dal calendario, anche oggi; le serie non sono protette (Claudio, 12/11).
 
 
 ## 11. Promemoria e notifiche
@@ -1110,7 +1110,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★ e due modifiche (solo ic
 
 ### 11.5 Riepilogo serale
 
-  - Titolo nel tono del tema (es. «La sera cala sul regno» in Fantasy, «Fine turno» in Cyberpunk), testo con le missioni ancora da fare: al massimo 3 per nome, poi «e altre 2».
+  - Titolo: il nome del compagno (6.14, 12/11), testo con le missioni ancora da fare: al massimo 3 per nome, poi «e altre 2».
   - Il tono è sempre un invito, mai un rimprovero: «Ti mancano 2 missioni, c'è ancora tempo».
   - Se tutte le missioni del giorno sono fatte, arriva un breve complimento nel tono del tema al posto dell'elenco (es. «Giornata completa\! Il regno festeggia» in Fantasy). Deciso da Claudio il 30/10.
   - Il testo è scritto con la voce del compagno e firmato col suo nome; situazioni e testi in 6.14 (12/11). Durante la pausa generale il riepilogo non parte.
