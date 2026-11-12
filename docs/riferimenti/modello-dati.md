@@ -162,7 +162,7 @@ Serve a tre cose: rende la chiusura idempotente (un giorno già chiuso non si ri
 
 ### 3.10 Impostazioni (`settings`)
 
-Tabella chiave-valore: `key`, `value` (JSON), `updated_at`. Ogni chiave ha uno schema Zod nel codice (`language`, `theme`, `game_mode`, `day_change`, `week_start`, `rest_days`, `quiet_hours`, `evening_summary`, `reduce_motion`, `colorblind`, `backup`, `general_pause` = `{ from_day, until_day | null }` della pausa in corso (12/11), `tale` = `{ shown_day, recent }` per il fumetto del mattino…). I cambi della giornata valgono da domani (scelta 10.4 del design): la chiave `day_change` contiene sia il valore attuale sia `{ next, from_day }`.
+Tabella chiave-valore: `key`, `value` (JSON), `updated_at`. Ogni chiave ha uno schema Zod nel codice (`language`, `theme`, `game_mode`, `day_change`, `week_start`, `rest_days`, `quiet_hours`, `evening_summary`, `reduce_motion`, `colorblind`, `backup`, `general_pause` = `{ from_day, until_day | null }` della pausa in corso o programmata, `null` senza pausa (12/11; `until_day` compreso), `tale` = `{ shown_day, last_open_day, recent }` per il fumetto del mattino…). I cambi della giornata valgono da domani (scelta 10.4 del design): la chiave `day_change` contiene sia il valore attuale sia `{ next, from_day }`.
 
 Perché nel database e non in MMKV: un solo file da salvare nel backup e da ripristinare, e lo store Zustand delle impostazioni si carica da qui all'avvio.
 
@@ -194,7 +194,7 @@ Perché nel database e non in MMKV: un solo file da salvare nel backup e da ripr
 | --- | --- |
 | Missioni | `mission.created`, `mission.updated`, `mission.paused`, `mission.resumed`, `mission.archived`, `mission.restored`, `mission.deleted` |
 | Completamenti | `mission.completed`, `mission.progressed` (valore parziale), `mission.skipped`, `mission.backfilled`, `event.reverted` (annulla) |
-| Giornata | `day.closed` (vita persa, scudo usato), `bonus.full_day`, `bonus.plan`, `pause.started`, `pause.ended` (giorni di pausa, scadenze dei boss spostate) |
+| Giornata | `day.closed` (vita persa, scudo usato), `bonus.full_day`, `bonus.plan`, `pause.started`, `pause.ended` (giorni di pausa, scadenze dei boss spostate; `cancelled: true` se annullata prima dell'inizio) |
 | Boss | `boss.created`, `boss.step_done`, `boss.damaged`, `boss.defeated`, `boss.deadline_missed` (monete rubate), `boss.archived` |
 | Eroe e compagno | `hero.level_up`, `hero.exhausted`, `hero.renamed`, `companion.stage_up`, `companion.gift` |
 | Negozio | `item.bought`, `item.used`, `shield.consumed`, `reward.redeemed`, `badge.unlocked`; lo scudo della vittoria sta nei delta di `boss.defeated` |

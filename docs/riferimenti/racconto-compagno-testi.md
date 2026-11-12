@@ -35,6 +35,8 @@ Le frasi del mattino (1–9) hanno una variante per umore: felice, normale, tris
 
 ## Segnaposto ammessi
 
+Nomi italiani per chi scrive i testi; nel codice si usano quelli inglesi indicati in «Regole di scrittura».
+
 `{{eroe}}`, `{{compagno}}`, `{{fatte}}`, `{{previste}}`, `{{serie}}`, `{{boss}}`, `{{danno}}`, `{{giorni}}` (assenza o pausa), `{{mancanti}}` (sera, già formattato come in 11.5), `{{n}}` (missioni che mancano). Il lessico del tema (monete, vita, boss…) va preso da `lessico-v2.json`, non scritto a mano. Le frasi con un numero hanno le forme singolare e plurale di i18next (`_one`, `_other`).
 
 ## Regole di scrittura
@@ -42,10 +44,10 @@ Le frasi del mattino (1–9) hanno una variante per umore: felice, normale, tris
 - Al massimo 120 caratteri per frase in italiano; i numeri vanno tra `**` per il grassetto.
 - Mai rimproveri, mai «hai mancato»: le situazioni 2, 7 e 12 invitano, come in 6.4 e 11.5.
 - Situazione 4 e frasi con `{{danno}}` o monete non si usano in Essenziale.
-- Chiavi: `racconto.<voce>.<situazione>.<umore>.<n>` al mattino, `racconto.<voce>.<situazione>.<n>` la sera, nei file di lessico per lingua.
+- Chiavi in inglese, come il resto del codice: `tale.<voice>.<situation>.<mood>.<n>` al mattino, `tale.<voice>.<situation>.<n>` la sera, nei file di lessico per lingua. Segnaposto nel codice: eroe → `{{hero}}`, compagno → `{{companion}}`, fatte → `{{done}}`, previste → `{{scheduled}}`, serie → `{{streak}}`, boss → `{{boss}}`, danno → `{{damage}}`, giorni → `{{days}}`, mancanti → `{{missing}}`, n → `{{count}}`.
 
 ## Ordine proposto
 
 1. Italiano (660 frasi), da far scrivere in un thread a parte e far rivedere a Claudio.
 2. Inglese, poi tedesco, francese e spagnolo in bozza (scelta minore 7 di `CLAUDE.md`).
-3. Nel frattempo il task T91 lavora con una frase per situazione e voce in italiano e inglese.
+3. Nel frattempo il task T91 lavora con una frase per situazione, voce e umore in tutte le lingue (de, fr, es copiate dall'inglese).

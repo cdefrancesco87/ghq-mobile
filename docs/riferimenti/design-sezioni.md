@@ -724,7 +724,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★ e le modifiche su umori 
   - **Riepilogo serale.** La notifica di 11.5 è firmata dal compagno: titolo «Cloudy» (nome del compagno) e testo con la sua voce, es. «Ti mancano 2 missioni, c'è ancora tempo». Tre situazioni: Tutto fatto, Mancano alcune missioni (con i nomi, come in 11.5), Nessuna ancora fatta.
   - **Modalità Essenziale:** il fumetto resta, senza danni al boss né monete nel testo; le situazioni Boss sconfitto non si usano.
   - **Accessibilità:** il fumetto si legge «Cloudy dice: …» dopo la scheda dell'eroe, senza prendere il fuoco; con Riduci movimento compare con una dissolvenza.
-  - I testi da scrivere sono elencati in `design/racconto-compagno-testi.md`.
+  - I testi da scrivere sono elencati in `racconto-compagno-testi.md` (in `design/` nella cartella di progetto, in `docs/riferimenti/` nel repo).
 
 ### 6.15 Scelte da approvare (12/11)
 
@@ -767,8 +767,8 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: sp
 
   - Nel gruppo Le tue ricompense: le ricompense create dall'utente, in ordine di prezzo, e per ultima la scheda tratteggiata «+ Nuova ricompensa». Senza ricompense il gruppo mostra solo questa scheda con l'esempio «Es. Un episodio della tua serie».
   - Scheda della ricompensa nella stessa griglia degli articoli: icona a linea `icona-regalo` (lotto 1; i regali del compagno usano invece gli sprite del lotto 8) con da 1 a 4 pallini per l'entità, nome (al massimo 2 righe), entità, prezzo con l'icona della moneta (solo il prezzo, senza giorni: Claudio, 12/11). Monete insufficienti: «Ti mancano 40 monete», come per gli articoli.
-  - Creazione in un foglio: nome (obbligatorio, fino a 40 caratteri) ed entità con 4 chip (Piccola, Media, Grande, Epica), ognuno con il suo prezzo. Il prezzo non si modifica a mano: viene dalla configurazione (`xp-e-monete.md`, proposta prezzi).
-  - Riscatto: il tocco apre un foglio di conferma con nome, prezzo, saldo dopo e «Riscatta per 200»; dopo, le monete scendono con un conteggio, una breve festa del tema (1 secondo, la stessa del completamento in grande) e l'avviso «Goditi: Un episodio della tua serie». Il riscatto va nel registro. La ricompensa resta disponibile per i riscatti successivi.
+  - Creazione in un foglio: nome (obbligatorio, fino a 40 caratteri) ed entità con 4 chip (Piccola, Media, Grande, Epica), ognuno con il suo prezzo. Il prezzo non si modifica a mano: viene dalla configurazione (prezzi approvati il 12/11, scelta minore 22 di `CLAUDE.md`).
+  - Riscatto: il tocco apre un foglio di conferma con nome, prezzo, saldo dopo e «Riscatta per 250»; dopo, le monete scendono con un conteggio, una breve festa del tema (1 secondo, la stessa del completamento in grande) e l'avviso «Goditi: Un episodio della tua serie». Il riscatto va nel registro. La ricompensa resta disponibile per i riscatti successivi.
   - Menu della scheda (pressione lunga o «…»): Modifica (nome ed entità; il nuovo prezzo vale dai riscatti successivi) ed Elimina con dialogo; i riscatti passati restano nel registro.
   - Nessun limite al numero di ricompense; la griglia carica le schede man mano che si scorre (Claudio, 12/11).
   - Le ricompense non vanno nell'Inventario: si riscattano e basta.
@@ -1014,7 +1014,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: tr
   - Primo giorno della settimana: lunedì o domenica, preso dal telefono all'inizio.
   - Giorni di riposo: 7 cerchi con l'iniziale, nessuno scelto di default; sotto «Nei giorni di riposo nessuna missione è prevista e la serie è al sicuro».
   - ★ Ogni cambio della giornata vale da domani, e la riga lo dice («Dal 31 ottobre»), così la giornata in corso non cambia regole a metà. In alternativa vale subito.
-  - **Pausa generale** (Should, 12/11): ultima riga del gruppo, con valore «No», «Fino al 20 nov» o «Senza data». Apre un foglio con: una frase su cosa succede («Le missioni non tolgono vita, l'umore del compagno resta fermo, promemoria e riepilogo serale tacciono, le scadenze dei boss si spostano in avanti. La serie invece conta: completa almeno una missione al giorno per non interromperla.»), un calendario con data di inizio e data di fine (fine facoltativa, ultimo giorno di pausa compreso; Claudio, 12/11), e il pulsante «Inizia la pausa». La pausa può iniziare oggi o in una data futura; prima dell'inizio la riga mostra «Dal 20 nov» (Claudio, 12/11).
+  - **Pausa generale** (Should, 12/11): ultima riga del gruppo, con valore «No», «Fino al 20 nov» o «Senza data». Apre un foglio con: una frase su cosa succede («Le missioni non tolgono vita, i giorni senza completamenti non abbassano l'umore del compagno, promemoria e riepilogo serale tacciono, le scadenze dei boss si spostano in avanti. La serie invece conta: completa almeno una missione al giorno per non interromperla.»), un calendario con data di inizio e data di fine (fine facoltativa, ultimo giorno di pausa compreso; Claudio, 12/11), e il pulsante «Inizia la pausa». La pausa può iniziare oggi o in una data futura; prima dell'inizio la riga mostra «Dal 20 nov» (Claudio, 12/11).
   - Durante la pausa lo stesso foglio mostra la data di fine con «Cambia» e il pulsante «Riprendi» (stesso dialogo di Oggi, 2.8).
   - In Essenziale la riga resta.
 
