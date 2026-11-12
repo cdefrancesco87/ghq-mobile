@@ -1,6 +1,6 @@
 # Mockup di GHQ Mobile · riferimenti per Claude Code
 
-Consegna dei lotti 0–8 del design (08/11). Questi file dicono **come deve apparire** ogni schermata; il **comportamento** resta in `docs/riferimenti/design-sezioni.md` e in `analisi-funzionale.md`. Se mockup e testo si contraddicono, segnalalo nel resoconto del task e segui il testo, tranne dove sotto è scritto altrimenti.
+Consegna dei lotti 0–8 del design (08/11). Questi file dicono **come deve apparire** ogni schermata; il **comportamento** resta in `docs/riferimenti/design-sezioni.md` e in `analisi-funzionale.md`. Se mockup e testo si contraddicono, vale la regola «Which source wins» di `CLAUDE.md` (decisa da Claudio il 12/11): vince la decisione esplicita più recente; a parità di data il comportamento segue i testi, l'aspetto segue i mockup, misure e colori seguono `temi.json` e `misure-componenti.md`, testi e lessico seguono i file di lessico. Segnala il conflitto nel resoconto del task.
 
 ## Cosa c'è
 | Cartella | Contenuto | Come si chiamano i file |

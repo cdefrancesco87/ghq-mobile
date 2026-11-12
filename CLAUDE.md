@@ -84,5 +84,16 @@ These hold until Claudio decides otherwise. Every constant goes in `src/rules/co
 20. **Confirmed by Claudio**: undo refused if the coins to be returned are already spent; boss theft from the day after the deadline, once per deadline; `tz_offset` in minutes east of UTC also in the log; `paused_until` is the first day of being active again; `theme` = `minimal` means automatic Minimal; evening summary on at 21:00; `week_start` integer 1–7 (1 = Monday); `hero.created` event.
 22. **Personal reward prices**: small 100, medium 250, large 600, epic 1500 coins; no limit on the number of rewards; the app shows only the price. Approved by Claudio on 12/11.
 23. **General pause** (12/11): on pause days no health is lost, no shield is consumed, the boss neither steals nor warns, and no reminders or evening summary are sent; streaks follow the normal rules (a day with no completions breaks them); "N times a week" quests require N − 1 for each pause day (minimum 0) and, if N reaches 0, that week their streak neither grows nor breaks, as with "Skip today"; a pause day with no completions does not count for the mood, while a completion during the pause counts as usual (choice 13). When the pause ends, only the boss deadlines falling on or after the first pause day are moved forward. `general_pause.until_day` is the last pause day, inclusive, while a quest's `paused_until` is the first day of being active again. This also applies to choices 8 and 11.
+24. **Status bar and Android system buttons** (gap L23, approved by Claudio on 12/11): light icons on the dark themes (Arcade, Cyberpunk, Lovecraft, Minimal dark), dark icons on Fantasy and Minimal light; the window background is the theme's `sfondo`.
 
-- Design: before every screen task, read docs/mockup/LEGGIMI.md and the frames cited in the task (the mockups take precedence over design-sezioni.md).
+## Which source wins (decided by Claudio on 12/11)
+
+Before every screen task, read `docs/mockup/LEGGIMI.md` and the frames cited in the task. When documents, mockups and lexicon disagree:
+
+1. **The most recent explicit decision wins** on the point it covers: a minor choice above, an approved row of `registro-decisioni.md`, a dated section of `design-sezioni.md`, the "decisions taken during the lots" in `LEGGIMI.md` and in the intro of `docs/backlog-schermate.md`. Rows marked "(Claude, da approvare)" or "Proposta" are not decisions.
+2. **With the same date, or when a date is missing**, it depends on what the conflict is about:
+   - rules and behaviour (what happens, flows, states, priorities, accessibility): `analisi-funzionale.md` > `design-sezioni.md` > mockups; a mockup never adds a feature or changes a rule;
+   - appearance (layout, order and presence of the elements, theme variants): mockups (08/11) > `design-sezioni.md`;
+   - sizes, colours and fonts: `temi.json` and `misure-componenti.md`, never the mockup pixels;
+   - texts and lexicon: lexicon files (`temi.json`, `lessico-v2.json`, `src/i18n/`) > `design-sezioni.md` > mockups (mockup texts are invented placeholders).
+3. Write every conflict and the choice made in the backlog journal; if it touches a game rule, mark the task `[!]`.
