@@ -10,7 +10,7 @@ import {
 import { appendEvent, type EventType } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
 import { buyItem } from '@/db/repositories/shop';
-import { undoEvent } from '@/db/repositories/undo';
+import { undoEvent, UndoRefusedError, type UndoRefusal } from '@/db/repositories/undo';
 import { boss, companion, events, hero, missionDays, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
 
@@ -43,6 +43,19 @@ function adjustHero(db: Db, deltas: { xp?: number; coins?: number; hp?: number }
     gameDay: '2026-11-05',
     deltas: change.deltas,
   });
+}
+
+/** Why the undo was refused, which the screen tells in words. */
+function refusalOf(undo: () => unknown): UndoRefusal | 'not_refused' {
+  try {
+    undo();
+  } catch (error) {
+    if (error instanceof UndoRefusedError) {
+      return error.reason;
+    }
+    throw error;
+  }
+  return 'not_refused';
 }
 
 function heroRow(db: Db) {
@@ -149,7 +162,8 @@ describe('undoEvent', () => {
     const db = newGame(['journal']);
     const completed = complete(db, missionId(db, 'journal'));
     const totals = heroRow(db);
-    expect(() => undoEvent(db, completed, clockAt(7, 10))).toThrow(RangeError);
+    expect(() => undoEvent(db, completed, clockAt(7, 10))).toThrow(UndoRefusedError);
+    expect(refusalOf(() => undoEvent(db, completed, clockAt(7, 10)))).toBe('day_changed');
     expect(heroRow(db)).toEqual(totals);
   });
 
@@ -159,7 +173,7 @@ describe('undoEvent', () => {
     const completed = complete(db, missionId(db, 'journal'));
     buyItem(db, 'potion', LATER);
     expect(db.select().from(hero).get()?.coins).toBe(2);
-    expect(() => undoEvent(db, completed, LATER)).toThrow(RangeError);
+    expect(refusalOf(() => undoEvent(db, completed, LATER))).toBe('coins_spent');
     expect(db.select().from(hero).get()?.coins).toBe(2);
     expect(db.select().from(missionDays).all()).toHaveLength(1);
     expectHeroMatchesLog(db);
@@ -169,7 +183,7 @@ describe('undoEvent', () => {
     const db = newGame(['journal', 'healthy_meal']);
     const completed = complete(db, missionId(db, 'journal'));
     undoEvent(db, completed, LATER);
-    expect(() => undoEvent(db, completed, LATER)).toThrow(RangeError);
+    expect(refusalOf(() => undoEvent(db, completed, LATER))).toBe('already_undone');
     expect(() => undoEvent(db, 'missing', LATER)).toThrow(RangeError);
     skipMission(db, { missionId: missionId(db, 'healthy_meal'), reason: 'rest', ...NOW });
     expect(() => undoEvent(db, lastEvent(db, 'mission.skipped').id, LATER)).toThrow(RangeError);

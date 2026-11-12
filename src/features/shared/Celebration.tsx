@@ -79,6 +79,8 @@ export interface CelebrationRequest {
   readonly origin: Point;
   /** Where the coins fly: the hero card; the top of the screen when missing. */
   readonly target?: Point;
+  /** What the screen reader says (design 2.11); the gains when missing. */
+  readonly label?: string;
 }
 
 interface CelebrationApi {
@@ -380,13 +382,14 @@ function GainChip({
   const gain = t('shared.celebration.xp', { xp, xpTerm });
   const coinGain = t('shared.celebration.coins', { coins });
   const label =
-    coins > 0
+    burst.label ??
+    (coins > 0
       ? t('shared.celebration.label', {
           gain,
           coins,
           coinsTerm: t('lexicon.coins_pl', { context: family }),
         })
-      : gain;
+      : gain);
 
   useEffect(() => announceOnIos(label), [label]);
 

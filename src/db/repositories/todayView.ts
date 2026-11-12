@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
 
 import { COMPANION_STAGES, moodFor, type CompanionStage, type Mood } from '../../rules/companion';
+import { completionDeltas } from '../../rules/completion';
 import { addDays, weekday } from '../../rules/gameDay';
 import { xpToNext } from '../../rules/level';
 import type { GameDay } from '../../rules/types';
@@ -12,6 +13,7 @@ import {
   dayPlan,
   events,
   missionDays,
+  missionReminders,
   missions as missionsTable,
 } from '../schema';
 import type { Db } from '../types';
@@ -35,6 +37,12 @@ export interface TodayMission {
   readonly value: number | null;
   /** A task due before today and not done yet («Scaduta», CLAUDE.md choice 10). */
   readonly overdue: boolean;
+  /** `HH:MM` of the earliest reminder, the time of the mission in the list. */
+  readonly time: string | null;
+  /** The XP a completion gives now (streak multiplier, exhausted day). */
+  readonly xp: number;
+  /** The `mission.completed` event of today not undone, for «Annulla completamento». */
+  readonly completionEventId: string | null;
 }
 
 export interface TodayBoss {
@@ -73,7 +81,10 @@ export interface TodayView {
     readonly name: string | null;
     readonly mood: Mood;
   };
-  /** In the order of `listTodayMissions`. */
+  /**
+   * In the order of the list (design-sezioni.md 2.5): overdue tasks, then the missions with a
+   * time by time, then the others in the order of `listTodayMissions`.
+   */
   readonly missions: readonly TodayMission[];
   /** Ids of the priorities of the day, in their order. */
   readonly plan: readonly string[];
@@ -166,6 +177,76 @@ function notices(db: Db, day: GameDay, exhaustedDay: GameDay | null): TodayNotic
   };
 }
 
+/** The earliest reminder time of each mission. */
+function missionTimes(db: Db, ids: readonly string[]): Map<string, string> {
+  const times = new Map<string, string>();
+  const rows = db
+    .select({ missionId: missionReminders.missionId, time: missionReminders.time })
+    .from(missionReminders)
+    .where(inArray(missionReminders.missionId, ids))
+    .all();
+  for (const { missionId, time } of rows) {
+    const earliest = times.get(missionId);
+    if (time !== null && (earliest === undefined || time < earliest)) {
+      times.set(missionId, time);
+    }
+  }
+  return times;
+}
+
+/** The last completion of each mission on the day that no undo has taken back. */
+function completionEvents(db: Db, day: GameDay): Map<string, string> {
+  const completed = db
+    .select({ id: events.id, missionId: events.missionId })
+    .from(events)
+    .where(and(eq(events.type, 'mission.completed'), eq(events.gameDay, day)))
+    .orderBy(asc(events.seq))
+    .all();
+  if (completed.length === 0) {
+    return new Map();
+  }
+  const reverted = new Set(
+    db
+      .select({ revertsId: events.revertsId })
+      .from(events)
+      .where(
+        and(
+          eq(events.type, 'event.reverted'),
+          inArray(
+            events.revertsId,
+            completed.map((event) => event.id),
+          ),
+        ),
+      )
+      .all()
+      .map((row) => row.revertsId),
+  );
+  const byMission = new Map<string, string>();
+  for (const event of completed) {
+    if (event.missionId !== null && !reverted.has(event.id)) {
+      byMission.set(event.missionId, event.id);
+    }
+  }
+  return byMission;
+}
+
+/** Overdue tasks first, then by time, then the missions without a time (design 2.5). */
+function listOrder(a: TodayMission, b: TodayMission): number {
+  if (a.overdue !== b.overdue) {
+    return a.overdue ? -1 : 1;
+  }
+  if (a.time === b.time) {
+    return 0;
+  }
+  if (a.time === null) {
+    return 1;
+  }
+  if (b.time === null) {
+    return -1;
+  }
+  return a.time < b.time ? -1 : 1;
+}
+
 /** The data of Today for the game day of `clock` (US-OGGI-01). */
 export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): TodayView {
   const day = gameDayOf(clock.now, clock.tzOffset, getSetting(db, 'day_change'));
@@ -187,22 +268,41 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
             ),
           )
           .all();
-  const today = list.map((mission): TodayMission => {
-    const row = rows.find((item) => item.missionId === mission.id);
-    const state: TodayMissionState =
-      row?.status === 'done' ? 'done' : row?.status === 'skipped' ? 'skipped' : 'todo';
-    return {
-      mission,
-      state,
-      doneAt: state === 'done' ? (row?.doneAt ?? null) : null,
-      value: row?.value ?? null,
-      overdue:
-        mission.kind === 'task' &&
-        state !== 'done' &&
-        mission.dueDay !== null &&
-        mission.dueDay < day,
-    };
-  });
+  const times =
+    list.length === 0
+      ? new Map<string, string>()
+      : missionTimes(
+          db,
+          list.map((m) => m.id),
+        );
+  const completions = completionEvents(db, day);
+  const today = list
+    .map((mission): TodayMission => {
+      const row = rows.find((item) => item.missionId === mission.id);
+      const state: TodayMissionState =
+        row?.status === 'done' ? 'done' : row?.status === 'skipped' ? 'skipped' : 'todo';
+      return {
+        mission,
+        state,
+        doneAt: state === 'done' ? (row?.doneAt ?? null) : null,
+        value: row?.value ?? null,
+        overdue:
+          mission.kind === 'task' &&
+          state !== 'done' &&
+          mission.dueDay !== null &&
+          mission.dueDay < day,
+        time: times.get(mission.id) ?? null,
+        xp: completionDeltas({
+          difficulty: mission.difficulty,
+          heroStreak: current.streak,
+          exhausted: current.exhaustedDay === day,
+          statPrimary: mission.statPrimary,
+          statSecondary: mission.statSecondary,
+        }).xp,
+        completionEventId: state === 'done' ? (completions.get(mission.id) ?? null) : null,
+      };
+    })
+    .sort(listOrder);
   const doneCount = today.filter((item) => item.state === 'done').length;
   const lastDays = db
     .select({ scheduledCount: daySummaries.scheduledCount, doneCount: daySummaries.doneCount })

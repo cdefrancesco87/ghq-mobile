@@ -22,19 +22,22 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { HeroCard } from './HeroCard';
 import { HeroStickyBar } from './HeroStickyBar';
 import { TodayHeader } from './TodayHeader';
+import { TodayMissions } from './TodayMissions';
 
 const EMPTY_COMPANION_SIZE = 128;
 const CLOSE_ICON = 20;
 
 export interface TodayScreenProps {
   readonly view: TodayView;
+  /** Minutes east of UTC of the phone, for the times of completion. */
+  readonly tzOffset: number;
 }
 
 /**
- * The upper part of Today (design-sezioni.md 2.1, 2.2, 2.8): date and greeting, the notice of the
- * shield, the hero card, and the empty states. Plan, boss and missions come with the next tasks.
+ * Today (design-sezioni.md 2.1, 2.2, 2.5, 2.8): date and greeting, the notice of the shield, the
+ * hero card, the missions of today or the empty states. Plan and boss come with the next tasks.
  */
-export function TodayScreen({ view }: TodayScreenProps) {
+export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
@@ -114,7 +117,9 @@ export function TodayScreen({ view }: TodayScreenProps) {
             actionLabel={t('today.empty.action')}
             onAction={() => router.push('/editor')}
           />
-        ) : null}
+        ) : (
+          <TodayMissions view={view} tzOffset={tzOffset} />
+        )}
       </ScrollView>
       {sticky ? <HeroStickyBar hero={view.hero} xpToNext={view.xpToNext} /> : null}
     </View>

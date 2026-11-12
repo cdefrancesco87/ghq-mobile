@@ -625,6 +625,29 @@
       "title": "Nessuna missione",
       "message": "Crea la prima per cominciare la giornata.",
       "action": "Crea una missione"
+    },
+    "missions": {
+      "title": "{{term}} di oggi",
+      "doneGroup": "Fatte ({{count}})",
+      "detailTime": "{{detail}} · {{time}}",
+      "overdueYesterday": "Scaduta ieri",
+      "overdueOn": "Scaduta il {{day}} {{month}}",
+      "completed": "{{name}} completata, più {{xp}} {{xpTerm}}",
+      "completedCoins": "{{name}} completata, più {{xp}} {{xpTerm}} e {{coins}} {{coinsTerm}}",
+      "doneToast": "Fatto",
+      "menu": {
+        "undo": "Annulla completamento",
+        "addToPlan": "Aggiungi alle priorità",
+        "edit": "Modifica",
+        "progress": "Andamento"
+      },
+      "errors": {
+        "dayChanged": "La giornata è cambiata: il completamento non si può più annullare.",
+        "coinsSpent": "Le monete di questo completamento sono già state spese: non si può annullare.",
+        "alreadyUndone": "Il completamento è già stato annullato.",
+        "planFull": "Ci sono già 3 priorità: togline una per aggiungerne un'altra.",
+        "failed": "Qualcosa non ha funzionato. Riprova."
+      }
     }
   }
 }

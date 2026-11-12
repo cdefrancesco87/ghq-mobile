@@ -625,6 +625,29 @@
       "title": "Aucune mission",
       "message": "Crée la première pour commencer la journée.",
       "action": "Créer une mission"
+    },
+    "missions": {
+      "title": "{{term}} du jour",
+      "doneGroup": "Faites ({{count}})",
+      "detailTime": "{{detail}} · {{time}}",
+      "overdueYesterday": "En retard depuis hier",
+      "overdueOn": "En retard depuis le {{day}} {{month}}",
+      "completed": "{{name}} terminée, plus {{xp}} {{xpTerm}}",
+      "completedCoins": "{{name}} terminée, plus {{xp}} {{xpTerm}} et {{coins}} {{coinsTerm}}",
+      "doneToast": "Fait",
+      "menu": {
+        "undo": "Annuler la validation",
+        "addToPlan": "Ajouter aux priorités",
+        "edit": "Modifier",
+        "progress": "Évolution"
+      },
+      "errors": {
+        "dayChanged": "La journée a changé : cette validation ne peut plus être annulée.",
+        "coinsSpent": "Les pièces de cette validation sont déjà dépensées : elle ne peut pas être annulée.",
+        "alreadyUndone": "Cette validation a déjà été annulée.",
+        "planFull": "Il y a déjà 3 priorités : retires-en une pour en ajouter une autre.",
+        "failed": "Un problème est survenu. Réessaie."
+      }
     }
   }
 }

@@ -37,6 +37,14 @@ export function loadHero(tx: Db): Hero {
   return row;
 }
 
+/** A change that would leave the hero with fewer than 0 coins. */
+export class NotEnoughCoinsError extends RangeError {
+  constructor(coins: number) {
+    super(`Not enough coins: ${coins}`);
+    this.name = 'NotEnoughCoinsError';
+  }
+}
+
 /** Applies XP, coins, hit points and stat points to the hero and returns what was applied. */
 export function changeHero(tx: Db, deltas: Partial<Deltas>, now: number): HeroChange {
   const current = loadHero(tx);
@@ -44,7 +52,7 @@ export function changeHero(tx: Db, deltas: Partial<Deltas>, now: number): HeroCh
   const hp = applyHp(current.hp, deltas.hp ?? 0);
   const coins = current.coins + (deltas.coins ?? 0);
   if (coins < 0) {
-    throw new RangeError(`Not enough coins: ${current.coins}`);
+    throw new NotEnoughCoinsError(current.coins);
   }
   tx.update(hero)
     .set({
