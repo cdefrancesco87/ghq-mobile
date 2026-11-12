@@ -125,6 +125,8 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 | 12/11 | (Claude) Backlog: task T88–T92 in fase 6; ricompense personali tolte dal T86 | Sono Should; il T86 resta solo regali (Could) | sviluppo/aggiunta-backlog-12-11.md |
 | 12/11 | Design delle 4 funzioni approvato con modifiche: pausa con calendario inizio e fine e serie non protette; scudo anche dalla quest di partenza; varianti per umore nelle frasi del mattino (3.300 frasi) e 3 situazioni in più; ricompense dopo gli Aiuti, senza limite (lista caricata a pezzi), solo prezzo; prezzi 100, 250, 600, 1.500 | Scelte una per una da Claudio | design/aggiunte-12-11.md |
 | 12/11 | Pausa generale: ogni giorno di pausa riduce di 1 le missioni «N volte a settimana» (minimo 0); se N arriva a 0 la serie della missione quella settimana non cresce e non si interrompe; un completamento in pausa rende felice il compagno, i giorni vuoti in pausa non abbassano l'umore. Con le correzioni del controllo di Claude Code (scelta minore 23) | Incoerenze trovate da Claude Code nel repo | CLAUDE.md scelte 12, 22, 23; backlog T88–T92 |
+| 12/11 | Quale fonte vince: la decisione esplicita più recente; a parità di data decide il tipo di contenuto (comportamento → testi, aspetto → mockup, misure → temi.json/misure-componenti, testi → lessico) | Conflitti tra documenti, mockup e lessico durante il loop | CLAUDE.md «Quale fonte vince», LEGGIMI dei mockup, backlog |
+| 12/11 | Barra di stato per tema (L23) approvata; task T38b subito dopo T38 | Lacuna L23 | CLAUDE.md scelta 24, design-sezioni A11.3, backlog T38b |
 
 ## In attesa di decisione
 

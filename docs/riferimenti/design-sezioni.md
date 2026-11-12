@@ -174,7 +174,7 @@ Il lessico della proposta precedente resta valido. Propongo questi nomi per i te
 
 ### A11. Regole di dettaglio
 
-Approvate da Claudio l'08/11 (lacune L03 e L04). Le altre regole di dettaglio (L02, L05, L09–L17, L23–L24) restano da approvare e verranno aggiunte qui.
+Approvate da Claudio l'08/11 (lacune L03 e L04). Le altre regole di dettaglio (L02, L05, L09–L17, L24) restano da approvare e verranno aggiunte qui.
 
 **A11.1 Testo molto grande (L03).**
 
@@ -192,6 +192,10 @@ Approvate da Claudio l'08/11 (lacune L03 e L04). Le altre regole di dettaglio (L
   - Titolo del Profilo: «PLAYER 1», «Scheda dell'eroe», «Dossier», «Diario dell'investigatore», «Profilo». Titolo di Statistiche: «HIGH SCORE» in Arcade, «Statistiche» negli altri.
   - Titolo di Modifica: «Modifica» + il nome del tema al singolare (es. «Modifica impresa»).
   - Titolo «Missioni di oggi»: plurale di `missioni` + «di oggi» (es. «Imprese di oggi»). Da confermare nei frame.
+
+**A11.3 Barra di stato (L23, approvata il 12/11).**
+
+  - Barra di stato e tasti di sistema di Android: icone chiare sui temi scuri (Arcade, Cyberpunk, Lovecraft, Minimal scuro), scure su Fantasy e Minimal chiaro; il fondo della finestra è lo `sfondo` del tema.
 
 
 ## 1. Primo avvio
