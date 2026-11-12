@@ -626,6 +626,20 @@
       "message": "Erstelle die erste, um den Tag zu beginnen.",
       "action": "Aufgabe erstellen"
     },
+    "plan": {
+      "countLabel": "{{count}} von {{max}} Prioritäten",
+      "intro": "Wähle bis zu {{max}} Prioritäten, mit denen du anfängst: Alle zu erledigen bringt +{{xp}} {{xpTerm}}.",
+      "add": "Priorität wählen",
+      "sealLabel": "Alle Prioritäten erledigt, plus {{xp}} {{xpTerm}}",
+      "completedLabel": "{{label}}. Alle Prioritäten erledigt, plus {{xp}} {{xpTerm}}",
+      "picker": {
+        "title": "Priorität wählen",
+        "subtitle": "{{term}} von heute, noch offen",
+        "none": "Außer den Prioritäten ist heute nichts mehr offen.",
+        "full": "Du hast schon {{max}} Prioritäten: Entferne eine.",
+        "chooseFirst": "Wähle zuerst einen Eintrag aus der Liste."
+      }
+    },
     "missions": {
       "title": "{{term}} von heute",
       "doneGroup": "Erledigt ({{count}})",
@@ -638,6 +652,7 @@
       "menu": {
         "undo": "Erledigung rückgängig machen",
         "addToPlan": "Zu den Prioritäten hinzufügen",
+        "removeFromPlan": "Aus den Prioritäten entfernen",
         "edit": "Bearbeiten",
         "progress": "Verlauf"
       },

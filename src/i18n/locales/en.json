@@ -626,6 +626,20 @@
       "message": "Create the first one to start the day.",
       "action": "Create a quest"
     },
+    "plan": {
+      "countLabel": "{{count}} of {{max}} priorities",
+      "intro": "Choose up to {{max}} priorities to start from: finishing them all is worth +{{xp}} {{xpTerm}}.",
+      "add": "Choose a priority",
+      "sealLabel": "All priorities done, plus {{xp}} {{xpTerm}}",
+      "completedLabel": "{{label}}. All priorities done, plus {{xp}} {{xpTerm}}",
+      "picker": {
+        "title": "Choose a priority",
+        "subtitle": "Today's {{term}} still to do",
+        "none": "Nothing else is left to do today outside the priorities.",
+        "full": "You already have {{max}} priorities: remove one.",
+        "chooseFirst": "Choose an item of the list first."
+      }
+    },
     "missions": {
       "title": "Today's {{term}}",
       "doneGroup": "Done ({{count}})",
@@ -638,6 +652,7 @@
       "menu": {
         "undo": "Undo completion",
         "addToPlan": "Add to priorities",
+        "removeFromPlan": "Remove from priorities",
         "edit": "Edit",
         "progress": "Progress"
       },

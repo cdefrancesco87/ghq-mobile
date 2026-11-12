@@ -1,138 +1,40 @@
-import { useRouter } from 'expo-router';
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View, type GestureResponderEvent } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import type { TodayMission, TodayView } from '@/db/repositories/todayView';
-import { ActionSheet, type ActionSheetItem } from '@/features/shared/ActionSheet';
+import type { TodayView } from '@/db/repositories/todayView';
 import { Card } from '@/features/shared/Card';
-import { describeFrequency } from '@/features/shared/describeFrequency';
 import { Icon } from '@/features/shared/Icon';
-import { categoryIcon, ICON_NAMES, type IconName } from '@/features/shared/icons';
 import { MissionRow } from '@/features/shared/MissionRow';
 import { ThemedText } from '@/features/shared/ThemedText';
-import { addDays } from '@/rules/gameDay';
 import { useTheme } from '@/theme/ThemeProvider';
-import { useMissionActions } from './useMissionActions';
-
-const MINUTE_MS = 60_000;
-
-/** «8:00» from `08:00`, in the way of the language. */
-function formatClock(time: string, language: string): string {
-  const [hours, minutes] = time.split(':').map(Number);
-  return new Intl.DateTimeFormat(language, {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(2000, 0, 1, hours, minutes)));
-}
-
-/** «07:42»: the local time of a UTC instant, with the offset of the phone. */
-function formatInstant(instant: number, tzOffset: number, language: string): string {
-  return new Intl.DateTimeFormat(language, {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  }).format(new Date(instant + tzOffset * MINUTE_MS));
-}
-
-function missionIcon({ iconKey, categoryKey }: TodayMission['mission']): IconName {
-  return iconKey !== null && (ICON_NAMES as readonly string[]).includes(iconKey)
-    ? (iconKey as IconName)
-    : categoryIcon(categoryKey);
-}
-
-/** Where the touch was, for the celebration; the centre of the screen in the tests. */
-function originOf(event: GestureResponderEvent | undefined) {
-  return { x: event?.nativeEvent?.pageX ?? 0, y: event?.nativeEvent?.pageY ?? 0 };
-}
+import { missionIcon, originOf, useMissionTexts } from './missionText';
+import type { MissionActions } from './useMissionActions';
+import type { MissionMenu } from './useMissionMenu';
 
 export interface TodayMissionsProps {
   readonly view: TodayView;
   /** Minutes east of UTC, for the times of completion. */
   readonly tzOffset: number;
+  readonly actions: MissionActions;
+  readonly menu: MissionMenu;
 }
 
 /**
  * «Missioni di oggi» (design-sezioni.md 2.5, 2.6): the missions to do, then the group of the
  * done ones, open by default. A touch on the control completes, a long press opens the menu, a
- * touch on the name opens the detail of the mission.
+ * touch on the name opens the detail of the mission. The priorities are only in the Plan (2.3),
+ * but the counter counts them.
  */
-export function TodayMissions({ view, tzOffset }: TodayMissionsProps) {
-  const { t, i18n } = useTranslation();
+export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsProps) {
+  const { t } = useTranslation();
   const { colors, family } = useTheme();
-  const router = useRouter();
-  const actions = useMissionActions();
+  const { detailOf, warningOf, doneTimeOf } = useMissionTexts(view.day, tzOffset);
   const [doneOpen, setDoneOpen] = useState(true);
-  const [menuFor, setMenuFor] = useState<TodayMission | null>(null);
 
-  const todo = view.missions.filter((item) => item.state === 'todo');
-  const done = view.missions.filter((item) => item.state === 'done');
-
-  const openDetail = (item: TodayMission) =>
-    router.push({ pathname: '/stats', params: { missionId: item.mission.id } });
-
-  const menuItems = (item: TodayMission): ActionSheetItem[] => {
-    const items: ActionSheetItem[] = [];
-    const eventId = item.completionEventId;
-    if (eventId !== null) {
-      items.push({
-        key: 'undo',
-        label: t('today.missions.menu.undo'),
-        icon: <Icon name="ripristina" size={20} color={colors.text} />,
-        onPress: () => actions.undo(eventId),
-      });
-    }
-    if (item.state === 'todo' && !view.plan.includes(item.mission.id)) {
-      items.push({
-        key: 'plan',
-        label: t('today.missions.menu.addToPlan'),
-        icon: <Icon name="aggiungi" size={20} color={colors.text} />,
-        onPress: () => actions.addToPlan(item),
-      });
-    }
-    items.push(
-      {
-        key: 'edit',
-        label: t('today.missions.menu.edit'),
-        icon: <Icon name="modifica" size={20} color={colors.text} />,
-        onPress: () => router.push({ pathname: '/editor', params: { missionId: item.mission.id } }),
-      },
-      {
-        key: 'progress',
-        label: t('today.missions.menu.progress'),
-        icon: <Icon name="statistiche" size={20} color={colors.text} />,
-        onPress: () => openDetail(item),
-      },
-    );
-    return items;
-  };
-
-  const detailOf = (item: TodayMission): string => {
-    const { frequency, dueDay } = item.mission;
-    // An overdue task says so in its warning: its due day would repeat it.
-    const detail = item.overdue ? '' : describeFrequency(frequency, t, dueDay);
-    if (item.time === null) {
-      return detail;
-    }
-    const time = formatClock(item.time, i18n.language);
-    return detail === '' ? time : t('today.missions.detailTime', { detail, time });
-  };
-
-  const warningOf = (item: TodayMission): string | undefined => {
-    const { dueDay } = item.mission;
-    if (!item.overdue || dueDay === null) {
-      return undefined;
-    }
-    if (dueDay === addDays(view.day, -1)) {
-      return t('today.missions.overdueYesterday');
-    }
-    const [, month, day] = dueDay.split('-').map(Number);
-    return t('today.missions.overdueOn', { day, month: t(`shared.frequency.month.${month}`) });
-  };
-
-  const rowActions = (item: TodayMission) =>
-    menuItems(item).map(({ key, label, onPress }) => ({ name: key, label, onAction: onPress }));
+  const listed = view.missions.filter((item) => !view.plan.includes(item.mission.id));
+  const todo = listed.filter((item) => item.state === 'todo');
+  const done = listed.filter((item) => item.state === 'done');
 
   const separator = <View style={[styles.separator, { backgroundColor: colors.border }]} />;
 
@@ -173,9 +75,9 @@ export function TodayMissions({ view, tzOffset }: TodayMissionsProps) {
                   xp={item.xp}
                   progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
                   onComplete={(event) => actions.complete(item, originOf(event))}
-                  onPress={() => openDetail(item)}
-                  onLongPress={() => setMenuFor(item)}
-                  actions={rowActions(item)}
+                  onPress={() => menu.openDetail(item)}
+                  onLongPress={() => menu.open(item)}
+                  actions={menu.rowActions(item)}
                 />
               </Fragment>
             );
@@ -212,14 +114,10 @@ export function TodayMissions({ view, tzOffset }: TodayMissionsProps) {
                     name={item.mission.name}
                     difficulty={item.mission.difficulty}
                     detail={detailOf(item)}
-                    doneTime={
-                      item.doneAt === null
-                        ? ''
-                        : formatInstant(item.doneAt, tzOffset, i18n.language)
-                    }
-                    onPress={() => openDetail(item)}
-                    onLongPress={() => setMenuFor(item)}
-                    actions={rowActions(item)}
+                    doneTime={doneTimeOf(item)}
+                    onPress={() => menu.openDetail(item)}
+                    onLongPress={() => menu.open(item)}
+                    actions={menu.rowActions(item)}
                   />
                 </Fragment>
               ))}
@@ -227,13 +125,6 @@ export function TodayMissions({ view, tzOffset }: TodayMissionsProps) {
           ) : null}
         </>
       )}
-      <ActionSheet
-        testID="today-mission-menu"
-        visible={menuFor !== null}
-        onClose={() => setMenuFor(null)}
-        title={menuFor?.mission.name}
-        items={menuFor === null ? [] : menuItems(menuFor)}
-      />
     </View>
   );
 }

@@ -167,7 +167,7 @@ function advanceStarterQuest(tx: Db, clock: ActionClock): void {
 }
 
 /** A bonus of the day given and not taken back by an undo. */
-function bonusGiven(tx: Db, type: DayBonus, day: GameDay): boolean {
+export function bonusGiven(tx: Db, type: DayBonus, day: GameDay): boolean {
   const given = tx
     .select({ id: events.id })
     .from(events)

@@ -3,6 +3,7 @@ import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-librar
 import type { ComponentType } from 'react';
 import { Dimensions } from 'react-native';
 
+import { setDayPlan } from '@/db/repositories/completion';
 import { appendEvent } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
 import { createMission, deleteMission } from '@/db/repositories/missions';
@@ -482,5 +483,114 @@ describe('Today: missions and completion', () => {
     await completeFromScreen(missionId(db, 'journal'));
 
     expect(await screen.findByTestId('moment-level_up')).toBeOnTheScreen();
+  });
+});
+
+describe('Today: plan of the day', () => {
+  const hidden = { includeHiddenElements: true };
+  const heroRow = (db: Db) => db.select().from(hero).get();
+  const planRow = (id: string) => `today-plan-${id}`;
+  const listRow = (id: string) => `today-mission-${id}`;
+  const planIds = (db: Db) =>
+    db
+      .select()
+      .from(dayPlan)
+      .all()
+      .map((item) => item.missionId);
+
+  it('explains the empty plan, then adds a priority from the sheet', async () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const journal = missionId(db, 'journal');
+    const meal = missionId(db, 'healthy_meal');
+    await openToday(db);
+
+    expect(screen.getByRole('header', { name: 'Priorità' })).toBeOnTheScreen();
+    expect(screen.getByTestId('today-plan-intro')).toHaveTextContent(
+      'Scegli fino a 3 priorità da cui iniziare: completarle tutte vale +25 XP.',
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Scegli una priorità' }));
+    expect(screen.getByTestId('today-plan-picker-confirm')).toBeDisabled();
+    expect(screen.getByRole('radio', { name: /journal/, checked: false })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId(`today-plan-picker-${journal}`));
+    await fireEvent.press(screen.getByTestId('today-plan-picker-confirm'));
+
+    expect(planIds(db)).toEqual([journal]);
+    expect(screen.queryByTestId('today-plan-intro')).toBeNull();
+    expect(screen.getByTestId(`${planRow(journal)}-position`)).toHaveTextContent('1');
+    // In the plan only: the list below leaves it out but its counter still counts it.
+    expect(screen.queryByTestId(listRow(journal))).toBeNull();
+    expect(screen.getByTestId(listRow(meal))).toBeOnTheScreen();
+    expect(screen.getByTestId('today-missions-count', hidden)).toHaveTextContent('0 di 2');
+    expect(screen.getByLabelText('1 priorità su 3')).toHaveTextContent('1 di 3');
+  });
+
+  it('removes a priority from the menu of its row', async () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const journal = missionId(db, 'journal');
+    setDayPlan(db, journal, clockAt(FRIDAY, 9));
+    await openToday(db);
+
+    await fireEvent(screen.getByTestId(`${planRow(journal)}-body`), 'longPress');
+    await fireEvent.press(screen.getByTestId('today-mission-menu-unplan'));
+
+    expect(planIds(db)).toEqual([]);
+    expect(screen.queryByTestId(planRow(journal))).toBeNull();
+    expect(screen.getByTestId(listRow(journal))).toBeOnTheScreen();
+    expect(screen.getByTestId('today-plan-intro')).toBeOnTheScreen();
+  });
+
+  it('refuses a fourth priority and says why', async () => {
+    const db = newGame(['journal', 'healthy_meal', 'bed_by_eleven', 'no_social_evening']);
+    const planned = ['journal', 'healthy_meal', 'bed_by_eleven'].map((key) => missionId(db, key));
+    planned.forEach((id) => setDayPlan(db, id, clockAt(FRIDAY, 9)));
+    const fourth = missionId(db, 'no_social_evening');
+    await openToday(db);
+
+    planned.forEach((id, index) =>
+      expect(screen.getByTestId(`${planRow(id)}-position`)).toHaveTextContent(String(index + 1)),
+    );
+    expect(screen.queryByTestId('today-plan-add')).toBeNull();
+    await fireEvent(screen.getByTestId(`${listRow(fourth)}-body`), 'longPress');
+    await fireEvent.press(screen.getByTestId('today-mission-menu-plan'));
+
+    expect(await screen.findByTestId('today-plan-picker-full')).toHaveTextContent(
+      'Hai già 3 priorità: togline una.',
+    );
+    expect(screen.getByRole('radio', { name: /no_social_evening/ })).toBeDisabled();
+    expect(screen.getByTestId('today-plan-picker-confirm')).toBeDisabled();
+    expect(planIds(db)).toEqual(planned);
+  });
+
+  it('gives the bonus with the last priority and takes it back with its undo', async () => {
+    const db = newGame(['journal', 'healthy_meal', 'bed_by_eleven']);
+    const journal = missionId(db, 'journal');
+    const meal = missionId(db, 'healthy_meal');
+    setDayPlan(db, journal, clockAt(FRIDAY, 9));
+    setDayPlan(db, meal, clockAt(FRIDAY, 9));
+    await openToday(db);
+
+    await fireEvent.press(screen.getByTestId(`${planRow(journal)}-control`));
+    expect(screen.queryByTestId('today-plan-seal')).toBeNull();
+    await fireEvent.press(screen.getByTestId(`${planRow(meal)}-control`));
+
+    expect(heroRow(db)).toMatchObject({ xpTotal: 45, coins: 4 });
+    expect(screen.getByTestId('today-plan-seal')).toHaveProp(
+      'accessibilityLabel',
+      'Priorità tutte fatte, più 25 XP',
+    );
+    expect(
+      screen.getByLabelText(/completata, più 10 XP e 2 Monete\. Priorità tutte fatte, più 25 XP$/),
+    ).toBeOnTheScreen();
+    // Done priorities stay in the plan, out of the group of the done missions.
+    expect(screen.getByTestId(planRow(meal))).toHaveTextContent(/fatta alle 10:00/);
+    expect(screen.queryByTestId('today-done-toggle')).toBeNull();
+    expectHeroMatchesLog(db);
+
+    await fireEvent.press(screen.getByTestId('undo-toast-undo'));
+
+    expect(heroRow(db)).toMatchObject({ xpTotal: 10, coins: 2 });
+    expect(screen.queryByTestId('today-plan-seal')).toBeNull();
+    expect(screen.getByTestId(`${planRow(meal)}-position`)).toHaveTextContent('2');
+    expectHeroMatchesLog(db);
   });
 });

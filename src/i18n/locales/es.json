@@ -626,6 +626,20 @@
       "message": "Crea la primera para empezar el día.",
       "action": "Crear una misión"
     },
+    "plan": {
+      "countLabel": "{{count}} de {{max}} prioridades",
+      "intro": "Elige hasta {{max}} prioridades por las que empezar: completarlas todas vale +{{xp}} {{xpTerm}}.",
+      "add": "Elegir una prioridad",
+      "sealLabel": "Todas las prioridades hechas, más {{xp}} {{xpTerm}}",
+      "completedLabel": "{{label}}. Todas las prioridades hechas, más {{xp}} {{xpTerm}}",
+      "picker": {
+        "title": "Elegir una prioridad",
+        "subtitle": "{{term}} de hoy aún por hacer",
+        "none": "Hoy no queda nada más por hacer fuera de las prioridades.",
+        "full": "Ya tienes {{max}} prioridades: quita una.",
+        "chooseFirst": "Elige primero un elemento de la lista."
+      }
+    },
     "missions": {
       "title": "{{term}} de hoy",
       "doneGroup": "Hechas ({{count}})",
@@ -638,6 +652,7 @@
       "menu": {
         "undo": "Deshacer completado",
         "addToPlan": "Añadir a prioridades",
+        "removeFromPlan": "Quitar de prioridades",
         "edit": "Editar",
         "progress": "Evolución"
       },
