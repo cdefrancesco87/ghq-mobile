@@ -1,6 +1,13 @@
 import { contrastRatio } from '@/theme/contrast';
 import temi from '@/theme/temi.json';
-import { TEXT_PAIRS, THEMES, THEME_KEYS, resolveTheme, type ThemeColors } from '@/theme/themes';
+import {
+  TEXT_PAIRS,
+  THEMES,
+  THEME_KEYS,
+  resolveTheme,
+  systemBarStyles,
+  type ThemeColors,
+} from '@/theme/themes';
 
 /** The structure of a value: the same keys and the same kinds of values. */
 function shape(value: unknown): unknown {
@@ -131,4 +138,21 @@ describe('resolveTheme', () => {
     expect(resolveTheme('minimal-scuro', 'light')).toBe('minimal-scuro');
     expect(resolveTheme('fantasy', 'dark')).toBe('fantasy');
   });
+});
+
+describe('systemBarStyles', () => {
+  // CLAUDE.md, choice 24 (L23): light icons on the dark themes, dark icons on the light ones.
+  it.each([
+    ['arcade', 'light', 'dark'],
+    ['cyberpunk', 'light', 'dark'],
+    ['lovecraft', 'light', 'dark'],
+    ['minimal-scuro', 'light', 'dark'],
+    ['fantasy', 'dark', 'light'],
+    ['minimal-chiaro', 'dark', 'light'],
+  ] as const)(
+    'gives %s a %s status bar and a %s navigation bar',
+    (key, statusBar, navigationBar) => {
+      expect(systemBarStyles(THEMES[key])).toEqual({ statusBar, navigationBar });
+    },
+  );
 });

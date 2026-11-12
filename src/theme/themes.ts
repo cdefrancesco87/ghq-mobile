@@ -264,3 +264,20 @@ export function resolveTheme(
   }
   return setting;
 }
+
+export interface SystemBarStyles {
+  /** `expo-status-bar`: `light` writes light icons. */
+  readonly statusBar: 'light' | 'dark';
+  /** `expo-navigation-bar`: `dark` is a dark bar with light buttons, the opposite naming. */
+  readonly navigationBar: 'light' | 'dark';
+}
+
+/**
+ * Status bar and Android system buttons of a theme (CLAUDE.md, choice 24): light icons on a dark
+ * background, dark icons on a light one.
+ */
+export function systemBarStyles(theme: ThemeTokens): SystemBarStyles {
+  return theme.dark
+    ? { statusBar: 'light', navigationBar: 'dark' }
+    : { statusBar: 'dark', navigationBar: 'light' };
+}
