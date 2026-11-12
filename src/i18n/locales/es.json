@@ -598,5 +598,33 @@
     "travel": "Viaje",
     "rest": "Descanso",
     "other": "Otro"
+  },
+  "today": {
+    "progress": "{{done}} de {{total}}",
+    "progressLabel": "Hechas {{done}} de {{total}}",
+    "hero": {
+      "level": "{{term}} {{level}}",
+      "toNext": "{{xp}} {{xpTerm}} para el siguiente",
+      "streak": "{{count}} · {{term}}",
+      "streakLabel_one": "{{term}}: {{count}} día. Abrir las estadísticas",
+      "streakLabel_other": "{{term}}: {{count}} días. Abrir las estadísticas",
+      "coins": "{{count}} · {{term}}",
+      "coinsLabel": "{{count}} {{term}}. Abrir la tienda",
+      "companionLabel": "{{name}}. Abrir su ficha",
+      "exhausted": "{{term}}: {{xpTerm}} a la mitad hasta mañana",
+      "stickyLevel": "Nv {{level}}"
+    },
+    "notices": {
+      "shieldUsed": "El escudo protegió tu racha ayer."
+    },
+    "rest": {
+      "title": "Día de descanso",
+      "message": "Tu racha está a salvo. Hoy no hay misiones."
+    },
+    "empty": {
+      "title": "Ninguna misión",
+      "message": "Crea la primera para empezar el día.",
+      "action": "Crear una misión"
+    }
   }
 }

@@ -598,5 +598,33 @@
     "travel": "Travel",
     "rest": "Rest",
     "other": "Other"
+  },
+  "today": {
+    "progress": "{{done}} of {{total}}",
+    "progressLabel": "Done {{done}} of {{total}}",
+    "hero": {
+      "level": "{{term}} {{level}}",
+      "toNext": "{{xp}} {{xpTerm}} to the next",
+      "streak": "{{count}} · {{term}}",
+      "streakLabel_one": "{{term}}: {{count}} day. Open the statistics",
+      "streakLabel_other": "{{term}}: {{count}} days. Open the statistics",
+      "coins": "{{count}} · {{term}}",
+      "coinsLabel": "{{count}} {{term}}. Open the shop",
+      "companionLabel": "{{name}}. Open its card",
+      "exhausted": "{{term}}: {{xpTerm}} halved until tomorrow",
+      "stickyLevel": "Lv {{level}}"
+    },
+    "notices": {
+      "shieldUsed": "The shield protected your streak yesterday."
+    },
+    "rest": {
+      "title": "Rest day",
+      "message": "Your streak is safe. No quests today."
+    },
+    "empty": {
+      "title": "No quests",
+      "message": "Create the first one to start the day.",
+      "action": "Create a quest"
+    }
   }
 }

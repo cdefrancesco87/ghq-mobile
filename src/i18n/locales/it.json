@@ -598,5 +598,33 @@
     "travel": "Viaggio",
     "rest": "Riposo",
     "other": "Altro"
+  },
+  "today": {
+    "progress": "{{done}} di {{total}}",
+    "progressLabel": "Fatte {{done}} di {{total}}",
+    "hero": {
+      "level": "{{term}} {{level}}",
+      "toNext": "{{xp}} {{xpTerm}} al prossimo",
+      "streak": "{{count}} · {{term}}",
+      "streakLabel_one": "{{term}}: {{count}} giorno. Apri le statistiche",
+      "streakLabel_other": "{{term}}: {{count}} giorni. Apri le statistiche",
+      "coins": "{{count}} · {{term}}",
+      "coinsLabel": "{{count}} {{term}}. Apri il negozio",
+      "companionLabel": "{{name}}. Apri la sua scheda",
+      "exhausted": "{{term}}: {{xpTerm}} dimezzati fino a domani",
+      "stickyLevel": "Lv {{level}}"
+    },
+    "notices": {
+      "shieldUsed": "Lo scudo ha protetto la tua serie ieri."
+    },
+    "rest": {
+      "title": "Giorno di riposo",
+      "message": "La serie è al sicuro. Oggi non ci sono missioni."
+    },
+    "empty": {
+      "title": "Nessuna missione",
+      "message": "Crea la prima per cominciare la giornata.",
+      "action": "Crea una missione"
+    }
   }
 }

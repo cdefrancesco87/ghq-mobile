@@ -131,7 +131,7 @@ describe('first launch', () => {
     expect(await screen.findByRole('header', { name: 'Vuoi i promemoria?' })).toBeOnTheScreen();
     await press('onboarding-enable-notifications');
 
-    expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
+    expect(await screen.findByTestId('today-screen')).toBeOnTheScreen();
     expect(mockRequestPermissions).toHaveBeenCalledTimes(1);
     expect(hasProfile(db)).toBe(true);
     const created = db.select().from(missions).all();
@@ -920,7 +920,7 @@ describe('notifications step', () => {
 
     await press('onboarding-enable-notifications');
 
-    expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
+    expect(await screen.findByTestId('today-screen')).toBeOnTheScreen();
     expect(mockRequestPermissions).toHaveBeenCalledTimes(1);
     expect(hasProfile(db)).toBe(true);
   });
@@ -934,7 +934,7 @@ describe('notifications step', () => {
 
     await press('onboarding-enable-notifications');
 
-    expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
+    expect(await screen.findByTestId('today-screen')).toBeOnTheScreen();
     expect(hasProfile(db)).toBe(true);
   });
 
@@ -948,7 +948,7 @@ describe('notifications step', () => {
 
       await press(testID);
 
-      expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
+      expect(await screen.findByTestId('today-screen')).toBeOnTheScreen();
       expect(mockRequestPermissions).not.toHaveBeenCalled();
       expect(hasProfile(db)).toBe(true);
     },
@@ -986,7 +986,7 @@ describe('resuming', () => {
     await screen.findByRole('header', { name: 'Vuoi i promemoria?' });
     await press('onboarding-not-now');
 
-    expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
+    expect(await screen.findByTestId('today-screen')).toBeOnTheScreen();
     expect(db.select().from(missions).all()).toHaveLength(4);
     expect(getSetting(db, 'theme')).toBe('fantasy');
     expect(useHeroStore.getState().hero?.name).toBe('Claudio');

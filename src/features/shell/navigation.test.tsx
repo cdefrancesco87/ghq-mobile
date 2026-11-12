@@ -82,7 +82,7 @@ describe('navigation', () => {
   it('shows the five tabs of the bar and the [+] with a profile', async () => {
     await openApp(newGame(['drink_water']));
 
-    expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
+    expect(await screen.findByTestId('today-screen')).toBeOnTheScreen();
     // The bar has 5 slots; the [+] in the middle is the 3rd. Stats is a stack route, not a tab.
     expect(tabLabels()).toEqual(['Oggi', 'Abitudini', 'Obiettivi', 'Profilo']);
     expect(screen.getByRole('button', { name: 'Nuova missione' })).toBeOnTheScreen();
@@ -91,7 +91,7 @@ describe('navigation', () => {
 
   it('keeps the tab labels on one line, truncated, with the font scale capped at 1.3', async () => {
     await openApp(newGame(['drink_water']));
-    await screen.findByRole('header', { name: 'Oggi' });
+    await screen.findByTestId('today-screen');
 
     for (const label of ['Oggi', 'Abitudini', 'Obiettivi', 'Profilo']) {
       const text = screen.getAllByText(label).find((node) => node.props.numberOfLines === 1);
@@ -102,7 +102,7 @@ describe('navigation', () => {
 
   it('changes screen from the bar', async () => {
     await openApp(newGame(['drink_water']));
-    await screen.findByRole('header', { name: 'Oggi' });
+    await screen.findByTestId('today-screen');
 
     await fireEvent.press(screen.getByTestId('tab-habits'));
 
@@ -111,7 +111,7 @@ describe('navigation', () => {
 
   it('opens the editor from the [+]', async () => {
     await openApp(newGame(['drink_water']));
-    await screen.findByRole('header', { name: 'Oggi' });
+    await screen.findByTestId('today-screen');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Nuova missione' }));
 
@@ -121,7 +121,8 @@ describe('navigation', () => {
   it('writes the titles in the given language', async () => {
     await openApp(newGame(['drink_water']), { language: 'en' });
 
-    expect(await screen.findByRole('header', { name: 'Today' })).toBeOnTheScreen();
+    // The greeting of Today, with the name of the hero of newGame.
+    expect(await screen.findByRole('header', { name: 'Hi, Claudio' })).toBeOnTheScreen();
   });
 
   it('redirects to the first launch when there is no profile', async () => {
@@ -141,12 +142,12 @@ describe('navigation', () => {
   it('leaves the first launch for Today when the profile exists', async () => {
     await openApp(newGame(['drink_water']), { url: '/onboarding' });
 
-    expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
+    expect(await screen.findByTestId('today-screen')).toBeOnTheScreen();
   });
 
   it('reaches stats as a stack route (not a tab)', async () => {
     await openApp(newGame(['drink_water']));
-    await screen.findByRole('header', { name: 'Oggi' });
+    await screen.findByTestId('today-screen');
 
     await act(() => router.push('/stats'));
     expect(await screen.findByRole('header', { name: 'Statistiche' })).toBeOnTheScreen();
@@ -154,7 +155,7 @@ describe('navigation', () => {
 
   it('has a placeholder for companion, shop and settings', async () => {
     await openApp(newGame(['drink_water']));
-    await screen.findByRole('header', { name: 'Oggi' });
+    await screen.findByTestId('today-screen');
 
     for (const [path, title] of [
       ['/companion', 'Compagno'],

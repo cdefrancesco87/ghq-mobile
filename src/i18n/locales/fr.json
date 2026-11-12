@@ -598,5 +598,33 @@
     "travel": "Voyage",
     "rest": "Repos",
     "other": "Autre"
+  },
+  "today": {
+    "progress": "{{done}} sur {{total}}",
+    "progressLabel": "Faites {{done}} sur {{total}}",
+    "hero": {
+      "level": "{{term}} {{level}}",
+      "toNext": "{{xp}} {{xpTerm}} avant le suivant",
+      "streak": "{{count}} · {{term}}",
+      "streakLabel_one": "{{term}} : {{count}} jour. Ouvrir les statistiques",
+      "streakLabel_other": "{{term}} : {{count}} jours. Ouvrir les statistiques",
+      "coins": "{{count}} · {{term}}",
+      "coinsLabel": "{{count}} {{term}}. Ouvrir la boutique",
+      "companionLabel": "{{name}}. Ouvrir sa fiche",
+      "exhausted": "{{term}} : {{xpTerm}} divisés par deux jusqu'à demain",
+      "stickyLevel": "Nv {{level}}"
+    },
+    "notices": {
+      "shieldUsed": "Le bouclier a protégé ta série hier."
+    },
+    "rest": {
+      "title": "Jour de repos",
+      "message": "Ta série est à l'abri. Aucune mission aujourd'hui."
+    },
+    "empty": {
+      "title": "Aucune mission",
+      "message": "Crée la première pour commencer la journée.",
+      "action": "Créer une mission"
+    }
   }
 }

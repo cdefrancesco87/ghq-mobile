@@ -29,6 +29,7 @@ import { categoryIcon } from '@/features/shared/icons';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { useReduceMotion } from '@/features/shared/useReduceMotion';
+import { termInSentence } from '@/i18n/lexicon';
 import { useTheme } from '@/theme/ThemeProvider';
 import { OnboardingStep, StepButton } from './OnboardingStep';
 
@@ -122,8 +123,7 @@ export function MissionsStep({
       title={t('onboarding.missions.title', {
         min: MIN_TEMPLATES,
         max: MAX_TEMPLATES,
-        // German writes its nouns with a capital letter.
-        missions: i18n.language === 'de' ? missionsWord : missionsWord.toLowerCase(),
+        missions: termInSentence(missionsWord, i18n.language),
       })}
       titleAlign="left"
       onBack={onBack}

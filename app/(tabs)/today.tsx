@@ -1,5 +1,7 @@
-import { ScreenPlaceholder } from '@/features/shell/ScreenPlaceholder';
+import { TodayScreen } from '@/features/today/TodayScreen';
+import { useTodayView } from '@/features/today/useTodayView';
 
 export default function Today() {
-  return <ScreenPlaceholder titleKey="today" />;
+  const view = useTodayView();
+  return view === null ? null : <TodayScreen view={view} />;
 }

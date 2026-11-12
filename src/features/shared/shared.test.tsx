@@ -541,6 +541,17 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
     await fireEvent.press(screen.getByTestId('empty-action'));
     expect(onAction).toHaveBeenCalledTimes(1);
   });
+
+  it('EmptyState can have a title and no action, as on a rest day', async () => {
+    await renderThemed(
+      <EmptyState title="Giorno di riposo" message="La serie è al sicuro." testID="rest" />,
+      { theme },
+    );
+
+    expect(screen.getByRole('header', { name: 'Giorno di riposo' })).toBeOnTheScreen();
+    expect(screen.getByText('La serie è al sicuro.')).toBeOnTheScreen();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
 });
 
 describe('useLargeText', () => {
