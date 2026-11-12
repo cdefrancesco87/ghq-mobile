@@ -9,6 +9,7 @@ import { MissionRow } from '@/features/shared/MissionRow';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useTheme } from '@/theme/ThemeProvider';
 import { missionIcon, originOf, useMissionTexts } from './missionText';
+import { RowHighlight } from './RowHighlight';
 import type { MissionActions } from './useMissionActions';
 import type { MissionMenu } from './useMissionMenu';
 
@@ -64,21 +65,26 @@ export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsPr
             return (
               <Fragment key={mission.id}>
                 {index === 0 ? null : separator}
-                <MissionRow
-                  testID={`today-mission-${mission.id}`}
-                  variant="today"
-                  icon={missionIcon(mission)}
-                  name={mission.name}
-                  difficulty={mission.difficulty}
-                  detail={detailOf(item)}
-                  warning={warningOf(item)}
-                  xp={item.xp}
-                  progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
-                  onComplete={(event) => actions.complete(item, originOf(event))}
-                  onPress={() => menu.openDetail(item)}
-                  onLongPress={() => menu.open(item)}
-                  actions={menu.rowActions(item)}
-                />
+                <RowHighlight
+                  missionId={mission.id}
+                  testID={`today-mission-${mission.id}-highlight`}
+                >
+                  <MissionRow
+                    testID={`today-mission-${mission.id}`}
+                    variant="today"
+                    icon={missionIcon(mission)}
+                    name={mission.name}
+                    difficulty={mission.difficulty}
+                    detail={detailOf(item)}
+                    warning={warningOf(item)}
+                    xp={item.xp}
+                    progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
+                    onComplete={(event) => actions.complete(item, originOf(event))}
+                    onPress={() => menu.openDetail(item)}
+                    onLongPress={() => menu.open(item)}
+                    actions={menu.rowActions(item)}
+                  />
+                </RowHighlight>
               </Fragment>
             );
           })}

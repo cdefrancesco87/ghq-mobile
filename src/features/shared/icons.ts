@@ -1,3 +1,4 @@
+import type { StatKey } from '@/rules/types';
 import { SHAPES } from '@/theme/shapes';
 import type { ThemeFamily } from '@/theme/themes';
 import { LINE_ICON_BODIES, PIXEL_ICON_BODIES } from './generated/svgData';
@@ -24,6 +25,20 @@ const CATEGORY_ICONS: Readonly<Record<string, IconName | undefined>> = {
 /** The default icon of a mission: that of its category (design-sezioni.md 4, Categoria e icona). */
 export function categoryIcon(categoryKey: string | null): IconName {
   return (categoryKey === null ? undefined : CATEGORY_ICONS[categoryKey]) ?? 'missioni';
+}
+
+const STAT_ICONS: Readonly<Record<StatKey, IconName>> = {
+  strength: 'forza',
+  constitution: 'costituzione',
+  intelligence: 'intelligenza',
+  wisdom: 'saggezza',
+  charisma: 'carisma',
+  discipline: 'disciplina',
+};
+
+/** The icon of a hero stat (design-sezioni.md 4.4). */
+export function statIcon(stat: StatKey): IconName {
+  return STAT_ICONS[stat];
 }
 
 /** Every icon of the app. */

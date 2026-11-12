@@ -380,6 +380,23 @@ export function deleteMission(
 }
 
 /**
+ * A mission not deleted, archived ones included, already has this name, ignoring case and the
+ * spaces around it: the editor warns without blocking (design-sezioni.md 4.12).
+ */
+export function isMissionNameTaken(db: Db, name: string): boolean {
+  const wanted = name.trim().toLocaleLowerCase();
+  if (wanted === '') {
+    return false;
+  }
+  return db
+    .select({ name: missions.name })
+    .from(missions)
+    .where(notDeleted(missions))
+    .all()
+    .some((row) => row.name.trim().toLocaleLowerCase() === wanted);
+}
+
+/**
  * The missions of a game day, in the order of the list (US-OGGI-01): the habits scheduled by
  * their frequency and the tasks due or overdue, without paused, archived or deleted missions.
  * On a rest day no mission is due (design-sezioni.md 10.5).

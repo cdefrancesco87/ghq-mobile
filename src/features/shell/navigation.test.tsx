@@ -115,7 +115,7 @@ describe('navigation', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Nuova missione' }));
 
-    expect(await screen.findByRole('header', { name: 'Editor missione' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Nuova abitudine' })).toBeOnTheScreen();
   });
 
   it('writes the titles in the given language', async () => {

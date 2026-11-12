@@ -75,11 +75,13 @@ export interface DifficultyProps {
   readonly difficulty: DifficultyLevel;
   /** Writes the word beside the notches; the screen reader always reads it. */
   readonly showWord?: boolean;
+  /** Notches and word on a filled surface, such as a chosen button; the primary colour by default. */
+  readonly color?: string;
   readonly testID?: string;
 }
 
 /** From 1 to 3 notches in the shape of the theme, plus the word (design-sezioni.md A6). */
-export function Difficulty({ difficulty, showWord = true, testID }: DifficultyProps) {
+export function Difficulty({ difficulty, showWord = true, color, testID }: DifficultyProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
   const word = t(`shared.difficulty.${difficulty}`);
@@ -95,13 +97,17 @@ export function Difficulty({ difficulty, showWord = true, testID }: DifficultyPr
                 height={NOTCH_SIZE}
                 viewBox={`0 0 ${NOTCH_SIZE} ${NOTCH_SIZE}`}
               >
-                {notchShape(family, full, colors.primary)}
+                {notchShape(family, full, color ?? colors.primary)}
               </Svg>
             </View>
           );
         })}
       </View>
-      {showWord ? <ThemedText variant="label">{word}</ThemedText> : null}
+      {showWord ? (
+        <ThemedText variant="label" color={color}>
+          {word}
+        </ThemedText>
+      ) : null}
     </View>
   );
 }

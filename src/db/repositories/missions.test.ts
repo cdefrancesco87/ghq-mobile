@@ -5,6 +5,7 @@ import {
   archiveMission,
   createMission,
   deleteMission,
+  isMissionNameTaken,
   listTodayMissions,
   pauseMission,
   restoreMission,
@@ -392,5 +393,21 @@ describe('edge cases', () => {
 
   it('lists nothing when there are no missions', () => {
     expect(listTodayMissions(createTestDb(), '2026-11-06')).toEqual([]);
+  });
+});
+
+describe('isMissionNameTaken', () => {
+  it('finds a mission with the same name, ignoring case and spaces, but not a deleted one', () => {
+    const db = createTestDb();
+    const read = createMission(db, { name: 'Leggi 20 pagine' }, CONTEXT);
+    archiveMission(db, createMission(db, { name: 'Corsa' }, CONTEXT).id, CONTEXT);
+
+    expect(isMissionNameTaken(db, '  leggi 20 PAGINE ')).toBe(true);
+    expect(isMissionNameTaken(db, 'Corsa')).toBe(true);
+    expect(isMissionNameTaken(db, 'Leggi 10 pagine')).toBe(false);
+    expect(isMissionNameTaken(db, '   ')).toBe(false);
+
+    deleteMission(db, read.id, CONTEXT);
+    expect(isMissionNameTaken(db, 'Leggi 20 pagine')).toBe(false);
   });
 });
