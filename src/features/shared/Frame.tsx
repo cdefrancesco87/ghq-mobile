@@ -188,7 +188,9 @@ function CutFrame({ shape, fill, stroke, edge = 'all', testID }: FramePropsOf<'c
       }}
     >
       {size === null ? null : (
-        <Svg width={size.width} height={size.height}>
+        // Not the measured numbers: react-native-svg truncates them, and at a width that is not
+        // whole the view would end before the right edge of the path.
+        <Svg width="100%" height="100%">
           {edge === 'top' ? (
             <>
               <Path d={cutSheetFillPath(size.width, size.height, cut)} fill={fill} />

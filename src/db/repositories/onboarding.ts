@@ -1,6 +1,11 @@
 import { uuidv7 } from 'uuidv7';
 
-import { MISSION_TEMPLATES, type MissionTemplate } from '../../content/templates';
+import {
+  MAX_TEMPLATES,
+  MIN_TEMPLATES,
+  MISSION_TEMPLATES,
+  type MissionTemplate,
+} from '../../content/templates';
 import { applyBossDamage, bossHpMax } from '../../rules/boss';
 import { BOSS, HP } from '../../rules/config';
 import { STAT_KEYS } from '../../rules/types';
@@ -8,15 +13,41 @@ import { boss, bossSteps, companion, hero, heroStats, missions } from '../schema
 import type { Db } from '../types';
 import { appendEvent } from './events';
 import { goalColumns } from './missions';
-import { setSetting, type SettingValue } from './settings';
+import {
+  SETTING_DEFAULTS,
+  clearOnboardingDraft,
+  getOnboardingDraft,
+  setOnboardingDraft,
+  setSetting,
+  type OnboardingDraft,
+  type SettingValue,
+} from './settings';
 
 // The first launch (analisi-funzionale.md, section 1): the hero, the stats, the egg, the chosen
 // missions and the quest of the first launch, all in one transaction and all in the event log
 // (modello-dati.md, section 8: no seed data).
 
-/** From 1 to 5 templates at the first launch (US-ONB-03). */
-export const MIN_TEMPLATES = 1;
-export const MAX_TEMPLATES = 5;
+/** The missions already selected at the first launch (design 1.5), also what «Salta» leaves. */
+export const RECOMMENDED_TEMPLATE_KEYS = MISSION_TEMPLATES.filter(
+  (template) => template.recommended,
+).map((template) => template.key);
+
+/** The first launch left halfway, or a new one from the first step (design 1.1). */
+export function loadOnboardingDraft(db: Db): OnboardingDraft {
+  return (
+    getOnboardingDraft(db) ?? {
+      step: 1,
+      name: '',
+      theme: SETTING_DEFAULTS.theme,
+      templateKeys: RECOMMENDED_TEMPLATE_KEYS,
+    }
+  );
+}
+
+/** Saves the choices of the first launch; a value that is not valid throws. */
+export function saveOnboardingDraft(db: Db, draft: OnboardingDraft, now: number): void {
+  setOnboardingDraft(db, draft, now);
+}
 
 /**
  * The quest of the first launch: a small boss of 3 steps. Name and step titles are keys: the
@@ -97,6 +128,7 @@ export function createProfile(db: Db, input: ProfileInput, context: ProfileConte
     tx.insert(companion).values({ id: 'companion', stage: 'egg', completionsTotal: 0 }).run();
     setSetting(tx, 'language', input.language, now);
     setSetting(tx, 'theme', input.theme, now);
+    clearOnboardingDraft(tx);
 
     templates.forEach((template, index) => {
       const missionId = uuidv7();

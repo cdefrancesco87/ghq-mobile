@@ -1,9 +1,25 @@
-import { asc } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
-import { createProfile, hasProfile, type ProfileInput } from '@/db/repositories/onboarding';
-import { getSetting } from '@/db/repositories/settings';
-import { boss, bossSteps, companion, events, hero, heroStats, missions } from '@/db/schema';
+import {
+  createProfile,
+  hasProfile,
+  loadOnboardingDraft,
+  saveOnboardingDraft,
+  type ProfileInput,
+} from '@/db/repositories/onboarding';
+import { getSetting, type OnboardingDraft } from '@/db/repositories/settings';
+import {
+  boss,
+  bossSteps,
+  companion,
+  events,
+  hero,
+  heroStats,
+  missions,
+  settings,
+} from '@/db/schema';
 import type { Db } from '@/db/types';
+import { HERO_NAME_MAX_LENGTH } from '@/rules/config';
 import { STAT_KEYS } from '@/rules/types';
 
 import { createTestDb, heroTotals, totalsFromLog } from '../../../test/db';
@@ -182,5 +198,67 @@ describe('createProfile', () => {
     expect(() => createProfile(db, input({ name: 'Altro' }), CONTEXT)).toThrow();
     expect(db.select().from(hero).get()?.name).toBe('Claudio');
     expect(db.select().from(missions).all()).toHaveLength(3);
+  });
+
+  it('removes the draft of the first launch', () => {
+    const db = createTestDb();
+    saveOnboardingDraft(db, { ...loadOnboardingDraft(db), step: 5 }, NOW);
+    createProfile(db, input(), CONTEXT);
+    expect(db.select().from(settings).where(eq(settings.key, 'onboarding_draft')).get()).toBe(
+      undefined,
+    );
+  });
+
+  it('keeps the draft when the profile cannot be created', () => {
+    const db = createTestDb();
+    saveOnboardingDraft(db, { ...loadOnboardingDraft(db), step: 5 }, NOW);
+    expect(() => createProfile(db, input({ language: 'xx' as never }), CONTEXT)).toThrow();
+    expect(loadOnboardingDraft(db).step).toBe(5);
+  });
+});
+
+describe('onboarding draft', () => {
+  it('starts from the language step, with Minimal and the 3 recommended templates', () => {
+    expect(loadOnboardingDraft(createTestDb())).toEqual({
+      step: 1,
+      name: '',
+      theme: 'minimal',
+      templateKeys: ['drink_water', 'read_pages', 'meditation'],
+    });
+  });
+
+  it('gives back the saved choices', () => {
+    const db = createTestDb();
+    const draft: OnboardingDraft = {
+      step: 4,
+      name: 'Claudio',
+      theme: 'minimal-scuro',
+      templateKeys: ['journal'],
+    };
+    saveOnboardingDraft(db, draft, NOW);
+    expect(loadOnboardingDraft(db)).toEqual(draft);
+  });
+
+  it('refuses a draft that is not valid', () => {
+    const db = createTestDb();
+    const valid = loadOnboardingDraft(db);
+    for (const wrong of [
+      { ...valid, step: 6 },
+      { ...valid, name: 'x'.repeat(HERO_NAME_MAX_LENGTH + 1) },
+      { ...valid, theme: 'pirate' },
+      { ...valid, templateKeys: ['drink_water', 'drink_water'] },
+      { ...valid, templateKeys: ['unknown'] },
+      { ...valid, templateKeys: ['drink_water', 'run', 'gym', 'journal', 'meditation', 'steps'] },
+    ]) {
+      expect(() => saveOnboardingDraft(db, wrong as never, NOW)).toThrow();
+    }
+  });
+
+  it('starts again when the stored draft is not valid any more', () => {
+    const db = createTestDb();
+    db.insert(settings)
+      .values({ key: 'onboarding_draft', value: { step: 4, templateKeys: ['gone'] }, updatedAt: 0 })
+      .run();
+    expect(loadOnboardingDraft(db).step).toBe(1);
   });
 });

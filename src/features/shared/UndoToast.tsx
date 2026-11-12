@@ -18,7 +18,8 @@ const EDGE = 16;
 
 export interface UndoToastRequest {
   readonly message: string;
-  readonly onUndo: () => void;
+  /** Without it the notice only informs: it has no «Annulla». */
+  readonly onUndo?: () => void;
 }
 
 interface UndoToastApi {
@@ -41,6 +42,8 @@ export function UndoToastProvider({ children }: { readonly children: ReactNode }
     return () => clearTimeout(timer);
   }, [request]);
 
+  const onUndo = request?.onUndo;
+
   return (
     <UndoToastContext value={api}>
       <View style={styles.root}>
@@ -48,10 +51,14 @@ export function UndoToastProvider({ children }: { readonly children: ReactNode }
         {request === null ? null : (
           <UndoToast
             message={request.message}
-            onUndo={() => {
-              setRequest(null);
-              request.onUndo();
-            }}
+            onUndo={
+              onUndo === undefined
+                ? undefined
+                : () => {
+                    setRequest(null);
+                    onUndo();
+                  }
+            }
           />
         )}
       </View>
@@ -59,7 +66,7 @@ export function UndoToastProvider({ children }: { readonly children: ReactNode }
   );
 }
 
-/** Shows the notice with «Annulla» after completions, archiving and skips. */
+/** Shows the notice with «Annulla» after completions, archiving and skips, or a short message. */
 export function useUndoToast(): UndoToastApi {
   const api = useContext(UndoToastContext);
   if (api === null) {
@@ -81,20 +88,25 @@ function UndoToast({ message, onUndo }: UndoToastRequest) {
       style={[styles.toast, { bottom: bottom + NAV_BAR_HEIGHT + EDGE }]}
     >
       <Frame shape={shape.control} fill={colors.text} stroke={colors.text} />
-      <ThemedText color={colors.background} style={styles.message}>
+      <ThemedText
+        color={colors.background}
+        style={[styles.message, onUndo === undefined ? styles.messageAlone : null]}
+      >
         {message}
       </ThemedText>
-      <Pressable
-        testID="undo-toast-undo"
-        onPress={onUndo}
-        accessibilityRole="button"
-        accessibilityLabel={t('shared.undo')}
-        style={styles.undo}
-      >
-        <ThemedText variant="label" color={colors.background}>
-          {t('shared.undo')}
-        </ThemedText>
-      </Pressable>
+      {onUndo === undefined ? null : (
+        <Pressable
+          testID="undo-toast-undo"
+          onPress={onUndo}
+          accessibilityRole="button"
+          accessibilityLabel={t('shared.undo')}
+          style={styles.undo}
+        >
+          <ThemedText variant="label" color={colors.background}>
+            {t('shared.undo')}
+          </ThemedText>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -111,5 +123,6 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
   },
   message: { flex: 1, paddingVertical: 8 },
+  messageAlone: { paddingRight: 16 },
   undo: { minHeight: BUTTON_HEIGHT, paddingHorizontal: 16, justifyContent: 'center' },
 });

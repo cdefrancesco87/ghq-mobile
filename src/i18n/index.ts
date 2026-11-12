@@ -26,6 +26,15 @@ export const RESOURCES = {
   es: { translation: es },
 } as const satisfies Record<Language, { translation: object }>;
 
+/** Every language in its own words, in the order of the list (design-sezioni.md 1.2). */
+export const LANGUAGE_NAMES: Readonly<Record<Language, string>> = {
+  de: 'Deutsch',
+  en: 'English',
+  es: 'Español',
+  fr: 'Français',
+  it: 'Italiano',
+};
+
 /** The device locales in order of preference, e.g. `['pt-BR', 'fr-FR']`. */
 export function deviceLocaleTags(): string[] {
   return getLocales().map((locale) => locale.languageTag);
