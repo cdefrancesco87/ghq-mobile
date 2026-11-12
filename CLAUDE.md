@@ -82,5 +82,6 @@ These hold until Claudio decides otherwise. Every constant goes in `src/rules/co
 18. **Potion**: cannot be used at full health.
 19. **Default language**: the device's language if it is one of it, en, de, fr, es, otherwise en.
 20. **Confirmed by Claudio**: undo refused if the coins to be returned are already spent; boss theft from the day after the deadline, once per deadline; `tz_offset` in minutes east of UTC also in the log; `paused_until` is the first day of being active again; `theme` = `minimal` means automatic Minimal; evening summary on at 21:00; `week_start` integer 1–7 (1 = Monday); `hero.created` event.
+22. **Personal reward prices**: small 100, medium 250, large 600, epic 1500 coins; no limit on the number of rewards; the app shows only the price. Approved by Claudio on 12/11.
 
 - Design: before every screen task, read docs/mockup/LEGGIMI.md and the frames cited in the task (the mockups take precedence over design-sezioni.md).

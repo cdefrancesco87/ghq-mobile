@@ -1,6 +1,6 @@
 # GHQ Mobile – Backlog delle schermate
 
-Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamenta di `docs/backlog-task.md` (T01–T33). Si esegue con lo stesso `docs/prompt-loop.md`, un task per giro. Scritto il 07/11/2026 dalle sezioni 1–12 di `analisi-funzionale.md` e `design-sezioni.md`; riallineato l'08/11/2026 ai mockup dei lotti 0–8 di Claude Design e alle decisioni dell'08/11 (`registro-decisioni.md`).
+Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamenta di `docs/backlog-task.md` (T01–T33). Si esegue con lo stesso `docs/prompt-loop.md`, un task per giro. Scritto il 07/11/2026 dalle sezioni 1–12 di `analisi-funzionale.md` e `design-sezioni.md`; riallineato l'08/11/2026 ai mockup dei lotti 0–8 di Claude Design e alle decisioni dell'08/11 (`registro-decisioni.md`). Il 12/11 aggiunti in fase 6 i task T88–T92 (pausa generale, scudo alla vittoria, racconto del compagno, ricompense personali) e tolte le ricompense dal T86.
 
 **Stati:** `[ ]` da fare · `[~]` in corso · `[x]` fatto · `[!]` bloccato (motivo nel Diario in fondo a questo file).
 
@@ -411,6 +411,50 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 
 ---
 
+### [ ] T88 – Pausa generale: regole e dati
+- **Obiettivo:** una vacanza o una malattia che non costano vita, serie né umore (aggiunto il 12/11).
+- **Riferimenti:** `analisi-funzionale.md` US-IMP-06 e «Regole di gioco» (Vita, Serie, Compagno); `modello-dati.md` 3.7, 3.10, 4.2; `design-sezioni.md` 10.5, 2.8.
+- **Da fare:**
+  - Chiave `general_pause` = `{ from_day, until_day | null }` (Zod; `until_day` è l'ultimo giorno di pausa compreso); eventi `pause.started` e `pause.ended`; colonna `day_summaries.is_paused` con la sua migrazione.
+  - In `src/rules/pause.ts` (TDD): `pauseIntervals(events)`, `isPausedDay(day, intervals)`, `pausedDaysBetween(intervals, from, to)`.
+  - `closeDays` (T14) e `closePendingDays` (T25): un giorno di pausa non toglie vita e non consuma scudi; le serie seguono le regole normali (un giorno senza completamenti le interrompe); i completamenti fatti in pausa danno XP, monete e punti statistica come sempre. `moodFor` (T13) salta i giorni di pausa. Nessun furto del boss e nessun avviso a 3 giorni durante la pausa.
+  - Azioni in TDD: `startPause(fromDay, untilDay | null)` (`fromDay` oggi o futuro; rifiutata se c'è già una pausa in corso o programmata, o con le date al contrario); una pausa programmata si può annullare prima dell'inizio, `resumePause()` (oggi è l'ultimo giorno di pausa), fine automatica dopo `until_day` alla chiusura dei giorni. Alla fine della pausa le scadenze dei boss attivi si spostano in avanti dei giorni di pausa e l'avviso a 3 giorni si ricalcola.
+- **Fatto quando:** i test coprono 5 giorni di pausa con missioni mancate (vita e scudi intatti, serie interrotta), pausa programmata nel futuro che parte al giorno giusto, completamenti in pausa con le ricompense normali, umore che ignora i giorni di pausa, scadenza del boss spostata di N giorni, fine automatica e «Riprendi» (da domani tutto conta), chiusura rieseguita senza cambiamenti, eroe uguale alla somma del registro.
+- **Dipende da:** T25.
+
+### [ ] T89 – Pausa generale: Impostazioni, Oggi e promemoria
+- **Obiettivo:** mettere in pausa e riprendere in due tocchi, e un'app che tace durante la pausa (aggiunto il 12/11).
+- **Riferimenti:** `analisi-funzionale.md` US-IMP-06; `design-sezioni.md` 10.5, 10.13, 2.8, 11.5. Mockup: nessuno, segui il testo e annotalo nel Diario.
+- **Da fare:** riga «Pausa generale» nel gruppo Giornata con il valore («No», «Fino al 20 nov», «Senza data») e il foglio con la spiegazione, il calendario con data di inizio e di fine (fine facoltativa) e «Inizia la pausa»; durante la pausa «Cambia» e «Riprendi». In Oggi la fascia fissa con l'icona `pausa` e «Riprendi», il chip della serie «in pausa», «Scadenza ferma» sulla scheda del boss; dialogo di «Riprendi» con i giorni di spostamento delle scadenze; fascia «Si riparte domani». Lo scheduler (T45, T73) non programma promemoria, riepilogo serale né avviso del boss nei giorni di pausa e riprogramma tutto all'inizio, alla fine e a «Riprendi».
+- **Fatto quando:** i test coprono inizio con e senza data, fascia e chip in Oggi, «Riprendi» col dialogo, nessun promemoria programmato in pausa e riprogrammazione alla fine, annunci del lettore di schermo.
+- **Dipende da:** T88, T55, T42, T73.
+
+### [ ] T90 – Scudo alla vittoria sul boss
+- **Obiettivo:** premiare la vittoria con uno scudo della serie (deciso il 12/11).
+- **Riferimenti:** `analisi-funzionale.md` sezione 5 e «Regole di gioco» (Boss); `xp-e-monete.md` «Come si guadagnano»; `design-sezioni.md` 5.5.
+- **Da fare:** in TDD `victoryShield(shieldsOwned)` in `src/rules/boss.ts`: uno scudo, oppure 100 monete se se ne hanno già 2; anche la quest di partenza dà lo scudo (Claudio, 12/11). La vittoria scrive scudo o monete nei delta di `boss.defeated` nella stessa transazione; l'annullamento della vittoria toglie lo scudo ed è rifiutato se lo scudo è già stato consumato (come le monete spese, scelta minore 20). Schermata della vittoria: riga dello scudo con sprite, «+1» e volo, oppure sprite spento e «Hai già 2 scudi: ricevi 100 monete»; annuncio a voce.
+- **Fatto quando:** i test coprono vittoria con 0, 1 e 2 scudi, quest di partenza con scudo, annullamento con scudo intatto e con scudo consumato, eroe uguale alla somma del registro.
+- **Dipende da:** T48.
+
+### [ ] T91 – Racconto del compagno: fumetto del mattino e riepilogo serale
+- **Obiettivo:** tornare nell'app come un piccolo rito (US-COMP-05, aggiunto il 12/11).
+- **Riferimenti:** `analisi-funzionale.md` sezione 6, US-COMP-05, 11; `design-sezioni.md` 6.14, 6.15, 2.2, 11.5; `docs/riferimenti/racconto-compagno-testi.md`.
+- **Da fare:**
+  - In TDD `src/rules/tale.ts`: `taleSituation({ yesterday, lastOpenDay, pauseEndedYesterday, bossDefeatedYesterday, streakRecord, gameMode })` con le priorità di 6.14 e i casi in cui non compare; `pickVariant(keys, recent)` che evita le ultime 3, con le frasi del mattino scelte anche per umore; `eveningSituation(done, scheduled)`.
+  - Chiave `tale` = `{ shown_day, recent }` nelle impostazioni.
+  - In Oggi il fumetto sotto la scheda dell'eroe, nella posa dell'umore, chiuso con un tocco o la X e non più mostrato fino a domani; lettore di schermo «Cloudy dice: …» senza prendere il fuoco.
+  - Riepilogo serale (T73) con il titolo uguale al nome del compagno e il testo della situazione serale.
+  - Testi: chiavi `racconto.<voce>.<situazione>.<n>`; chiavi `racconto.<voce>.<situazione>.<umore>.<n>` per il mattino; scrivi in bozza **una sola** variante per situazione, voce e umore, in italiano e inglese (scelta minore 7). Il resto lo fornisce Claudio (task C21): il codice deve funzionare con qualsiasi numero di varianti.
+- **Fatto quando:** i test coprono ogni situazione e la sua priorità, nessun fumetto il primo giorno e in pausa, Essenziale senza la situazione Boss sconfitto, nessuna ripetizione delle ultime 3, fumetto chiuso che non torna fino al cambio di giornata, testo serale per 0, 2 e tutte le missioni fatte, ogni chiave presente in tutte le lingue.
+- **Dipende da:** T64, T73, T88.
+
+### [ ] T92 – Ricompense personali
+- **Obiettivo:** dare alle monete un valore nella vita reale (US-NEG-03, Should dal 12/11; prima stava nel T86).
+- **Riferimenti:** `analisi-funzionale.md` US-NEG-03; `xp-e-monete.md` sezione 2; `modello-dati.md` 3.9 (`rewards`); `design-sezioni.md` 7.2, 7.6, 7.10, 7.11. Mockup: nessuno, segui il testo e annotalo nel Diario.
+- **Da fare:** tabella `rewards` con la sua migrazione; prezzi per entità in configurazione da `CLAUDE.md` scelta minore 22; in TDD `rewardPrice(size)`, `createReward`, `updateReward`, `archiveReward` (nessun limite), `redeemReward` con evento `reward.redeemed` (nome e prezzo copiati), rifiutato con monete insufficienti. Gruppo «Le tue ricompense» subito dopo gli Aiuti, schede con `icona-regalo` e pallini dell'entità, solo il prezzo, scheda «+ Nuova ricompensa», lista virtualizzata (`FlatList`) che carica allo scorrimento, foglio di creazione con i 4 chip, foglio di riscatto «Riscatta per 200», festa breve, menu Modifica ed Elimina; nascosto in Essenziale. **Se in `CLAUDE.md` non c'è la scelta minore 22 (task C13), segna il task `[!]`.**
+- **Fatto quando:** i test coprono creazione, 50 ricompense con la lista virtualizzata, riscatto con saldo e registro, monete insufficienti, modifica dell'entità che cambia solo i riscatti futuri, eliminazione con lo storico intatto, layout a una colonna con `fontScale` 1,3, eroe uguale alla somma del registro.
+- **Dipende da:** T51.
+
 ## Fase 7 – Could
 
 ### [ ] T77 – (Could) Abitudini: riordino e scorrimento
@@ -476,11 +520,11 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 - **Fatto quando:** i test coprono avvio, salto e versione ridotta.
 - **Dipende da:** T64.
 
-### [ ] T86 – (Could) Regali per il compagno e ricompense personali
-- **Obiettivo:** dare alle monete un uso affettivo e uno nella vita reale.
-- **Riferimenti:** `analisi-funzionale.md` US-COMP-04, US-NEG-03; `design-sezioni.md` 6.8, 7.6; `xp-e-monete.md` sezione 2; `modello-dati.md` 3.9 (`rewards`).
-- **Da fare:** regali nel Negozio, «Fai un regalo» nella scheda del compagno con esultanza e umore che sale di un livello fino a domani; ricompense personali con nome ed entità, prezzo automatico, riscatto con evento `reward.redeemed`; tabella `rewards` con la sua migrazione. **I prezzi di regali e ricompense non sono decisi: se in `CLAUDE.md` non ci sono (task C13), segna il task `[!]`.**
-- **Fatto quando:** i test coprono acquisto e dono del regalo, umore alzato fino al cambio di giornata, riscatto della ricompensa, eroe uguale alla somma del registro.
+### [ ] T86 – (Could) Regali per il compagno
+- **Obiettivo:** dare alle monete un uso affettivo (le ricompense personali sono passate al T92 il 12/11).
+- **Riferimenti:** `analisi-funzionale.md` US-COMP-04; `design-sezioni.md` 6.8; `xp-e-monete.md` sezione 2.
+- **Da fare:** regali nel Negozio, «Fai un regalo» nella scheda del compagno con esultanza e umore che sale di un livello fino a domani. **I prezzi dei regali non sono decisi: se in `CLAUDE.md` non ci sono (task C13), segna il task `[!]`.**
+- **Fatto quando:** i test coprono acquisto e dono del regalo, umore alzato fino al cambio di giornata, eroe uguale alla somma del registro.
 - **Dipende da:** T64, T51.
 
 ### [ ] T87 – (Could) Live Activity del timer (iPhone)
@@ -499,7 +543,7 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 | # | Cosa | Quando | Sblocca |
 | --- | --- | --- | --- |
 | C12 | Copiare nel repository `docs/backlog-schermate.md`, il nuovo `docs/prompt-loop.md` e i file nuovi di `docs/riferimenti/` (`temi.json`, `colori-v2.json`, `lessico-v2.json`, `misure-componenti.md`, `lacune-design-schermate.md`, `design-sezioni.md`, `registro-decisioni.md`) senza sovrascrivere `docs/backlog-task.md` (ha gli stati e il Diario); copiare la cartella `sviluppo/mockup-per-claude-code/` in `docs/mockup/` (36 MB, solo riferimento; se pesa troppo per Git, tenerla fuori dal commit e dirlo nel Diario); applicare prima il prompt delle decisioni aperte (scelte minori 15–19) | Prima di riavviare il loop | T33b, T34, T35 |
-| C13 | Decidere e aggiungere a `CLAUDE.md` come scelte minori: (a) vita del boss quando si aggiungono o tolgono passi dopo la creazione e come si elimina un boss (il modello dati non ha `deleted_at` né `boss.deleted`) → scelta 21; (b) ricompense dei completamenti dimenticati (proposta aperta di C06); (c) monete per badge; (d) prezzi di regali e ricompense personali | Prima di T49, T68, T70, T86 | quei task |
+| C13 | Decidere e aggiungere a `CLAUDE.md` come scelte minori: (a) vita del boss quando si aggiungono o tolgono passi dopo la creazione e come si elimina un boss (il modello dati non ha `deleted_at` né `boss.deleted`) → scelta 21; (b) ricompense dei completamenti dimenticati (proposta aperta di C06); (c) monete per badge; (d) prezzi dei regali (T86) e delle ricompense personali (scelta 22, proposta in `sviluppo/aggiunta-backlog-12-11.md`) | Prima di T49, T68, T70, T86, T92 | quei task |
 | C14 | Rivedere i contenuti in bozza delle schermate: saluti, frasi e fumetti del compagno, battute del boss, testi delle notifiche, nomi degli stadi, elenco dei badge, chiavi nuove in tedesco, francese e spagnolo (elenco nel Diario) | Man mano, dopo T50, T65, T70, T73 | – |
 | C15 | Far preparare gli ultimi asset: logo e icona dell'app definitivi, sprite intermedi di evoluzione, icone vere di scudo e pozione, elenco dei titoli dell'eroe per livello, scala per daltonici; poi ricopiarli in `assets/` | Quando servono | rifiniture, T82, T85 |
 | C16 | Emulatore di Android Studio e Maestro (sostituisce C11): development build sull'emulatore, `npm run e2e`, screenshot di Oggi nei 6 temi | Dopo T58 | test end-to-end |
@@ -507,6 +551,7 @@ Secondo backlog del loop di Claude Code: le schermate dell'app, dopo le fondamen
 | C18 | Prova su Android con la development build: promemoria reali con Non disturbare, Posticipa e riepilogo serale, widget, Health Connect | Dopo T73, T75, T76 | uscita Android |
 | C19 | iOS: iscrizione all'Apple Developer Program, `eas build --profile development --platform ios` (in cloud, senza Mac), installazione sull'iPhone; prova di azioni delle notifiche, widget (iOS 17+), backup iCloud, Apple Salute e, se fatta, Live Activity | Quando Android regge | uscita iOS |
 | C20 | Una settimana d'uso vero e revisione di accessibilità: TalkBack e VoiceOver sui flussi principali, testo al 200%, Riduci movimento, contrasti nei 6 temi; annotare le correzioni come nuovi task | Dopo la fase 5 | rifiniture |
+| C21 | Far scrivere i testi del racconto del compagno (elenco in `docs/riferimenti/racconto-compagno-testi.md`, 660 frasi per lingua) e metterli nei file di lessico | Dopo T91 | racconto completo |
 
 ---
 
