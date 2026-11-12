@@ -386,11 +386,92 @@
     "companion": "Compagnon",
     "shop": "Boutique",
     "settings": "Réglages",
-    "onboarding": "Premier lancement",
     "editor": "Éditeur de mission",
     "placeholder": "Cet écran arrive bientôt."
   },
+  "onboarding": {
+    "stepLabel": "Étape {{step}} sur {{total}}, {{name}}",
+    "steps": {
+      "language": "langue",
+      "name": "nom du héros",
+      "theme": "thème",
+      "missions": "premières missions",
+      "notifications": "notifications"
+    },
+    "continue": "Continuer",
+    "skip": "Passer",
+    "language": {
+      "title": "Choisis la langue"
+    },
+    "name": {
+      "title": "Comment s'appelle ton héros ?",
+      "placeholder": "Ton nom",
+      "hint": "Tu peux le changer quand tu veux depuis le Profil",
+      "disabledReason": "Écris le nom du héros pour continuer"
+    },
+    "theme": {
+      "title": "Choisis le thème"
+    },
+    "missions": {
+      "title": "Choisis de {{min}} à {{max}} {{missions}} pour commencer",
+      "continue": "Continuer · {{count}} sur {{max}}",
+      "limit": "{{max}} au maximum : tu pourras en ajouter d'autres plus tard",
+      "disabledReason": "Choisis au moins une mission pour continuer",
+      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}}",
+      "categoryLabel": "{{name}}, sélectionnées : {{count}}"
+    },
+    "notifications": {
+      "title": "Tu veux des rappels ?",
+      "body": "Je te rappelle tes missions à l'heure que tu choisis et le soir je te dis comment ça s'est passé.",
+      "enable": "Activer les rappels",
+      "later": "Pas maintenant",
+      "reminderTime": "8:00",
+      "reminderBody": "C'est l'heure ! Dix minutes pour toi.",
+      "summaryTime": "21:00",
+      "summaryTitle": "Comment s'est passée ta journée ?",
+      "summaryBody": "Tu as terminé 3 missions sur 4. Bravo !"
+    }
+  },
   "shared": {
+    "greeting": "Salut, {{name}}",
+    "greeting_arcade": "{{name}} · READY?",
+    "greeting_fantasy": "Salutations, {{name}}",
+    "greeting_cyberpunk": "En ligne, {{name}}",
+    "greeting_lovecraft": "Encore éveillé, {{name}} ?",
+    "themeCarousel": {
+      "modes": {
+        "automatic": "Automatique",
+        "light": "Clair",
+        "dark": "Sombre"
+      },
+      "themes": {
+        "arcade": {
+          "name": "Arcade",
+          "tone": "Une salle d'arcade où chaque jour est un stage",
+          "description": "Thème Arcade : borne en pixels, couleurs vives, compagnon Pixel"
+        },
+        "fantasy": {
+          "name": "Fantasy",
+          "tone": "Une aventure écrite sur parchemin",
+          "description": "Thème Fantasy : parchemin, couleurs chaudes, compagnon Rocky"
+        },
+        "cyberpunk": {
+          "name": "Cyberpunk",
+          "tone": "Contrats et néons dans une ville qui ne dort jamais",
+          "description": "Thème Cyberpunk : néons, fond sombre, compagnon Glitchy"
+        },
+        "lovecraft": {
+          "name": "Lovecraft",
+          "tone": "Un grimoire de rites quotidiens",
+          "description": "Thème Lovecraft : encre, tons sombres, compagnon Lumin"
+        },
+        "minimal": {
+          "name": "Minimal",
+          "tone": "Net et léger, comme un bon carnet",
+          "description": "Thème Minimal : net, clair ou sombre, compagnon Cloudy"
+        }
+      }
+    },
     "close": "Fermer",
     "back": "Retour",
     "cancel": "Annuler",

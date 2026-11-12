@@ -127,15 +127,21 @@ describe('navigation', () => {
   it('redirects to the first launch when there is no profile', async () => {
     await openApp(createTestDb());
 
-    expect(await screen.findByRole('header', { name: 'Primo avvio' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Scegli la lingua' })).toBeOnTheScreen();
     expect(tabLabels()).toEqual([]);
   });
 
   it('redirects a link to the tabs to the first launch when there is no profile', async () => {
     await openApp(createTestDb(), { url: '/habits' });
 
-    expect(await screen.findByRole('header', { name: 'Primo avvio' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Scegli la lingua' })).toBeOnTheScreen();
     expect(tabLabels()).toEqual([]);
+  });
+
+  it('leaves the first launch for Today when the profile exists', async () => {
+    await openApp(newGame(['drink_water']), { url: '/onboarding' });
+
+    expect(await screen.findByRole('header', { name: 'Oggi' })).toBeOnTheScreen();
   });
 
   it('reaches stats as a stack route (not a tab)', async () => {

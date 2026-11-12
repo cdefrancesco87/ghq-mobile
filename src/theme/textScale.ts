@@ -7,6 +7,11 @@ export const MAX_TITLE_SCALE = 1.5;
 /** Body, labels, numbers and captions stop at 200% (design-sezioni.md A3). */
 export const MAX_TEXT_SCALE = 2;
 
+/** A height kept for text: it grows with the font scale, up to the limit of the text's role. */
+export function scaledTextHeight(height: number, fontScale: number, maxScale: number): number {
+  return height * Math.min(fontScale, maxScale);
+}
+
 /**
  * The size of Press Start 2P at a font scale: it stays sharp only at multiples of 2, so a larger
  * size is rounded down to one, without going below the size of the theme (A3 and A11.1).

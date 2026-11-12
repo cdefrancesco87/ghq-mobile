@@ -484,6 +484,17 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
       expect(onUndo).not.toHaveBeenCalled();
     });
 
+    it('without an undo it has no «Annulla» and still disappears after 5 seconds', async () => {
+      await openProvider();
+
+      await act(async () => toast.show({ message: 'Massimo 5' }));
+      expect(screen.getByText('Massimo 5')).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Annulla' })).toBeNull();
+
+      await act(async () => jest.advanceTimersByTime(UNDO_TOAST_MS));
+      expect(screen.queryByText('Massimo 5')).toBeNull();
+    });
+
     it('undoes from «Annulla», at least 48 high, and disappears', async () => {
       const onUndo = jest.fn();
       await openProvider();
@@ -667,6 +678,26 @@ describe('shapes of the other themes', () => {
     expect(cutFramePath(200, 100, 12, 1)).toBe(
       'M12 0.5 L199.5 0.5 L199.5 87.5 L187.5 99.5 L0.5 99.5 L0.5 12 Z',
     );
+  });
+
+  it('a Cyberpunk frame fills a width that is not whole, so its right edge stays visible', async () => {
+    await renderThemed(
+      <Card testID="card">
+        <Text>Contenuto</Text>
+      </Card>,
+      { theme: 'cyberpunk' },
+    );
+
+    await fireEvent(screen.getByTestId('card-frame'), 'layout', {
+      nativeEvent: { layout: { width: 266.67, height: 100, x: 0, y: 0 } },
+    });
+
+    // react-native-svg truncates a number, and the view would end before the edge of the path.
+    const [svg] = screen.getByTestId('card-frame').children;
+    const { width, height } = StyleSheet.flatten(
+      (svg as unknown as { props: { style: StyleProp<ViewStyle> } }).props.style,
+    ) as ViewStyle;
+    expect([width, height]).toEqual(['100%', '100%']);
   });
 
   it('a Cyberpunk sheet has only the top left corner cut and the top edge in xp', () => {
