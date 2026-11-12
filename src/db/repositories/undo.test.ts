@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 
-import { createBoss } from '@/db/repositories/boss';
+import { completeBossStep, createBoss } from '@/db/repositories/boss';
 import {
   completeMission,
   progressMission,
@@ -11,7 +11,16 @@ import { appendEvent, type EventType } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
 import { buyItem } from '@/db/repositories/shop';
 import { undoEvent, UndoRefusedError, type UndoRefusal } from '@/db/repositories/undo';
-import { boss, companion, events, hero, missionDays, missions } from '@/db/schema';
+import {
+  boss,
+  bossSteps,
+  companion,
+  events,
+  hero,
+  heroStats,
+  missionDays,
+  missions,
+} from '@/db/schema';
 import type { Db } from '@/db/types';
 
 import { at, clockAt, expectHeroMatchesLog, missionId, newGame, TZ } from '../../../test/game';
@@ -56,6 +65,16 @@ function refusalOf(undo: () => unknown): UndoRefusal | 'not_refused' {
     throw error;
   }
   return 'not_refused';
+}
+
+function stepsOf(db: Db, bossId: string): string[] {
+  return db
+    .select({ id: bossSteps.id })
+    .from(bossSteps)
+    .where(eq(bossSteps.bossId, bossId))
+    .orderBy(asc(bossSteps.position))
+    .all()
+    .map((row) => row.id);
 }
 
 function heroRow(db: Db) {
@@ -138,6 +157,68 @@ describe('undoEvent', () => {
     expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(58);
     undoEvent(db, completed, LATER);
     expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(60);
+    expectHeroMatchesLog(db);
+  });
+
+  it('undoes a boss step: the step is to do again, the hit points and the stat points go back', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'medium', statKey: 'wisdom', steps: ['A', 'B', 'C'] },
+      NOW,
+    );
+    const [first] = stepsOf(db, thesis.id);
+    const before = heroRow(db);
+    const { eventId } = completeBossStep(db, first, NOW);
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(40);
+
+    expect(undoEvent(db, eventId, LATER).reverted).toEqual([eventId]);
+
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(60);
+    expect(db.select().from(bossSteps).where(eq(bossSteps.id, first)).get()?.doneAt).toBeNull();
+    expect(db.select().from(heroStats).where(eq(heroStats.statKey, 'wisdom')).get()?.points).toBe(
+      0,
+    );
+    expect(heroRow(db)).toEqual(before);
+    expect(refusalOf(() => undoEvent(db, eventId, LATER))).toBe('already_undone');
+    expectHeroMatchesLog(db);
+  });
+
+  it('gives back only the hit points the step really took', () => {
+    const db = newGame(['journal']);
+    const journal = missionId(db, 'journal');
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'medium', steps: ['A', 'B'], missionIds: [journal] },
+      NOW,
+    );
+    db.update(boss).set({ hp: 21 }).where(eq(boss.id, thesis.id)).run();
+    const [first] = stepsOf(db, thesis.id);
+    const { eventId } = completeBossStep(db, first, NOW);
+    // One step left: the floor is 10, so the step took 11 and not 20.
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(10);
+
+    undoEvent(db, eventId, LATER);
+
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(21);
+  });
+
+  it('never undoes the step that defeats a boss, and refuses a step of another day', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, { name: 'Tesi', difficulty: 'easy', steps: ['A', 'B'] }, NOW);
+    const [first, last] = stepsOf(db, thesis.id);
+    const step = completeBossStep(db, first, NOW);
+    const victory = completeBossStep(db, last, NOW);
+    expect(victory.defeated).toBe(true);
+
+    expect(refusalOf(() => undoEvent(db, victory.eventId, LATER))).toBe('boss_not_active');
+    // The boss is defeated: an earlier step cannot be undone either.
+    expect(refusalOf(() => undoEvent(db, step.eventId, LATER))).toBe('boss_not_active');
+
+    const other = newGame(['journal']);
+    const quest = createBoss(other, { name: 'Tesi', difficulty: 'easy', steps: ['A', 'B'] }, NOW);
+    const done = completeBossStep(other, stepsOf(other, quest.id)[0], NOW);
+    expect(refusalOf(() => undoEvent(other, done.eventId, clockAt(7, 10)))).toBe('day_changed');
     expectHeroMatchesLog(db);
   });
 

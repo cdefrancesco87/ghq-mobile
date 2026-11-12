@@ -23,6 +23,7 @@ import { DayPlan } from './DayPlan';
 import { HeroCard } from './HeroCard';
 import { HeroStickyBar } from './HeroStickyBar';
 import { TodayHeader } from './TodayHeader';
+import { TodayBosses } from './TodayBosses';
 import { TodayMissions } from './TodayMissions';
 import { useMissionActions } from './useMissionActions';
 import { useMissionMenu } from './useMissionMenu';
@@ -37,9 +38,8 @@ export interface TodayScreenProps {
 }
 
 /**
- * Today (design-sezioni.md 2.1, 2.2, 2.3, 2.5, 2.8): date and greeting, the notice of the shield,
- * the hero card, the plan of the day and the missions of today, or the empty states. The boss
- * comes with the next task.
+ * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the notice of the shield, the hero
+ * card, the plan of the day, the bosses and the missions of today, or the empty states.
  */
 export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const { t } = useTranslation();
@@ -52,6 +52,7 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const [shieldClosed, setShieldClosed] = useState(false);
   const actions = useMissionActions();
   const menu = useMissionMenu(view, actions);
+  const working = !view.restDay && view.totalCount > 0;
 
   const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     const past = heroBottom !== null && nativeEvent.contentOffset.y > heroBottom;
@@ -107,6 +108,9 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
         >
           <HeroCard view={view} />
         </View>
+        {/* The plan comes before the boss (2.1); the bosses stay also on a day without missions. */}
+        {working ? <DayPlan view={view} tzOffset={tzOffset} actions={actions} menu={menu} /> : null}
+        <TodayBosses view={view} actions={actions} />
         {view.restDay ? (
           <EmptyState
             testID="today-rest"
@@ -124,10 +128,7 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
             onAction={() => router.push('/editor')}
           />
         ) : (
-          <>
-            <DayPlan view={view} tzOffset={tzOffset} actions={actions} menu={menu} />
-            <TodayMissions view={view} tzOffset={tzOffset} actions={actions} menu={menu} />
-          </>
+          <TodayMissions view={view} tzOffset={tzOffset} actions={actions} menu={menu} />
         )}
       </ScrollView>
       {menu.sheets}

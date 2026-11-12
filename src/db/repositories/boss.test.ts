@@ -149,7 +149,12 @@ describe('completeBossStep', () => {
     const db = newGame(['journal']);
     const quest = starterQuest(db);
     const [, second, third] = stepIds(db, quest.id);
-    expect(completeBossStep(db, second, NOW)).toEqual({ defeated: false, moments: [] });
+    expect(completeBossStep(db, second, NOW)).toEqual({
+      defeated: false,
+      eventId: eventsOf(db, 'boss.step_done').at(-1)?.id,
+      dealt: 20,
+      moments: [],
+    });
     const victory = completeBossStep(db, third, NOW);
     expect(victory.defeated).toBe(true);
     expect(victory.moments.map((event) => event.type)).toEqual(['boss.defeated', 'hero.level_up']);

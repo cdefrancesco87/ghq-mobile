@@ -593,6 +593,27 @@
       }
     }
   },
+  "bosses": {
+    "card": {
+      "hpLabel": "Vita di {{name}}",
+      "steps": "Passi {{done}} di {{total}}",
+      "nextStep": "Prossimo passo",
+      "stepLabel": "Completa il passo {{step}} di {{name}}",
+      "days_one": "{{count}} giorno",
+      "days_other": "{{count}} giorni",
+      "dueToday": "Scade oggi",
+      "overdue": "Scaduto",
+      "damage": "−{{damage}}"
+    },
+    "today": {
+      "empty": "Trasforma un obiettivo in un boss",
+      "empty_fantasy": "Trasforma un obiettivo in una nemesi",
+      "empty_cyberpunk": "Trasforma un obiettivo in un firewall",
+      "empty_lovecraft": "Trasforma un obiettivo in un orrore",
+      "empty_minimal": "Dividi un grande obiettivo in passi",
+      "stepToast": "Passo fatto · −{{damage}}"
+    }
+  },
   "skipReasons": {
     "illness": "Malattia",
     "travel": "Viaggio",
@@ -661,6 +682,7 @@
         "dayChanged": "La giornata è cambiata: il completamento non si può più annullare.",
         "coinsSpent": "Le monete di questo completamento sono già state spese: non si può annullare.",
         "alreadyUndone": "Il completamento è già stato annullato.",
+        "bossNotActive": "Questo boss è già sconfitto: la vittoria non si annulla.",
         "planFull": "Ci sono già 3 priorità: togline una per aggiungerne un'altra.",
         "failed": "Qualcosa non ha funzionato. Riprova."
       }
