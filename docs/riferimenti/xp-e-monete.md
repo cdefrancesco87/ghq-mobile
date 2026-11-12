@@ -115,7 +115,7 @@ Le priorità seguono la tabella MoSCoW dell'analisi funzionale:
 - **Should:** «Salta oggi» fino a 3 volte a settimana, bonus giornata completa, scudo della serie, boss che ruba monete a scadenza passata, badge con monete bonus, registro e completamenti dimenticati fino a 7 giorni prima, ricompense personali, scudo alla vittoria su un boss.
 - **Could:** regali per il compagno, riepilogo settimanale. Le classi semplici sono eliminate: al loro posto ci sono le statistiche dell'eroe, descritte in [statistiche-eroe.md](statistiche-eroe.md).
 - **Won't:** prestigio e acquisto di altri compagni.
-- **Da decidere:** le regole segnate «Proposta» nella sezione 1, i prezzi delle ricompense personali per entità e la priorità di moltiplicatore di serie e bonus del Piano, che non sono nella tabella (proposta: Must).
+- **Da decidere:** le regole segnate «Proposta» nella sezione 1 e la priorità di moltiplicatore di serie e bonus del Piano, che non sono nella tabella (proposta: Must).
 
 I primi mesi d'uso raccolgono dati reali su XP e monete, utili per tarare valori e prezzi prima di aggiungere regali e ricompense personali.
 

@@ -194,7 +194,7 @@ Perché nel database e non in MMKV: un solo file da salvare nel backup e da ripr
 | --- | --- |
 | Missioni | `mission.created`, `mission.updated`, `mission.paused`, `mission.resumed`, `mission.archived`, `mission.restored`, `mission.deleted` |
 | Completamenti | `mission.completed`, `mission.progressed` (valore parziale), `mission.skipped`, `mission.backfilled`, `event.reverted` (annulla) |
-| Giornata | `day.closed` (vita persa, scudo usato), `bonus.full_day`, `bonus.plan`, `pause.started`, `pause.ended` (giorni di pausa, scadenze dei boss spostate; `cancelled: true` se annullata prima dell'inizio) |
+| Giornata | `day.closed` (vita persa, scudo usato), `bonus.full_day`, `bonus.plan`, `pause.started`, `pause.ended` (giorni di pausa, scadenze dei boss spostate; `cancelled: true` se annullata prima dell'inizio), `pause.changed` (data di fine cambiata durante la pausa, con la vecchia e la nuova data) |
 | Boss | `boss.created`, `boss.step_done`, `boss.damaged`, `boss.defeated`, `boss.deadline_missed` (monete rubate), `boss.archived` |
 | Eroe e compagno | `hero.level_up`, `hero.exhausted`, `hero.renamed`, `companion.stage_up`, `companion.gift` |
 | Negozio | `item.bought`, `item.used`, `shield.consumed`, `reward.redeemed`, `badge.unlocked`; lo scudo della vittoria sta nei delta di `boss.defeated` |

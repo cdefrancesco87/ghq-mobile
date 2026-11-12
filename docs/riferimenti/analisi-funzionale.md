@@ -465,7 +465,7 @@ Tutte le scelte personali in un posto: aspetto, ritmo della giornata, notifiche,
 - **US-IMP-05** Come utente voglio cancellare tutti i miei dati, così che possa ricominciare o andarmene.
   - Serve una doppia conferma; dopo la cancellazione l'app riparte dal Primo avvio.
 - **US-IMP-06** Come utente voglio mettere in pausa tutta l'app per una vacanza o una malattia, così che al ritorno non trovi vita persa.
-  - Durante la pausa le missioni non tolgono vita, gli scudi non si consumano, i giorni senza completamenti non abbassano l'umore del compagno (un completamento lo rende felice come sempre), promemoria e riepilogo serale sono sospesi. Le missioni «N volte a settimana» chiedono una volta in meno per ogni giorno di pausa (12/11).
+  - Durante la pausa le missioni non tolgono vita, gli scudi non si consumano, i giorni di pausa non contano per l'umore del compagno (un completamento oggi lo rende felice come sempre), promemoria e riepilogo serale sono sospesi. Le missioni «N volte a settimana» chiedono una volta in meno per ogni giorno di pausa (12/11).
   - Le serie non sono protette: un giorno di pausa senza completamenti le interrompe come un giorno normale, così lo scudo resta l'unica protezione della serie (Claudio, 12/11).
   - La pausa può iniziare oggi o in una data futura.
   - Le missioni si possono comunque completare e danno XP, monete e punti statistica come sempre.
@@ -578,7 +578,7 @@ Dal livello 7 all'8 servono 500 XP, come nel mockup di Oggi. Con 5 missioni medi
 **Compagno**
 
 - Uovo → cucciolo al primo completamento; cucciolo → adulto a 150 completamenti totali. Se si aggiunge il quarto stadio (Could, nome da scegliere: es. Asceso o Antico), la soglia per adulto si abbassa e il quarto stadio diventa il nuovo traguardo. Regole del compagno approvate da Claudio il 16/10.
-- Umore sugli ultimi 3 giorni: felice sopra il 70% di missioni completate, normale tra 30% e 70%, triste sotto il 30%. I giorni di pausa generale senza completamenti non contano.
+- Umore sugli ultimi 3 giorni: felice sopra il 70% di missioni completate, normale tra 30% e 70%, triste sotto il 30%. I giorni di pausa generale non contano mai: la finestra va indietro fino agli ultimi 3 giorni non di pausa; in pausa un completamento oggi rende felice il compagno.
 
 **Statistiche dell'eroe**
 
