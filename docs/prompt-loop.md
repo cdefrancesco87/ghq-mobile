@@ -19,7 +19,7 @@ You are in the GHQ Mobile development loop. In this round run **one single task*
 9. If everything passes:
    - mark the task `[x]`;
    - add one line at the end of the Diario of the file containing the task, in Italian: date, task code, what you did in one sentence, any minor choices or content to review;
-   - commit all the task's files with the message `Txx: <task title>`;
+   - commit all the task's files with the message `Txx: <task title translated into English>` (a hook refuses commit messages with Italian words; use the same English title for the PR);
    - if the task started from another task's branch, first check with `git ls-remote origin <base-branch>` that it is on the remote; if not, push it first (it is allowed);
    - push the branch with `git push -u origin <branch>` and open a PR with `gh pr create`, targeting `main`, or the previous task's branch if the task started from it. Do not merge;
    - give `gh pr create` a `--title` and a single-line `--body` (or `--fill`): no heredoc, no `$(...)`.
