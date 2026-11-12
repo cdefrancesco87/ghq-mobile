@@ -5,7 +5,7 @@ import type { ComponentType } from 'react';
 import { Dimensions, Linking } from 'react-native';
 
 import { archiveBoss, createBoss } from '@/db/repositories/boss';
-import { missionReminderTimes } from '@/db/repositories/missions';
+import { missionReminderTimes, updateMission } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
 import { boss, missionReminders, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
@@ -429,6 +429,33 @@ describe('Mission editor: other options and editing', () => {
     await act(async () => router.back());
     expect(screen.queryByTestId('editor-discard')).toBeNull();
     expect(screen.queryByTestId('editor')).toBeNull();
+  });
+
+  it('keeps the reminder rows when the times did not change', async () => {
+    const db = newGame(['journal']);
+    const journal = db.select().from(missions).get()!;
+    updateMission(db, journal.id, { reminders: ['08:00'] }, clockAt(FRIDAY, 9));
+    const before = db.select().from(missionReminders).all();
+    await openToEdit(db, journal.id);
+    await name('Diario della sera');
+    await fireEvent.press(screen.getByTestId('editor-save'));
+
+    await screen.findByTestId('today-screen');
+    expect(created(db, 'Diario della sera')).toBeDefined();
+    expect(db.select().from(missionReminders).all()).toEqual(before);
+  });
+
+  it('archives without asking about changes not saved, which are left out', async () => {
+    const db = newGame(['journal']);
+    const journal = db.select().from(missions).get()!;
+    await openToEdit(db, journal.id);
+    await name('Diario della sera');
+    await fireEvent.press(screen.getByTestId('editor-archive'));
+
+    await screen.findByTestId('today-screen');
+    expect(screen.queryByTestId('editor-discard')).toBeNull();
+    expect(created(db, journal.name)?.status).toBe('archived');
+    expect(created(db, 'Diario della sera')).toBeUndefined();
   });
 
   it('archives with «Annulla» and deletes after the dialog', async () => {

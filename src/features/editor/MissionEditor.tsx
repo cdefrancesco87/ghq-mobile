@@ -186,11 +186,13 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
     let saved;
     try {
       saved = runAction((tx, clock) => {
-        const { kind: _kind, ...changes } = input;
+        const { kind: _kind, reminders, ...fields } = input;
+        // The reminder rows are written again only when the times changed.
+        const sameTimes = JSON.stringify(draft.reminders) === JSON.stringify(initial.reminders);
         const mission =
           missionId === undefined
             ? createMission(tx, input, clock)
-            : updateMission(tx, missionId, changes, clock);
+            : updateMission(tx, missionId, sameTimes ? fields : { ...fields, reminders }, clock);
         const day = gameDayOf(clock.now, clock.tzOffset, getSetting(tx, 'day_change'));
         return {
           id: mission.id,
@@ -230,6 +232,7 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
     if (missionId === undefined) {
       return;
     }
+    setFailed(false);
     try {
       runAction((tx, clock) => archiveMission(tx, missionId, clock));
     } catch {
@@ -254,6 +257,7 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
     if (missionId === undefined) {
       return;
     }
+    setFailed(false);
     try {
       cancelNotifications(
         runAction((tx, clock) => deleteMission(tx, missionId, clock)).cancelledNotificationIds,
