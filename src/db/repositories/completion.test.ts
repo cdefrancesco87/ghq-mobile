@@ -117,6 +117,14 @@ describe('completeMission', () => {
     expectHeroMatchesLog(db);
   });
 
+  it('returns the completion event and its gains, for the undo and the celebration', () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const result = complete(db, missionId(db, 'journal'));
+    const event = db.select().from(events).where(eq(events.type, 'mission.completed')).get();
+    expect(result.completion).toEqual({ eventId: event?.id, xp: 10, coins: 2 });
+    expect(complete(db, missionId(db, 'journal')).completion).toBeNull();
+  });
+
   it('counts the same completion once, from the notification and from the app', () => {
     const db = newGame(['journal']);
     const journal = missionId(db, 'journal');
@@ -154,7 +162,7 @@ describe('completeMission', () => {
 
   it('completes a measurable mission at its target', () => {
     const db = newGame(['drink_water', 'journal']);
-    complete(db, missionId(db, 'drink_water'));
+    expect(complete(db, missionId(db, 'drink_water')).completion).not.toBeNull();
     expect(db.select().from(missionDays).get()).toMatchObject({ status: 'done', value: 2 });
     expectHeroMatchesLog(db);
   });
@@ -318,12 +326,12 @@ describe('progressMission', () => {
         tzOffset: 60,
       });
     for (let tap = 1; tap <= 7; tap++) {
-      expect(progress(tap).status).toBe('progressed');
+      expect(progress(tap)).toMatchObject({ status: 'progressed', completion: null });
     }
     expect(db.select().from(missionDays).get()).toMatchObject({ status: 'partial', value: 1.75 });
     expect(heroTotals(db)).toMatchObject({ xp: 0, coins: 0 });
 
-    expect(progress(8).status).toBe('completed');
+    expect(progress(8)).toMatchObject({ status: 'completed', completion: { xp: 10, coins: 2 } });
     expect(db.select().from(missionDays).get()).toMatchObject({ status: 'done', value: 2 });
     expect(heroTotals(db)).toMatchObject({ xp: 10, coins: 2 });
 

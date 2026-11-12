@@ -625,6 +625,29 @@
       "title": "Ninguna misión",
       "message": "Crea la primera para empezar el día.",
       "action": "Crear una misión"
+    },
+    "missions": {
+      "title": "{{term}} de hoy",
+      "doneGroup": "Hechas ({{count}})",
+      "detailTime": "{{detail}} · {{time}}",
+      "overdueYesterday": "Vencida ayer",
+      "overdueOn": "Vencida el {{day}} de {{month}}",
+      "completed": "{{name}} completada, más {{xp}} {{xpTerm}}",
+      "completedCoins": "{{name}} completada, más {{xp}} {{xpTerm}} y {{coins}} {{coinsTerm}}",
+      "doneToast": "Hecho",
+      "menu": {
+        "undo": "Deshacer completado",
+        "addToPlan": "Añadir a prioridades",
+        "edit": "Editar",
+        "progress": "Evolución"
+      },
+      "errors": {
+        "dayChanged": "El día ha cambiado: este completado ya no se puede deshacer.",
+        "coinsSpent": "Las monedas de este completado ya se gastaron: no se puede deshacer.",
+        "alreadyUndone": "Este completado ya se deshizo.",
+        "planFull": "Ya hay 3 prioridades: quita una para añadir otra.",
+        "failed": "Algo salió mal. Inténtalo de nuevo."
+      }
     }
   }
 }

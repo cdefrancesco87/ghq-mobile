@@ -6,7 +6,7 @@ import { companion, dayPlan, events, missionDays, missions } from '../schema';
 import type { Db } from '../types';
 import { healBoss } from './boss';
 import { appendEvent, type EventRow } from './events';
-import { changeHero, type ActionClock } from './hero';
+import { changeHero, NotEnoughCoinsError, type ActionClock } from './hero';
 import { listTodayMissions } from './missions';
 import { gameDayOf, getSetting } from './settings';
 
@@ -15,6 +15,16 @@ import { gameDayOf, getSetting } from './settings';
 // hit points, stat points, the mission day and streak, the damage to the boss and the bonuses of
 // the day that the undo makes incomplete (CLAUDE.md, choices 4 and 5). The companion never loses
 // a stage and the step of the quest of the first launch stays done.
+
+/** Why an undo was refused: the screen says it in words (US-OGGI-04). */
+export type UndoRefusal = 'already_undone' | 'day_changed' | 'coins_spent';
+
+export class UndoRefusedError extends RangeError {
+  constructor(readonly reason: UndoRefusal) {
+    super(`The undo was refused: ${reason}`);
+    this.name = 'UndoRefusedError';
+  }
+}
 
 /** What a `mission.completed` event records for its undo (completion.ts). */
 interface CompletionPayload {
@@ -153,6 +163,21 @@ function revertDayBonuses(tx: Db, day: GameDay, clock: ActionClock): string[] {
   });
 }
 
+/** The opposite changes of a completion that can be undone. */
+function undoCompletion(tx: Db, completed: EventRow, clock: ActionClock): { reverted: string[] } {
+  revert(tx, completed, clock);
+  restoreMissionDay(tx, completed, completed.payload as unknown as CompletionPayload);
+  restoreBoss(tx, completed, clock.now);
+  const current = tx.select().from(companion).get();
+  if (current !== undefined && current.completionsTotal > 0) {
+    tx.update(companion)
+      .set({ completionsTotal: current.completionsTotal - 1 })
+      .where(eq(companion.id, current.id))
+      .run();
+  }
+  return { reverted: [completed.id, ...revertDayBonuses(tx, completed.gameDay, clock)] };
+}
+
 /**
  * Undoes a completion of today. Refused for an unknown event, an event that is not a completion,
  * an event already undone, after the day change, and when the coins to give back were already
@@ -168,22 +193,16 @@ export function undoEvent(db: Db, eventId: string, clock: ActionClock): { revert
       throw new RangeError(`Only a completion can be undone: ${completed.type}`);
     }
     if (isReverted(tx, completed.id)) {
-      throw new RangeError('The completion was already undone');
+      throw new UndoRefusedError('already_undone');
     }
     const today = gameDayOf(clock.now, clock.tzOffset, getSetting(tx, 'day_change'));
     if (!canUndo(completed.gameDay, today)) {
-      throw new RangeError('A completion can be undone only until the day change');
+      throw new UndoRefusedError('day_changed');
     }
-    revert(tx, completed, clock);
-    restoreMissionDay(tx, completed, completed.payload as unknown as CompletionPayload);
-    restoreBoss(tx, completed, clock.now);
-    const current = tx.select().from(companion).get();
-    if (current !== undefined && current.completionsTotal > 0) {
-      tx.update(companion)
-        .set({ completionsTotal: current.completionsTotal - 1 })
-        .where(eq(companion.id, current.id))
-        .run();
+    try {
+      return undoCompletion(tx, completed, clock);
+    } catch (error) {
+      throw error instanceof NotEnoughCoinsError ? new UndoRefusedError('coins_spent') : error;
     }
-    return { reverted: [completed.id, ...revertDayBonuses(tx, completed.gameDay, clock)] };
   });
 }

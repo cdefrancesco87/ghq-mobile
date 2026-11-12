@@ -625,6 +625,29 @@
       "title": "Keine Aufgaben",
       "message": "Erstelle die erste, um den Tag zu beginnen.",
       "action": "Aufgabe erstellen"
+    },
+    "missions": {
+      "title": "{{term}} von heute",
+      "doneGroup": "Erledigt ({{count}})",
+      "detailTime": "{{detail}} · {{time}}",
+      "overdueYesterday": "Seit gestern überfällig",
+      "overdueOn": "Seit {{day}}. {{month}} überfällig",
+      "completed": "{{name}} erledigt, plus {{xp}} {{xpTerm}}",
+      "completedCoins": "{{name}} erledigt, plus {{xp}} {{xpTerm}} und {{coins}} {{coinsTerm}}",
+      "doneToast": "Erledigt",
+      "menu": {
+        "undo": "Erledigung rückgängig machen",
+        "addToPlan": "Zu den Prioritäten hinzufügen",
+        "edit": "Bearbeiten",
+        "progress": "Verlauf"
+      },
+      "errors": {
+        "dayChanged": "Der Tag hat gewechselt: Die Erledigung kann nicht mehr rückgängig gemacht werden.",
+        "coinsSpent": "Die Münzen dieser Erledigung sind schon ausgegeben: Sie kann nicht rückgängig gemacht werden.",
+        "alreadyUndone": "Die Erledigung wurde schon rückgängig gemacht.",
+        "planFull": "Es gibt schon 3 Prioritäten: Entferne eine, um eine andere hinzuzufügen.",
+        "failed": "Etwas ist schiefgelaufen. Versuch es noch einmal."
+      }
     }
   }
 }

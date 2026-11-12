@@ -1,0 +1,247 @@
+import { useRouter } from 'expo-router';
+import { Fragment, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet, View, type GestureResponderEvent } from 'react-native';
+
+import type { TodayMission, TodayView } from '@/db/repositories/todayView';
+import { ActionSheet, type ActionSheetItem } from '@/features/shared/ActionSheet';
+import { Card } from '@/features/shared/Card';
+import { describeFrequency } from '@/features/shared/describeFrequency';
+import { Icon } from '@/features/shared/Icon';
+import { categoryIcon, ICON_NAMES, type IconName } from '@/features/shared/icons';
+import { MissionRow } from '@/features/shared/MissionRow';
+import { ThemedText } from '@/features/shared/ThemedText';
+import { addDays } from '@/rules/gameDay';
+import { useTheme } from '@/theme/ThemeProvider';
+import { useMissionActions } from './useMissionActions';
+
+const MINUTE_MS = 60_000;
+
+/** «8:00» from `08:00`, in the way of the language. */
+function formatClock(time: string, language: string): string {
+  const [hours, minutes] = time.split(':').map(Number);
+  return new Intl.DateTimeFormat(language, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(2000, 0, 1, hours, minutes)));
+}
+
+/** «07:42»: the local time of a UTC instant, with the offset of the phone. */
+function formatInstant(instant: number, tzOffset: number, language: string): string {
+  return new Intl.DateTimeFormat(language, {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(instant + tzOffset * MINUTE_MS));
+}
+
+function missionIcon({ iconKey, categoryKey }: TodayMission['mission']): IconName {
+  return iconKey !== null && (ICON_NAMES as readonly string[]).includes(iconKey)
+    ? (iconKey as IconName)
+    : categoryIcon(categoryKey);
+}
+
+/** Where the touch was, for the celebration; the centre of the screen in the tests. */
+function originOf(event: GestureResponderEvent | undefined) {
+  return { x: event?.nativeEvent?.pageX ?? 0, y: event?.nativeEvent?.pageY ?? 0 };
+}
+
+export interface TodayMissionsProps {
+  readonly view: TodayView;
+  /** Minutes east of UTC, for the times of completion. */
+  readonly tzOffset: number;
+}
+
+/**
+ * «Missioni di oggi» (design-sezioni.md 2.5, 2.6): the missions to do, then the group of the
+ * done ones, open by default. A touch on the control completes, a long press opens the menu, a
+ * touch on the name opens the detail of the mission.
+ */
+export function TodayMissions({ view, tzOffset }: TodayMissionsProps) {
+  const { t, i18n } = useTranslation();
+  const { colors, family } = useTheme();
+  const router = useRouter();
+  const actions = useMissionActions();
+  const [doneOpen, setDoneOpen] = useState(true);
+  const [menuFor, setMenuFor] = useState<TodayMission | null>(null);
+
+  const todo = view.missions.filter((item) => item.state === 'todo');
+  const done = view.missions.filter((item) => item.state === 'done');
+
+  const openDetail = (item: TodayMission) =>
+    router.push({ pathname: '/stats', params: { missionId: item.mission.id } });
+
+  const menuItems = (item: TodayMission): ActionSheetItem[] => {
+    const items: ActionSheetItem[] = [];
+    const eventId = item.completionEventId;
+    if (eventId !== null) {
+      items.push({
+        key: 'undo',
+        label: t('today.missions.menu.undo'),
+        icon: <Icon name="ripristina" size={20} color={colors.text} />,
+        onPress: () => actions.undo(eventId),
+      });
+    }
+    if (item.state === 'todo' && !view.plan.includes(item.mission.id)) {
+      items.push({
+        key: 'plan',
+        label: t('today.missions.menu.addToPlan'),
+        icon: <Icon name="aggiungi" size={20} color={colors.text} />,
+        onPress: () => actions.addToPlan(item),
+      });
+    }
+    items.push(
+      {
+        key: 'edit',
+        label: t('today.missions.menu.edit'),
+        icon: <Icon name="modifica" size={20} color={colors.text} />,
+        onPress: () => router.push({ pathname: '/editor', params: { missionId: item.mission.id } }),
+      },
+      {
+        key: 'progress',
+        label: t('today.missions.menu.progress'),
+        icon: <Icon name="statistiche" size={20} color={colors.text} />,
+        onPress: () => openDetail(item),
+      },
+    );
+    return items;
+  };
+
+  const detailOf = (item: TodayMission): string => {
+    const { frequency, dueDay } = item.mission;
+    // An overdue task says so in its warning: its due day would repeat it.
+    const detail = item.overdue ? '' : describeFrequency(frequency, t, dueDay);
+    if (item.time === null) {
+      return detail;
+    }
+    const time = formatClock(item.time, i18n.language);
+    return detail === '' ? time : t('today.missions.detailTime', { detail, time });
+  };
+
+  const warningOf = (item: TodayMission): string | undefined => {
+    const { dueDay } = item.mission;
+    if (!item.overdue || dueDay === null) {
+      return undefined;
+    }
+    if (dueDay === addDays(view.day, -1)) {
+      return t('today.missions.overdueYesterday');
+    }
+    const [, month, day] = dueDay.split('-').map(Number);
+    return t('today.missions.overdueOn', { day, month: t(`shared.frequency.month.${month}`) });
+  };
+
+  const rowActions = (item: TodayMission) =>
+    menuItems(item).map(({ key, label, onPress }) => ({ name: key, label, onAction: onPress }));
+
+  const separator = <View style={[styles.separator, { backgroundColor: colors.border }]} />;
+
+  return (
+    <View testID="today-missions" style={styles.section}>
+      <View style={styles.heading}>
+        <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.flex}>
+          {t('today.missions.title', { term: t('lexicon.missions_pl', { context: family }) })}
+        </ThemedText>
+        {/* The ring of the header already says it to the screen reader. */}
+        <ThemedText
+          testID="today-missions-count"
+          variant="caption"
+          color={colors.textMuted}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {t('today.progress', { done: view.doneCount, total: view.totalCount })}
+        </ThemedText>
+      </View>
+      {todo.length === 0 ? null : (
+        <Card>
+          {todo.map((item, index) => {
+            const { mission } = item;
+            const target = mission.goalTarget;
+            const measurable = mission.goalType !== 'none' && target !== null && target > 0;
+            return (
+              <Fragment key={mission.id}>
+                {index === 0 ? null : separator}
+                <MissionRow
+                  testID={`today-mission-${mission.id}`}
+                  variant="today"
+                  icon={missionIcon(mission)}
+                  name={mission.name}
+                  difficulty={mission.difficulty}
+                  detail={detailOf(item)}
+                  warning={warningOf(item)}
+                  xp={item.xp}
+                  progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
+                  onComplete={(event) => actions.complete(item, originOf(event))}
+                  onPress={() => openDetail(item)}
+                  onLongPress={() => setMenuFor(item)}
+                  actions={rowActions(item)}
+                />
+              </Fragment>
+            );
+          })}
+        </Card>
+      )}
+      {done.length === 0 ? null : (
+        <>
+          <Pressable
+            testID="today-done-toggle"
+            accessibilityRole="button"
+            accessibilityState={{ expanded: doneOpen }}
+            onPress={() => setDoneOpen((open) => !open)}
+            style={styles.toggle}
+          >
+            <ThemedText variant="label" color={colors.textMuted} style={styles.flex}>
+              {t('today.missions.doneGroup', { count: done.length })}
+            </ThemedText>
+            <Icon
+              name={doneOpen ? 'freccia-su' : 'freccia-giu'}
+              size={20}
+              color={colors.textMuted}
+            />
+          </Pressable>
+          {doneOpen ? (
+            <Card testID="today-done">
+              {done.map((item, index) => (
+                <Fragment key={item.mission.id}>
+                  {index === 0 ? null : separator}
+                  <MissionRow
+                    testID={`today-mission-${item.mission.id}`}
+                    variant="done"
+                    icon={missionIcon(item.mission)}
+                    name={item.mission.name}
+                    difficulty={item.mission.difficulty}
+                    detail={detailOf(item)}
+                    doneTime={
+                      item.doneAt === null
+                        ? ''
+                        : formatInstant(item.doneAt, tzOffset, i18n.language)
+                    }
+                    onPress={() => openDetail(item)}
+                    onLongPress={() => setMenuFor(item)}
+                    actions={rowActions(item)}
+                  />
+                </Fragment>
+              ))}
+            </Card>
+          ) : null}
+        </>
+      )}
+      <ActionSheet
+        testID="today-mission-menu"
+        visible={menuFor !== null}
+        onClose={() => setMenuFor(null)}
+        title={menuFor?.mission.name}
+        items={menuFor === null ? [] : menuItems(menuFor)}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  section: { gap: 8 },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  flex: { flex: 1 },
+  separator: { height: StyleSheet.hairlineWidth },
+  toggle: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 },
+});

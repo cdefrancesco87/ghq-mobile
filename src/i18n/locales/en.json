@@ -625,6 +625,29 @@
       "title": "No quests",
       "message": "Create the first one to start the day.",
       "action": "Create a quest"
+    },
+    "missions": {
+      "title": "Today's {{term}}",
+      "doneGroup": "Done ({{count}})",
+      "detailTime": "{{detail}} · {{time}}",
+      "overdueYesterday": "Overdue since yesterday",
+      "overdueOn": "Overdue since {{month}} {{day}}",
+      "completed": "{{name}} completed, plus {{xp}} {{xpTerm}}",
+      "completedCoins": "{{name}} completed, plus {{xp}} {{xpTerm}} and {{coins}} {{coinsTerm}}",
+      "doneToast": "Done",
+      "menu": {
+        "undo": "Undo completion",
+        "addToPlan": "Add to priorities",
+        "edit": "Edit",
+        "progress": "Progress"
+      },
+      "errors": {
+        "dayChanged": "The day has changed: this completion can no longer be undone.",
+        "coinsSpent": "The coins from this completion are already spent: it cannot be undone.",
+        "alreadyUndone": "This completion was already undone.",
+        "planFull": "There are already 3 priorities: remove one to add another.",
+        "failed": "Something went wrong. Try again."
+      }
     }
   }
 }

@@ -6,6 +6,7 @@ import {
   View,
   type AccessibilityActionEvent,
   type AccessibilityActionInfo,
+  type GestureResponderEvent,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -125,7 +126,8 @@ export interface CompletionControlProps {
   readonly testID: string;
   /** The whole mission, with state and action: this is what the screen reader stops on. */
   readonly accessibilityLabel: string;
-  readonly onPress: () => void;
+  /** The event gives where the touch was, for the celebration. */
+  readonly onPress: (event: GestureResponderEvent) => void;
   readonly onLongPress?: () => void;
   /** Progress of a measurable mission, from 0 to 1: a ring instead of the empty box. */
   readonly progress?: number;

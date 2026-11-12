@@ -9,7 +9,8 @@ import { changeHero } from '@/db/repositories/hero';
 import { createMission, deleteMission, pauseMission } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
 import { getTodayView } from '@/db/repositories/todayView';
-import { daySummaries, hero } from '@/db/schema';
+import { undoEvent } from '@/db/repositories/undo';
+import { daySummaries, hero, missionReminders } from '@/db/schema';
 import { FRIDAY, at, clockAt, missionId, newGame } from '../../../test/game';
 
 const TODAY = '2026-11-06';
@@ -137,6 +138,65 @@ describe('getTodayView', () => {
 
     expect(missionOf(getTodayView(db, clockAt(FRIDAY, 12)), task.id).overdue).toBe(true);
     expect(missionOf(getTodayView(db, clockAt(FRIDAY - 1, 12)), task.id).overdue).toBe(false);
+  });
+
+  it('puts overdue tasks first, then the missions by time, then the others', () => {
+    const db = newGame(['meditation', 'read_pages', 'journal'], FRIDAY - 2);
+    const meditation = missionId(db, 'meditation');
+    const pages = missionId(db, 'read_pages');
+    const journal = missionId(db, 'journal');
+    db.insert(missionReminders)
+      .values([
+        { id: 'r1', missionId: journal, time: '21:00' },
+        { id: 'r2', missionId: meditation, time: '08:00' },
+        { id: 'r3', missionId: meditation, time: '07:30' },
+      ])
+      .run();
+    const task = createMission(
+      db,
+      { name: 'Chiama il dentista', kind: 'task', difficulty: 'easy', dueDay: '2026-11-05' },
+      clockAt(FRIDAY - 2, 10),
+    );
+
+    const view = getTodayView(db, clockAt(FRIDAY, 12));
+
+    expect(view.missions.map((item) => item.mission.id)).toEqual([
+      task.id,
+      meditation,
+      journal,
+      pages,
+    ]);
+    expect(missionOf(view, meditation).time).toBe('07:30');
+    expect(missionOf(view, pages).time).toBeNull();
+  });
+
+  it('gives the XP at stake, halved when the hero is exhausted', () => {
+    const db = newGame(['read_pages', 'journal']);
+    const pages = missionId(db, 'read_pages');
+
+    expect(missionOf(getTodayView(db, clockAt(FRIDAY, 12)), pages).xp).toBe(25);
+    db.update(hero).set({ exhaustedDay: TODAY }).run();
+    expect(missionOf(getTodayView(db, clockAt(FRIDAY, 12)), pages).xp).toBe(13);
+  });
+
+  it('gives the completion event of a done mission until it is undone', () => {
+    const db = newGame(['meditation', 'journal']);
+    const meditation = missionId(db, 'meditation');
+    const result = completeMission(db, {
+      missionId: meditation,
+      source: 'app',
+      ...clockAt(FRIDAY, 10),
+    });
+    const eventId = result.completion?.eventId ?? '';
+
+    expect(missionOf(getTodayView(db, clockAt(FRIDAY, 12)), meditation).completionEventId).toBe(
+      eventId,
+    );
+    undoEvent(db, eventId, clockAt(FRIDAY, 11));
+    expect(missionOf(getTodayView(db, clockAt(FRIDAY, 12)), meditation)).toMatchObject({
+      state: 'todo',
+      completionEventId: null,
+    });
   });
 
   it('tells the coins stolen today by a boss', () => {

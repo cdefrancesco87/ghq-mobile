@@ -63,12 +63,23 @@ export interface CompletionResult extends WithMoments {
    * idempotency key was already used. In the last two cases nothing changed.
    */
   readonly status: 'completed' | 'progressed' | 'already_done' | 'already_recorded';
+  /** The `mission.completed` event and its gains, when the rewards were given. */
+  readonly completion: {
+    readonly eventId: string;
+    readonly xp: number;
+    readonly coins: number;
+  } | null;
   readonly bonuses: readonly DayBonus[];
   /** Notifications to cancel in the operating system, outside the transaction. */
   readonly cancelledNotificationIds: readonly string[];
 }
 
-const NOTHING = { bonuses: [], cancelledNotificationIds: [], moments: [] } as const;
+const NOTHING = {
+  completion: null,
+  bonuses: [],
+  cancelledNotificationIds: [],
+  moments: [],
+} as const;
 
 function today(tx: Db, { now, tzOffset }: { now: number; tzOffset: number }): GameDay {
   return gameDayOf(now, tzOffset, getSetting(tx, 'day_change'));
@@ -249,7 +260,7 @@ function finishCompletion(
   });
   const change = changeHero(tx, rewards, input.now);
   const before = missionDayOf(tx, mission.id, day);
-  appendEvent(tx, {
+  const { event } = appendEvent(tx, {
     type: 'mission.completed',
     occurredAt: input.now,
     tzOffset: input.tzOffset,
@@ -293,6 +304,7 @@ function finishCompletion(
   const bonuses = giveDayBonuses(tx, day, clock);
   return {
     status: 'completed',
+    completion: { eventId: event.id, xp: change.deltas.xp, coins: change.deltas.coins },
     bonuses,
     cancelledNotificationIds: cancelReminders(tx, mission.id, day),
   };

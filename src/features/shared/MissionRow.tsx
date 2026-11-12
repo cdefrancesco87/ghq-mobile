@@ -1,5 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View, type AccessibilityActionEvent } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type AccessibilityActionEvent,
+  type GestureResponderEvent,
+} from 'react-native';
 
 import type { Difficulty as DifficultyLevel } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -35,6 +41,8 @@ interface CommonProps {
   readonly difficulty: DifficultyLevel;
   /** Under the name: the frequency (`describeFrequency`) or the progress, e.g. «1,25 di 2 L». */
   readonly detail: string;
+  /** Before the detail in the danger colour, e.g. «Scaduta ieri» (design 2.5). */
+  readonly warning?: string;
   /** Opens the detail of the mission. */
   readonly onPress?: () => void;
   /** Opens the menu of the row. */
@@ -45,7 +53,7 @@ interface CommonProps {
 interface ToComplete {
   /** The XP at stake. */
   readonly xp: number;
-  readonly onComplete: () => void;
+  readonly onComplete: (event: GestureResponderEvent) => void;
   /** Progress of a measurable mission, from 0 to 1. */
   readonly progress?: number;
 }
@@ -76,7 +84,8 @@ export function MissionRow(props: MissionRowProps) {
   const { t } = useTranslation();
   const { colors, family, typography } = useTheme();
   const large = useLargeText();
-  const { testID, name, difficulty, detail, onPress, onLongPress, actions } = props;
+  const { testID, name, difficulty, onPress, onLongPress, actions, warning } = props;
+  const detail = [warning, props.detail].filter(Boolean).join(' · ');
 
   const difficultyWord = t(`shared.difficulty.${difficulty}`).toLowerCase();
   const doneAt =
@@ -157,8 +166,13 @@ export function MissionRow(props: MissionRowProps) {
             {name}
           </ThemedText>
           <View style={styles.meta}>
+            {warning === undefined || props.variant === 'done' ? null : (
+              <ThemedText testID={`${testID}-warning`} variant="caption" color={colors.dangerText}>
+                {warning}
+              </ThemedText>
+            )}
             <ThemedText variant="caption" color={colors.textMuted} style={styles.detail}>
-              {props.variant === 'done' ? doneAt : detail}
+              {props.variant === 'done' ? doneAt : props.detail}
             </ThemedText>
             {large ? null : notches}
           </View>

@@ -3,10 +3,14 @@ import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-librar
 import type { ComponentType } from 'react';
 import { Dimensions } from 'react-native';
 
-import { deleteMission } from '@/db/repositories/missions';
+import { appendEvent } from '@/db/repositories/events';
+import { changeHero } from '@/db/repositories/hero';
+import { createMission, deleteMission } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
-import { daySummaries, hero } from '@/db/schema';
+import { buyItem } from '@/db/repositories/shop';
+import { dayPlan, daySummaries, hero, missionDays, missionReminders } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { UNDO_TOAST_MS } from '@/features/shared/UndoToast';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
 import { startApp, useAppStore } from '@/stores/app';
@@ -24,7 +28,15 @@ import Editor from '../../../app/editor';
 import Index from '../../../app/index';
 import Shop from '../../../app/shop';
 import Stats from '../../../app/stats';
-import { FRIDAY, at, clockAt, missionId, newGame } from '../../../test/game';
+import {
+  FRIDAY,
+  TZ,
+  at,
+  clockAt,
+  expectHeroMatchesLog,
+  missionId,
+  newGame,
+} from '../../../test/game';
 
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
@@ -40,8 +52,8 @@ const ROUTES: Record<string, ComponentType> = {
   '(tabs)/profile': Profile,
 };
 
-async function openToday(db: Db) {
-  await startApp({ openDatabase: () => Promise.resolve(db), clock: () => clockAt(FRIDAY, 10) });
+async function openToday(db: Db, clock = () => clockAt(FRIDAY, 10)) {
+  await startApp({ openDatabase: () => Promise.resolve(db), clock });
   const i18n = await createI18n('it');
   await renderRouter(
     {
@@ -270,5 +282,205 @@ describe('Today: particular states', () => {
     await fireEvent.press(screen.getByTestId('today-empty-action'));
 
     expect(await screen.findByRole('header', { name: 'Editor missione' })).toBeOnTheScreen();
+  });
+});
+
+describe('Today: missions and completion', () => {
+  const hidden = { includeHiddenElements: true };
+  const heroRow = (db: Db) => db.select().from(hero).get();
+  const row = (id: string) => `today-mission-${id}`;
+
+  async function completeFromScreen(id: string) {
+    await fireEvent.press(screen.getByTestId(`${row(id)}-control`));
+  }
+
+  async function openMenu(id: string) {
+    await fireEvent(screen.getByTestId(`${row(id)}-body`), 'longPress');
+  }
+
+  /** Coins earned before the test, written in the log like every gain. */
+  function giveCoins(db: Db, coins: number) {
+    const change = changeHero(db, { coins }, at(FRIDAY, 9));
+    appendEvent(db, {
+      type: 'bonus.plan',
+      occurredAt: at(FRIDAY, 9),
+      tzOffset: TZ,
+      source: 'system',
+      gameDay: '2026-11-05',
+      deltas: change.deltas,
+    });
+  }
+
+  it('lists the overdue tasks, then the missions by time, then the others', async () => {
+    const db = newGame(['read_pages', 'journal'], FRIDAY - 2);
+    const pages = missionId(db, 'read_pages');
+    const journal = missionId(db, 'journal');
+    db.insert(missionReminders).values({ id: 'r1', missionId: journal, time: '21:00' }).run();
+    const task = createMission(
+      db,
+      { name: 'Chiama il dentista', kind: 'task', difficulty: 'easy', dueDay: '2026-11-05' },
+      clockAt(FRIDAY - 2, 10),
+    );
+    await openToday(db);
+
+    expect(screen.getByRole('header', { name: 'Abitudini di oggi' })).toBeOnTheScreen();
+    expect(screen.getByTestId('today-missions-count', hidden)).toHaveTextContent('0 di 3');
+    expect(treeOrder([row(pages), row(journal), row(task.id)])).toEqual([
+      row(task.id),
+      row(journal),
+      row(pages),
+    ]);
+    expect(screen.getByTestId(`${row(task.id)}-warning`)).toHaveTextContent('Scaduta ieri');
+    expect(screen.getByTestId(row(journal))).toHaveTextContent(/21:00/);
+  });
+
+  it('completes a mission with a touch: gains in the database and in the store, celebration, notice', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const journal = missionId(db, 'journal');
+    await openToday(db);
+
+    await completeFromScreen(journal);
+
+    expect(heroRow(db)).toMatchObject({ xpTotal: 10, coins: 2 });
+    expect(useHeroStore.getState().hero).toMatchObject({ xpTotal: 10, coins: 2 });
+    expect(db.select().from(missionDays).get()).toMatchObject({ status: 'done', source: 'app' });
+    expect(screen.getByLabelText(/completata, più 10 XP e 2 Monete$/)).toBeOnTheScreen();
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(/Fatto/);
+    expect(screen.getByLabelText('Fatte 1 di 2')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Fatte (1)', expanded: true })).toBeOnTheScreen();
+    expect(screen.getByTestId(row(journal))).toHaveTextContent(/fatta alle 10:00/);
+    expectHeroMatchesLog(db);
+  });
+
+  it('closes and opens again the group of the done missions', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const journal = missionId(db, 'journal');
+    await openToday(db);
+    await completeFromScreen(journal);
+
+    await fireEvent.press(screen.getByTestId('today-done-toggle'));
+    expect(screen.queryByTestId(row(journal))).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('today-done-toggle'));
+    expect(screen.getByTestId(row(journal))).toBeOnTheScreen();
+  });
+
+  it('undoes the completion from the notice', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const journal = missionId(db, 'journal');
+    await openToday(db);
+    await completeFromScreen(journal);
+
+    await fireEvent.press(screen.getByTestId('undo-toast-undo'));
+
+    expect(heroRow(db)).toMatchObject({ xpTotal: 0, coins: 0 });
+    expect(useHeroStore.getState().hero).toMatchObject({ xpTotal: 0, coins: 0 });
+    expect(screen.queryByTestId('today-done-toggle')).toBeNull();
+    expect(screen.getByTestId(`${row(journal)}-control`)).toBeOnTheScreen();
+    expectHeroMatchesLog(db);
+  });
+
+  it('hides the notice after 5 seconds, then undoes from the menu of the row', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const journal = missionId(db, 'journal');
+    await openToday(db);
+    jest.useFakeTimers();
+    try {
+      await completeFromScreen(journal);
+      await act(async () => {
+        jest.advanceTimersByTime(UNDO_TOAST_MS);
+      });
+      expect(screen.queryByTestId('undo-toast')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+
+    await openMenu(journal);
+    expect(screen.queryByTestId('today-mission-menu-plan')).toBeNull();
+    await fireEvent.press(screen.getByTestId('today-mission-menu-undo'));
+
+    expect(heroRow(db)).toMatchObject({ xpTotal: 0, coins: 0 });
+    expect(screen.getByTestId(`${row(journal)}-control`)).toBeOnTheScreen();
+    expectHeroMatchesLog(db);
+  });
+
+  it('refuses the undo after the day change, with a clear message', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const journal = missionId(db, 'journal');
+    let clock = clockAt(FRIDAY, 10);
+    await openToday(db, () => clock);
+    await completeFromScreen(journal);
+
+    clock = clockAt(FRIDAY + 1, 7);
+    await openMenu(journal);
+    await fireEvent.press(screen.getByTestId('today-mission-menu-undo'));
+
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(
+      'La giornata è cambiata: il completamento non si può più annullare.',
+    );
+    expect(heroRow(db)).toMatchObject({ xpTotal: 10 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('refuses the undo when the coins of the completion are already spent', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const journal = missionId(db, 'journal');
+    giveCoins(db, 48);
+    await openToday(db);
+    await completeFromScreen(journal);
+    buyItem(db, 'potion', clockAt(FRIDAY, 11));
+
+    await openMenu(journal);
+    await fireEvent.press(screen.getByTestId('today-mission-menu-undo'));
+
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(
+      'Le monete di questo completamento sono già state spese: non si può annullare.',
+    );
+    expect(heroRow(db)).toMatchObject({ xpTotal: 10, coins: 0 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('adds a mission to the priorities from the menu of the row', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const pages = missionId(db, 'read_pages');
+    await openToday(db);
+
+    await openMenu(pages);
+    expect(screen.queryByTestId('today-mission-menu-undo')).toBeNull();
+    await fireEvent.press(screen.getByTestId('today-mission-menu-plan'));
+
+    expect(db.select().from(dayPlan).all()).toEqual([
+      { gameDay: '2026-11-06', missionId: pages, position: 0 },
+    ]);
+  });
+
+  it('opens the detail of the mission from its name', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const pages = missionId(db, 'read_pages');
+    await openToday(db);
+
+    await fireEvent.press(screen.getByTestId(`${row(pages)}-body`));
+    expect(await screen.findByRole('header', { name: 'Statistiche' })).toBeOnTheScreen();
+  });
+
+  it('opens the editor from the menu of the row', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const pages = missionId(db, 'read_pages');
+    await openToday(db);
+
+    await openMenu(pages);
+    await fireEvent.press(screen.getByTestId('today-mission-menu-edit'));
+
+    expect(await screen.findByRole('header', { name: 'Editor missione' })).toBeOnTheScreen();
+  });
+
+  it('shows the level-up moment when the completion takes the hero to the next level', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    db.update(hero).set({ xpInLevel: 195, xpTotal: 195 }).run();
+    await openToday(db);
+
+    await completeFromScreen(missionId(db, 'journal'));
+
+    expect(await screen.findByTestId('moment-level_up')).toBeOnTheScreen();
   });
 });
