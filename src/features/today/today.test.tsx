@@ -715,6 +715,29 @@ describe('Today: bosses', () => {
     expectHeroMatchesLog(db);
   });
 
+  it('says why the step before the victory cannot be undone any more', async () => {
+    const db = newGame(['journal']);
+    archiveBoss(db, starter(db).id, clockAt(FRIDAY, 9));
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'easy', steps: ['A', 'B'] },
+      clockAt(FRIDAY, 9),
+    );
+    await openToday(db);
+    await fireEvent.press(screen.getByTestId(`${card(thesis.id)}-step`));
+    const undoFirstStep = screen.getByTestId('undo-toast-undo');
+
+    // The victory has no notice of its own: the one of the first step is still there.
+    await fireEvent.press(screen.getByTestId(`${card(thesis.id)}-step`));
+    await fireEvent.press(undoFirstStep);
+
+    expect(bossRow(db, thesis.id)?.status).toBe('defeated');
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(
+      'Questo boss è già sconfitto: la vittoria non si annulla.',
+    );
+    expectHeroMatchesLog(db);
+  });
+
   it('leads to Obiettivi when there is no boss', async () => {
     const db = newGame(['journal']);
     archiveBoss(db, starter(db).id, clockAt(FRIDAY, 9));

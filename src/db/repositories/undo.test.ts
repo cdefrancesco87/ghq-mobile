@@ -211,9 +211,9 @@ describe('undoEvent', () => {
     const victory = completeBossStep(db, last, NOW);
     expect(victory.defeated).toBe(true);
 
-    expect(() => undoEvent(db, victory.eventId, LATER)).toThrow(RangeError);
+    expect(refusalOf(() => undoEvent(db, victory.eventId, LATER))).toBe('boss_not_active');
     // The boss is defeated: an earlier step cannot be undone either.
-    expect(() => undoEvent(db, step.eventId, LATER)).toThrow(RangeError);
+    expect(refusalOf(() => undoEvent(db, step.eventId, LATER))).toBe('boss_not_active');
 
     const other = newGame(['journal']);
     const quest = createBoss(other, { name: 'Tesi', difficulty: 'easy', steps: ['A', 'B'] }, NOW);

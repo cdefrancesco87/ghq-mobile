@@ -682,6 +682,7 @@
         "dayChanged": "Der Tag hat gewechselt: Die Erledigung kann nicht mehr rückgängig gemacht werden.",
         "coinsSpent": "Die Münzen dieser Erledigung sind schon ausgegeben: Sie kann nicht rückgängig gemacht werden.",
         "alreadyUndone": "Die Erledigung wurde schon rückgängig gemacht.",
+        "bossNotActive": "Dieser Boss ist schon besiegt: Ein Sieg lässt sich nicht rückgängig machen.",
         "planFull": "Es gibt schon 3 Prioritäten: Entferne eine, um eine andere hinzuzufügen.",
         "failed": "Etwas ist schiefgelaufen. Versuch es noch einmal."
       }

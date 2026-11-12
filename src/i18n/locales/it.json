@@ -682,6 +682,7 @@
         "dayChanged": "La giornata è cambiata: il completamento non si può più annullare.",
         "coinsSpent": "Le monete di questo completamento sono già state spese: non si può annullare.",
         "alreadyUndone": "Il completamento è già stato annullato.",
+        "bossNotActive": "Questo boss è già sconfitto: la vittoria non si annulla.",
         "planFull": "Ci sono già 3 priorità: togline una per aggiungerne un'altra.",
         "failed": "Qualcosa non ha funzionato. Riprova."
       }

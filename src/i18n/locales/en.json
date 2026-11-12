@@ -682,6 +682,7 @@
         "dayChanged": "The day has changed: this completion can no longer be undone.",
         "coinsSpent": "The coins from this completion are already spent: it cannot be undone.",
         "alreadyUndone": "This completion was already undone.",
+        "bossNotActive": "This boss is already defeated: a victory cannot be undone.",
         "planFull": "There are already 3 priorities: remove one to add another.",
         "failed": "Something went wrong. Try again."
       }

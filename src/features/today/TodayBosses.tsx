@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { TodayView } from '@/db/repositories/todayView';
 import { BossCard, type BossHit } from '@/features/bosses/BossCard';
@@ -14,6 +14,8 @@ import type { MissionActions } from './useMissionActions';
 /** How long the number of the damage stays beside the bar (design-sezioni.md 5.4). */
 export const DAMAGE_MS = 1500;
 const DOT_SIZE = 6;
+/** The side margin of the content of Today (TodayScreen). */
+const SCREEN_MARGIN = 16;
 
 export interface TodayBossesProps {
   readonly view: TodayView;
@@ -29,10 +31,15 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
   const router = useRouter();
-  const [width, setWidth] = useState(0);
+  const screenSize = useWindowDimensions();
+  // Until the first layout the pages take the width of the screen less the margins of Today.
+  const [width, setWidth] = useState(screenSize.width - 2 * SCREEN_MARGIN);
   const [page, setPage] = useState(0);
   const [hit, setHit] = useState<(BossHit & { readonly bossId: string }) | null>(null);
+  // A second tap before Today is read again would send the same step twice.
+  const lastTap = useRef<{ readonly view: TodayView; readonly stepId: string } | null>(null);
   const { bosses } = view;
+  const current = Math.min(page, Math.max(bosses.length - 1, 0));
 
   useEffect(() => {
     if (hit === null) {
@@ -65,6 +72,14 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
         day={view.day}
         hit={hit?.bossId === item.boss.id ? hit : null}
         onCompleteStep={() => {
+          const stepId = item.nextStep?.id;
+          if (stepId === undefined) {
+            return;
+          }
+          if (lastTap.current?.view === view && lastTap.current.stepId === stepId) {
+            return;
+          }
+          lastTap.current = { view, stepId };
           const dealt = actions.completeStep(item);
           if (dealt !== null) {
             setHit((last) => ({ bossId: item.boss.id, dealt, key: (last?.key ?? 0) + 1 }));
@@ -106,7 +121,7 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
                 testID={`today-bosses-dot-${index}`}
                 style={[
                   styles.dot,
-                  { backgroundColor: index === page ? colors.primary : colors.border },
+                  { backgroundColor: index === current ? colors.primary : colors.border },
                 ]}
               />
             ))}

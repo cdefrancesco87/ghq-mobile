@@ -54,6 +54,7 @@ export function useMissionActions(): MissionActions {
         day_changed: 'dayChanged',
         coins_spent: 'coinsSpent',
         already_undone: 'alreadyUndone',
+        boss_not_active: 'bossNotActive',
       } as const;
       tell(t(`today.missions.errors.${reasons[error.reason]}`));
     }

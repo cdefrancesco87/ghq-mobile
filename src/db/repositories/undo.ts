@@ -17,7 +17,7 @@ import { gameDayOf, getSetting } from './settings';
 // a stage and the step of the quest of the first launch stays done.
 
 /** Why an undo was refused: the screen says it in words (US-OGGI-04). */
-export type UndoRefusal = 'already_undone' | 'day_changed' | 'coins_spent';
+export type UndoRefusal = 'already_undone' | 'day_changed' | 'coins_spent' | 'boss_not_active';
 
 export class UndoRefusedError extends RangeError {
   constructor(readonly reason: UndoRefusal) {
@@ -186,7 +186,7 @@ function undoCompletion(tx: Db, completed: EventRow, clock: ActionClock): { reve
 function undoStep(tx: Db, done: EventRow, clock: ActionClock): { reverted: string[] } {
   const target = tx.select().from(boss).where(eq(boss.id, done.bossId!)).get();
   if (target === undefined || target.status !== 'active') {
-    throw new RangeError('A step of a boss that is not active cannot be undone');
+    throw new UndoRefusedError('boss_not_active');
   }
   revert(tx, done, clock);
   const { stepId, dealt } = done.payload;
