@@ -19,10 +19,13 @@ import { Icon } from '@/features/shared/Icon';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { hitSlopFor } from '@/features/shared/touch';
 import { useTheme } from '@/theme/ThemeProvider';
+import { DayPlan } from './DayPlan';
 import { HeroCard } from './HeroCard';
 import { HeroStickyBar } from './HeroStickyBar';
 import { TodayHeader } from './TodayHeader';
 import { TodayMissions } from './TodayMissions';
+import { useMissionActions } from './useMissionActions';
+import { useMissionMenu } from './useMissionMenu';
 
 const EMPTY_COMPANION_SIZE = 128;
 const CLOSE_ICON = 20;
@@ -34,8 +37,9 @@ export interface TodayScreenProps {
 }
 
 /**
- * Today (design-sezioni.md 2.1, 2.2, 2.5, 2.8): date and greeting, the notice of the shield, the
- * hero card, the missions of today or the empty states. Plan and boss come with the next tasks.
+ * Today (design-sezioni.md 2.1, 2.2, 2.3, 2.5, 2.8): date and greeting, the notice of the shield,
+ * the hero card, the plan of the day and the missions of today, or the empty states. The boss
+ * comes with the next task.
  */
 export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const { t } = useTranslation();
@@ -46,6 +50,8 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const [heroBottom, setHeroBottom] = useState<number | null>(null);
   const [sticky, setSticky] = useState(false);
   const [shieldClosed, setShieldClosed] = useState(false);
+  const actions = useMissionActions();
+  const menu = useMissionMenu(view, actions);
 
   const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     const past = heroBottom !== null && nativeEvent.contentOffset.y > heroBottom;
@@ -118,9 +124,13 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
             onAction={() => router.push('/editor')}
           />
         ) : (
-          <TodayMissions view={view} tzOffset={tzOffset} />
+          <>
+            <DayPlan view={view} tzOffset={tzOffset} actions={actions} menu={menu} />
+            <TodayMissions view={view} tzOffset={tzOffset} actions={actions} menu={menu} />
+          </>
         )}
       </ScrollView>
+      {menu.sheets}
       {sticky ? <HeroStickyBar hero={view.hero} xpToNext={view.xpToNext} /> : null}
     </View>
   );

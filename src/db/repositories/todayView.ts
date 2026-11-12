@@ -18,6 +18,7 @@ import {
 } from '../schema';
 import type { Db } from '../types';
 import type { Boss } from './boss';
+import { bonusGiven } from './completion';
 import { loadHero, type Hero } from './hero';
 import { listTodayMissions, type Mission } from './missions';
 import { gameDayOf, getSetting } from './settings';
@@ -88,6 +89,8 @@ export interface TodayView {
   readonly missions: readonly TodayMission[];
   /** Ids of the priorities of the day, in their order. */
   readonly plan: readonly string[];
+  /** The bonus of the plan was given today and no undo took it back (design-sezioni.md 2.3). */
+  readonly planBonus: boolean;
   /** Active bosses, the nearest deadline first and those without one last. */
   readonly bosses: readonly TodayBoss[];
   readonly doneCount: number;
@@ -331,6 +334,7 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
       .orderBy(asc(dayPlan.position))
       .all()
       .map((row) => row.missionId),
+    planBonus: bonusGiven(db, 'bonus.plan', day),
     bosses: activeBosses(db),
     doneCount,
     totalCount: today.length,

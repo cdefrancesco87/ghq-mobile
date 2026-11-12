@@ -49,6 +49,11 @@ export function bossSpriteKey(family: ThemeFamily, kind: BossKind): string | nul
   return family === 'minimal' ? null : `boss-${family}-${BOSS_FILES[kind]}`;
 }
 
+/** The seal of the theme for a plan of the day all done (design-sezioni.md 2.3, esito-lotto4.md). */
+export function sealSpriteKey(family: ThemeFamily): string {
+  return `sigillo-${family}`;
+}
+
 /** The side of a pixel sprite in a box: only whole multiples of its grid (A5), at least once. */
 export function spriteSide(grid: number, box: number): number {
   return grid * Math.max(1, Math.floor(box / grid));

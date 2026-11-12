@@ -199,6 +199,23 @@ describe('getTodayView', () => {
     });
   });
 
+  it('tells when the bonus of the plan is given today, until the undo takes it back', () => {
+    const db = newGame(['meditation', 'journal']);
+    const meditation = missionId(db, 'meditation');
+    setDayPlan(db, meditation, clockAt(FRIDAY, 9));
+    expect(getTodayView(db, clockAt(FRIDAY, 9)).planBonus).toBe(false);
+
+    const result = completeMission(db, {
+      missionId: meditation,
+      source: 'app',
+      ...clockAt(FRIDAY, 10),
+    });
+    expect(getTodayView(db, clockAt(FRIDAY, 11)).planBonus).toBe(true);
+
+    undoEvent(db, result.completion?.eventId ?? '', clockAt(FRIDAY, 11));
+    expect(getTodayView(db, clockAt(FRIDAY, 12)).planBonus).toBe(false);
+  });
+
   it('tells the coins stolen today by a boss', () => {
     const db = newGame(['meditation']);
     changeHero(db, { coins: 300 }, at(FRIDAY, 10));

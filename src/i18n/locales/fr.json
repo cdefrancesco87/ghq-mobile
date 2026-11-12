@@ -626,6 +626,21 @@
       "message": "Crée la première pour commencer la journée.",
       "action": "Créer une mission"
     },
+    "plan": {
+      "count": "{{count}} sur {{max}}",
+      "countLabel": "{{count}} priorités sur {{max}}",
+      "intro": "Choisis jusqu'à {{max}} priorités par lesquelles commencer : les terminer toutes vaut +{{xp}} {{xpTerm}}.",
+      "add": "Choisir une priorité",
+      "sealLabel": "Toutes les priorités faites, plus {{xp}} {{xpTerm}}",
+      "completedLabel": "{{label}}. Toutes les priorités faites, plus {{xp}} {{xpTerm}}",
+      "picker": {
+        "title": "Choisir une priorité",
+        "subtitle": "{{term}} du jour encore à faire",
+        "none": "Il ne reste rien d'autre à faire aujourd'hui en dehors des priorités.",
+        "full": "Tu as déjà {{max}} priorités : retires-en une.",
+        "chooseFirst": "Choisis d'abord un élément de la liste."
+      }
+    },
     "missions": {
       "title": "{{term}} du jour",
       "doneGroup": "Faites ({{count}})",
@@ -638,6 +653,7 @@
       "menu": {
         "undo": "Annuler la validation",
         "addToPlan": "Ajouter aux priorités",
+        "removeFromPlan": "Retirer des priorités",
         "edit": "Modifier",
         "progress": "Évolution"
       },

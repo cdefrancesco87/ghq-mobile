@@ -1,13 +1,19 @@
 import { useTranslation } from 'react-i18next';
 import { uuidv7 } from 'uuidv7';
 
-import { completeMission, progressMission, setDayPlan } from '@/db/repositories/completion';
+import {
+  completeMission,
+  progressMission,
+  removeFromDayPlan,
+  setDayPlan,
+} from '@/db/repositories/completion';
 import type { TodayMission } from '@/db/repositories/todayView';
 import { undoEvent, UndoRefusedError } from '@/db/repositories/undo';
 import { type Point, useCelebration } from '@/features/shared/Celebration';
 import { useMomentQueue } from '@/features/shared/MomentQueue';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { systemScheduler } from '@/features/notifications/system';
+import { DAY_PLAN } from '@/rules/config';
 import { runAction } from '@/stores/app';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -17,6 +23,7 @@ export interface MissionActions {
   /** Undoes a completion of today (US-OGGI-04); a refusal is told in words. */
   readonly undo: (eventId: string) => void;
   readonly addToPlan: (item: TodayMission) => void;
+  readonly removeFromPlan: (item: TodayMission) => void;
 }
 
 /** The actions of the rows of Today, with their celebration, moments and notices. */
@@ -81,14 +88,17 @@ export function useMissionActions(): MissionActions {
       coins: completion.coins,
       coinsTerm: t('lexicon.coins_pl', { context: family }),
     };
+    const label = t(
+      completion.coins > 0 ? 'today.missions.completedCoins' : 'today.missions.completed',
+      values,
+    );
     celebrate({
       xp: completion.xp,
       coins: completion.coins,
       origin,
-      label: t(
-        completion.coins > 0 ? 'today.missions.completedCoins' : 'today.missions.completed',
-        values,
-      ),
+      label: result.bonuses.includes('bonus.plan')
+        ? t('today.plan.completedLabel', { label, xp: DAY_PLAN.bonusXp, xpTerm: values.xpTerm })
+        : label,
     });
     enqueue(result.moments);
     toast.show({
@@ -106,5 +116,13 @@ export function useMissionActions(): MissionActions {
     }
   };
 
-  return { complete, undo, addToPlan };
+  const removeFromPlan = (item: TodayMission) => {
+    try {
+      runAction((db, clock) => removeFromDayPlan(db, item.mission.id, clock));
+    } catch {
+      tell(t('today.missions.errors.failed'));
+    }
+  };
+
+  return { complete, undo, addToPlan, removeFromPlan };
 }
