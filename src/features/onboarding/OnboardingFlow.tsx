@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AppState } from 'react-native';
 
 import {
   RECOMMENDED_TEMPLATE_KEYS,
@@ -24,35 +25,62 @@ import { OnboardingStep, StepButton } from './OnboardingStep';
 const FIRST_THEMED_STEP = 3;
 /** The tallest title of the themes on Android (Chakra Petch 22): the step does not move. */
 const THEME_TITLE_HEIGHT = 40;
-/** The name is saved when typing pauses, not at every key: each save also reloads the stores. */
-export const NAME_SAVE_DELAY_MS = 400;
+/**
+ * Name and theme change many times in a row (keys, cards passing in the centre): they are saved
+ * when the changes pause, as each save also reloads the stores.
+ */
+export const DRAFT_SAVE_DELAY_MS = 400;
+
+interface PendingSave {
+  readonly draft: OnboardingDraft;
+  readonly timer: ReturnType<typeof setTimeout>;
+}
+
+function saveDraft(draft: OnboardingDraft): void {
+  runAction((db, { now }) => saveOnboardingDraft(db, draft, now));
+}
 
 /**
  * The five steps of the first launch (design-sezioni.md 1.1). Every choice goes into the draft at
- * once (the name when typing pauses), so the flow resumes from the step left; the language is
+ * once (name and theme when the changes pause), so the flow resumes from the step left; the language is
  * already a setting of its own.
  */
 export function OnboardingFlow() {
   const { t } = useTranslation();
   const language = useSettingsStore((state) => state.settings.language);
   const [draft, setDraft] = useState(() => loadOnboardingDraft(getSession().db));
-  const pendingName = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(pendingName.current), []);
+  const pending = useRef<PendingSave | null>(null);
+  useEffect(() => {
+    // On iPhone a suspended app runs no timer: a change still waiting is saved on the way out.
+    const subscription = AppState.addEventListener('change', (state) => {
+      const waiting = pending.current;
+      if (state !== 'active' && waiting !== null) {
+        clearTimeout(waiting.timer);
+        pending.current = null;
+        saveDraft(waiting.draft);
+      }
+    });
+    return () => {
+      subscription.remove();
+      clearTimeout(pending.current?.timer);
+    };
+  }, []);
 
   const save = (next: OnboardingDraft) => {
-    // Any save writes the whole draft, so it also covers a name still waiting.
-    clearTimeout(pendingName.current);
-    runAction((db, { now }) => saveOnboardingDraft(db, next, now));
+    // Any save writes the whole draft, so it also covers a change still waiting.
+    clearTimeout(pending.current?.timer);
+    pending.current = null;
+    saveDraft(next);
   };
   const update = (changes: Partial<OnboardingDraft>) => {
     const next = { ...draft, ...changes };
     save(next);
     setDraft(next);
   };
-  const changeName = (name: string) => {
-    const next = { ...draft, name };
-    clearTimeout(pendingName.current);
-    pendingName.current = setTimeout(() => save(next), NAME_SAVE_DELAY_MS);
+  const updateLater = (changes: Partial<OnboardingDraft>) => {
+    const next = { ...draft, ...changes };
+    clearTimeout(pending.current?.timer);
+    pending.current = { draft: next, timer: setTimeout(() => save(next), DRAFT_SAVE_DELAY_MS) };
     setDraft(next);
   };
   const finish = () => {
@@ -88,7 +116,7 @@ export function OnboardingFlow() {
         return (
           <NameStep
             name={draft.name}
-            onChangeName={changeName}
+            onChangeName={(name) => updateLater({ name })}
             onBack={() => update({ step: 1 })}
             onContinue={() => update({ step: 3 })}
           />
@@ -112,7 +140,7 @@ export function OnboardingFlow() {
             <ThemeCarousel
               value={draft.theme}
               heroName={draft.name.trim()}
-              onChange={(theme) => update({ theme })}
+              onChange={(theme) => updateLater({ theme })}
             />
           </OnboardingStep>
         );
