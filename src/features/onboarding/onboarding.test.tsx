@@ -114,7 +114,7 @@ describe('first launch', () => {
 
     expect(
       await screen.findByRole('header', {
-        name: 'Scegli da 1 a 5 missioni per iniziare',
+        name: 'Scegli da 1 a 5 abitudini per iniziare',
       }),
     ).toBeOnTheScreen();
     expect(screen.getByText('Continua · 3 di 5')).toBeOnTheScreen();
@@ -780,6 +780,20 @@ describe('missions step', () => {
 
     expect(
       await screen.findByRole('header', { name: 'Scegli da 1 a 5 imprese per iniziare' }),
+    ).toBeOnTheScreen();
+  });
+
+  it('writes the title with the Minimal lexicon too', async () => {
+    const db = createTestDb();
+    saveOnboardingDraft(
+      db,
+      { ...loadOnboardingDraft(db), step: 4, name: 'C', theme: 'minimal-chiaro' },
+      NOW,
+    );
+    await openApp(db);
+
+    expect(
+      await screen.findByRole('header', { name: 'Scegli da 1 a 5 abitudini per iniziare' }),
     ).toBeOnTheScreen();
   });
 });

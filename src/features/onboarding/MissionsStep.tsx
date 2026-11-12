@@ -109,9 +109,7 @@ export function MissionsStep({
     }
   };
 
-  const missionsWord = t('lexicon.missions_pl', {
-    context: family === 'minimal' ? undefined : family,
-  });
+  const missionsWord = t('lexicon.missions_pl', { context: family });
 
   return (
     <OnboardingStep
