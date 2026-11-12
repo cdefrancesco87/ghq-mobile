@@ -81,7 +81,10 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
           }
           lastTap.current = { view, stepId };
           const dealt = actions.completeStep(item);
-          if (dealt !== null) {
+          if (dealt === null) {
+            // Nothing was saved: the same step can be tried again.
+            lastTap.current = null;
+          } else {
             setHit((last) => ({ bossId: item.boss.id, dealt, key: (last?.key ?? 0) + 1 }));
           }
         }}

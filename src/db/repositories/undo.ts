@@ -183,8 +183,13 @@ function undoCompletion(tx: Db, completed: EventRow, clock: ActionClock): { reve
  * the step really took (`dealt`) and the stat points go back. A victory is never undone
  * (CLAUDE.md, choice 25), so no step of a boss that is no longer active can be undone.
  */
-function undoStep(tx: Db, done: EventRow, clock: ActionClock): { reverted: string[] } {
-  const target = tx.select().from(boss).where(eq(boss.id, done.bossId!)).get();
+function undoStep(
+  tx: Db,
+  done: EventRow,
+  bossId: string,
+  clock: ActionClock,
+): { reverted: string[] } {
+  const target = tx.select().from(boss).where(eq(boss.id, bossId)).get();
   if (target === undefined || target.status !== 'active') {
     throw new UndoRefusedError('boss_not_active');
   }
@@ -211,8 +216,11 @@ export function undoEvent(db: Db, eventId: string, clock: ActionClock): { revert
     if (completed === undefined) {
       throw new RangeError(`Unknown event: ${eventId}`);
     }
-    const isStep = completed.type === 'boss.step_done' && completed.bossId !== null;
-    if (!isStep && (completed.type !== 'mission.completed' || completed.missionId === null)) {
+    const stepBossId = completed.type === 'boss.step_done' ? completed.bossId : null;
+    if (
+      stepBossId === null &&
+      (completed.type !== 'mission.completed' || completed.missionId === null)
+    ) {
       throw new RangeError(`Only a completion or a boss step can be undone: ${completed.type}`);
     }
     if (isReverted(tx, completed.id)) {
@@ -222,8 +230,8 @@ export function undoEvent(db: Db, eventId: string, clock: ActionClock): { revert
     if (!canUndo(completed.gameDay, today)) {
       throw new UndoRefusedError('day_changed');
     }
-    if (isStep) {
-      return undoStep(tx, completed, clock);
+    if (stepBossId !== null) {
+      return undoStep(tx, completed, stepBossId, clock);
     }
     try {
       return undoCompletion(tx, completed, clock);
