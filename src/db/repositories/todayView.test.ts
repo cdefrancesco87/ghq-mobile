@@ -1,0 +1,193 @@
+import { createBoss, checkBossDeadlines } from '@/db/repositories/boss';
+import {
+  completeMission,
+  progressMission,
+  setDayPlan,
+  skipMission,
+} from '@/db/repositories/completion';
+import { changeHero } from '@/db/repositories/hero';
+import { createMission, deleteMission, pauseMission } from '@/db/repositories/missions';
+import { setSetting } from '@/db/repositories/settings';
+import { getTodayView } from '@/db/repositories/todayView';
+import { daySummaries, hero } from '@/db/schema';
+import { FRIDAY, at, clockAt, missionId, newGame } from '../../../test/game';
+
+const TODAY = '2026-11-06';
+
+function missionOf(view: ReturnType<typeof getTodayView>, id: string) {
+  const found = view.missions.find((item) => item.mission.id === id);
+  if (found === undefined) {
+    throw new Error(`Mission ${id} is not in the view`);
+  }
+  return found;
+}
+
+describe('getTodayView', () => {
+  it('gives hero, missions with their state, plan, bosses and counters on a normal day', () => {
+    const db = newGame(['drink_water', 'read_pages', 'meditation']);
+    const water = missionId(db, 'drink_water');
+    const pages = missionId(db, 'read_pages');
+    const meditation = missionId(db, 'meditation');
+    completeMission(db, { missionId: meditation, source: 'app', ...clockAt(FRIDAY, 10) });
+    progressMission(db, { missionId: water, source: 'app', ...clockAt(FRIDAY, 11) });
+    setDayPlan(db, pages, clockAt(FRIDAY, 11));
+
+    const view = getTodayView(db, clockAt(FRIDAY, 12));
+
+    expect(view.day).toBe(TODAY);
+    expect(view.restDay).toBe(false);
+    expect(view.hero.name).toBe('Claudio');
+    expect(view.xpToNext).toBeGreaterThan(view.hero.xpInLevel);
+    expect(view.missions.map((item) => item.mission.id)).toEqual([water, pages, meditation]);
+    expect(missionOf(view, meditation)).toMatchObject({
+      state: 'done',
+      doneAt: at(FRIDAY, 10),
+      overdue: false,
+    });
+    expect(missionOf(view, water)).toMatchObject({ state: 'todo', value: 0.25, doneAt: null });
+    expect(missionOf(view, pages)).toMatchObject({ state: 'todo', value: null });
+    expect(view.plan).toEqual([pages]);
+    expect(view.doneCount).toBe(1);
+    expect(view.totalCount).toBe(3);
+    // The quest of the first launch is the boss in progress.
+    expect(view.bosses).toHaveLength(1);
+    expect(view.bosses[0]).toMatchObject({ stepsDone: 2, stepsTotal: 3 });
+    expect(view.bosses[0].nextStep?.title).toBe('starter_quest.steps.open_stats');
+    // The first completion hatches the egg; a completion today makes the companion happy.
+    expect(view.companion).toMatchObject({ stage: 'baby', mood: 'happy' });
+    expect(view.notices).toEqual({
+      exhausted: false,
+      shieldUsedYesterday: false,
+      coinsStolen: [],
+      companionGrewTo: 'baby',
+      resumedMissionIds: [],
+    });
+  });
+
+  it('marks a skipped mission', () => {
+    const db = newGame(['meditation']);
+    const meditation = missionId(db, 'meditation');
+    skipMission(db, { missionId: meditation, reason: 'rest', ...clockAt(FRIDAY, 10) });
+
+    const view = getTodayView(db, clockAt(FRIDAY, 12));
+
+    expect(missionOf(view, meditation).state).toBe('skipped');
+    expect(view.doneCount).toBe(0);
+  });
+
+  it('has no missions on a rest day', () => {
+    const db = newGame(['meditation']);
+    // 6 November 2026 is a Friday (5 with Monday = 1).
+    setSetting(db, 'rest_days', [5], at(FRIDAY, 9));
+
+    const view = getTodayView(db, clockAt(FRIDAY, 12));
+
+    expect(view.restDay).toBe(true);
+    expect(view.missions).toEqual([]);
+    expect(view.totalCount).toBe(0);
+  });
+
+  it('tells when the hero is exhausted today', () => {
+    const db = newGame(['meditation']);
+    db.update(hero).set({ exhaustedDay: TODAY }).run();
+
+    expect(getTodayView(db, clockAt(FRIDAY, 12)).notices.exhausted).toBe(true);
+    expect(getTodayView(db, clockAt(FRIDAY + 1, 12)).notices.exhausted).toBe(false);
+  });
+
+  it('tells when the shield saved the streak yesterday', () => {
+    const db = newGame(['meditation']);
+    db.insert(daySummaries)
+      .values({
+        gameDay: TODAY,
+        scheduledCount: 1,
+        doneCount: 0,
+        scheduledXp: 15,
+        missedXp: 15,
+        hpLost: 0,
+        isRestDay: false,
+        fullDay: false,
+        planComplete: false,
+        shieldUsed: true,
+        closedAt: at(FRIDAY + 1, 6),
+      })
+      .run();
+
+    expect(getTodayView(db, clockAt(FRIDAY + 1, 12)).notices.shieldUsedYesterday).toBe(true);
+    expect(getTodayView(db, clockAt(FRIDAY + 2, 12)).notices.shieldUsedYesterday).toBe(false);
+  });
+
+  it('leaves out the deleted missions', () => {
+    const db = newGame(['meditation', 'read_pages']);
+    const meditation = missionId(db, 'meditation');
+    deleteMission(db, meditation, clockAt(FRIDAY, 10));
+
+    const view = getTodayView(db, clockAt(FRIDAY, 12));
+
+    expect(view.missions.map((item) => item.mission.id)).toEqual([missionId(db, 'read_pages')]);
+  });
+
+  it('marks a task due before today as overdue', () => {
+    const db = newGame(['meditation'], FRIDAY - 2);
+    const task = createMission(
+      db,
+      { name: 'Chiama il dentista', kind: 'task', difficulty: 'easy', dueDay: '2026-11-05' },
+      clockAt(FRIDAY - 2, 10),
+    );
+
+    expect(missionOf(getTodayView(db, clockAt(FRIDAY, 12)), task.id).overdue).toBe(true);
+    expect(missionOf(getTodayView(db, clockAt(FRIDAY - 1, 12)), task.id).overdue).toBe(false);
+  });
+
+  it('tells the coins stolen today by a boss', () => {
+    const db = newGame(['meditation']);
+    changeHero(db, { coins: 300 }, at(FRIDAY, 10));
+    const goal = createBoss(
+      db,
+      {
+        name: 'Maratona',
+        difficulty: 'medium',
+        deadlineDay: TODAY,
+        steps: ['Corri', 'Corri ancora'],
+      },
+      clockAt(FRIDAY, 10),
+    );
+    const { robbed } = checkBossDeadlines(db, clockAt(FRIDAY + 1, 8));
+
+    const view = getTodayView(db, clockAt(FRIDAY + 1, 12));
+
+    expect(view.notices.coinsStolen).toEqual([
+      { bossId: goal.id, bossName: 'Maratona', coins: robbed[0].coins },
+    ]);
+    expect(getTodayView(db, clockAt(FRIDAY + 2, 12)).notices.coinsStolen).toEqual([]);
+  });
+
+  it('tells the missions back from a pause today', () => {
+    const db = newGame(['meditation']);
+    const meditation = missionId(db, 'meditation');
+    pauseMission(db, meditation, '2026-11-07', clockAt(FRIDAY, 10));
+
+    expect(getTodayView(db, clockAt(FRIDAY, 12)).notices.resumedMissionIds).toEqual([]);
+    expect(getTodayView(db, clockAt(FRIDAY + 1, 12)).notices.resumedMissionIds).toEqual([
+      meditation,
+    ]);
+  });
+
+  it('orders the active bosses by deadline, the ones without a deadline last', () => {
+    const db = newGame(['meditation']);
+    const later = createBoss(
+      db,
+      { name: 'Tardi', difficulty: 'easy', deadlineDay: '2026-11-20', steps: ['A', 'B'] },
+      clockAt(FRIDAY, 10),
+    );
+    const sooner = createBoss(
+      db,
+      { name: 'Presto', difficulty: 'easy', deadlineDay: '2026-11-10', steps: ['A', 'B'] },
+      clockAt(FRIDAY, 10),
+    );
+
+    const names = getTodayView(db, clockAt(FRIDAY, 12)).bosses.map((item) => item.boss.id);
+
+    expect(names.slice(0, 2)).toEqual([sooner.id, later.id]);
+  });
+});

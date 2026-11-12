@@ -598,5 +598,33 @@
     "travel": "Reise",
     "rest": "Erholung",
     "other": "Sonstiges"
+  },
+  "today": {
+    "progress": "{{done}} von {{total}}",
+    "progressLabel": "Erledigt {{done}} von {{total}}",
+    "hero": {
+      "level": "{{term}} {{level}}",
+      "toNext": "{{xp}} {{xpTerm}} bis zum nächsten",
+      "streak": "{{count}} · {{term}}",
+      "streakLabel_one": "{{term}}: {{count}} Tag. Statistiken öffnen",
+      "streakLabel_other": "{{term}}: {{count}} Tage. Statistiken öffnen",
+      "coins": "{{count}} · {{term}}",
+      "coinsLabel": "{{count}} {{term}}. Laden öffnen",
+      "companionLabel": "{{name}}. Seine Karte öffnen",
+      "exhausted": "{{term}}: {{xpTerm}} bis morgen halbiert",
+      "stickyLevel": "Lv {{level}}"
+    },
+    "notices": {
+      "shieldUsed": "Der Schild hat gestern deine Serie geschützt."
+    },
+    "rest": {
+      "title": "Ruhetag",
+      "message": "Deine Serie ist sicher. Heute gibt es keine Aufgaben."
+    },
+    "empty": {
+      "title": "Keine Aufgaben",
+      "message": "Erstelle die erste, um den Tag zu beginnen.",
+      "action": "Aufgabe erstellen"
+    }
   }
 }
