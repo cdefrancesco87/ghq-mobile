@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { TodayMission, TodayView } from '@/db/repositories/todayView';
 import { ActionSheet, type ActionSheetItem } from '@/features/shared/ActionSheet';
 import { Icon } from '@/features/shared/Icon';
 import type { MissionRowAction } from '@/features/shared/MissionRow';
+import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { canAddToPlan } from '@/rules/day';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PlanPicker } from './PlanPicker';
@@ -30,6 +31,20 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
   const router = useRouter();
   const [menuFor, setMenuFor] = useState<TodayMission | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // The picker asked from the menu waits for the menu to slide away: on iOS a modal shown while
+  // another one is still closing may never appear.
+  const [pickerQueued, setPickerQueued] = useState(false);
+
+  useEffect(() => {
+    if (!pickerQueued || menuFor !== null) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setPickerQueued(false);
+      setPickerOpen(true);
+    }, SHEET_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [pickerQueued, menuFor]);
 
   const openDetail = (item: TodayMission) =>
     router.push({ pathname: '/stats', params: { missionId: item.mission.id } });
@@ -58,7 +73,7 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
         key: 'plan',
         label: t('today.missions.menu.addToPlan'),
         icon: <Icon name="aggiungi" size={20} color={colors.text} />,
-        onPress: () => (canAddToPlan(view.plan) ? actions.addToPlan(item) : setPickerOpen(true)),
+        onPress: () => (canAddToPlan(view.plan) ? actions.addToPlan(item) : setPickerQueued(true)),
       });
     }
     items.push(

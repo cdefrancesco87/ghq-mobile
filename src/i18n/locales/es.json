@@ -627,6 +627,7 @@
       "action": "Crear una misión"
     },
     "plan": {
+      "count": "{{count}} de {{max}}",
       "countLabel": "{{count}} de {{max}} prioridades",
       "intro": "Elige hasta {{max}} prioridades por las que empezar: completarlas todas vale +{{xp}} {{xpTerm}}.",
       "add": "Elegir una prioridad",

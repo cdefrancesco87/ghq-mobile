@@ -11,7 +11,7 @@ import { sealSpriteKey } from '@/features/shared/sprites';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { DAY_PLAN } from '@/rules/config';
-import { isPlanComplete } from '@/rules/day';
+import { canAddToPlan, isPlanComplete } from '@/rules/day';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { missionIcon, originOf, useMissionTexts } from './missionText';
@@ -37,7 +37,8 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
   const { colors, family } = useTheme();
   const { detailOf, warningOf, doneTimeOf } = useMissionTexts(view.day, tzOffset);
 
-  // A skipped priority is out of the day, like in the list below.
+  // A skipped priority is out of the day, like in the list below, but it still takes its place
+  // in the plan: whether «Salta oggi» frees the place is for T59 to decide.
   const priorities = view.plan
     .map((id) => view.missions.find((item) => item.mission.id === id))
     .filter((item): item is TodayMission => item !== undefined && item.state !== 'skipped');
@@ -67,7 +68,7 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
             max: DAY_PLAN.maxPriorities,
           })}
         >
-          {t('today.progress', { done: priorities.length, total: DAY_PLAN.maxPriorities })}
+          {t('today.plan.count', { count: priorities.length, max: DAY_PLAN.maxPriorities })}
         </ThemedText>
       </View>
       {priorities.length === 0 ? (
@@ -128,7 +129,7 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
             {`+${DAY_PLAN.bonusXp} ${xpTerm}`}
           </ThemedText>
         </View>
-      ) : priorities.length < DAY_PLAN.maxPriorities ? (
+      ) : canAddToPlan(view.plan) ? (
         <Pressable
           testID="today-plan-add"
           accessibilityRole="button"

@@ -627,6 +627,7 @@
       "action": "Aufgabe erstellen"
     },
     "plan": {
+      "count": "{{count}} von {{max}}",
       "countLabel": "{{count}} von {{max}} Prioritäten",
       "intro": "Wähle bis zu {{max}} Prioritäten, mit denen du anfängst: Alle zu erledigen bringt +{{xp}} {{xpTerm}}.",
       "add": "Priorität wählen",

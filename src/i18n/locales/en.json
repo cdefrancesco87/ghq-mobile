@@ -627,6 +627,7 @@
       "action": "Create a quest"
     },
     "plan": {
+      "count": "{{count}} of {{max}}",
       "countLabel": "{{count}} of {{max}} priorities",
       "intro": "Choose up to {{max}} priorities to start from: finishing them all is worth +{{xp}} {{xpTerm}}.",
       "add": "Choose a priority",
