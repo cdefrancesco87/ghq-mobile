@@ -482,7 +482,8 @@ describe('Today: missions and completion', () => {
     await openMenu(pages);
     await fireEvent.press(screen.getByTestId('today-mission-menu-edit'));
 
-    expect(await screen.findByRole('header', { name: 'Editor missione' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Modifica abitudine' })).toBeOnTheScreen();
+    expect(screen.getByTestId('editor-name')).toHaveProp('value', 'templates.read_pages.name');
   });
 
   it('shows the level-up moment when the completion takes the hero to the next level', async () => {

@@ -75,6 +75,18 @@ export async function setUpNotifications(): Promise<void> {
   await Notifications.setNotificationCategoryAsync(CATEGORY_REMINDER_LAST, [complete]);
 }
 
+/** `undetermined`: never asked yet, so the app can still ask (design-sezioni.md 4.8). */
+export type NotificationPermission = 'granted' | 'denied' | 'undetermined';
+
+/** The permission to show notifications, without asking for it. */
+export async function notificationPermission(): Promise<NotificationPermission> {
+  const current = await Notifications.getPermissionsAsync();
+  if (current.granted) {
+    return 'granted';
+  }
+  return current.status === 'denied' ? 'denied' : 'undetermined';
+}
+
 /** Asks for the permission to show notifications; true if it was granted. */
 export async function requestNotificationPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();

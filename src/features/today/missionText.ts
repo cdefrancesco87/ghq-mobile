@@ -3,21 +3,12 @@ import type { GestureResponderEvent } from 'react-native';
 
 import type { TodayMission } from '@/db/repositories/todayView';
 import { describeFrequency } from '@/features/shared/describeFrequency';
+import { formatClock } from '@/features/shared/formatClock';
 import { categoryIcon, ICON_NAMES, type IconName } from '@/features/shared/icons';
 import { addDays } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
 
 const MINUTE_MS = 60_000;
-
-/** «8:00» from `08:00`, in the way of the language. */
-function formatClock(time: string, language: string): string {
-  const [hours, minutes] = time.split(':').map(Number);
-  return new Intl.DateTimeFormat(language, {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(2000, 0, 1, hours, minutes)));
-}
 
 /** «07:42»: the local time of a UTC instant, with the offset of the phone. */
 function formatInstant(instant: number, tzOffset: number, language: string): string {

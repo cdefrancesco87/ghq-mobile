@@ -5,6 +5,7 @@ import {
   checkBossDeadlines,
   completeBossStep,
   createBoss,
+  listActiveBosses,
   type NewBoss,
 } from '@/db/repositories/boss';
 import { appendEvent, type EventType } from '@/db/repositories/events';
@@ -227,6 +228,18 @@ describe('archiveBoss', () => {
     expect(() => createBoss(db, { ...THESIS, name: 'Maratona' }, NOW)).not.toThrow();
     expect(() => archiveBoss(db, thesis.id, NOW)).toThrow(RangeError);
     expect(move.status).toBe('active');
+  });
+});
+
+describe('listActiveBosses', () => {
+  it('lists the active bosses in the order of creation, not the archived or defeated ones', () => {
+    const db = newGame(['journal']);
+    const quest = starterQuest(db);
+    const thesis = createBoss(db, THESIS, NOW);
+    const move = createBoss(db, { ...THESIS, name: 'Trasloco' }, NOW);
+    archiveBoss(db, quest.id, NOW);
+
+    expect(listActiveBosses(db).map((item) => item.id)).toEqual([thesis.id, move.id]);
   });
 });
 
