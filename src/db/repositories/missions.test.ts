@@ -5,8 +5,10 @@ import {
   archiveMission,
   createMission,
   deleteMission,
+  getMission,
   isMissionNameTaken,
   listTodayMissions,
+  missionReminderTimes,
   pauseMission,
   restoreMission,
   resumeMission,
@@ -186,6 +188,50 @@ describe('updateMission', () => {
     ).toThrow();
     expect(() => updateMission(db, 'missing', { name: 'Altro' }, CONTEXT)).toThrow();
     expect(eventsOf(db, mission.id)).toEqual(['mission.created']);
+  });
+});
+
+describe('reminders of a mission', () => {
+  const times = (db: Db, id: string) => missionReminderTimes(db, id);
+
+  it('saves the times of a habit in order, once each', () => {
+    const db = createTestDb();
+    const mission = createMission(
+      db,
+      { name: 'Leggi', reminders: ['21:00', '08:00', '21:00'] },
+      CONTEXT,
+    );
+    expect(times(db, mission.id)).toEqual(['08:00', '21:00']);
+    expect(db.select().from(missionReminders).all()).toEqual([
+      expect.objectContaining({ missionId: mission.id, time: '08:00', leadMinutes: null }),
+      expect.objectContaining({ missionId: mission.id, time: '21:00', leadMinutes: null }),
+    ]);
+  });
+
+  it('replaces the times on update, removes them with an empty list, keeps them when missing', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Leggi', reminders: ['08:00'] }, CONTEXT);
+
+    updateMission(db, mission.id, { name: 'Leggi 30 pagine' }, CONTEXT);
+    expect(times(db, mission.id)).toEqual(['08:00']);
+
+    updateMission(db, mission.id, { reminders: ['07:30', '22:15'] }, CONTEXT);
+    expect(times(db, mission.id)).toEqual(['07:30', '22:15']);
+    const last = db.select().from(events).orderBy(asc(events.seq)).all().at(-1);
+    expect(last?.payload).toEqual({ fields: ['reminders'] });
+
+    updateMission(db, mission.id, { reminders: [] }, CONTEXT);
+    expect(times(db, mission.id)).toEqual([]);
+  });
+
+  it('refuses a time that is not HH:MM and the times of a task, which has no due time', () => {
+    const db = createTestDb();
+    expect(() => createMission(db, { name: 'Leggi', reminders: ['8:00'] }, CONTEXT)).toThrow();
+    expect(() => createMission(db, { name: 'Leggi', reminders: ['24:00'] }, CONTEXT)).toThrow();
+    expect(() =>
+      createMission(db, { name: 'Dentista', kind: 'task', reminders: ['08:00'] }, CONTEXT),
+    ).toThrow(RangeError);
+    expect(db.select().from(missions).all()).toEqual([]);
   });
 });
 
@@ -393,6 +439,21 @@ describe('edge cases', () => {
 
   it('lists nothing when there are no missions', () => {
     expect(listTodayMissions(createTestDb(), '2026-11-06')).toEqual([]);
+  });
+});
+
+describe('getMission', () => {
+  it('reads a mission to edit, archived too, but not a deleted or unknown one', () => {
+    const db = createTestDb();
+    const read = createMission(db, { name: 'Leggi' }, CONTEXT);
+    const run = createMission(db, { name: 'Corsa' }, CONTEXT);
+    archiveMission(db, run.id, CONTEXT);
+
+    expect(getMission(db, read.id)).toEqual(read);
+    expect(getMission(db, run.id)?.status).toBe('archived');
+    deleteMission(db, read.id, CONTEXT);
+    expect(getMission(db, read.id)).toBeNull();
+    expect(getMission(db, 'missing')).toBeNull();
   });
 });
 

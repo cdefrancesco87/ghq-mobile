@@ -51,14 +51,66 @@ export interface MissionFields {
   readonly notes: string | null;
 }
 
-export type NewMission = Partial<MissionFields> & {
-  readonly name: string;
-  /** A recurring habit (default) or a single task. */
-  readonly kind?: Mission['kind'];
-  readonly templateKey?: string | null;
-};
+/** The reminders of the editor: `HH:MM` times of a habit (`mission_reminders.time`). */
+interface WithReminders {
+  /** Missing keeps the reminders as they are; an empty list removes them. */
+  readonly reminders?: readonly string[];
+}
 
-export type MissionChanges = Partial<MissionFields>;
+export type NewMission = Partial<MissionFields> &
+  WithReminders & {
+    readonly name: string;
+    /** A recurring habit (default) or a single task. */
+    readonly kind?: Mission['kind'];
+    readonly templateKey?: string | null;
+  };
+
+export type MissionChanges = Partial<MissionFields> & WithReminders;
+
+const reminderTimesSchema = z.array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/));
+
+/**
+ * The reminder times, in order and once each. A task has none: its reminders come before a due
+ * time (`lead_minutes`), and a task has no due time in the data model (modello-dati.md 3.3).
+ */
+function reminderTimes(kind: Mission['kind'], times: readonly string[]): string[] {
+  const valid = reminderTimesSchema.parse(times);
+  if (kind === 'task' && valid.length > 0) {
+    throw new RangeError('A task has no due time to put reminders before');
+  }
+  return [...new Set(valid)].sort();
+}
+
+function writeReminders(tx: Db, missionId: string, times: readonly string[]): void {
+  tx.delete(missionReminders).where(eq(missionReminders.missionId, missionId)).run();
+  if (times.length > 0) {
+    tx.insert(missionReminders)
+      .values(times.map((time) => ({ id: uuidv7(), missionId, time })))
+      .run();
+  }
+}
+
+/** A mission not deleted, to edit it; null when it is gone. */
+export function getMission(db: Db, missionId: string): Mission | null {
+  return (
+    db
+      .select()
+      .from(missions)
+      .where(and(eq(missions.id, missionId), notDeleted(missions)))
+      .get() ?? null
+  );
+}
+
+/** The reminder times of a mission, in order (the editor shows them as chips, design 4.8). */
+export function missionReminderTimes(db: Db, missionId: string): string[] {
+  return db
+    .select({ time: missionReminders.time })
+    .from(missionReminders)
+    .where(eq(missionReminders.missionId, missionId))
+    .all()
+    .flatMap((row) => (row.time === null ? [] : [row.time]))
+    .sort();
+}
 
 export interface ActionContext {
   /** UTC instant of the action, in milliseconds. */
@@ -229,6 +281,7 @@ export function createMission(db: Db, input: NewMission, context: ActionContext)
     healthMetric: input.healthMetric ?? null,
     notes: input.notes ?? null,
   });
+  const times = reminderTimes(kind, input.reminders ?? []);
   return db.transaction((tx) => {
     const last = tx
       .select({ sortOrder: max(missions.sortOrder) })
@@ -247,6 +300,7 @@ export function createMission(db: Db, input: NewMission, context: ActionContext)
       })
       .returning()
       .get();
+    writeReminders(tx, mission.id, times);
     record(tx, 'mission.created', mission.id, context, { kind });
     return mission;
   });
@@ -267,8 +321,12 @@ export function updateMission(
     const given = Object.fromEntries(
       Object.entries(changes).filter(([, value]) => value !== undefined),
     ) as MissionChanges;
-    const fields = validated(current.kind, { ...fieldsOf(current), ...given });
+    const { reminders, ...fieldChanges } = given;
+    const fields = validated(current.kind, { ...fieldsOf(current), ...fieldChanges });
     const mission = save(tx, missionId, { ...columnsOf(fields), updatedAt: context.now });
+    if (reminders !== undefined) {
+      writeReminders(tx, missionId, reminderTimes(current.kind, reminders));
+    }
     record(tx, 'mission.updated', missionId, context, { fields: Object.keys(given).sort() });
     return mission;
   });

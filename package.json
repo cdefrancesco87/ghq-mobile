@@ -13,6 +13,7 @@
     "@expo-google-fonts/share-tech-mono": "^0.4.1",
     "@expo-google-fonts/vt323": "^0.4.1",
     "@expo/ui": "~58.0.28",
+    "@react-native-community/datetimepicker": "9.2.1",
     "drizzle-orm": "^0.45.4",
     "expo": "~58.0.25",
     "expo-constants": "~58.0.15",

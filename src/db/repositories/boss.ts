@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 
 import {
@@ -174,6 +174,11 @@ function todayOf(tx: Db, clock: ActionClock): GameDay {
 
 function activeCount(tx: Db): number {
   return tx.select({ id: boss.id }).from(boss).where(eq(boss.status, 'active')).all().length;
+}
+
+/** The active bosses, from the oldest: the choices of «Boss collegato» (design-sezioni.md 4.9). */
+export function listActiveBosses(db: Db): Boss[] {
+  return db.select().from(boss).where(eq(boss.status, 'active')).orderBy(asc(boss.createdAt)).all();
 }
 
 /**
