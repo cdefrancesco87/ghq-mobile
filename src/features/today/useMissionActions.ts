@@ -7,7 +7,8 @@ import {
   removeFromDayPlan,
   setDayPlan,
 } from '@/db/repositories/completion';
-import type { TodayMission } from '@/db/repositories/todayView';
+import { completeBossStep } from '@/db/repositories/boss';
+import type { TodayBoss, TodayMission } from '@/db/repositories/todayView';
 import { undoEvent, UndoRefusedError } from '@/db/repositories/undo';
 import { type Point, useCelebration } from '@/features/shared/Celebration';
 import { useMomentQueue } from '@/features/shared/MomentQueue';
@@ -24,9 +25,14 @@ export interface MissionActions {
   readonly undo: (eventId: string) => void;
   readonly addToPlan: (item: TodayMission) => void;
   readonly removeFromPlan: (item: TodayMission) => void;
+  /**
+   * Completes the next step of a boss from Today (design-sezioni.md 2.4) and gives the hit points
+   * it took, or null when nothing changed. The step that wins has no «Annulla» (choice 25).
+   */
+  readonly completeStep: (item: TodayBoss) => number | null;
 }
 
-/** The actions of the rows of Today, with their celebration, moments and notices. */
+/** The actions of the rows and the boss cards of Today, with celebration, moments and notices. */
 export function useMissionActions(): MissionActions {
   const { t } = useTranslation();
   const { family } = useTheme();
@@ -124,5 +130,28 @@ export function useMissionActions(): MissionActions {
     }
   };
 
-  return { complete, undo, addToPlan, removeFromPlan };
+  const completeStep = (item: TodayBoss): number | null => {
+    const step = item.nextStep;
+    if (step === null) {
+      return null;
+    }
+    let result;
+    try {
+      result = runAction((db, clock) => completeBossStep(db, step.id, clock));
+    } catch {
+      tell(t('today.missions.errors.failed'));
+      return null;
+    }
+    enqueue(result.moments);
+    if (!result.defeated) {
+      const { eventId } = result;
+      toast.show({
+        message: t('bosses.today.stepToast', { damage: result.dealt }),
+        onUndo: () => undo(eventId),
+      });
+    }
+    return result.dealt;
+  };
+
+  return { complete, undo, addToPlan, removeFromPlan, completeStep };
 }

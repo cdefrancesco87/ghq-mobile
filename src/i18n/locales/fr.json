@@ -593,6 +593,27 @@
       }
     }
   },
+  "bosses": {
+    "card": {
+      "hpLabel": "Vie de {{name}}",
+      "steps": "Étapes {{done}} sur {{total}}",
+      "nextStep": "Prochaine étape",
+      "stepLabel": "Terminer l'étape {{step}} de {{name}}",
+      "days_one": "{{count}} jour",
+      "days_other": "{{count}} jours",
+      "dueToday": "Échéance aujourd'hui",
+      "overdue": "Échéance passée",
+      "damage": "−{{damage}}"
+    },
+    "today": {
+      "empty": "Transforme un objectif en boss",
+      "empty_fantasy": "Transforme un objectif en némésis",
+      "empty_cyberpunk": "Transforme un objectif en pare-feu",
+      "empty_lovecraft": "Transforme un objectif en horreur",
+      "empty_minimal": "Découpe un grand objectif en étapes",
+      "stepToast": "Étape faite · −{{damage}}"
+    }
+  },
   "skipReasons": {
     "illness": "Maladie",
     "travel": "Voyage",

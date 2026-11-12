@@ -44,6 +44,14 @@ export interface NewBoss {
   readonly missionIds?: readonly string[];
 }
 
+export interface StepResult {
+  readonly defeated: boolean;
+  /** The `boss.step_done` event, for «Annulla» (design-sezioni.md 2.4). */
+  readonly eventId: string;
+  /** Hit points really taken, for the number of the damage (design-sezioni.md 5.4). */
+  readonly dealt: number;
+}
+
 export interface DeadlineCheck {
   /** Bosses whose deadline warning starts now: the caller sends the system notification. */
   readonly warned: readonly string[];
@@ -103,7 +111,7 @@ export function healBoss(tx: Db, bossId: string, points: number, now: number): v
  * Marks a step as done: 20 damage, 10 points to the stat of the boss if it has one, and the
  * victory with its reward when it was the last step.
  */
-export function markStepDone(tx: Db, stepId: string, clock: ActionClock): { defeated: boolean } {
+export function markStepDone(tx: Db, stepId: string, clock: ActionClock): StepResult {
   const step = tx.select().from(bossSteps).where(eq(bossSteps.id, stepId)).get();
   if (step === undefined) {
     throw new RangeError(`Unknown boss step: ${stepId}`);
@@ -122,11 +130,17 @@ export function markStepDone(tx: Db, stepId: string, clock: ActionClock): { defe
   );
   tx.update(boss).set({ hp: hit.hp, updatedAt: clock.now }).where(eq(boss.id, target.id)).run();
   const stats = changeHero(tx, { stats: stepStatPoints(target.statKey) }, clock.now);
-  appendEvent(tx, {
+  const { event } = appendEvent(tx, {
     ...eventBase(clock, target.id),
     type: 'boss.step_done',
     deltas: stats.deltas,
-    payload: { stepId, position: step.position, damage: BOSS.stepDamage, hp: hit.hp },
+    payload: {
+      stepId,
+      position: step.position,
+      damage: BOSS.stepDamage,
+      dealt: target.hp - hit.hp,
+      hp: hit.hp,
+    },
   });
   if (hit.defeated) {
     const steps = tx
@@ -151,7 +165,7 @@ export function markStepDone(tx: Db, stepId: string, clock: ActionClock): { defe
     });
     recordLevelUp(tx, change, clock);
   }
-  return { defeated: hit.defeated };
+  return { defeated: hit.defeated, eventId: event.id, dealt: target.hp - hit.hp };
 }
 
 function todayOf(tx: Db, clock: ActionClock): GameDay {
@@ -243,7 +257,7 @@ export function completeBossStep(
   db: Db,
   stepId: string,
   clock: ActionClock,
-): { defeated: boolean } & WithMoments {
+): StepResult & WithMoments {
   return db.transaction((tx) => withMoments(tx, () => markStepDone(tx, stepId, clock)));
 }
 

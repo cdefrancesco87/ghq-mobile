@@ -593,6 +593,27 @@
       }
     }
   },
+  "bosses": {
+    "card": {
+      "hpLabel": "Leben von {{name}}",
+      "steps": "Schritte {{done}} von {{total}}",
+      "nextStep": "Nächster Schritt",
+      "stepLabel": "Schritt {{step}} von {{name}} erledigen",
+      "days_one": "{{count}} Tag",
+      "days_other": "{{count}} Tage",
+      "dueToday": "Heute fällig",
+      "overdue": "Überfällig",
+      "damage": "−{{damage}}"
+    },
+    "today": {
+      "empty": "Mach aus einem Ziel einen Boss",
+      "empty_fantasy": "Mach aus einem Ziel eine Nemesis",
+      "empty_cyberpunk": "Mach aus einem Ziel eine Firewall",
+      "empty_lovecraft": "Mach aus einem Ziel ein Grauen",
+      "empty_minimal": "Teile ein großes Ziel in Schritte",
+      "stepToast": "Schritt erledigt · −{{damage}}"
+    }
+  },
   "skipReasons": {
     "illness": "Krankheit",
     "travel": "Reise",

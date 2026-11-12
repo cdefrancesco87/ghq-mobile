@@ -1,15 +1,25 @@
+import { asc, eq } from 'drizzle-orm';
 import { Stack } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { Dimensions } from 'react-native';
 
+import { archiveBoss, completeBossStep, createBoss } from '@/db/repositories/boss';
 import { setDayPlan } from '@/db/repositories/completion';
 import { appendEvent } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
 import { createMission, deleteMission } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
 import { buyItem } from '@/db/repositories/shop';
-import { dayPlan, daySummaries, hero, missionDays, missionReminders } from '@/db/schema';
+import {
+  boss,
+  bossSteps,
+  dayPlan,
+  daySummaries,
+  hero,
+  missionDays,
+  missionReminders,
+} from '@/db/schema';
 import type { Db } from '@/db/types';
 import { UNDO_TOAST_MS } from '@/features/shared/UndoToast';
 import { AppProviders } from '@/features/shell/AppProviders';
@@ -592,5 +602,128 @@ describe('Today: plan of the day', () => {
     expect(screen.queryByTestId('today-plan-seal')).toBeNull();
     expect(screen.getByTestId(`${planRow(meal)}-position`)).toHaveTextContent('2');
     expectHeroMatchesLog(db);
+  });
+});
+
+describe('Today: bosses', () => {
+  const card = (id: string) => `today-boss-${id}`;
+  const bossRow = (db: Db, id: string) => db.select().from(boss).where(eq(boss.id, id)).get();
+  const starter = (db: Db) => db.select().from(boss).where(eq(boss.kind, 'starter')).get()!;
+  const stepsOf = (db: Db, id: string) =>
+    db
+      .select()
+      .from(bossSteps)
+      .where(eq(bossSteps.bossId, id))
+      .orderBy(asc(bossSteps.position))
+      .all();
+
+  it('shows the compact card of the boss with bar, steps, deadline and next step', async () => {
+    const db = newGame(['journal']);
+    archiveBoss(db, starter(db).id, clockAt(FRIDAY, 9));
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'medium', deadlineDay: '2026-11-20', steps: ['A', 'B', 'C'] },
+      clockAt(FRIDAY, 9),
+    );
+    await openToday(db);
+
+    expect(screen.getByRole('header', { name: 'Grande obiettivo' })).toBeOnTheScreen();
+    expect(screen.getByTestId(`${card(thesis.id)}-name`)).toHaveTextContent('Tesi');
+    expect(screen.getByLabelText('Vita di Tesi 60 su 60')).toBeOnTheScreen();
+    expect(screen.getByTestId(card(thesis.id))).toHaveTextContent(/Passi 0 di 3/);
+    expect(screen.getByTestId(`${card(thesis.id)}-deadline`)).toHaveTextContent('14 giorni');
+    expect(screen.getByTestId(`${card(thesis.id)}-next`)).toHaveTextContent('A');
+    expect(screen.queryByTestId('today-bosses-scroll')).toBeNull();
+  });
+
+  it('scrolls three bosses from the nearest deadline, with the dots and the near deadline in danger', async () => {
+    const db = newGame(['journal']);
+    const later = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'medium', deadlineDay: '2026-11-30', steps: ['A', 'B'] },
+      clockAt(FRIDAY, 9),
+    );
+    const sooner = createBoss(
+      db,
+      { name: 'Trasloco', difficulty: 'easy', deadlineDay: '2026-11-08', steps: ['A', 'B'] },
+      clockAt(FRIDAY, 9),
+    );
+    const quest = starter(db);
+    await openToday(db);
+
+    expect(screen.getByRole('header', { name: 'Grandi obiettivi' })).toBeOnTheScreen();
+    expect(screen.getByTestId('today-bosses-scroll')).toBeOnTheScreen();
+    expect(treeOrder([card(later.id), card(sooner.id), card(quest.id)])).toEqual([
+      card(sooner.id),
+      card(later.id),
+      card(quest.id),
+    ]);
+    expect(screen.getByTestId('today-bosses-dot-2', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId(`${card(sooner.id)}-deadline`)).toHaveTextContent('2 giorni');
+    // The quest of the first launch is a boss like the others, with its name of the theme.
+    expect(screen.getByTestId(`${card(quest.id)}-name`)).toHaveTextContent('Primi passi');
+    // Its first step («Crea la prima abitudine») is done with the profile.
+    expect(screen.getByTestId(`${card(quest.id)}-next`)).toHaveTextContent('Completala');
+  });
+
+  it('completes a step from the card and undoes it from the notice', async () => {
+    const db = newGame(['journal']);
+    archiveBoss(db, starter(db).id, clockAt(FRIDAY, 9));
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'medium', steps: ['A', 'B', 'C'] },
+      clockAt(FRIDAY, 9),
+    );
+    await openToday(db);
+
+    await fireEvent.press(screen.getByTestId(`${card(thesis.id)}-step`));
+
+    expect(bossRow(db, thesis.id)?.hp).toBe(40);
+    expect(screen.getByLabelText('Vita di Tesi 40 su 60')).toBeOnTheScreen();
+    // The notice says the damage aloud: the number beside the bar is only drawn.
+    expect(
+      screen.getByTestId(`${card(thesis.id)}-damage`, { includeHiddenElements: true }),
+    ).toHaveTextContent('−20');
+    expect(screen.getByTestId(card(thesis.id))).toHaveTextContent(/Passi 1 di 3/);
+    expect(screen.getByTestId(`${card(thesis.id)}-next`)).toHaveTextContent('B');
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(/Passo fatto · −20/);
+
+    await fireEvent.press(screen.getByTestId('undo-toast-undo'));
+
+    expect(bossRow(db, thesis.id)?.hp).toBe(60);
+    expect(stepsOf(db, thesis.id)[0].doneAt).toBeNull();
+    expect(screen.getByTestId(`${card(thesis.id)}-next`)).toHaveTextContent('A');
+    expectHeroMatchesLog(db);
+  });
+
+  it('wins from the last step without «Annulla»', async () => {
+    const db = newGame(['journal']);
+    archiveBoss(db, starter(db).id, clockAt(FRIDAY, 9));
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'easy', steps: ['A', 'B'] },
+      clockAt(FRIDAY, 9),
+    );
+    completeBossStep(db, stepsOf(db, thesis.id)[0].id, clockAt(FRIDAY, 9));
+    await openToday(db);
+
+    await fireEvent.press(screen.getByTestId(`${card(thesis.id)}-step`));
+
+    expect(bossRow(db, thesis.id)?.status).toBe('defeated');
+    expect(await screen.findByTestId('moment-boss_defeated')).toBeOnTheScreen();
+    expect(screen.queryByTestId('undo-toast-undo')).toBeNull();
+    expectHeroMatchesLog(db);
+  });
+
+  it('leads to Obiettivi when there is no boss', async () => {
+    const db = newGame(['journal']);
+    archiveBoss(db, starter(db).id, clockAt(FRIDAY, 9));
+    await openToday(db);
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Dividi un grande obiettivo in passi' }),
+    );
+
+    expect(await screen.findByRole('header', { name: 'Obiettivi' })).toBeOnTheScreen();
   });
 });

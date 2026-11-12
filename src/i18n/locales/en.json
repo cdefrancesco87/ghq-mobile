@@ -593,6 +593,27 @@
       }
     }
   },
+  "bosses": {
+    "card": {
+      "hpLabel": "{{name}} health",
+      "steps": "Steps {{done}} of {{total}}",
+      "nextStep": "Next step",
+      "stepLabel": "Complete the step {{step}} of {{name}}",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "dueToday": "Due today",
+      "overdue": "Overdue",
+      "damage": "−{{damage}}"
+    },
+    "today": {
+      "empty": "Turn a goal into a boss",
+      "empty_fantasy": "Turn a goal into a nemesis",
+      "empty_cyberpunk": "Turn a goal into a firewall",
+      "empty_lovecraft": "Turn a goal into a horror",
+      "empty_minimal": "Split a big goal into steps",
+      "stepToast": "Step done · −{{damage}}"
+    }
+  },
   "skipReasons": {
     "illness": "Illness",
     "travel": "Travel",

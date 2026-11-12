@@ -2,7 +2,7 @@ import { and, asc, eq, gt, inArray } from 'drizzle-orm';
 
 import { bonusesToRevert, canUndo, revertDeltas, type DayBonus } from '../../rules/undo';
 import type { GameDay } from '../../rules/types';
-import { companion, dayPlan, events, missionDays, missions } from '../schema';
+import { boss, bossSteps, companion, dayPlan, events, missionDays, missions } from '../schema';
 import type { Db } from '../types';
 import { healBoss } from './boss';
 import { appendEvent, type EventRow } from './events';
@@ -179,9 +179,31 @@ function undoCompletion(tx: Db, completed: EventRow, clock: ActionClock): { reve
 }
 
 /**
- * Undoes a completion of today. Refused for an unknown event, an event that is not a completion,
- * an event already undone, after the day change, and when the coins to give back were already
- * spent. Returns the ids of the events undone: the completion and the bonuses it takes back.
+ * The opposite changes of a boss step: the step is to do again, the boss gets back the hit points
+ * the step really took (`dealt`) and the stat points go back. A victory is never undone
+ * (CLAUDE.md, choice 25), so no step of a boss that is no longer active can be undone.
+ */
+function undoStep(tx: Db, done: EventRow, clock: ActionClock): { reverted: string[] } {
+  const target = tx.select().from(boss).where(eq(boss.id, done.bossId!)).get();
+  if (target === undefined || target.status !== 'active') {
+    throw new RangeError('A step of a boss that is not active cannot be undone');
+  }
+  revert(tx, done, clock);
+  const { stepId, dealt } = done.payload;
+  if (typeof stepId === 'string') {
+    tx.update(bossSteps).set({ doneAt: null }).where(eq(bossSteps.id, stepId)).run();
+  }
+  if (typeof dealt === 'number') {
+    healBoss(tx, target.id, dealt, clock.now);
+  }
+  return { reverted: [done.id] };
+}
+
+/**
+ * Undoes a completion or a boss step of today. Refused for an unknown event, an event of another
+ * type, an event already undone, after the day change, when the coins to give back were already
+ * spent, and for the steps of a defeated boss. Returns the ids of the events undone: the
+ * completion and the bonuses it takes back, or the step.
  */
 export function undoEvent(db: Db, eventId: string, clock: ActionClock): { reverted: string[] } {
   return db.transaction((tx) => {
@@ -189,8 +211,9 @@ export function undoEvent(db: Db, eventId: string, clock: ActionClock): { revert
     if (completed === undefined) {
       throw new RangeError(`Unknown event: ${eventId}`);
     }
-    if (completed.type !== 'mission.completed' || completed.missionId === null) {
-      throw new RangeError(`Only a completion can be undone: ${completed.type}`);
+    const isStep = completed.type === 'boss.step_done' && completed.bossId !== null;
+    if (!isStep && (completed.type !== 'mission.completed' || completed.missionId === null)) {
+      throw new RangeError(`Only a completion or a boss step can be undone: ${completed.type}`);
     }
     if (isReverted(tx, completed.id)) {
       throw new UndoRefusedError('already_undone');
@@ -198,6 +221,9 @@ export function undoEvent(db: Db, eventId: string, clock: ActionClock): { revert
     const today = gameDayOf(clock.now, clock.tzOffset, getSetting(tx, 'day_change'));
     if (!canUndo(completed.gameDay, today)) {
       throw new UndoRefusedError('day_changed');
+    }
+    if (isStep) {
+      return undoStep(tx, completed, clock);
     }
     try {
       return undoCompletion(tx, completed, clock);
