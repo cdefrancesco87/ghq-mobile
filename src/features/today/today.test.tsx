@@ -292,7 +292,7 @@ describe('Today: particular states', () => {
     expect(screen.getByRole('header', { name: 'Nessuna missione' })).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('today-empty-action'));
 
-    expect(await screen.findByRole('header', { name: 'Editor missione' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Nuova abitudine' })).toBeOnTheScreen();
   });
 });
 
