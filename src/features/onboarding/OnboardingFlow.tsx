@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -24,19 +24,35 @@ import { OnboardingStep, StepButton } from './OnboardingStep';
 const FIRST_THEMED_STEP = 3;
 /** The tallest title of the themes on Android (Chakra Petch 22): the step does not move. */
 const THEME_TITLE_HEIGHT = 40;
+/** The name is saved when typing pauses, not at every key: each save also reloads the stores. */
+export const NAME_SAVE_DELAY_MS = 400;
 
 /**
  * The five steps of the first launch (design-sezioni.md 1.1). Every choice goes into the draft at
- * once, so the flow resumes from the step left; the language is already a setting of its own.
+ * once (the name when typing pauses), so the flow resumes from the step left; the language is
+ * already a setting of its own.
  */
 export function OnboardingFlow() {
   const { t } = useTranslation();
   const language = useSettingsStore((state) => state.settings.language);
   const [draft, setDraft] = useState(() => loadOnboardingDraft(getSession().db));
+  const pendingName = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(pendingName.current), []);
 
+  const save = (next: OnboardingDraft) => {
+    // Any save writes the whole draft, so it also covers a name still waiting.
+    clearTimeout(pendingName.current);
+    runAction((db, { now }) => saveOnboardingDraft(db, next, now));
+  };
   const update = (changes: Partial<OnboardingDraft>) => {
     const next = { ...draft, ...changes };
-    runAction((db, { now }) => saveOnboardingDraft(db, next, now));
+    save(next);
+    setDraft(next);
+  };
+  const changeName = (name: string) => {
+    const next = { ...draft, name };
+    clearTimeout(pendingName.current);
+    pendingName.current = setTimeout(() => save(next), NAME_SAVE_DELAY_MS);
     setDraft(next);
   };
   const finish = () => {
@@ -72,7 +88,7 @@ export function OnboardingFlow() {
         return (
           <NameStep
             name={draft.name}
-            onChangeName={(name) => update({ name })}
+            onChangeName={changeName}
             onBack={() => update({ step: 1 })}
             onContinue={() => update({ step: 3 })}
           />

@@ -7,6 +7,7 @@ import { getLanguage, getSetting, setSetting } from '@/db/repositories/settings'
 import { hasProfile, loadOnboardingDraft, saveOnboardingDraft } from '@/db/repositories/onboarding';
 import { missions } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { NAME_SAVE_DELAY_MS } from '@/features/onboarding/OnboardingFlow';
 import { UNDO_TOAST_MS } from '@/features/shared/UndoToast';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
@@ -245,10 +246,48 @@ describe('name step', () => {
     await openApp(db);
     await screen.findByRole('header', { name: 'Come si chiama il tuo eroe?' });
 
+    jest.useFakeTimers();
     await fireEvent.changeText(screen.getByTestId('onboarding-name'), 'x'.repeat(25));
+    await act(async () => jest.advanceTimersByTime(NAME_SAVE_DELAY_MS));
+    jest.useRealTimers();
 
     expect(screen.getByTestId('onboarding-name').props.value).toHaveLength(20);
     expect(loadOnboardingDraft(db).name).toHaveLength(20);
+  });
+
+  describe('saving the name', () => {
+    afterEach(() => jest.useRealTimers());
+
+    async function typeName(db: Db) {
+      startAt(db, 2, '');
+      await openApp(db);
+      await screen.findByRole('header', { name: 'Come si chiama il tuo eroe?' });
+      jest.useFakeTimers();
+      for (const name of ['C', 'Cl', 'Cla']) {
+        await fireEvent.changeText(screen.getByTestId('onboarding-name'), name);
+        await act(async () => jest.advanceTimersByTime(NAME_SAVE_DELAY_MS - 1));
+      }
+    }
+
+    it('waits for a pause in the typing before saving it', async () => {
+      const db = createTestDb();
+      await typeName(db);
+
+      expect(screen.getByTestId('onboarding-name').props.value).toBe('Cla');
+      expect(loadOnboardingDraft(db).name).toBe('');
+
+      await act(async () => jest.advanceTimersByTime(1));
+      expect(loadOnboardingDraft(db).name).toBe('Cla');
+    });
+
+    it('saves it at once with «Continua»', async () => {
+      const db = createTestDb();
+      await typeName(db);
+
+      await press('onboarding-continue');
+
+      expect(loadOnboardingDraft(db)).toMatchObject({ step: 3, name: 'Cla' });
+    });
   });
 });
 
