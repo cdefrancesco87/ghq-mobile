@@ -142,7 +142,7 @@ L'annullamento cancella la riga (o riporta `value` al valore precedente) e il re
 
 Una riga per giorno di gioco chiuso, scritta dalla funzione di cambio giornata.
 
-`game_day` (chiave), `scheduled_count`, `done_count`, `scheduled_xp`, `missed_xp`, `hp_lost`, `is_rest_day`, `full_day` (bonus dato), `plan_complete`, `shield_used`, `closed_at`.
+`game_day` (chiave), `scheduled_count`, `done_count`, `scheduled_xp`, `missed_xp`, `hp_lost`, `is_rest_day`, `full_day` (bonus dato), `plan_complete`, `shield_used`, `is_paused` (giorno di pausa generale, 12/11), `closed_at`.
 
 Serve a tre cose: rende la chiusura idempotente (un giorno già chiuso non si richiude, anche dopo giorni senza aprire l'app), alimenta la heatmap con una query semplice, e dà all'umore del compagno gli ultimi 3 giorni.
 
@@ -156,13 +156,13 @@ Serve a tre cose: rende la chiusura idempotente (un giorno già chiuso non si ri
 
 - `inventory`: `item_key` (chiave), `quantity`. Il limite di 2 scudi è un `CHECK`.
 - `badges`: `badge_key` (chiave), `unlocked_at`. Le condizioni e i premi stanno nel codice.
-- `rewards` (Could): `id`, `name`, `size`, `archived_at`; i riscatti sono eventi nel registro.
+- `rewards` (Should dal 12/11): `id`, `name`, `size`, `created_at`, `archived_at`; i riscatti sono eventi nel registro, con nome e prezzo copiati nell'evento. Nessun limite al numero.
 - `app_notifications`: `id`, `kind`, `params` (JSON), `created_at`, `seen_at`. Alimentano il bollino del widget piccolo e il foglio «Notifiche recenti».
 - `scheduled_reminders`: `os_id` (identificativo della notifica nel sistema), `mission_id`, `game_day`, `fire_at`, `snooze_count`. Serve per cancellare i promemoria di una missione completata (US-NOT-03), contare i posticipi (massimo 3) e riprogrammare entro il limite iOS di 64.
 
 ### 3.10 Impostazioni (`settings`)
 
-Tabella chiave-valore: `key`, `value` (JSON), `updated_at`. Ogni chiave ha uno schema Zod nel codice (`language`, `theme`, `game_mode`, `day_change`, `week_start`, `rest_days`, `quiet_hours`, `evening_summary`, `reduce_motion`, `colorblind`, `backup`…). I cambi della giornata valgono da domani (scelta 10.4 del design): la chiave `day_change` contiene sia il valore attuale sia `{ next, from_day }`.
+Tabella chiave-valore: `key`, `value` (JSON), `updated_at`. Ogni chiave ha uno schema Zod nel codice (`language`, `theme`, `game_mode`, `day_change`, `week_start`, `rest_days`, `quiet_hours`, `evening_summary`, `reduce_motion`, `colorblind`, `backup`, `general_pause` = `{ from_day, until_day | null }` della pausa in corso o programmata, `null` senza pausa (12/11; `until_day` compreso), `tale` = `{ shown_day, last_open_day, recent }` per il fumetto del mattino…). I cambi della giornata valgono da domani (scelta 10.4 del design): la chiave `day_change` contiene sia il valore attuale sia `{ next, from_day }`.
 
 Perché nel database e non in MMKV: un solo file da salvare nel backup e da ripristinare, e lo store Zustand delle impostazioni si carica da qui all'avvio.
 
@@ -194,10 +194,10 @@ Perché nel database e non in MMKV: un solo file da salvare nel backup e da ripr
 | --- | --- |
 | Missioni | `mission.created`, `mission.updated`, `mission.paused`, `mission.resumed`, `mission.archived`, `mission.restored`, `mission.deleted` |
 | Completamenti | `mission.completed`, `mission.progressed` (valore parziale), `mission.skipped`, `mission.backfilled`, `event.reverted` (annulla) |
-| Giornata | `day.closed` (vita persa, scudo usato), `bonus.full_day`, `bonus.plan` |
+| Giornata | `day.closed` (vita persa, scudo usato), `bonus.full_day`, `bonus.plan`, `pause.started`, `pause.ended` (giorni di pausa, scadenze dei boss spostate; `cancelled: true` se annullata prima dell'inizio) |
 | Boss | `boss.created`, `boss.step_done`, `boss.damaged`, `boss.defeated`, `boss.deadline_missed` (monete rubate), `boss.archived` |
 | Eroe e compagno | `hero.level_up`, `hero.exhausted`, `hero.renamed`, `companion.stage_up`, `companion.gift` |
-| Negozio | `item.bought`, `item.used`, `shield.consumed`, `reward.redeemed`, `badge.unlocked` |
+| Negozio | `item.bought`, `item.used`, `shield.consumed`, `reward.redeemed`, `badge.unlocked`; lo scudo della vittoria sta nei delta di `boss.defeated` |
 
 ### 4.3 Regole
 

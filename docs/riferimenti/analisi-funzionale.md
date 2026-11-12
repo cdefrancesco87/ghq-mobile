@@ -92,6 +92,7 @@ Ogni elemento approvato ha una priorità MoSCoW: **Must** (senza, la versione no
 | 5. Obiettivi e boss | Grandi obiettivi divisi in passi | Must |
 | 5. Obiettivi e boss | Danno al boss da passi e missioni collegate | Must |
 | 5. Obiettivi e boss | Ricompense alla vittoria | Must |
+| 5. Obiettivi e boss | Uno scudo della serie alla vittoria (12/11) | Should |
 | 5. Obiettivi e boss | Massimo 3 boss attivi | Must |
 | 5. Obiettivi e boss | Sala dei trofei | Should |
 | 5. Obiettivi e boss | Scadenza mancata: il boss ruba monete | Should |
@@ -102,6 +103,7 @@ Ogni elemento approvato ha una priorità MoSCoW: **Must** (senza, la versione no
 | 6. Compagno | Umore | Should |
 | 6. Compagno | Crescita | Must |
 | 6. Compagno | Non muore mai e non perde stadi | Must |
+| 6. Compagno | Racconto della giornata (12/11) | Should |
 | 6. Compagno | Firma i promemoria | Could |
 | 6. Compagno | Animazione di evoluzione | Could |
 | 6. Compagno | Quarto stadio | Could |
@@ -111,7 +113,7 @@ Ogni elemento approvato ha una priorità MoSCoW: **Must** (senza, la versione no
 | 7. Negozio e inventario | Regali per il compagno con animazione | Could |
 | 7. Negozio e inventario | Inventario con pulsante Usa | Must |
 | 7. Negozio e inventario | Monete solo giocando, non acquistabili | Must |
-| 7. Negozio e inventario | Ricompense personali | Could |
+| 7. Negozio e inventario | Ricompense personali (Could fino al 12/11) | Should |
 | 7. Negozio e inventario | Acquisto di altri compagni | Won't |
 | 8. Statistiche | Heatmap | Should |
 | 8. Statistiche | Andamento per missione | Must |
@@ -132,6 +134,7 @@ Ogni elemento approvato ha una priorità MoSCoW: **Must** (senza, la versione no
 | 9. Profilo | Compagno che segnala la statistica trascurata | Won't |
 | 9. Profilo | Prestigio | Won't |
 | 10. Impostazioni e dati | Giornata: orario di cambio, primo giorno della settimana, giorni di riposo, modificabili | Must |
+| 10. Impostazioni e dati | Pausa generale per vacanza o malattia (12/11) | Should |
 | 10. Impostazioni e dati | Modalità di gioco Completo o Essenziale | Should |
 | 10. Impostazioni e dati | Tema | Must |
 | 10. Impostazioni e dati | Backup su iCloud o Google Drive | Must |
@@ -305,7 +308,7 @@ I grandi obiettivi diventano boss: si dividono in passi, e ogni passo o missione
 - Creazione di un boss: nome dell'obiettivo, passi ordinati (da 2 a 20), scadenza facoltativa, difficoltà, statistica facoltativa (riceve 10 punti a ogni passo), missioni ricorrenti collegate.
 - Scheda del boss: sprite del boss nel tema, vita residua, passi fatti sul totale, prossimo passo, missioni collegate, giorni alla scadenza.
 - La vita del boss è calcolata dai passi, 20 per passo; la difficoltà cambia solo la ricompensa (vedi Regole di gioco); ogni passo completato e ogni missione collegata infliggono danno.
-- Alla vittoria: schermata di celebrazione, bonus di XP e monete, trofeo nella Sala dei trofei.
+- Alla vittoria: schermata di celebrazione, bonus di XP e monete, uno scudo della serie (100 monete al suo posto se se ne hanno già 2), trofeo nella Sala dei trofei.
 - Se la scadenza passa, il boss resta in campo: ruba il 10% delle monete dell'eroe, al massimo 500, sbeffeggiandolo. I passi fatti restano e l'utente può fissare una nuova scadenza o archiviare l'obiettivo. 3 giorni prima della scadenza, viene mandato un reminder.
 - **Prima versione, bassa priorità: Main Quest**: un obiettivo fissato in cima al piano del giorno. **Prima versione, bassa priorità: catene di quest**: obiettivi in sequenza, ognuno sblocca il successivo.
 
@@ -334,6 +337,7 @@ Un piccolo essere che cresce con le abitudini dell'utente e dà un motivo affett
 - Umore visibile (felice, normale, triste) calcolato dagli ultimi 3 giorni; il compagno non muore mai.
 - La scheda del compagno mostra nome (c’è un default, ma modificabile), stadio, numero di missioni da completare prima del prossimo stadio, umore e, in F2, i cosmetici indossati.
 - Il compagno firma promemoria e messaggi (es. «Goccia ti ricorda: Meditazione, 10 minuti»).
+- **Racconto della giornata** (Should, per la fidelizzazione; spunto preso da Finch): la sera il riepilogo serale è un messaggio del compagno sulla giornata; alla prima apertura del giorno dopo il compagno accoglie l'eroe in Oggi con un fumetto su ieri (missioni fatte, danno al boss, serie) e un incoraggiamento per oggi. Il tono segue il tema e l'umore.
 
 **User stories**
 
@@ -345,6 +349,11 @@ Un piccolo essere che cresce con le abitudini dell'utente e dà un motivo affett
   - Il compagno non perde mai stadi.
 - **US-COMP-03** Come utente voglio dare un nome al mio compagno, così che lo senta mio.
   - Il nome si cambia dalla scheda del compagno e appare nei promemoria.
+- **US-COMP-05** Come procrastinatore voglio che il compagno mi racconti la giornata, così che tornare nell'app sia un piccolo rito e non un controllo.
+  - Il fumetto del mattino appare una volta al giorno e si chiude con un tocco.
+  - Se ieri non è stato fatto nulla il testo incoraggia, senza rimproveri.
+  - Ogni situazione (giornata piena, parziale, vuota, boss sconfitto, serie record) ha almeno 5 varianti di testo per tema e lingua, perché non si ripeta.
+  - Durante la pausa generale il compagno non racconta.
 - **US-COMP-04 (F2)** Come utente voglio fare regali al compagno (biscotti, caramelle, una palla, elenco e prezzi da decidere), così che le monete abbiano un uso concreto e io possa rendere felice il mio compagno con delle interazioni attive.
   - Il regalo si dona dall'inventario, fa partire un'animazione del compagno felice e ne alza l'umore di un livello (es. da triste a normale) fino al cambio di giornata. Subito dopo il compagno ricorda all'eroe di proseguire con le abitudini, perché sono quelle che contano davvero (es. «Grazie, \[NOME EROE\]! Ma non dimenticarti di prenderti cura di te stesso. Completa i task di oggi entro la giornata!»).
 
@@ -355,11 +364,11 @@ Il posto dove si spendono le monete: aiuti che proteggono i progressi e, in F2, 
 **Expected output**
 
 - Saldo monete in alto, articoli in griglia con prezzo e descrizione breve.
-- Articoli MVP: **pozione** (ridà vita), **scudo della serie** (protegge la serie per un giorno mancato, massimo 2 posseduti).
+- Articoli MVP: **pozione** (ridà vita), **scudo della serie** (protegge la serie per un giorno mancato, massimo 2 posseduti; se ne riceve uno anche a ogni boss sconfitto).
 - Regali per il compagno (Could): biscotti, caramelle, palla per giocare e simili. Darne uno fa partire un'animazione del compagno felice di riceverlo e ne alza l'umore; poi il compagno ricorda all'eroe di proseguire con le abitudini, perché sono importanti. In versioni successive (Won't per ora): acquisto di altri compagni.
 - Inventario con gli oggetti posseduti e il pulsante Usa.
 - Le monete si guadagnano solo giocando; non si comprano con denaro reale e non si convertono in XP.
-- Le ricompense personali (F2): l'utente crea premi della vita reale con un prezzo in monete (es. «Un episodio di una serie, 100 monete»).
+- Le ricompense personali (Should): l'utente crea premi della vita reale con un prezzo in monete (es. «Un episodio di una serie, 100 monete»).
 
 **User stories**
 
@@ -368,7 +377,7 @@ Il posto dove si spendono le monete: aiuti che proteggono i progressi e, in F2, 
   - Non si possono avere più di 2 scudi.
 - **US-NEG-02** Come utente voglio recuperare vita con una pozione, così che uscire da un periodo difficile sia possibile.
   - Una pozione ridà 10 punti vita, senza superare il massimo.
-- **US-NEG-03 (F2)** Come utente voglio premiarmi con ricompense reali che decido io, così che le monete abbiano valore fuori dall'app.
+- **US-NEG-03** Come utente voglio premiarmi con ricompense reali che decido io, così che le monete abbiano valore fuori dall'app.
   - Le ricompense personali si creano con nome, entità (piccola, media, grande, epica) e il prezzo viene definito automaticamente dall’entità; riscattarle scala le monete e le registra nello storico.
 
 ### 8. Statistiche
@@ -431,6 +440,7 @@ Tutte le scelte personali in un posto: aspetto, ritmo della giornata, notifiche,
 
 - **Aspetto**: tema (6), con Minimal che segue chiaro o scuro del sistema; dimensione del testo segue quella del sistema.
 - **Giornata**: orario di cambio giornata (default 06:00), primo giorno della settimana, giorni di riposo settimanali facoltativi, tutti modificabili dall'utente (Must).
+- **Pausa generale** (Should): per vacanza o malattia sospende le penalità di tutte le missioni in un colpo, con data di inizio (anche futura) e data di fine facoltativa scelte da un calendario. Durante la pausa Oggi mostra un avviso con il pulsante «Riprendi».
 - **Livello di gioco:** Completo o Essenziale. Essenziale nasconde vita, boss e negozio e lascia missioni, serie e statistiche.
 - **Notifiche**: attivazione generale, riepilogo serale e orario, suoni.
 - **Accessibilità**: Riduci movimento (segue anche l'impostazione del sistema), vibrazioni, suoni.
@@ -454,6 +464,13 @@ Tutte le scelte personali in un posto: aspetto, ritmo della giornata, notifiche,
   - L'esportazione CSV contiene missioni e registro completo, condivisibile con il foglio di condivisione del sistema.
 - **US-IMP-05** Come utente voglio cancellare tutti i miei dati, così che possa ricominciare o andarmene.
   - Serve una doppia conferma; dopo la cancellazione l'app riparte dal Primo avvio.
+- **US-IMP-06** Come utente voglio mettere in pausa tutta l'app per una vacanza o una malattia, così che al ritorno non trovi vita persa.
+  - Durante la pausa le missioni non tolgono vita, gli scudi non si consumano, i giorni senza completamenti non abbassano l'umore del compagno (un completamento lo rende felice come sempre), promemoria e riepilogo serale sono sospesi. Le missioni «N volte a settimana» chiedono una volta in meno per ogni giorno di pausa (12/11).
+  - Le serie non sono protette: un giorno di pausa senza completamenti le interrompe come un giorno normale, così lo scudo resta l'unica protezione della serie (Claudio, 12/11).
+  - La pausa può iniziare oggi o in una data futura.
+  - Le missioni si possono comunque completare e danno XP, monete e punti statistica come sempre.
+  - Le scadenze dei boss si spostano in avanti dei giorni di pausa.
+  - La pausa finisce alla data scelta o con «Riprendi»; finita la pausa tutto riparte dal giorno dopo, senza penalità per i giorni passati.
 
 ### 11. Promemoria e notifiche
 
@@ -463,7 +480,7 @@ Riportare l'utente alle missioni al momento giusto e farle completare anche senz
 
 - Promemoria per missione, a uno o più orari, nei giorni previsti dalla frequenza; per le attività singole con anticipo di 0 (all'ora esatta), 5, 15 o 30 minuti.
 - Azioni direttamente dalla notifica: **Completa** e **Posticipa** (10 min). Completare dalla notifica assegna gli stessi guadagni dell'app.
-- Riepilogo serale facoltativo (default 21:00) con le missioni ancora da fare, firmato dal compagno.
+- Riepilogo serale facoltativo (default 21:00) con le missioni ancora da fare, raccontato dal compagno (vedi Racconto della giornata nella sezione 6).
 - Nessuna notifica di marketing; al massimo una notifica di «richiamo» dopo 3 giorni di inattività, disattivabile.
 - I testi usano il lessico del tema attivo.
 
@@ -544,24 +561,24 @@ Dal livello 7 all'8 servono 500 XP, come nel mockup di Oggi. Con 5 missioni medi
 - Massimo 50. Al cambio di giornata le missioni programmate e non fatte (né saltate, né in pausa) tolgono vita. Si perdono al massimo 10 punti al giorno, in proporzione a quanto manca: vita persa = 10 × XP delle missioni mancate ÷ XP di tutte le missioni previste, arrotondato all'intero. Esempio: 2 medie mancate su 5 medie previste tolgono 4 punti. Deciso da Claudio il 16/10.
 - Si recupera: +1 per ogni missione completata, +5 per giornata completa, +10 con una pozione.
 - A vita 0 l'eroe è «esausto» per un giorno: guadagna metà XP, poi la vita torna al 25% di quella massima (13 su 50, arrotondato per eccesso). Non perde livelli, monete né oggetti.
-- Nessuna perdita di vita nei giorni di riposo, per le missioni in pausa e in modalità Essenziale.
+- Nessuna perdita di vita nei giorni di riposo, per le missioni in pausa, durante la pausa generale e in modalità Essenziale.
 
 **Serie**
 
 - **Serie dell'eroe**: giorni consecutivi con almeno una missione completata. Un giorno di riposo la mantiene senza farla crescere.
 - **Serie di missione**: occorrenze consecutive previste e completate; i giorni non previsti dalla frequenza non contano.
-- Uno scudo posseduto si consuma da solo nel primo giorno mancato e salva entrambe le serie. Un «Salta oggi» non spezza la serie ma non la fa crescere. Regole della serie approvate da Claudio il 16/10.
+- Uno scudo posseduto si consuma da solo nel primo giorno mancato e salva entrambe le serie. Un «Salta oggi» non spezza la serie ma non la fa crescere. Durante la pausa generale le serie seguono le regole normali e gli scudi non si consumano (12/11). Regole della serie approvate da Claudio il 16/10.
 
 **Boss**
 
 - Vita del boss = numero di passi × 20. Ogni passo infligge 20 danni, ogni missione collegata il danno della tabella.
 - La vita non scende sotto 10 × passi rimanenti: la vittoria richiede sempre l'ultimo passo. A scadenza mancata il boss ruba il 10% delle monete, al massimo 500, sbeffeggiando l'eroe.
-- Ricompensa alla vittoria: passi × 10 XP × difficoltà del boss (facile 1, media 1,5, difficile 2), e monete pari a un quinto degli XP.
+- Ricompensa alla vittoria: passi × 10 XP × difficoltà del boss (facile 1, media 1,5, difficile 2), e monete pari a un quinto degli XP, più uno scudo della serie (100 monete al suo posto se se ne hanno già 2). Scudo deciso da Claudio il 12/11.
 
 **Compagno**
 
 - Uovo → cucciolo al primo completamento; cucciolo → adulto a 150 completamenti totali. Se si aggiunge il quarto stadio (Could, nome da scegliere: es. Asceso o Antico), la soglia per adulto si abbassa e il quarto stadio diventa il nuovo traguardo. Regole del compagno approvate da Claudio il 16/10.
-- Umore sugli ultimi 3 giorni: felice sopra il 70% di missioni completate, normale tra 30% e 70%, triste sotto il 30%.
+- Umore sugli ultimi 3 giorni: felice sopra il 70% di missioni completate, normale tra 30% e 70%, triste sotto il 30%. I giorni di pausa generale senza completamenti non contano.
 
 **Statistiche dell'eroe**
 

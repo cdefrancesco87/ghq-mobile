@@ -14,8 +14,9 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 | 16/10 | Riferimento su Drive nella cartella nuova (account c.defrancesco.dev), non più quella vecchia | Cambio di account Google | Istruzioni di progetto |
 | 30/10 | Usare superpowers soprattutto in fase di codice; niente agenti in parallelo di default | Consumo di token | Thread Modello dati |
 | 06/11 | Cartella di progetto come fonte di verità, Drive come copia sempre aggiornata | I thread leggono e scrivono la cartella direttamente; Drive è più comodo da consultare | [00-indice.md](00-indice.md) |
-
 | 06/11 | (Claude) Backlog di 33 task preliminari da eseguire in loop con Claude Code, un task per giro; fuori dal loop i passi che richiedono Claudio | Richiesta di Claudio | [sviluppo/README.md](sviluppo/README.md) |
+| 12/11 | Analisi dei concorrenti estesa a Habitica e Finch, con tabella di posizionamento di GHQ; la proposta di priorità del 15/10 resta solo come storico, fa fede il MoSCoW | Le 6 app già analizzate non avevano valutazioni; la proposta e alcuni spunti erano in contrasto con le decisioni del 16/10 | [analisi/analisi-funzionalita-habitica-finch.md](analisi/analisi-funzionalita-habitica-finch.md) |
+
 ## Funzionalità e regole di gioco
 
 | Data | Decisione | Motivo | Dove |
@@ -58,6 +59,10 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 | 06/11 | Il boss ruba dal giorno dopo la scadenza, una volta per scadenza | Confermata la scelta del loop | idem |
 | 06/11 | La pozione non si può usare a vita piena | Evita di sprecare 50 monete | idem |
 | 06/11 | Impostazioni: lingua del dispositivo se tra le 5 (altrimenti inglese), tema Minimal automatico, riepilogo serale acceso alle 21:00, settimana da lunedì | Confermate con una correzione alla lingua | idem |
+| 12/11 | Pausa generale per vacanza o malattia: congela vita, umore e notifiche; scadenze dei boss spostate in avanti. ~~Congela le serie~~: le serie seguono le regole normali e gli scudi non si consumano; inizio oggi o futuro, scelto con un calendario (Claudio, 12/11) | Spunto da Habitica e Finch: chi si ferma rischia di abbandonare | Analisi funzionale, sez. 10 e Regole di gioco |
+| 12/11 | Uno scudo della serie a ogni boss sconfitto (100 monete se se ne hanno già 2) | Lo scudo si guadagna anche giocando, come in Finch | Analisi funzionale, sez. 5; xp-e-monete |
+| 12/11 | Il compagno racconta la giornata: riepilogo serale e fumetto del mattino in Oggi | Fidelizzazione, spunto da Finch | Analisi funzionale, sez. 6 e 11 |
+| 12/11 | Ricompense personali da Could a Should | Le monete devono avere valore fuori dall'app | Analisi funzionale, sez. 7; xp-e-monete |
 
 ## Stack tecnologico (tutte del 30/10)
 
@@ -116,10 +121,16 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 | 08/11 | Logo: si usa il segnaposto (spilla con la spunta) del lotto 4; il definitivo si disegna più avanti | Claudio | design/consegne/4/ |
 | 08/11 | Lotto 4 approvato. Habitat: vasca illuminata dal basso a Cyberpunk (Glitchy), scrittoio con lampada a olio a Lovecraft (Lumin); stadi Uovo, Cucciolo, Adulto in tutti i temi | Compagni nuovi; Claudio: «sì ai cambi» | design/design-sezioni.md 6.10, design/consegne/4/ |
 | 08/11 | Barra di navigazione a 4 voci con il [+] al centro: Oggi, Abitudini, [+], Obiettivi, Profilo. Statistiche si apre da Profilo e dalla scheda dell'eroe | Con 6 posti il [+] stava al 42% della larghezza (Claudio) | design/design-sezioni.md A6, design/consegne/5/ |
+| 12/11 | ~~(Claude, da approvare) Design delle 4 funzioni Should del 12/11: pausa generale da oggi con fascia e «Riprendi» in Oggi e riga in Giornata; scudo alla vittoria mostrato nella schermata, non dato dalla quest di partenza; racconto del compagno con 8 situazioni del mattino e 3 serali, testi uguali per ogni umore; ricompense dopo gli Aiuti, massimo 20~~ Superata dalla riga «Design delle 4 funzioni approvato con modifiche» | Portare in design e backlog le funzioni decise il 12/11 | design/aggiunte-12-11.md, design-sezioni 2.8, 5.5, 6.14, 7.6, 10.5 |
+| 12/11 | (Claude) Backlog: task T88–T92 in fase 6; ricompense personali tolte dal T86 | Sono Should; il T86 resta solo regali (Could) | sviluppo/aggiunta-backlog-12-11.md |
+| 12/11 | Design delle 4 funzioni approvato con modifiche: pausa con calendario inizio e fine e serie non protette; scudo anche dalla quest di partenza; varianti per umore nelle frasi del mattino (3.300 frasi in tutto, 660 per lingua) e 3 situazioni in più; ricompense dopo gli Aiuti, senza limite (lista caricata a pezzi), solo prezzo; prezzi 100, 250, 600, 1.500 | Scelte una per una da Claudio | design/aggiunte-12-11.md |
+| 12/11 | Pausa generale: ogni giorno di pausa riduce di 1 le missioni «N volte a settimana» (minimo 0); se N arriva a 0 la serie della missione quella settimana non cresce e non si interrompe; un completamento in pausa rende felice il compagno, i giorni vuoti in pausa non abbassano l'umore. Con le correzioni del controllo di Claude Code (scelta minore 23) | Incoerenze trovate da Claude Code nel repo | CLAUDE.md scelte 12, 22, 23; backlog T88–T92 |
+| 12/11 | Quale fonte vince: la decisione esplicita più recente; a parità di data decide il tipo di contenuto (comportamento → testi, aspetto → mockup, misure → temi.json/misure-componenti, testi → lessico) | Conflitti tra documenti, mockup e lessico durante il loop | CLAUDE.md «Quale fonte vince», LEGGIMI dei mockup, backlog |
+| 12/11 | Barra di stato per tema (L23) approvata; task T38b subito dopo T38 | Lacuna L23 | CLAUDE.md scelta 24, design-sezioni A11.3, backlog T38b |
 
 ## In attesa di decisione
 
-- Valori di badge, regali e prezzi delle ricompense personali.
+- Valori di badge e regali. Prezzi delle ricompense personali approvati il 12/11.
 - Proposte ancora aperte nella proposta XP e monete (limite ai cambi di difficoltà, XP dimezzati dopo 10 missioni facili, penalità per ritardi e completamenti a posteriori).
 - Se e dove mostrare le missioni eliminate.
 
@@ -130,3 +141,5 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 - 08/11: lotto 8 (piedistallo, badge, regali, corona, 2 sprite intermedi per tema) consegnato in consegne/8; intermedi sono bozze per resampling.
 - 08/11: Claudio: sprite intermedi (lotto 8) restano placeholder per ora, come il logo; da rifinire in seguito.
 - 08/11: pacchetto mockup per Claude Code in sviluppo/mockup-per-claude-code/ (+zip); il thread «Secondo backlog: schermate» riallinea backlog-schermate.md ai frame. Da copiare nel repo in docs/riferimenti/mockup/.
+- 08/11: Claudio approva L03 (soglia testo grande fontScale ≥ 1,3; barra a 4 voci + [+]) e L04 (lessico con singolare/plurale/genere, etichette barra non tematizzate). Percorso mockup nel repo: docs/mockup/.
+- 08/11: aggiunta A11 (L03 e L04) a design-sezioni.md e design/lessico-v2.json (it definitivo, en proposto, de/fr/es da fare in T28).

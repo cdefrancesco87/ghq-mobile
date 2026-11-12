@@ -80,7 +80,7 @@ Nella versione precedente il budget fisso impediva a un membro del team di gonfi
 
 - Missioni completate: 2, 5 o 10 monete secondo la difficoltà.
 - Giornata completa: +10 monete.
-- Boss sconfitto: un quinto degli XP della vittoria.
+- Boss sconfitto: un quinto degli XP della vittoria, più uno scudo della serie (100 monete al suo posto se se ne hanno già 2).
 - Badge sbloccato: monete bonus, valore ancora da definire.
 - Quest di partenza del primo avvio: le prime monete.
 
@@ -97,14 +97,14 @@ In un solo caso: se la scadenza di un boss passa, il boss sbeffeggia l'eroe e ru
 | Pozione | 50 monete | +10 vita, senza superare il massimo di 50 | Must |
 | Scudo della serie | 100 monete | Protegge le serie per un giorno mancato; massimo 2 posseduti | Should |
 | Regali per il compagno (biscotti, caramelle, palla) | da definire | Animazione del compagno felice e umore su di un livello fino al cambio di giornata; poi il compagno ricorda di proseguire con le abitudini | Could |
-| Ricompense personali | automatico secondo l'entità | Un premio della vita reale, es. «Un episodio di una serie», di entità piccola, media, grande o epica | Could |
+| Ricompense personali | automatico secondo l'entità | Un premio della vita reale, es. «Un episodio di una serie», di entità piccola, media, grande o epica | Should |
 
 Una pozione costa circa un giorno e mezzo di costanza, uno scudo circa tre giorni. L'acquisto di altri compagni è Won't per questa versione.
 
 ### Altre regole consigliate
 
 - **Niente monete in vendita.** Non si comprano con denaro reale e non si convertono in XP. Un'eventuale monetizzazione resta cosmetica, come temi extra o skin del compagno.
-- **Ricompense personali (Could).** L'utente le crea con nome ed entità (piccola, media, grande o epica) e l'app assegna il prezzo in monete in base all'entità; i prezzi sono ancora da definire. Riscattarle scala le monete e lo registra nello storico. Proposta: l'app mostra il prezzo anche in giorni di costanza (100 monete, circa 3 giorni).
+- **Ricompense personali (Should, da Could il 12/11).** L'utente le crea con nome ed entità (piccola, media, grande o epica) e l'app assegna il prezzo in monete in base all'entità; prezzi approvati da Claudio il 12/11: piccola 100, media 250, grande 600, epica 1500 monete. Riscattarle scala le monete e lo registra nello storico. L'app mostra solo il prezzo, senza giorni di costanza; nessun limite al numero di ricompense.
 - **Trasparenza.** Dal registro si vede da dove arriva ogni moneta e dove è stata spesa.
 
 ## 3. Priorità MoSCoW
@@ -112,8 +112,8 @@ Una pozione costa circa un giorno e mezzo di costanza, uno scudo circa tre giorn
 Le priorità seguono la tabella MoSCoW dell'analisi funzionale:
 
 - **Must:** XP per difficoltà, livelli fino a 50 con titolo, annullamento in giornata, monete solo giocando, pozione e inventario, danno al boss e ricompense alla vittoria, vita con recupero morbido.
-- **Should:** «Salta oggi» fino a 3 volte a settimana, bonus giornata completa, scudo della serie, boss che ruba monete a scadenza passata, badge con monete bonus, registro e completamenti dimenticati fino a 7 giorni prima.
-- **Could:** regali per il compagno, ricompense personali, riepilogo settimanale. Le classi semplici sono eliminate: al loro posto ci sono le statistiche dell'eroe, descritte in [statistiche-eroe.md](statistiche-eroe.md).
+- **Should:** «Salta oggi» fino a 3 volte a settimana, bonus giornata completa, scudo della serie, boss che ruba monete a scadenza passata, badge con monete bonus, registro e completamenti dimenticati fino a 7 giorni prima, ricompense personali, scudo alla vittoria su un boss.
+- **Could:** regali per il compagno, riepilogo settimanale. Le classi semplici sono eliminate: al loro posto ci sono le statistiche dell'eroe, descritte in [statistiche-eroe.md](statistiche-eroe.md).
 - **Won't:** prestigio e acquisto di altri compagni.
 - **Da decidere:** le regole segnate «Proposta» nella sezione 1, i prezzi delle ricompense personali per entità e la priorità di moltiplicatore di serie e bonus del Piano, che non sono nella tabella (proposta: Must).
 
@@ -130,9 +130,9 @@ Il modello completo è in [modello-dati.md](modello-dati.md).
 | Evento di registro | tipo (completamento, annullamento, bonus, ritardo, acquisto, uso, furto del boss), data, riferimenti, variazioni di XP, monete e vita | Must |
 | Valori di difficoltà | XP, monete e danno al boss per ogni difficoltà, più il tetto di vita persa al giorno (10 punti), in una configurazione unica da tarare | Must |
 | Oggetto | tipo (pozione, scudo, regalo), quantità, data d'uso | Must |
-| Ricompensa personale | nome, entità (piccola, media, grande, epica), attiva sì/no | Could |
-| Prezzi delle ricompense | monete per ogni entità, in configurazione | Could |
-| Riscatto | ricompensa, data, monete spese | Could |
+| Ricompensa personale | nome, entità (piccola, media, grande, epica), attiva sì/no | Should |
+| Prezzi delle ricompense | monete per ogni entità, in configurazione | Should |
+| Riscatto | ricompensa, data, monete spese | Should |
 | Badge | tipo, condizione, data di sblocco, monete date | Should |
 
 Tutto resta sul telefono; i dati escono solo verso il backup nel cloud personale dell'utente.

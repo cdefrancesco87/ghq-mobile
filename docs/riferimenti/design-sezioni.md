@@ -174,7 +174,7 @@ Il lessico della proposta precedente resta valido. Propongo questi nomi per i te
 
 ### A11. Regole di dettaglio
 
-Approvate da Claudio l'08/11 (lacune L03 e L04). Le altre regole di dettaglio (L02, L05, L09–L17, L23–L24) restano da approvare e verranno aggiunte qui.
+Approvate da Claudio l'08/11 (lacune L03 e L04). Le altre regole di dettaglio (L02, L05, L09–L17, L24) restano da approvare e verranno aggiunte qui.
 
 **A11.1 Testo molto grande (L03).**
 
@@ -192,6 +192,10 @@ Approvate da Claudio l'08/11 (lacune L03 e L04). Le altre regole di dettaglio (L
   - Titolo del Profilo: «PLAYER 1», «Scheda dell'eroe», «Dossier», «Diario dell'investigatore», «Profilo». Titolo di Statistiche: «HIGH SCORE» in Arcade, «Statistiche» negli altri.
   - Titolo di Modifica: «Modifica» + il nome del tema al singolare (es. «Modifica impresa»).
   - Titolo «Missioni di oggi»: plurale di `missioni` + «di oggi» (es. «Imprese di oggi»). Da confermare nei frame.
+
+**A11.3 Barra di stato (L23, approvata il 12/11).**
+
+  - Barra di stato e tasti di sistema di Android: icone chiare sui temi scuri (Arcade, Cyberpunk, Lovecraft, Minimal scuro), scure su Fantasy e Minimal chiaro; il fondo della finestra è lo `sfondo` del tema.
 
 
 ## 1. Primo avvio
@@ -286,6 +290,8 @@ Stato: **approvata da Claudio il 30/10, con le scelte ★**. Obiettivo di design
   - Scheda dell'eroe, alta circa 128: a sinistra il compagno (64, animato a riposo, si tocca per aprire la sua scheda); a destra nome, titolo e livello, poi le barre di vita ed esperienza con i numeri, poi due chip: serie in giorni e monete.
   - ★ Scorrendo, la scheda si riduce a una barra fissa sottile con livello, vita ed esperienza, così il riscontro dei completamenti resta sempre visibile.
   - Minimal: compagno a 40, barre sottili, chip discreti; i temi di gioco danno più spazio al compagno e alle barre.
+  - Alla prima apertura della giornata, sotto la scheda dell'eroe compare il fumetto del mattino del compagno (vedi 6.14). Si chiude con un tocco e non torna fino a domani.
+
 
 ### 2.3 Piano del giorno
 
@@ -331,8 +337,10 @@ Quando l'ultima missione è fatta, il contatore lascia il posto a una scheda cel
   - **Scudo usato**: avviso informativo in cima «Lo scudo ha protetto la tua serie ieri», chiudibile.
   - **Boss che ha rubato monete**: avviso in cima con la battuta del boss e le scelte «Nuova scadenza» (in evidenza) e «Archivia».
   - **Promemoria disattivati**: nessun avviso in Oggi; se ne parla solo nelle Impostazioni.
+  - **Pausa generale** (Should, 12/11): in cima, sotto la data, una fascia informativa con l'icona pausa e il testo «In pausa fino al 20 novembre · La vita è al sicuro» (senza data di fine: «In pausa · La vita è al sicuro»), con il pulsante «Riprendi» a destra. La fascia non si chiude. Le missioni restano visibili e si possono completare (danno XP, monete e punti statistica come sempre); la scheda del boss mostra «Scadenza ferma» al posto dei giorni che mancano. Niente fumetto del mattino.
+  - **Riprendi**: un dialogo spiega «La pausa finisce oggi. Da domani le missioni tornano a contare; le scadenze dei boss sono spostate di 6 giorni» con «Riprendi» e «Annulla». Dopo, la fascia diventa «Si riparte domani», chiudibile, fino al cambio di giornata.
+  - **Fine della pausa**: il primo giorno dopo la pausa (alla data scelta o dopo «Riprendi»), il fumetto del mattino accoglie l'eroe con la situazione «Ritorno dalla pausa» (6.14).
 
-  
 
 ### 2.9 Varianti per tema
 
@@ -585,6 +593,11 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: fa
   - Schermata intera, saltabile: il boss viene sconfitto con l'animazione del tema, appare «Vittoria\!» nel lessico del tema, XP e monete salgono con un conteggio, il trofeo vola verso la Sala dei trofei.
   - Pulsanti «Vedi il trofeo» e «Continua»; tornando su Obiettivi il posto liberato propone «+ Nuovo obiettivo».
   - Animazione per tema: il boss esplode in pixel (Arcade), cade in polvere d'oro (Fantasy), il firewall va in crash con un glitch (Cyberpunk), l'Orrore svanisce nella nebbia (Lovecraft), l'anello si chiude con coriandoli sobri (Minimal).
+  - ★ Sotto il conteggio di XP e monete compare la riga dello scudo: sprite dello scudo (16×16 a 3×), nome nel lessico del tema e «+1», che poi vola verso l'icona delle monete nella scheda dell'eroe come gli altri guadagni. In alternativa lo scudo si nomina solo nel testo, senza sprite.
+  - Con 2 scudi già posseduti lo sprite compare spento e si trasforma in «+100 monete», con la riga «Hai già 2 scudi: ricevi 100 monete» e le monete che si aggiungono al conteggio.
+  - Anche la quest di partenza dà lo scudo (Claudio, 12/11).
+  - Lettore di schermo: «Vittoria. Più 120 XP, più 24 monete, più uno scudo della serie» oppure «… più 100 monete al posto dello scudo, ne hai già 2». Con Riduci movimento lo scudo compare senza volo.
+
 
 ### 5.6 Scadenza vicina e mancata
 
@@ -706,6 +719,22 @@ Stato: approvata da Claudio il 30/10, con le scelte ★ e le modifiche su umori 
 4.  Nomi degli stadi diversi per tema (★) o uguali ovunque.
 5.  Habitat di sfondo per tema (★) o sfondo neutro.
 
+### 6.14 Racconto della giornata (Should, 12/11)
+
+  - **Fumetto del mattino.** Alla prima apertura della giornata di gioco, in Oggi, sotto la scheda dell'eroe e prima del Piano del giorno, il compagno (nella posa del suo umore) parla con un fumetto di al massimo due frasi: la prima su ieri, con i numeri in grassetto (es. «Ieri **4 missioni su 5** e **20 danni** a Glitch-Lord!»); la seconda è un incoraggiamento per oggi. Il fumetto entra con la stessa animazione del tocco sul compagno (6.4) e si chiude con un tocco ovunque sul fumetto o con la X; non torna fino a domani. Toccare il compagno dopo riporta le frasi normali di 6.4.
+  - **Situazioni**, in ordine di priorità quando ne valgono più d'una: Ritorno dalla pausa, Ritorno dopo assenza (2 o più giorni senza aprire l'app), Serie record (ieri la serie dell'eroe ha superato il suo massimo), Boss sconfitto ieri, Giornata piena, Giornata parziale, Giornata vuota, Giorno di riposo. Per ogni situazione c'è un insieme di frasi su ieri; l'incoraggiamento per oggi è un insieme a parte, uguale per tutte le situazioni. L'app sceglie a caso evitando le ultime 3 frasi usate.
+  - **Tono.** Segue il tema (lessico e voce del compagno: Pixel, Rocky, Glitchy, Lumin, Cloudy) e l'umore, che si vede dalla posa dello sprite; le frasi del mattino hanno una variante per umore (felice, normale, triste), decisa da Claudio il 12/11; quelle della sera no. Giornata vuota e Ritorno dopo assenza incoraggiano e non rimproverano mai, come in 6.4.
+  - **Quando non compare:** il primo giorno d'uso (non c'è un ieri), durante la pausa generale, se ieri l'app non prevedeva nulla e non era giorno di riposo (nessuna missione ancora creata).
+  - **Riepilogo serale.** La notifica di 11.5 è firmata dal compagno: titolo «Cloudy» (nome del compagno) e testo con la sua voce, es. «Ti mancano 2 missioni, c'è ancora tempo». Tre situazioni: Tutto fatto, Mancano alcune missioni (con i nomi, come in 11.5), Nessuna ancora fatta.
+  - **Modalità Essenziale:** il fumetto resta, senza danni al boss né monete nel testo; le situazioni Boss sconfitto non si usano.
+  - **Accessibilità:** il fumetto si legge «Cloudy dice: …» dopo la scheda dell'eroe, senza prendere il fuoco; con Riduci movimento compare con una dissolvenza.
+  - I testi da scrivere sono elencati in `racconto-compagno-testi.md` (in `design/` nella cartella di progetto, in `docs/riferimenti/` nel repo).
+
+### 6.15 Scelte da approvare (12/11)
+
+1.  ~~Testi uguali per ogni umore~~: una variante per umore nelle frasi del mattino (Claudio, 12/11).
+
+
 ## 7. Negozio e inventario
 
 Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: spendere le monete in modo chiaro e senza sorprese, con gli aiuti in primo piano e un negozio che sembri parte del mondo del tema.
@@ -719,7 +748,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: sp
 
   - In cima il saldo grande con l'icona della moneta del tema e una frase di benvenuto nel tono del tema.
   - ★ Negozio e Inventario stanno nella stessa schermata come due schede in alto. In alternativa due schermate separate, ognuna con la sua riga nel Profilo.
-  - La scheda Negozio ha tre gruppi: Aiuti (pozione, scudo della serie), Regali per il compagno (se entrano nella versione) e Le tue ricompense (se entrano nella versione).
+  - La scheda Negozio ha tre gruppi: Aiuti (pozione, scudo della serie), Le tue ricompense (Should dal 12/11) e Regali per il compagno (se entrano nella versione). ★ Le ricompense vengono subito dopo gli Aiuti, perché sono Should e sono il motivo principale per spendere.
 
 ### 7.3 Scheda dell'articolo
 
@@ -738,11 +767,17 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: sp
   - Il tocco apre un foglio con descrizione e azione: la pozione ha Usa (la barra della vita si riempie con un'animazione); se la vita è già piena il pulsante è spento con «La vita è già al massimo». Lo scudo non ha pulsante: «Si usa da solo nel primo giorno mancato». I regali hanno «Dona a Blob», che apre l'animazione dell'esultanza del compagno.
   - Inventario vuoto: lo sprite di uno zaino vuoto e «Niente qui: guarda nel Negozio».
 
-### 7.6 Ricompense personali (Could)
+### 7.6 Ricompense personali (Should dal 12/11)
 
-  - Nel gruppo Le tue ricompense: le ricompense create dall'utente e la scheda «+ Nuova ricompensa».
-  - Creazione in un foglio: nome (es. «Un episodio di una serie») e entità con 4 chip (piccola, media, grande, epica), ognuno con il suo prezzo, che è automatico e segue il documento su XP e monete.
-  - Riscattare chiede conferma, scala le monete, mostra una breve festa del tema e registra il riscatto nel registro. La ricompensa resta disponibile per i riscatti successivi; si modifica o si elimina dal suo menu.
+  - Nel gruppo Le tue ricompense: le ricompense create dall'utente, in ordine di prezzo, e per ultima la scheda tratteggiata «+ Nuova ricompensa». Senza ricompense il gruppo mostra solo questa scheda con l'esempio «Es. Un episodio della tua serie».
+  - Scheda della ricompensa nella stessa griglia degli articoli: icona a linea `icona-regalo` (lotto 1; i regali del compagno usano invece gli sprite del lotto 8) con da 1 a 4 pallini per l'entità, nome (al massimo 2 righe), entità, prezzo con l'icona della moneta (solo il prezzo, senza giorni: Claudio, 12/11). Monete insufficienti: «Ti mancano 40 monete», come per gli articoli.
+  - Creazione in un foglio: nome (obbligatorio, fino a 40 caratteri) ed entità con 4 chip (Piccola, Media, Grande, Epica), ognuno con il suo prezzo. Il prezzo non si modifica a mano: viene dalla configurazione (prezzi approvati il 12/11, scelta minore 22 di `CLAUDE.md`).
+  - Riscatto: il tocco apre un foglio di conferma con nome, prezzo, saldo dopo e «Riscatta per 250»; dopo, le monete scendono con un conteggio, una breve festa del tema (1 secondo, la stessa del completamento in grande) e l'avviso «Goditi: Un episodio della tua serie». Il riscatto va nel registro. La ricompensa resta disponibile per i riscatti successivi.
+  - Menu della scheda (pressione lunga o «…»): Modifica (nome ed entità; il nuovo prezzo vale dai riscatti successivi) ed Elimina con dialogo; i riscatti passati restano nel registro.
+  - Nessun limite al numero di ricompense; la griglia carica le schede man mano che si scorre (Claudio, 12/11).
+  - Le ricompense non vanno nell'Inventario: si riscattano e basta.
+  - Modalità Essenziale: nascoste con il Negozio.
+  - Lettore di schermo: «Un episodio della tua serie, ricompensa media, 250 monete», con «ti mancano 40 monete» se serve.
 
 ### 7.7 Nomi per tema
 
@@ -774,6 +809,9 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: sp
 3.  Acquisto con foglio di conferma (★) o con un tocco e Annulla.
 4.  Nomi propri per tema di negozio e inventario (★) o uguali ovunque.
 5.  In Essenziale gli scudi posseduti continuano a funzionare (★) o sono sospesi.
+6.  Ricompense subito dopo gli Aiuti (approvata il 12/11).
+7.  Nessun limite di ricompense, con caricamento allo scorrimento (Claudio, 12/11).
+
 
 ## 8. Statistiche
 
@@ -980,6 +1018,10 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: tr
   - Primo giorno della settimana: lunedì o domenica, preso dal telefono all'inizio.
   - Giorni di riposo: 7 cerchi con l'iniziale, nessuno scelto di default; sotto «Nei giorni di riposo nessuna missione è prevista e la serie è al sicuro».
   - ★ Ogni cambio della giornata vale da domani, e la riga lo dice («Dal 31 ottobre»), così la giornata in corso non cambia regole a metà. In alternativa vale subito.
+  - **Pausa generale** (Should, 12/11): ultima riga del gruppo, con valore «No», «Fino al 20 nov» o «Senza data». Apre un foglio con: una frase su cosa succede («Le missioni non tolgono vita, i giorni senza completamenti non abbassano l'umore del compagno, promemoria e riepilogo serale tacciono, le scadenze dei boss si spostano in avanti. La serie invece conta: completa almeno una missione al giorno per non interromperla.»), un calendario con data di inizio e data di fine (fine facoltativa, ultimo giorno di pausa compreso; Claudio, 12/11), e il pulsante «Inizia la pausa». La pausa può iniziare oggi o in una data futura; prima dell'inizio la riga mostra «Dal 20 nov» (Claudio, 12/11).
+  - Durante la pausa lo stesso foglio mostra la data di fine con «Cambia» e il pulsante «Riprendi» (stesso dialogo di Oggi, 2.8).
+  - In Essenziale la riga resta.
+
 
 ### 10.6 Notifiche
 
@@ -1029,6 +1071,8 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: tr
 3.  Cambio di livello di gioco con foglio di conferma (★) o immediato con Annulla.
 4.  Cambi della giornata validi da domani (★) o subito.
 5.  Impostazioni sobrie in tutti i temi (★) o decorate come il resto.
+5.  Pausa generale: inizio scelto dal calendario, anche oggi; le serie non sono protette (Claudio, 12/11).
+
 
 ## 11. Promemoria e notifiche
 
@@ -1069,6 +1113,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★ e due modifiche (solo ic
   - Titolo nel tono del tema (es. «La sera cala sul regno» in Fantasy, «Fine turno» in Cyberpunk), testo con le missioni ancora da fare: al massimo 3 per nome, poi «e altre 2».
   - Il tono è sempre un invito, mai un rimprovero: «Ti mancano 2 missioni, c'è ancora tempo».
   - Se tutte le missioni del giorno sono fatte, arriva un breve complimento nel tono del tema al posto dell'elenco (es. «Giornata completa\! Il regno festeggia» in Fantasy). Deciso da Claudio il 30/10.
+  - Il testo è scritto con la voce del compagno e firmato col suo nome; situazioni e testi in 6.14 (12/11). Durante la pausa generale il riepilogo non parte.
   - Il tocco apre Oggi.
 
 ### 11.6 Avviso del boss e richiamo

@@ -47,7 +47,7 @@ Priorità: **P1** = percorso Must, tocca molte schermate · **P2** = Must, una s
 
 Indicatore della voce attiva nella barra: pillola 32×4 sotto l'icona (Minimal), cornice 2 (Arcade), rombo 6 (Fantasy), linea 2 con alone (Cyberpunk), punto a stella 6 (Lovecraft).
 
-### L03 · «Testo molto grande» senza soglia
+### L03 · «Testo molto grande» senza soglia — ✅ approvata l'08/11 (barra a 4 voci + [+], non 5)
 **Task:** T36, T39, T43, T51, T53, T54, T55 e la barra di navigazione del T31.
 **Cosa manca:** molte sezioni dicono «con testo molto grande il layout cambia», ma nessuna dice da quale dimensione. Mancano poi i casi della barra di navigazione (5 voci + [+] con etichette, in tedesco), della riga missione (nome, XP e controllo da 48 sulla stessa riga) e della scheda del boss compatta.
 **Proposta:**
@@ -57,7 +57,7 @@ Indicatore della voce attiva nella barra: pillola 32×4 sotto l'icona (Minimal),
 - Boss compatto in Oggi: lo sprite sparisce e il resto va in colonna.
 - Press Start 2P: corpo arrotondato per difetto al multiplo di 2.
 
-### L04 · Lessico incompleto
+### L04 · Lessico incompleto — ✅ approvata l'08/11
 **Task:** T28 (già fatto, in bozza) e ogni schermata con testo tematizzato.
 **Cosa manca:** il lessico ha solo il singolare in italiano. Mancano plurali e generi: le intestazioni usano «Orrori», «Grandi obiettivi», e frasi come «Trasforma un obiettivo in un boss» in Fantasy diventano «in una Nemesi». Mancano le altre 4 lingue e diversi termini usati dal design: la parola della vittoria (5.5 dice «nel lessico del tema» ma non la dà), il titolo «Missioni di oggi», il titolo «Modifica missione» per tema, i titoli di Profilo e Statistiche.
 **Proposta:**
@@ -163,7 +163,7 @@ Il Diario elenca ogni segnaposto, come già chiede il T35.
 | L20 | T55 | «Suoni del tema» (10.4, A7) non ha un task né i suoni. Contatti (10.9) senza indirizzo; testo della Privacy non scritto. | Riga dei suoni nascosta finché i suoni non esistono (fuori dal loop). Contatti: dimmi un indirizzo email, altrimenti la riga non c'è. Privacy in bozza dalla frase di 10.9. |
 | L21 | T57 | «Sceglie un backup» (10.8) non dice quanti backup si tengono. | Uno solo, sovrascritto a ogni backup: il ripristino mostra quello. |
 | L22 | backlog | Riferimenti mancanti: T34 non cita A3 e A4; T39 e T40 non citano 2.9 (Oggi per tema: HUD Arcade, medaglione Fantasy…); T48 non cita 5.9; T52 non cita 8.10; T68 non cita 8.3 e 8.6. Senza, il loop salta le varianti di tema. | Aggiungo i riferimenti al backlog. |
-| L23 | T39 | Colori di barra di stato e barra di sistema di Android per tema non definiti. | Icone chiare sui temi scuri, scure su Fantasy e Minimal chiaro; fondo = `sfondo`. |
+| L23 | T39 | Colori di barra di stato e barra di sistema di Android per tema non definiti. | **Approvata da Claudio il 12/11** (design A11.3, scelta minore 24, task T38b): icone chiare sui temi scuri, scure su Fantasy e Minimal chiaro; fondo = `sfondo`. |
 | L24 | T40, T44 | Errori generici (un'azione rifiutata o un salvataggio fallito) senza aspetto; definiti solo quelli del backup. | Azione rifiutata: avviso in basso come L05, senza Annulla, colore `info`, con il motivo. Errore imprevisto: «Qualcosa è andato storto, riprova» e una riga nel log. |
 | L25 | T48 | La nebbia di Lovecraft (5.9) cambia lo sprite a ogni passo: serve un effetto o più immagini. | Nel Must lo sprite si vede tutto; la nebbia nel task Could delle decorazioni. |
 | L26 | design | In 12.1 un paragrafo («Il tocco apre l'app…») è scritto come titolo `###`. | Correggo il refuso. |
