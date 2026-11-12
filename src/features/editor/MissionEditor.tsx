@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
@@ -11,7 +11,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createMission, deleteMission, isMissionNameTaken } from '@/db/repositories/missions';
+import {
+  createMission,
+  deleteMission,
+  isMissionNameTaken,
+  listTodayMissions,
+} from '@/db/repositories/missions';
+import { gameDayOf, getSetting } from '@/db/repositories/settings';
 import { systemScheduler } from '@/features/notifications/system';
 import { Button } from '@/features/shared/Button';
 import { Difficulty } from '@/features/shared/Difficulty';
@@ -39,6 +45,17 @@ const STAT_SIZE = 52;
 
 type Kind = 'habit' | 'task';
 
+/** Base values, without the streak multiplier: the preview never promises XP that can change (4.10). */
+function baseRewards(difficulty: Level, stat: StatKey | null) {
+  return completionDeltas({
+    difficulty,
+    heroStreak: 0,
+    exhausted: false,
+    statPrimary: stat,
+    statSecondary: null,
+  });
+}
+
 /**
  * The editor of a new mission, basic fields (design-sezioni.md 4.1–4.4, 4.10, 4.12, 4.15; mockups
  * B5 and D13): name with the keyboard open, type, difficulty and main stat, then the bar with the
@@ -50,6 +67,7 @@ export function MissionEditor() {
   const router = useRouter();
   const toast = useUndoToast();
   const highlight = useHighlightStore((state) => state.highlight);
+  const clearHighlight = useHighlightStore((state) => state.clear);
   const large = useLargeText();
   const { bottom } = useSafeAreaInsets();
   const [name, setName] = useState('');
@@ -57,17 +75,12 @@ export function MissionEditor() {
   const [difficulty, setDifficulty] = useState<Level>('medium');
   const [stat, setStat] = useState<StatKey | null>(null);
   const [failed, setFailed] = useState(false);
+  // Enter and Save, or two quick taps, would otherwise create the mission twice.
+  const saving = useRef(false);
 
   const trimmed = name.trim();
   const taken = useMemo(() => isMissionNameTaken(getSession().db, name), [name]);
-  // Base values: no streak multiplier, so the preview never promises XP that can change (4.10).
-  const rewards = completionDeltas({
-    difficulty,
-    heroStreak: 0,
-    exhausted: false,
-    statPrimary: stat,
-    statSecondary: null,
-  });
+  const rewards = baseRewards(difficulty, stat);
   const xpTerm = t('lexicon.xp_pl', { context: family });
   const coinsTerm = t('lexicon.coins_pl', { context: family });
   const statName = (key: StatKey) => t(`stats.${key}`, { context: family });
@@ -76,24 +89,39 @@ export function MissionEditor() {
   const radius = shape.kind === 'rounded' ? shape.radius : 0;
 
   const save = () => {
-    if (trimmed === '') {
+    if (trimmed === '' || saving.current) {
       return;
     }
+    saving.current = true;
     let created;
     try {
-      created = runAction((db, clock) =>
-        createMission(db, { name: trimmed, kind, difficulty, statPrimary: stat }, clock),
-      );
+      created = runAction((db, clock) => {
+        const mission = createMission(
+          db,
+          { name: trimmed, kind, difficulty, statPrimary: stat },
+          clock,
+        );
+        const day = gameDayOf(clock.now, clock.tzOffset, getSetting(db, 'day_change'));
+        return {
+          id: mission.id,
+          inToday: listTodayMissions(db, day).some((m) => m.id === mission.id),
+        };
+      });
     } catch {
+      saving.current = false;
       setFailed(true);
       return;
     }
-    const { id } = created;
-    highlight(id);
+    const { id, inToday } = created;
+    // Only a row that Today shows can be highlighted: a task without a due day is not there.
+    if (inToday) {
+      highlight(id);
+    }
     router.back();
     toast.show({
       message: t('editor.created'),
       onUndo: () => {
+        clearHighlight();
         try {
           const { cancelledNotificationIds } = runAction((db, clock) =>
             deleteMission(db, id, clock),
@@ -188,13 +216,7 @@ export function MissionEditor() {
                 onPress={() => setDifficulty(level)}
                 accessibilityLabel={t('editor.difficultyLabel', {
                   name: t(`shared.difficulty.${level}`),
-                  xp: completionDeltas({
-                    difficulty: level,
-                    heroStreak: 0,
-                    exhausted: false,
-                    statPrimary: null,
-                    statSecondary: null,
-                  }).xp,
+                  xp: baseRewards(level, null).xp,
                   term: xpTerm,
                   position: index + 1,
                   total: DIFFICULTIES.length,

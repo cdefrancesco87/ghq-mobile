@@ -117,6 +117,7 @@ describe('Mission editor: basic fields', () => {
 
     expect(created(db, 'Corsa')?.deletedAt).not.toBeNull();
     expect(screen.queryByTestId(`today-mission-${id}`)).toBeNull();
+    expect(useHighlightStore.getState().missionId).toBeNull();
   });
 
   it('saves a single task with the chosen difficulty and stat', async () => {
@@ -136,6 +137,8 @@ describe('Mission editor: basic fields', () => {
       dueDay: null,
       statPrimary: 'charisma',
     });
+    // A task without a due day is not in Today: there is no row to highlight.
+    expect(useHighlightStore.getState().missionId).toBeNull();
   });
 
   it('changes the preview of the rewards with difficulty and stat', async () => {
