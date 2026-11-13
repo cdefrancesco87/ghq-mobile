@@ -7,6 +7,7 @@ import {
   archivedWindow,
   completionCounts,
   completionRate,
+  generalPauseSpans,
   pauseSpans,
   rateOf,
   type PauseEvent,
@@ -20,6 +21,7 @@ import { notDeleted, type EventType } from './events';
 import { getHeatmap, type HeatmapView } from './heatmap';
 import { loadHero, type ActionClock } from './hero';
 import type { Mission } from './missions';
+import { pauseIntervalsOf } from './pause';
 import { gameDayOf, getSetting } from './settings';
 
 // The overview of Statistics (analisi-funzionale.md section 8, design-sezioni.md 8.2, 8.4): the
@@ -108,6 +110,8 @@ export function rateInputsOf(
     .where(and(inArray(events.missionId, ids), inArray(events.type, RATE_EVENTS)))
     .orderBy(asc(events.seq))
     .all();
+  // The days of a general pause are not expected, like those of a paused mission (choice 23).
+  const general = generalPauseSpans(pauseIntervalsOf(db));
 
   return rows.map((mission) => {
     const ownLog = log.filter((event) => event.missionId === mission.id);
@@ -124,13 +128,16 @@ export function rateInputsOf(
       input: {
         mission: { ...mission, createdDay },
         days: days.filter((day) => day.missionId === mission.id),
-        pauses: pauseSpans(
-          ownLog.map((event): PauseEvent => ({
-            type: event.type,
-            gameDay: event.gameDay,
-            until: (event.payload.until as GameDay | null | undefined) ?? null,
-          })),
-        ),
+        pauses: [
+          ...pauseSpans(
+            ownLog.map((event): PauseEvent => ({
+              type: event.type,
+              gameDay: event.gameDay,
+              until: (event.payload.until as GameDay | null | undefined) ?? null,
+            })),
+          ),
+          ...general,
+        ],
         restDays,
         weekStart,
       },

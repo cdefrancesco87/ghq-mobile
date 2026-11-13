@@ -20,12 +20,15 @@ export interface HeatmapWeekDays {
   readonly days: readonly GameDay[];
 }
 
-/** The colour level of a day with `done` missions out of `scheduled`. */
-export function heatmapLevel(done: number, scheduled: number): HeatmapLevel {
+/**
+ * The colour level of a day with `done` missions out of `scheduled`. A day of general pause
+ * without completions stays empty, like a rest day (choice 23).
+ */
+export function heatmapLevel(done: number, scheduled: number, paused = false): HeatmapLevel {
   if (!Number.isInteger(done) || !Number.isInteger(scheduled) || done < 0 || done > scheduled) {
     throw new RangeError(`Invalid day counts: ${done} of ${scheduled}`);
   }
-  if (scheduled === 0) {
+  if (scheduled === 0 || (paused && done === 0)) {
     return null;
   }
   if (done === 0) {

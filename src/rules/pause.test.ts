@@ -1,4 +1,14 @@
-import { isPausedOn, pauseLastDay, pauseUntil } from './pause';
+import {
+  isPausedDay,
+  isPausedOn,
+  pauseIntervals,
+  pauseLastDay,
+  pauseLength,
+  windowStartOutsidePause,
+  pausedDaysBetween,
+  pauseUntil,
+  type PauseEvent,
+} from './pause';
 import type { GameDay } from './types';
 
 const TODAY: GameDay = '2026-11-13';
@@ -43,5 +53,106 @@ describe('isPausedOn', () => {
     expect(isPausedOn({ status: 'paused', pausedUntil: null }, '2030-01-01')).toBe(true);
     expect(isPausedOn({ status: 'active', pausedUntil: null }, TODAY)).toBe(false);
     expect(isPausedOn({ status: 'archived', pausedUntil: null }, TODAY)).toBe(false);
+  });
+});
+
+describe('general pause', () => {
+  const started = (fromDay: GameDay, untilDay: GameDay | null): PauseEvent => ({
+    type: 'pause.started',
+    payload: { fromDay, untilDay },
+  });
+
+  describe('pauseIntervals', () => {
+    it('is empty without pause events', () => {
+      expect(pauseIntervals([])).toEqual([]);
+    });
+
+    it('reads a pause with its end, an open one and a changed end', () => {
+      expect(
+        pauseIntervals([
+          started('2026-11-02', '2026-11-04'),
+          { type: 'pause.ended', payload: { fromDay: '2026-11-02', untilDay: '2026-11-04' } },
+          started('2026-11-10', null),
+          {
+            type: 'pause.changed',
+            payload: { fromDay: '2026-11-10', oldUntilDay: null, untilDay: '2026-11-12' },
+          },
+        ]),
+      ).toEqual([
+        { fromDay: '2026-11-02', untilDay: '2026-11-04' },
+        { fromDay: '2026-11-10', untilDay: '2026-11-12' },
+      ]);
+      expect(pauseIntervals([started('2026-11-10', null)])).toEqual([
+        { fromDay: '2026-11-10', untilDay: null },
+      ]);
+    });
+
+    it('drops a scheduled pause cancelled before its start', () => {
+      expect(
+        pauseIntervals([
+          started('2026-11-20', '2026-11-25'),
+          {
+            type: 'pause.ended',
+            payload: { fromDay: '2026-11-20', untilDay: '2026-11-25', cancelled: true },
+          },
+        ]),
+      ).toEqual([]);
+    });
+  });
+
+  describe('isPausedDay', () => {
+    const intervals = [
+      { fromDay: '2026-11-02' as GameDay, untilDay: '2026-11-04' as GameDay },
+      { fromDay: '2026-11-10' as GameDay, untilDay: null },
+    ];
+
+    it('includes the first and the last day of a pause', () => {
+      expect(isPausedDay('2026-11-01', intervals)).toBe(false);
+      expect(isPausedDay('2026-11-02', intervals)).toBe(true);
+      expect(isPausedDay('2026-11-04', intervals)).toBe(true);
+      expect(isPausedDay('2026-11-05', intervals)).toBe(false);
+    });
+
+    it('has no end for an open pause', () => {
+      expect(isPausedDay('2026-11-09', intervals)).toBe(false);
+      expect(isPausedDay('2027-03-01', intervals)).toBe(true);
+    });
+  });
+
+  describe('pausedDaysBetween', () => {
+    const intervals = [{ fromDay: '2026-11-04' as GameDay, untilDay: '2026-11-05' as GameDay }];
+
+    it('counts the paused days of a range, both ends included', () => {
+      expect(pausedDaysBetween(intervals, '2026-11-02', '2026-11-08')).toBe(2);
+      expect(pausedDaysBetween(intervals, '2026-11-05', '2026-11-08')).toBe(1);
+      expect(pausedDaysBetween(intervals, '2026-11-06', '2026-11-08')).toBe(0);
+      expect(pausedDaysBetween([], '2026-11-02', '2026-11-08')).toBe(0);
+    });
+
+    it('counts an open pause up to the end of the range', () => {
+      expect(
+        pausedDaysBetween([{ fromDay: '2026-11-07', untilDay: null }], '2026-11-02', '2026-11-08'),
+      ).toBe(2);
+    });
+  });
+
+  describe('pauseLength', () => {
+    it('counts the days of a pause, the last one included', () => {
+      expect(pauseLength({ fromDay: '2026-11-13', untilDay: '2026-11-13' })).toBe(1);
+      expect(pauseLength({ fromDay: '2026-11-13', untilDay: '2026-11-17' })).toBe(5);
+    });
+  });
+
+  describe('windowStartOutsidePause', () => {
+    const intervals = [{ fromDay: '2026-11-10' as GameDay, untilDay: '2026-11-14' as GameDay }];
+
+    it('is the start of a plain window without pauses', () => {
+      expect(windowStartOutsidePause('2026-11-30', 30, [])).toBe('2026-11-01');
+    });
+
+    it('goes back by the paused days, so the window has as many days not paused', () => {
+      expect(windowStartOutsidePause('2026-11-30', 30, intervals)).toBe('2026-10-27');
+      expect(windowStartOutsidePause('2026-11-16', 3, intervals)).toBe('2026-11-09');
+    });
   });
 });

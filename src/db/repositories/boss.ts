@@ -14,6 +14,7 @@ import {
 } from '../../rules/boss';
 import { BOSS, BOSS_EDIT } from '../../rules/config';
 import { isGameDay } from '../../rules/gameDay';
+import { isPausedDay } from '../../rules/pause';
 import {
   DIFFICULTIES,
   STAT_KEYS,
@@ -26,6 +27,7 @@ import type { Db } from '../types';
 import { appendEvent, notDeleted } from './events';
 import { changeHero, loadHero, recordLevelUp, type ActionClock } from './hero';
 import { withMoments, type WithMoments } from './moments';
+import { getGeneralPause } from './pause';
 import { gameDayOf, getSetting, setSetting } from './settings';
 
 // The bosses (analisi-funzionale.md, section 5; modello-dati.md, 3.8): creation, steps, damage
@@ -572,15 +574,22 @@ function notify(tx: Db, kind: string, bossId: string, now: number): void {
  * The deadlines of the active bosses (analisi-funzionale.md, section 5): the warning from 3 days
  * before, once, and, when the deadline has passed, the theft of 10% of the coins (at most 500),
  * once for each deadline (nothing in the Essential mode). The boss stays active and its steps stay.
+ * On a day of general pause nothing happens, and a deadline that falls in the pause in progress or
+ * scheduled is skipped: the end of the pause moves it forward (choice 23, closePendingDays).
  */
 export function checkBossDeadlines(db: Db, clock: ActionClock): DeadlineCheck {
   return db.transaction((tx) => {
     const today = todayOf(tx, clock);
     const warned: string[] = [];
     const robbed: { bossId: string; coins: number }[] = [];
+    const pause = getGeneralPause(tx);
+    const pauses = pause === null ? [] : [pause];
+    if (isPausedDay(today, pauses)) {
+      return { warned, robbed };
+    }
     const active = tx.select().from(boss).where(eq(boss.status, 'active')).all();
     for (const target of active) {
-      if (target.deadlineDay === null) {
+      if (target.deadlineDay === null || isPausedDay(target.deadlineDay, pauses)) {
         continue;
       }
       if (shouldWarnDeadline(today, target.deadlineDay, target.deadlineWarned)) {

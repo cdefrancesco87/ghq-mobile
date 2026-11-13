@@ -10,12 +10,14 @@ import {
 } from '../../rules/heatmap';
 import { dayMark, type DayMark } from '../../rules/missionDetail';
 import { completionCounts, rateOf } from '../../rules/missionRate';
+import { isPausedDay } from '../../rules/pause';
 import type { GameDay } from '../../rules/types';
 import { daySummaries, missionDays, missions } from '../schema';
 import type { Db } from '../types';
 import { notDeleted } from './events';
 import { loadHero, type ActionClock } from './hero';
 import { listTodayMissions, type Mission } from './missions';
+import { pauseIntervalsOf } from './pause';
 import { gameDayOf, getSetting } from './settings';
 import { rateInputsOf } from './statsView';
 
@@ -77,19 +79,23 @@ export function getHeatmap(db: Db, clock: ActionClock): HeatmapView {
       gameDay: daySummaries.gameDay,
       scheduled: daySummaries.scheduledCount,
       done: daySummaries.doneCount,
+      paused: daySummaries.isPaused,
     })
     .from(daySummaries)
     .where(and(gte(daySummaries.gameDay, columns[0].start), lte(daySummaries.gameDay, today)))
     .all();
   const byDay = new Map(summaries.map((row) => [row.gameDay, row]));
   const now = todayCounts(db, today);
+  const pausedToday = isPausedDay(today, pauseIntervalsOf(db));
 
   const levelOf = (day: GameDay): HeatmapLevel => {
     if (day === today) {
-      return heatmapLevel(now.done, now.scheduled);
+      return heatmapLevel(now.done, now.scheduled, pausedToday);
     }
     const summary = byDay.get(day);
-    return summary === undefined ? null : heatmapLevel(summary.done, summary.scheduled);
+    return summary === undefined
+      ? null
+      : heatmapLevel(summary.done, summary.scheduled, summary.paused);
   };
 
   return {
@@ -115,7 +121,7 @@ export function getHeatmapDay(db: Db, clock: ActionClock, day: GameDay): Heatmap
       done: now.done,
       scheduled: now.scheduled,
       rate: rateOf({ expected: now.scheduled, done: now.done }),
-      level: heatmapLevel(now.done, now.scheduled),
+      level: heatmapLevel(now.done, now.scheduled, isPausedDay(today, pauseIntervalsOf(db))),
       missions: now.listed.map((mission) => {
         const status = now.status.get(mission.id);
         const mark: HeatmapMark =
@@ -165,7 +171,7 @@ export function getHeatmapDay(db: Db, clock: ActionClock, day: GameDay): Heatmap
     done,
     scheduled,
     rate: rateOf({ expected: scheduled, done }),
-    level: summary === undefined ? null : heatmapLevel(done, scheduled),
+    level: summary === undefined ? null : heatmapLevel(done, scheduled, summary.isPaused),
     missions: marked,
   };
 }

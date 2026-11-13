@@ -2,6 +2,7 @@ import { DIFFICULTY_VALUES, HP } from './config';
 import { applyHp, hpLoss } from './day';
 import { isDueToday, type DueMission } from './frequency';
 import { addDays, daysBetween, weekStartOf, weekday, type Weekday } from './gameDay';
+import { isPausedDay, pausedDaysBetween, type PauseInterval } from './pause';
 import {
   nextHeroStreak,
   nextMissionStreak,
@@ -69,6 +70,8 @@ export interface CloseDaysInput {
   readonly inventory: CloseInventory;
   readonly settings: CloseSettings;
   readonly bonuses?: CloseBonuses;
+  /** The general pauses (choice 23): from `pauseIntervals` of the log. */
+  readonly pauses?: readonly PauseInterval[];
 }
 
 /** A row of `day_summaries`, without `closed_at`. */
@@ -83,6 +86,8 @@ export interface DaySummary {
   readonly fullDay: boolean;
   readonly planComplete: boolean;
   readonly shieldUsed: boolean;
+  /** A day of general pause (choice 23). */
+  readonly isPaused: boolean;
 }
 
 export interface MissionStreakChange {
@@ -135,6 +140,7 @@ function missionResult(
   day: GameDay,
   rows: readonly CloseMissionDay[],
   weekStart: Weekday,
+  pauses: readonly PauseInterval[],
 ): MissionResult | null {
   if (!isActiveOn(mission, day)) {
     return null;
@@ -144,7 +150,7 @@ function missionResult(
   const doneToday = status === 'done';
   const frequency = mission.frequency;
 
-  // «N volte a settimana» (choices 9, 15, 16, 17): judged on the last day of the week.
+  // «N volte a settimana» (choices 9, 15, 16, 17, 23): judged on the last day of the week.
   if (frequency?.type === 'times_per_week') {
     const start = weekStartOf(day, weekStart);
     if (addDays(start, 6) !== day) {
@@ -159,7 +165,13 @@ function missionResult(
     const skipsInWeek = rows.filter(
       (row) => row.status === 'skipped' && row.gameDay >= rangeStart && row.gameDay <= day,
     ).length;
-    const effectiveTimes = Math.max(0, frequency.times - skipsInWeek);
+    // Each paused day too, together with the skips (choice 23).
+    const pausedInWeek = pausedDaysBetween(pauses, rangeStart, day);
+    const effectiveTimes = Math.max(0, frequency.times - skipsInWeek - pausedInWeek);
+    if (effectiveTimes === 0) {
+      // Skips and pause brought N to 0: the streak neither grows nor breaks (choices 17, 23).
+      return { mission, done: doneToday ? 1 : 0, missed: 0, occurrence: null };
+    }
 
     if (isFirstPartialWeek) {
       // No HP loss in the first partial week; streak grows only if N is reached (choice 16).
@@ -198,12 +210,14 @@ function missionResult(
  * Closes every whole game day between `lastClosedDay` and `today`. Rest days and days without
  * missions due keep the hero streak; the first day with missions due and no completion uses a
  * shield, if any, which saves every streak of that day. Hit points reaching 0 make the hero
- * exhausted on the next day, and at the close of that day they go back to 13.
+ * exhausted on the next day, and at the close of that day they go back to 13. A day of general
+ * pause (choice 23) takes no hit points and uses no shield; the streaks follow the normal rules.
  */
 export function closeDays(input: CloseDaysInput): CloseDaysResult {
   const { missions, settings } = input;
   const fullDays = new Set(input.bonuses?.fullDays);
   const planDays = new Set(input.bonuses?.planDays);
+  const pauses = input.pauses ?? [];
   const rowsByMission = new Map<string, CloseMissionDay[]>();
   for (const row of input.missionDays) {
     rowsByMission.set(row.missionId, [...(rowsByMission.get(row.missionId) ?? []), row]);
@@ -219,6 +233,7 @@ export function closeDays(input: CloseDaysInput): CloseDaysResult {
 
   for (const day of daysBetween(input.lastClosedDay, input.today)) {
     const isRestDay = settings.restDays.includes(weekday(day));
+    const isPaused = isPausedDay(day, pauses);
     // On a rest day no mission is due (design 10.5), except times_per_week on the last day of the
     // week which is always evaluated even when that day is a rest day (choice 15).
     const isLastDayOfWeek = addDays(weekStartOf(day, settings.weekStart), 6) === day;
@@ -231,6 +246,7 @@ export function closeDays(input: CloseDaysInput): CloseDaysResult {
         day,
         rowsByMission.get(mission.id) ?? [],
         settings.weekStart,
+        pauses,
       );
       return result === null ? [] : [result];
     });
@@ -247,8 +263,10 @@ export function closeDays(input: CloseDaysInput): CloseDaysResult {
       missedXp += missed * xp;
     }
 
-    // A day without missions due works as a rest day (choice 11).
-    const shieldUsed = !isRestDay && scheduledCount > 0 && doneCount === 0 && shields > 0;
+    // A day without missions due works as a rest day (choice 11). No shield on a paused day: the
+    // streaks break as usual (choice 23).
+    const shieldUsed =
+      !isPaused && !isRestDay && scheduledCount > 0 && doneCount === 0 && shields > 0;
     let outcome: DayOutcome;
     if (isRestDay || scheduledCount === 0) {
       outcome = 'rest';
@@ -281,7 +299,10 @@ export function closeDays(input: CloseDaysInput): CloseDaysResult {
 
     // On a rest day the only results are the weekly evaluations of its last day: the rest protects
     // the missions on fixed days, not the debt of the week (choice 15).
-    const hpLost = hpLoss({ scheduledXp, missedXp, isRestDay: false, gameMode: settings.gameMode });
+    // A paused day takes no hit points (choice 23).
+    const hpLost = isPaused
+      ? 0
+      : hpLoss({ scheduledXp, missedXp, isRestDay: false, gameMode: settings.gameMode });
     // Choice 3: the close of the exhausted day gives back 13 hit points.
     const wasExhausted = hero.exhaustedDay === day;
     const hp = wasExhausted ? HP.afterExhaustion : applyHp(hero.hp, -hpLost);
@@ -299,6 +320,7 @@ export function closeDays(input: CloseDaysInput): CloseDaysResult {
         fullDay: fullDays.has(day),
         planComplete: planDays.has(day),
         shieldUsed,
+        isPaused,
       },
       hpDelta: hp - hero.hp,
       exhaustedNextDay,

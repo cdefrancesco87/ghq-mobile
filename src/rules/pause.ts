@@ -1,4 +1,4 @@
-import { addDays, isGameDay } from './gameDay';
+import { addDays, diffDays, isGameDay } from './gameDay';
 import type { GameDay } from './types';
 
 // Pausing a single mission (US-ABI-02, design-sezioni.md 3.6). `paused_until` is the first day
@@ -44,4 +44,102 @@ export function isPausedOn(
   day: GameDay,
 ): boolean {
   return mission.status === 'paused' && (mission.pausedUntil === null || day < mission.pausedUntil);
+}
+
+// The general pause (CLAUDE.md, choice 23; modello-dati.md 3.10 and 4.2): unlike the
+// `paused_until` of a mission, its `untilDay` is the last paused day, included, and null for a
+// pause without an end.
+
+/** A general pause in progress, scheduled or over. */
+export interface PauseInterval {
+  readonly fromDay: GameDay;
+  /** The last paused day, included; null for a pause without an end. */
+  readonly untilDay: GameDay | null;
+}
+
+/** The pause events of the log, in the order they were written. */
+export type PauseEvent =
+  | { readonly type: 'pause.started'; readonly payload: PauseInterval }
+  | {
+      readonly type: 'pause.changed';
+      readonly payload: PauseInterval & { readonly oldUntilDay: GameDay | null };
+    }
+  | {
+      readonly type: 'pause.ended';
+      readonly payload: PauseInterval & { readonly cancelled?: boolean };
+    };
+
+/**
+ * The general pauses written in the log, oldest first: a pause started (now or in the future),
+ * with its end changed by «Cambia» or «Riprendi», and closed by its end. A scheduled pause
+ * cancelled before its start leaves nothing.
+ */
+export function pauseIntervals(events: readonly PauseEvent[]): PauseInterval[] {
+  const byStart = new Map<GameDay, PauseInterval>();
+  for (const event of events) {
+    const { fromDay, untilDay } = event.payload;
+    if (event.type === 'pause.ended' && event.payload.cancelled === true) {
+      byStart.delete(fromDay);
+    } else {
+      byStart.set(fromDay, { fromDay, untilDay });
+    }
+  }
+  return [...byStart.values()].sort((a, b) => (a.fromDay < b.fromDay ? -1 : 1));
+}
+
+function contains(interval: PauseInterval, day: GameDay): boolean {
+  return day >= interval.fromDay && (interval.untilDay === null || day <= interval.untilDay);
+}
+
+/** Whether `day` is a day of general pause. */
+export function isPausedDay(day: GameDay, intervals: readonly PauseInterval[]): boolean {
+  return intervals.some((interval) => contains(interval, day));
+}
+
+/** How many days of general pause fall between `from` and `to`, both included. */
+export function pausedDaysBetween(
+  intervals: readonly PauseInterval[],
+  from: GameDay,
+  to: GameDay,
+): number {
+  let count = 0;
+  for (const interval of intervals) {
+    const start = interval.fromDay > from ? interval.fromDay : from;
+    const end = interval.untilDay === null || interval.untilDay > to ? to : interval.untilDay;
+    if (start <= end) {
+      count += diffDays(start, end) + 1;
+    }
+  }
+  return count;
+}
+
+/** The days of a pause with an end, the first and the last included. */
+export function pauseLength(interval: {
+  readonly fromDay: GameDay;
+  readonly untilDay: GameDay;
+}): number {
+  return diffDays(interval.fromDay, interval.untilDay) + 1;
+}
+
+/**
+ * The first day of a window of `windowDays` days not paused that ends on `end`: the days of
+ * general pause stretch it back (choice 23), e.g. the windows of the form arrow.
+ */
+export function windowStartOutsidePause(
+  end: GameDay,
+  windowDays: number,
+  intervals: readonly PauseInterval[],
+): GameDay {
+  if (!Number.isInteger(windowDays) || windowDays < 1) {
+    throw new RangeError(`A window lasts at least one day: ${windowDays}`);
+  }
+  let day = end;
+  let counted = isPausedDay(day, intervals) ? 0 : 1;
+  while (counted < windowDays) {
+    day = addDays(day, -1);
+    if (!isPausedDay(day, intervals)) {
+      counted += 1;
+    }
+  }
+  return day;
 }

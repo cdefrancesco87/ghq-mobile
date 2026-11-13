@@ -17,6 +17,7 @@ import { alias } from 'drizzle-orm/sqlite-core';
 import { HERO_LEVELS, PROFILE, STATS } from '../../rules/config';
 import { addDays, diffDays } from '../../rules/gameDay';
 import { xpToNext } from '../../rules/level';
+import { windowStartOutsidePause } from '../../rules/pause';
 import { formArrow, statProgress, type FormArrow, type StatProgress } from '../../rules/stats';
 import { STAT_KEYS, type GameDay, type StatKey } from '../../rules/types';
 import { boss, events, hero, heroStats, missionDays, missions } from '../schema';
@@ -25,6 +26,7 @@ import { getBadgesView, type BadgesView } from './badges';
 import { getCompanionView, type CompanionView } from './companion';
 import { appendEvent, notDeleted } from './events';
 import { loadHero, type ActionClock, type Hero } from './hero';
+import { pauseIntervalsOf } from './pause';
 import { gameDayOf, getSetting } from './settings';
 
 // The Profile (analisi-funzionale.md section 9, US-PROF-01, 03, 04; design-sezioni.md 9.2–9.5,
@@ -102,14 +104,17 @@ function pointsBetween(db: Db, stat: StatKey, from: GameDay, to: GameDay): numbe
 
 /**
  * The form arrow of every stat on `today`: the window is STATS.formWindowDays long and ends
- * today; the days of use start from the game day of the hero's creation.
+ * today; the days of use start from the game day of the hero's creation. The days of general
+ * pause do not count in the length of the windows, which stretch back over them (choice 23), so
+ * a holiday does not give a ↓ on the return.
  */
 function formArrows(db: Db, heroDay: GameDay, today: GameDay): Map<StatKey, FormArrow | null> {
   const window = STATS.formWindowDays;
   const daysOfUse = Math.max(1, diffDays(heroDay, today) + 1);
-  const lastFrom = addDays(today, -(window - 1));
+  const pauses = pauseIntervalsOf(db);
+  const lastFrom = windowStartOutsidePause(today, window, pauses);
   const prevTo = addDays(lastFrom, -1);
-  const prevFrom = addDays(prevTo, -(window - 1));
+  const prevFrom = windowStartOutsidePause(prevTo, window, pauses);
   return new Map(
     STAT_KEYS.map((stat) => [
       stat,

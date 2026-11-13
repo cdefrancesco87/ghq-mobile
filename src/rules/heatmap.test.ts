@@ -2,6 +2,11 @@ import { heatmapLevel, heatmapWeeks, weekSummary, type HeatmapCell } from './hea
 import type { GameDay } from './types';
 
 describe('heatmapLevel', () => {
+  it('leaves empty a day of general pause without completions (choice 23)', () => {
+    expect(heatmapLevel(0, 4, true)).toBeNull();
+    expect(heatmapLevel(2, 4, true)).toBe(2);
+  });
+
   it('has four levels: none, less than half, at least half, all', () => {
     expect(heatmapLevel(0, 4)).toBe(0);
     expect(heatmapLevel(1, 4)).toBe(1);

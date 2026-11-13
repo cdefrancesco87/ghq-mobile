@@ -82,6 +82,7 @@ describe('closeDays', () => {
         fullDay: false,
         planComplete: false,
         shieldUsed: false,
+        isPaused: false,
       },
       {
         gameDay: '2026-11-03',
@@ -94,6 +95,7 @@ describe('closeDays', () => {
         fullDay: false,
         planComplete: false,
         shieldUsed: false,
+        isPaused: false,
       },
       {
         gameDay: '2026-11-04',
@@ -106,6 +108,7 @@ describe('closeDays', () => {
         fullDay: false,
         planComplete: false,
         shieldUsed: false,
+        isPaused: false,
       },
       {
         gameDay: '2026-11-05',
@@ -118,6 +121,7 @@ describe('closeDays', () => {
         fullDay: false,
         planComplete: false,
         shieldUsed: false,
+        isPaused: false,
       },
       {
         gameDay: '2026-11-06',
@@ -130,6 +134,7 @@ describe('closeDays', () => {
         fullDay: false,
         planComplete: false,
         shieldUsed: false,
+        isPaused: false,
       },
     ]);
     expect(result.days.map((day) => day.hpDelta)).toEqual([-3, 0, -10, 0, -3]);
@@ -556,7 +561,7 @@ describe('closeDays', () => {
       expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 3, best: 3 }]);
     });
 
-    it('succeeds with N = 2, 3 skips and no completion (choice 17)', () => {
+    it('neither grows nor breaks with N = 2, 3 skips and no completion (choices 17, 23)', () => {
       const result = closeDays(
         input({
           lastClosedDay: '2026-11-01',
@@ -572,7 +577,8 @@ describe('closeDays', () => {
         }),
       );
       expect(result.days[6].summary).toMatchObject({ missedXp: 0, hpLost: 0 });
-      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 2, best: 2 }]);
+      // Skips bring N to 0: that week the streak neither grows nor breaks (T88).
+      expect(result.missionStreaks).toEqual([]);
     });
 
     it('reduces required times by skips in the week, minimum 0 (choice 17)', () => {
@@ -593,7 +599,7 @@ describe('closeDays', () => {
       expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 3, best: 3 }]);
     });
 
-    it('clamps to 0 when skips exceed the required times (choice 17)', () => {
+    it('clamps to 0 when skips exceed the required times, streak untouched (choices 17, 23)', () => {
       // 3 required, 4 skips → effective 0; 0 done → 0 missed.
       const skippedDays: CloseMissionDay[] = [
         { missionId: 'w', gameDay: '2026-11-02', status: 'skipped' },
@@ -610,7 +616,7 @@ describe('closeDays', () => {
         }),
       );
       expect(result.days[6].summary).toMatchObject({ missedXp: 0 });
-      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 3, best: 3 }]);
+      expect(result.missionStreaks).toEqual([]);
     });
 
     it('break the hero streak on a last day without completions, unless a shield saves it', () => {
@@ -669,5 +675,144 @@ describe('closeDays', () => {
 
   it('rejects days that are not game days', () => {
     expect(() => closeDays(input({ today: '2026-13-01' as GameDay }))).toThrow(RangeError);
+  });
+  describe('general pause (choice 23)', () => {
+    const weekly = (overrides: Partial<CloseMission> = {}) =>
+      mission('w', { frequency: { type: 'times_per_week', times: 3 }, ...overrides });
+
+    it('keeps hit points and shields on 5 paused days with missed missions, but breaks the streaks', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-07',
+          missions: [mission('a', { streak: 4, streakBest: 4 })],
+          hero: { hp: 40, streak: 3, streakBest: 5, exhaustedDay: null },
+          inventory: { shields: 2 },
+          pauses: [{ fromDay: '2026-11-02', untilDay: '2026-11-06' }],
+        }),
+      );
+      expect(result.days).toHaveLength(5);
+      for (const day of result.days) {
+        expect(day.summary).toMatchObject({
+          isPaused: true,
+          scheduledCount: 1,
+          missedXp: 25,
+          hpLost: 0,
+          shieldUsed: false,
+        });
+        expect(day.hpDelta).toBe(0);
+      }
+      expect(result.hero).toEqual({ hp: 40, streak: 0, streakBest: 5, exhaustedDay: null });
+      expect(result.inventory).toEqual({ shields: 2 });
+      expect(result.missionStreaks).toEqual([{ missionId: 'a', streak: 0, best: 4 }]);
+    });
+
+    it('lets the streaks grow with a completion on a paused day', () => {
+      const result = closeDays(
+        input({
+          today: '2026-11-03',
+          missions: [mission('a', { streak: 4, streakBest: 4 })],
+          missionDays: done('a', '2026-11-02'),
+          pauses: [{ fromDay: '2026-11-02', untilDay: null }],
+        }),
+      );
+      expect(result.days[0].summary).toMatchObject({ isPaused: true, doneCount: 1 });
+      expect(result.hero.streak).toBe(4);
+      // The streak of the mission grew at the completion: the close leaves it as it is.
+      expect(result.missionStreaks).toEqual([]);
+    });
+
+    it('starts a scheduled pause on its first day', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-05',
+          missions: [mission('a')],
+          pauses: [{ fromDay: '2026-11-03', untilDay: '2026-11-10' }],
+        }),
+      );
+      expect(
+        result.days.map((day) => [day.summary.gameDay, day.summary.isPaused, day.summary.hpLost]),
+      ).toEqual([
+        ['2026-11-02', false, 10],
+        ['2026-11-03', true, 0],
+        ['2026-11-04', true, 0],
+      ]);
+    });
+
+    it('counts again from the day after the pause', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-04',
+          missions: [mission('a')],
+          inventory: { shields: 1 },
+          pauses: [{ fromDay: '2026-11-01', untilDay: '2026-11-02' }],
+        }),
+      );
+      expect(result.days[0].summary).toMatchObject({
+        isPaused: true,
+        hpLost: 0,
+        shieldUsed: false,
+      });
+      expect(result.days[1].summary).toMatchObject({ isPaused: false, shieldUsed: true });
+      expect(result.inventory.shields).toBe(0);
+    });
+
+    it('reduces «N volte a settimana» by 1 for each paused day of the week', () => {
+      // N = 3, 2 paused days: 1 completion is enough and the streak grows.
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [weekly({ streak: 2, streakBest: 2 })],
+          missionDays: done('w', '2026-11-03'),
+          pauses: [{ fromDay: '2026-11-05', untilDay: '2026-11-06' }],
+        }),
+      );
+      expect(result.days[6].summary).toMatchObject({ isPaused: false, missedXp: 0, hpLost: 0 });
+      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 3, best: 3 }]);
+    });
+
+    it('charges the missing times of a week with 2 paused days', () => {
+      // N = 3, 2 paused days: 0 completions leave 1 missing time on Sunday.
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [weekly({ streak: 2, streakBest: 2 })],
+          pauses: [{ fromDay: '2026-11-03', untilDay: '2026-11-04' }],
+        }),
+      );
+      expect(result.days[6].summary).toMatchObject({ missedXp: 25, hpLost: 10 });
+      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 0, best: 2 }]);
+    });
+
+    it('neither grows nor breaks the streak when skips and pause bring N to 0', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [weekly({ streak: 2, streakBest: 2 })],
+          missionDays: [{ missionId: 'w', gameDay: '2026-11-02', status: 'skipped' }],
+          pauses: [{ fromDay: '2026-11-05', untilDay: '2026-11-06' }],
+        }),
+      );
+      expect(result.days[6].summary).toMatchObject({ missedXp: 0, hpLost: 0 });
+      expect(result.missionStreaks).toEqual([]);
+    });
+
+    it('takes no hit points for a week judged on a paused last day, but breaks its streak', () => {
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [weekly({ streak: 2, streakBest: 2 })],
+          pauses: [{ fromDay: '2026-11-08', untilDay: '2026-11-08' }],
+        }),
+      );
+      expect(result.days[6].summary).toMatchObject({ isPaused: true, missedXp: 50, hpLost: 0 });
+      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 0, best: 2 }]);
+    });
   });
 });

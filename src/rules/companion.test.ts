@@ -113,6 +113,19 @@ describe('moodWindowOf', () => {
   it('rejects impossible days', () => {
     expect(() => moodWindowOf(days([2, 3]))).toThrow(RangeError);
   });
+
+  it('skips the days of general pause, going back to the last 3 days not paused (choice 23)', () => {
+    const paused = { scheduledCount: 4, doneCount: 0, isPaused: true };
+    const window = [...days([2, 2], [2, 2], [2, 2]), paused, paused, paused, paused];
+    expect(moodWindowOf(window)).toEqual({ days: 3, scheduled: 6, done: 6, percent: 100 });
+    expect(moodFor(window)).toBe('happy');
+    // A sad window before the pause stays sad without a completion today, happy with one.
+    const sad = [...days([2, 0], [2, 0], [2, 0]), paused];
+    expect(moodFor(sad)).toBe('sad');
+    expect(moodFor(sad, 1)).toBe('happy');
+    // Only paused days: no mission due in the window.
+    expect(moodFor([paused, paused, paused])).toBe('normal');
+  });
 });
 
 describe('growthOf', () => {

@@ -1,7 +1,12 @@
 import { and, asc, inArray } from 'drizzle-orm';
 
 import { TEMPLATE_CATEGORIES, type TemplateCategory } from '../../content/templates';
-import { completionRate, pauseSpans, type PauseEvent } from '../../rules/missionRate';
+import {
+  completionRate,
+  generalPauseSpans,
+  pauseSpans,
+  type PauseEvent,
+} from '../../rules/missionRate';
 import { isPausedOn, pauseLastDay } from '../../rules/pause';
 import type { GameDay } from '../../rules/types';
 import { events, missionDays, missions } from '../schema';
@@ -9,6 +14,7 @@ import type { Db } from '../types';
 import { notDeleted, type EventType } from './events';
 import type { ActionClock } from './hero';
 import type { Mission } from './missions';
+import { pauseIntervalsOf } from './pause';
 import { gameDayOf, getSetting } from './settings';
 import { companionOn, type TodayView } from './todayView';
 
@@ -107,6 +113,8 @@ export function listHabitsView(db: Db, clock: ActionClock): HabitsView {
     .where(and(inArray(events.missionId, ids), inArray(events.type, RATE_EVENTS)))
     .orderBy(asc(events.seq))
     .all();
+  // The days of a general pause are not expected, like those of a paused mission (choice 23).
+  const general = generalPauseSpans(pauseIntervalsOf(db));
 
   const itemOf = (mission: Mission): HabitItem => {
     const own = days.filter((day) => day.missionId === mission.id);
@@ -118,13 +126,16 @@ export function listHabitsView(db: Db, clock: ActionClock): HabitsView {
     const createdDay =
       ownLog.find((event) => event.type === 'mission.created')?.gameDay ??
       gameDayOf(mission.createdAt, clock.tzOffset, dayChange);
-    const pauses = pauseSpans(
-      ownLog.map((event): PauseEvent => ({
-        type: event.type,
-        gameDay: event.gameDay,
-        until: (event.payload.until as GameDay | null | undefined) ?? null,
-      })),
-    );
+    const pauses = [
+      ...pauseSpans(
+        ownLog.map((event): PauseEvent => ({
+          type: event.type,
+          gameDay: event.gameDay,
+          until: (event.payload.until as GameDay | null | undefined) ?? null,
+        })),
+      ),
+      ...general,
+    ];
     const doneDays = own.filter((day) => day.status === 'done').map((day) => day.gameDay);
     const paused = isPausedOn(mission, today);
     return {

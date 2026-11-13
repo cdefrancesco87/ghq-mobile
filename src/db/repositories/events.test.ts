@@ -154,9 +154,9 @@ describe('appendEvent', () => {
 });
 
 describe('EVENT_TYPES', () => {
-  it('lists the 31 event types of the data model plus hero.created, the provisional boss ones and companion.renamed', () => {
-    expect(EVENT_TYPES).toHaveLength(35);
-    expect(new Set(EVENT_TYPES).size).toBe(35);
+  it('lists the 31 event types of the data model plus hero.created, the provisional boss ones, companion.renamed and the 3 of the general pause', () => {
+    expect(EVENT_TYPES).toHaveLength(38);
+    expect(new Set(EVENT_TYPES).size).toBe(38);
     expect(EVENT_TYPES).toEqual(
       expect.arrayContaining([
         'mission.deleted',
@@ -170,6 +170,9 @@ describe('EVENT_TYPES', () => {
         'companion.renamed',
         'hero.created',
         'shield.consumed',
+        'pause.started',
+        'pause.changed',
+        'pause.ended',
       ]),
     );
   });

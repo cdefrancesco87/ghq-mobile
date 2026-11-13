@@ -2,6 +2,7 @@ import { addDays } from './gameDay';
 import {
   completionCounts,
   completionRate,
+  generalPauseSpans,
   pauseSpans,
   rateOf,
   type RateInput,
@@ -288,6 +289,20 @@ describe('completionCounts over other windows', () => {
   it('turns counts into a rate rounded down', () => {
     expect(rateOf({ expected: 3, done: 2 })).toBe(66);
     expect(rateOf({ expected: 0, done: 0 })).toBeNull();
+  });
+});
+
+describe('generalPauseSpans', () => {
+  it('turns the last paused day of a general pause into the first day active again', () => {
+    expect(
+      generalPauseSpans([
+        { fromDay: '2026-11-02', untilDay: '2026-11-04' },
+        { fromDay: '2026-11-20', untilDay: null },
+      ]),
+    ).toEqual([
+      { from: '2026-11-02', until: '2026-11-05' },
+      { from: '2026-11-20', until: null },
+    ]);
   });
 });
 

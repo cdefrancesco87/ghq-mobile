@@ -78,6 +78,17 @@ export const settingSchemas = {
     rest_days: restDays,
     from_day: gameDay,
   }),
+  /**
+   * The general pause in progress or scheduled (CLAUDE.md, choice 23), null without one:
+   * `until_day` is the last paused day, included, null for a pause without an end. Written only by
+   * the actions of the pause (src/db/repositories/pause.ts).
+   */
+  general_pause: z
+    .strictObject({ from_day: gameDay, until_day: gameDay.nullable() })
+    .refine((pause) => pause.until_day === null || pause.until_day >= pause.from_day, {
+      message: 'The pause cannot end before it starts',
+    })
+    .nullable(),
   /** The general switch of the reminders in the Settings (design 10.6). */
   reminders_enabled: z.boolean(),
   /** «Non disturbare» intervals; an interval can cross midnight (22:00–07:00). */
@@ -134,8 +145,11 @@ export type WeekRulesChange = SettingValue<'week_rules_next'>;
  * rules exist only for a while.
  */
 type KeyWithDefault = Exclude<SettingKey, 'device_id' | 'onboarding_draft' | 'week_rules_next'>;
-/** Keys written with setSetting: the day change has its own rule (setDayChange). */
-type EditableKey = Exclude<KeyWithDefault, 'day_change'>;
+/**
+ * Keys written with setSetting: the day change has its own rule (setDayChange), the general pause
+ * its actions (pause.ts).
+ */
+type EditableKey = Exclude<KeyWithDefault, 'day_change' | 'general_pause'>;
 
 export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K> } = {
   /** Only a fallback: the first launch uses the language of the phone (getLanguage). */
@@ -145,6 +159,7 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   day_change: { value: '06:00', next: null, from_day: null },
   week_start: 1,
   rest_days: [],
+  general_pause: null,
   quiet_hours: [],
   evening_summary: { enabled: true, time: '21:00' },
   reduce_motion: 'system',
@@ -201,6 +216,16 @@ export function setSetting<K extends EditableKey>(
   now: number,
 ): void {
   write(db, key, value, now);
+}
+
+/** Saves the general pause; only the actions of the pause call it (src/db/repositories/pause.ts). */
+export function writeGeneralPause(db: Db, value: SettingValue<'general_pause'>, now: number): void {
+  if (value === null) {
+    // No pause: the row goes away and the default (null) is read.
+    db.delete(settings).where(eq(settings.key, 'general_pause')).run();
+    return;
+  }
+  write(db, 'general_pause', value, now);
 }
 
 /** The day change time in force on a game day. */

@@ -1,0 +1,1 @@
+ALTER TABLE `day_summaries` ADD `is_paused` integer DEFAULT false NOT NULL;

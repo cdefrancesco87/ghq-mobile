@@ -12,7 +12,8 @@ import { gameDayOf, getDeviceId, getSetting } from './settings';
 /**
  * The event types of the data model (modello-dati.md, 4.2), plus `hero.created`: the creation of
  * the profile, which brings the starting hit points into the log so that the log always adds up
- * to the hero. `boss.updated` and `boss.deleted` are provisional (CLAUDE.md, choice 21).
+ * to the hero. `boss.updated` and `boss.deleted` are provisional (CLAUDE.md, choice 21). The
+ * `pause.*` events belong to the general pause (choice 23).
  */
 export const EVENT_TYPES = [
   'mission.created',
@@ -30,6 +31,9 @@ export const EVENT_TYPES = [
   'day.closed',
   'bonus.full_day',
   'bonus.plan',
+  'pause.started',
+  'pause.changed',
+  'pause.ended',
   'boss.created',
   'boss.step_done',
   'boss.damaged',

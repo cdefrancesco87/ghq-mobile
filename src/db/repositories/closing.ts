@@ -7,6 +7,7 @@ import { daySummaries, events, hero, inventory, missionDays, missions } from '..
 import type { Db } from '../types';
 import { appendEvent } from './events';
 import { changeHero, loadHero, type ActionClock } from './hero';
+import { endPauseIfOver, pauseIntervalsOf } from './pause';
 import { gameDayOf, getSetting, pendingWeekRules, promoteWeekRules } from './settings';
 
 // The day change (modello-dati.md 3.7 and 5): every whole game day not closed yet is closed by
@@ -79,8 +80,10 @@ function bonusDays(tx: Db, from: GameDay, to: GameDay) {
 /**
  * Closes every whole game day between the last closed day and today (today stays open): it
  * writes `day_summaries`, the `day.closed` events with the hit points lost, `shield.consumed`
- * and `hero.exhausted`, and saves the hero, the shields and the streaks. Running it again
- * changes nothing. Returns the summaries of the days closed now.
+ * and `hero.exhausted`, and saves the hero, the shields and the streaks. The days of a general
+ * pause close with its rules (choice 23), and a pause whose last day has passed ends here, moving
+ * the boss deadlines before any check of the deadlines. Running it again changes nothing. Returns
+ * the summaries of the days closed now.
  */
 export function closePendingDays(db: Db, clock: ActionClock): DaySummary[] {
   return db.transaction((tx) => {
@@ -91,7 +94,9 @@ export function closePendingDays(db: Db, clock: ActionClock): DaySummary[] {
     const before =
       pending !== null && pending.from_day <= today ? closeUntil(tx, clock, pending.from_day) : [];
     promoteWeekRules(tx, today, clock.now);
-    return [...before, ...closeUntil(tx, clock, today)];
+    const closed = [...before, ...closeUntil(tx, clock, today)];
+    endPauseIfOver(tx, clock, today);
+    return closed;
   });
 }
 
@@ -147,6 +152,7 @@ function closeUntil(tx: Db, clock: ActionClock, today: GameDay): DaySummary[] {
     inventory: { shields },
     settings,
     bonuses: bonusDays(tx, lastClosed, today),
+    pauses: pauseIntervalsOf(tx),
   });
 
   const base = { occurredAt: clock.now, tzOffset: clock.tzOffset, source: SYSTEM } as const;
@@ -168,6 +174,7 @@ function closeUntil(tx: Db, clock: ActionClock, today: GameDay): DaySummary[] {
         missedXp: day.summary.missedXp,
         hpLost: day.summary.hpLost,
         heroStreak: day.heroStreak.streak,
+        ...(day.summary.isPaused ? { paused: true } : {}),
       },
     });
     if (day.summary.shieldUsed) {

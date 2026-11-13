@@ -281,12 +281,15 @@ function listOrder(a: TodayMission, b: TodayMission): number {
  * The companion on `day` with `doneCount` missions done that day: its mood follows choice 13 of
  * CLAUDE.md (a completion today, otherwise the last 3 closed days).
  */
-/** The last 3 closed days before `day`, oldest first: the window of the mood. */
+/**
+ * The last 3 closed days before `day` that are not days of general pause, oldest first: the
+ * window of the mood (choice 23).
+ */
 export function moodDaysBefore(db: Db, day: GameDay): DayCompletion[] {
   return db
     .select({ scheduledCount: daySummaries.scheduledCount, doneCount: daySummaries.doneCount })
     .from(daySummaries)
-    .where(lt(daySummaries.gameDay, day))
+    .where(and(lt(daySummaries.gameDay, day), eq(daySummaries.isPaused, false)))
     .orderBy(desc(daySummaries.gameDay))
     .limit(MOOD.windowDays)
     .all()

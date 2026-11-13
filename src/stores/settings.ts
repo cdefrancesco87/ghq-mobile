@@ -20,8 +20,11 @@ type StoredKey = Exclude<
   SettingKey,
   'device_id' | 'onboarding_draft' | 'theme' | 'week_rules_next'
 >;
-/** The keys written with `update`: the day change has its own rule (setDayChange). */
-type EditableKey = Exclude<StoredKey, 'day_change'>;
+/**
+ * The keys written with `update`: the day change has its own rule (setDayChange), the general pause
+ * its actions (src/db/repositories/pause.ts).
+ */
+type EditableKey = Exclude<StoredKey, 'day_change' | 'general_pause'>;
 
 export type AppSettings = { readonly [K in StoredKey]: SettingValue<K> };
 
@@ -31,6 +34,7 @@ const KEYS: readonly StoredKey[] = [
   'day_change',
   'week_start',
   'rest_days',
+  'general_pause',
   'quiet_hours',
   'evening_summary',
   'reduce_motion',

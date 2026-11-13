@@ -14,6 +14,8 @@ export interface DayCompletion {
   readonly scheduledCount: number;
   /** Missions done among the scheduled ones. */
   readonly doneCount: number;
+  /** A day of general pause: it never enters the window of the mood (choice 23). */
+  readonly isPaused?: boolean;
 }
 
 function assertNonNegativeInteger(value: number, name: string): void {
@@ -56,14 +58,15 @@ export interface MoodWindow {
 }
 
 /**
- * Sums the missions of the last 3 closed days, the window of the mood.
+ * Sums the missions of the last 3 closed days, the window of the mood. The days of general pause
+ * never count: the window goes back to the last 3 days not paused (choice 23).
  *
- * @param lastDays The closed days, oldest first; only the last 3 count.
+ * @param lastDays The closed days, oldest first; only the last 3 not paused count.
  */
 export function moodWindowOf(lastDays: readonly DayCompletion[]): MoodWindow {
   let scheduled = 0;
   let done = 0;
-  for (const day of lastDays.slice(-MOOD.windowDays)) {
+  for (const day of lastDays.filter((item) => item.isPaused !== true).slice(-MOOD.windowDays)) {
     assertNonNegativeInteger(day.scheduledCount, 'Scheduled missions');
     assertNonNegativeInteger(day.doneCount, 'Done missions');
     if (day.doneCount > day.scheduledCount) {
@@ -83,9 +86,10 @@ export function moodWindowOf(lastDays: readonly DayCompletion[]): MoodWindow {
 /**
  * Mood from today's completions and the missions of the last 3 closed days (CLAUDE.md, choice 13):
  * happy if at least one mission is done today; otherwise happy above 70%, sad below 30%, normal in
- * between (borders included) and when no mission was due in the last 3 days.
+ * between (borders included) and when no mission was due in the last 3 days. The days of general
+ * pause stay out of the window, so during a pause only a completion today changes it (choice 23).
  *
- * @param lastDays The closed days, oldest first; only the last 3 count.
+ * @param lastDays The closed days, oldest first; only the last 3 not paused count.
  * @param todayDoneCount Completions done in the current open day (not yet closed).
  */
 export function moodFor(lastDays: readonly DayCompletion[], todayDoneCount = 0): Mood {

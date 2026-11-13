@@ -51,6 +51,7 @@ describe('closePendingDays', () => {
         fullDay: true,
         planComplete: false,
         shieldUsed: false,
+        isPaused: false,
         closedAt: at(9, 10),
       },
       expect.objectContaining({ gameDay: '2026-11-07', missedXp: 10, hpLost: 10 }),

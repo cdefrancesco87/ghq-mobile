@@ -249,6 +249,8 @@ export const daySummaries = sqliteTable('day_summaries', {
   fullDay: integer('full_day', { mode: 'boolean' }).notNull(),
   planComplete: integer('plan_complete', { mode: 'boolean' }).notNull(),
   shieldUsed: integer('shield_used', { mode: 'boolean' }).notNull(),
+  /** A day of general pause (choice 23). */
+  isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
   closedAt: integer('closed_at').notNull(),
 });
 

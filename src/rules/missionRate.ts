@@ -1,6 +1,7 @@
 import { HABITS_LIST } from './config';
 import { isScheduled, type Frequency } from './frequency';
 import { addDays, diffDays, weekday, weekStartOf, type Weekday } from './gameDay';
+import type { PauseInterval } from './pause';
 import type { GameDay } from './types';
 
 // The completion rate of a mission in the last 30 days, shown in Habits (design-sezioni.md 3.2),
@@ -79,6 +80,17 @@ export function pauseSpans(events: readonly PauseEvent[]): PauseSpan[] {
     spans.push(open);
   }
   return spans;
+}
+
+/**
+ * The general pauses (choice 23) as spans of a mission: their days are not expected either, so the
+ * rates of Habits and Statistics do not drop during a holiday.
+ */
+export function generalPauseSpans(intervals: readonly PauseInterval[]): PauseSpan[] {
+  return intervals.map((interval) => ({
+    from: interval.fromDay,
+    until: interval.untilDay === null ? null : addDays(interval.untilDay, 1),
+  }));
 }
 
 export function isPaused(day: GameDay, pauses: readonly PauseSpan[]): boolean {
