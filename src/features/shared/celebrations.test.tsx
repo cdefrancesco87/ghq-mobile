@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { AccessibilityInfo, Dimensions, Pressable, StyleSheet } from 'react-native';
 
 import type { EventRow } from '@/db/repositories/events';
@@ -8,6 +9,7 @@ import { useHeroStore } from '@/stores/hero';
 import { useSettingsStore } from '@/stores/settings';
 
 import { renderThemed } from '../../../test/render';
+import { EVOLUTION, evolutionOrder } from './CompanionEvolution';
 import { CELEBRATION_MS, CelebrationProvider, useCelebration } from './Celebration';
 import { MOMENT_MAX_MS, MomentQueueProvider, useMomentQueue } from './MomentQueue';
 import { addMoments, momentsFromEvents, waitsForTouch, type Moment } from './moments';
@@ -28,6 +30,8 @@ const STAGE_UP = event('companion.stage_up', 'stage', { payload: { from: 'baby',
 const BADGE = event('badge.unlocked', 'badge', { dCoins: 25, payload: { badge: 'completions_1' } });
 
 const ORIGIN = { x: 340, y: 500 };
+/** When the evolution starts: once the sprite has bounced in (MomentScreen). */
+const EVOLUTION_DELAY = 850;
 
 /** Hidden from the screen reader, so the queries must be told to look at it. */
 const queryEffect = () =>
@@ -464,6 +468,78 @@ describe('MomentQueue', () => {
     expect(screen.getByText('Cloudy è cresciuto!')).toBeTruthy();
     expect(screen.queryByTestId('moment-grow-from')).toBeNull();
     expect(screen.getByTestId('moment-grow-to')).toBeTruthy();
+  });
+
+  /** The style the animation gives a layer now (Reanimated types it as taking nothing). */
+  const animatedStyleOf = getAnimatedStyle as unknown as (component: unknown) => {
+    opacity?: number;
+  };
+  const opacityOf = (testID: string) =>
+    animatedStyleOf(screen.getByTestId(testID, { includeHiddenElements: true }));
+
+  /** The 2 intermediate placeholders of every theme (placeholders.ts). */
+  const ORDER = evolutionOrder(2);
+
+  it('orders the change of shape, flickering without intermediate sprites', () => {
+    expect(ORDER).toEqual([1, 0, 1, 2, 1, 2, 3]);
+    expect(evolutionOrder(0)).toEqual([1, 0, 1, 0, 1]);
+  });
+
+  it('starts the evolution with the puppy, then light, change of shape, flash and greeting', async () => {
+    await renderQueue([STAGE_UP]);
+    expect(screen.getByTestId('moment-evolution')).toBeTruthy();
+    expect(opacityOf('moment-grow-from').opacity).toBe(1);
+    expect(opacityOf('moment-grow-to').opacity).toBe(0);
+    expect(opacityOf('moment-evolution-light').opacity).toBe(0);
+    // The light has grown behind the puppy.
+    const lightEnd = EVOLUTION_DELAY + EVOLUTION.lightMs;
+    await act(async () => jest.advanceTimersByTime(lightEnd));
+    expect(opacityOf('moment-evolution-light').opacity).toBeGreaterThan(0);
+    // The shape changes through the intermediate sprites, stepping back once to the puppy.
+    const half = EVOLUTION.frameMs / 2;
+    await act(async () => jest.advanceTimersByTime(half));
+    expect(opacityOf('moment-evolution-frame-1').opacity).toBe(1);
+    expect(opacityOf('moment-grow-from').opacity).toBe(0);
+    expect(opacityOf('moment-grow-to').opacity).toBe(0);
+    await act(async () => jest.advanceTimersByTime(EVOLUTION.frameMs));
+    expect(opacityOf('moment-grow-from').opacity).toBe(1);
+    expect(opacityOf('moment-evolution-frame-1').opacity).toBe(0);
+    await act(async () => jest.advanceTimersByTime(EVOLUTION.frameMs * 2));
+    expect(opacityOf('moment-evolution-frame-2').opacity).toBe(1);
+    // The flash once the shape has settled, then the adult greets and hops.
+    const shapeEnd = lightEnd + ORDER.length * EVOLUTION.frameMs;
+    const flashStart = shapeEnd + EVOLUTION.flashMs / 4;
+    await act(async () => jest.advanceTimersByTime(flashStart - (lightEnd + half * 7)));
+    expect(opacityOf('moment-evolution-flash').opacity).toBeGreaterThan(0);
+    const greetMid = shapeEnd + EVOLUTION.flashMs / 2 + EVOLUTION.greetMs / 2;
+    await act(async () => jest.advanceTimersByTime(greetMid - flashStart));
+    expect(opacityOf('moment-evolution-greet').opacity).toBe(1);
+    expect(opacityOf('moment-grow-from').opacity).toBe(0);
+    // The greeting ends on the happy adult, before the moment closes.
+    await act(async () => jest.advanceTimersByTime(EVOLUTION.greetMs / 2 + EVOLUTION.frameMs));
+    expect(opacityOf('moment-evolution-greet').opacity).toBe(0);
+    expect(opacityOf('moment-grow-to').opacity).toBe(1);
+    expect(opacityOf('moment-evolution-flash').opacity).toBe(0);
+    expect(screen.getByTestId('moment-companion_stage')).toBeTruthy();
+  });
+
+  it('skips the evolution with «Salta»', async () => {
+    await renderQueue([STAGE_UP]);
+    await act(async () => jest.advanceTimersByTime(EVOLUTION_DELAY + EVOLUTION.lightMs));
+    await fireEvent.press(screen.getByRole('button', { name: 'Salta' }));
+    expect(screen.queryByTestId('moment-evolution')).toBeNull();
+    expect(screen.queryByTestId('moment-companion_stage')).toBeNull();
+  });
+
+  it('shows only the adult with «Riduci movimento»: no light, flash or greeting', async () => {
+    setReduceMotion('on');
+    await renderQueue([STAGE_UP]);
+    expect(screen.getByText('Cloudy è cresciuto!')).toBeTruthy();
+    expect(screen.getByTestId('moment-grow-to')).toBeTruthy();
+    expect(screen.getByLabelText('Cloudy, adulto, felice')).toBeTruthy();
+    for (const id of ['grow-from', 'evolution-light', 'evolution-flash', 'evolution-greet']) {
+      expect(screen.queryByTestId(`moment-${id}`, { includeHiddenElements: true })).toBeNull();
+    }
   });
 
   it('writes the name chosen for the companion', async () => {

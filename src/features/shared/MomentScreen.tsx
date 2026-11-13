@@ -21,6 +21,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { announceOnIos } from './announce';
 import { useBadgeTexts } from './badgeTexts';
 import { Button } from './Button';
+import { CompanionEvolution } from './CompanionEvolution';
 import { CompanionSprite } from './CompanionSprite';
 import { iconXml, type IconName } from './icons';
 import type { Moment, VictoryShieldMoment } from './moments';
@@ -265,44 +266,8 @@ function IconEmblem({
   );
 }
 
-/** Before the adult, the previous stage: the puppy (design-sezioni.md 6.6). */
-const PREVIOUS_STAGE = { baby: 'egg', adult: 'baby' } as const;
-/** The puppy fades into the adult once the sprite has bounced in. */
-const GROW_DELAY_MS = EMBLEM_DELAY_MS + EMBLEM_GROW_MS + EMBLEM_SETTLE_MS;
-const GROW_FADE_MS = 600;
-
-/**
- * The evolution (design-sezioni.md 6.6): a cross-fade between the two sprites, until the full
- * animation of T85. With «Riduci movimento» only the new stage.
- */
-function GrowFade({
-  stage,
-  reduceMotion,
-}: {
-  readonly stage: 'baby' | 'adult';
-  readonly reduceMotion: boolean;
-}) {
-  const grown = useSharedValue(reduceMotion ? 1 : 0);
-  useEffect(() => {
-    if (!reduceMotion) {
-      grown.set(withDelay(GROW_DELAY_MS, withTiming(1, { duration: GROW_FADE_MS })));
-    }
-  }, [grown, reduceMotion]);
-  const fromStyle = useAnimatedStyle(() => ({ opacity: 1 - grown.get() }));
-  const toStyle = useAnimatedStyle(() => ({ opacity: grown.get() }));
-  return (
-    <View style={styles.grow}>
-      {reduceMotion ? null : (
-        <Animated.View testID="moment-grow-from" style={[StyleSheet.absoluteFill, fromStyle]}>
-          <CompanionSprite stage={PREVIOUS_STAGE[stage]} mood="happy" size={SPRITE_SIZE} />
-        </Animated.View>
-      )}
-      <Animated.View testID="moment-grow-to" style={toStyle}>
-        <CompanionSprite stage={stage} mood="happy" size={SPRITE_SIZE} />
-      </Animated.View>
-    </View>
-  );
-}
+/** The evolution starts once the sprite has bounced in. */
+const EVOLUTION_DELAY_MS = EMBLEM_DELAY_MS + EMBLEM_GROW_MS + EMBLEM_SETTLE_MS;
 
 function Emblem({
   moment,
@@ -329,10 +294,15 @@ function Emblem({
     case 'hatch':
       return <CompanionSprite stage="baby" mood="happy" size={SPRITE_SIZE} />;
     case 'companion_stage':
-      return moment.stage === 'egg' ? (
-        <CompanionSprite stage="egg" mood="happy" size={SPRITE_SIZE} />
+      // The puppy is born in the hatching moment: only the adult has an evolution (6.6).
+      return moment.stage === 'adult' ? (
+        <CompanionEvolution
+          size={SPRITE_SIZE}
+          delayMs={EVOLUTION_DELAY_MS}
+          reduceMotion={reduceMotion}
+        />
       ) : (
-        <GrowFade stage={moment.stage} reduceMotion={reduceMotion} />
+        <CompanionSprite stage={moment.stage} mood="happy" size={SPRITE_SIZE} />
       );
     case 'badge':
       return <IconEmblem name="badge" />;
@@ -545,7 +515,6 @@ const styles = StyleSheet.create({
   shieldRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   shieldText: { flexShrink: 1 },
   shieldFly: { position: 'absolute', right: 0, top: 0 },
-  grow: { width: SPRITE_SIZE, height: SPRITE_SIZE },
   levelNumber: { fontSize: LEVEL_FONT_SIZE, lineHeight: LEVEL_FONT_SIZE * 1.2 },
   iconEmblem: {
     borderWidth: 1,
