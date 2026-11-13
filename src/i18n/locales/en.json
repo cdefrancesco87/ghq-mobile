@@ -722,7 +722,14 @@
       "archiveMessage": "The goal leaves the list and frees a place. The steps done stay, but it cannot be resumed.",
       "archivedToast": "Goal archived",
       "archived": "Archived",
-      "defeatedOn": "Defeated on {{month}} {{day}}"
+      "defeatedOn": "Defeated on {{month}} {{day}}",
+      "edit": "Edit",
+      "deadline": "New deadline",
+      "deadlineToast": "Deadline updated",
+      "delete": "Delete",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteMessage": "The goal leaves every list and the linked missions no longer hit it. What you already earned stays. This cannot be undone.",
+      "deletedToast": "Goal deleted"
     }
   },
   "skipReasons": {
@@ -894,7 +901,11 @@
       "create_fantasy": "Challenge the Nemesis",
       "create_cyberpunk": "Start the intrusion",
       "create_lovecraft": "Summon the Horror",
-      "create_minimal": "Create goal"
+      "create_minimal": "Create goal",
+      "editTitle": "Edit goal",
+      "editPreview": "Health {{hp}} of {{max}} · Reward {{xp}} {{xpTerm}} and {{coins}} {{coinsTerm}}",
+      "stepDoneLabel": "Step {{position}} of {{total}}, done",
+      "stepLeftMissing": "At least one step to do is needed for the final blow"
     }
   }
 }

@@ -5,9 +5,15 @@ import {
   checkBossDeadlines,
   completeBossStep,
   createBoss,
+  deleteBoss,
   listActiveBosses,
+  setBossDeadline,
+  updateBoss,
   type NewBoss,
 } from '@/db/repositories/boss';
+import { completeMission } from '@/db/repositories/completion';
+import { getBossView } from '@/db/repositories/bossView';
+import { getGoalsView } from '@/db/repositories/goalsView';
 import { appendEvent, type EventType } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
 import { appNotifications, boss, bossSteps, events, hero, heroStats, missions } from '@/db/schema';
@@ -312,5 +318,315 @@ describe('checkBossDeadlines', () => {
     ]);
     expect(db.select().from(hero).get()?.coins).toBe(7500);
     expectHeroMatchesLog(db);
+  });
+});
+
+function stepsOf(db: Db, bossId: string) {
+  return db
+    .select({ id: bossSteps.id, title: bossSteps.title, done: bossSteps.doneAt })
+    .from(bossSteps)
+    .where(eq(bossSteps.bossId, bossId))
+    .orderBy(asc(bossSteps.position))
+    .all()
+    .map((row) => ({ id: row.id, title: row.title, done: row.done !== null }));
+}
+
+function bossOf(db: Db, bossId: string) {
+  const row = db.select().from(boss).where(eq(boss.id, bossId)).get();
+  if (row === undefined) {
+    throw new Error(`No boss ${bossId}`);
+  }
+  return row;
+}
+
+describe('updateBoss', () => {
+  it('renames the boss and its steps and moves them, without changing the hit points', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    const [index, first, second] = stepIds(db, thesis.id);
+    completeBossStep(db, index, NOW);
+    updateBoss(
+      db,
+      thesis.id,
+      {
+        name: ' Tesi di laurea ',
+        steps: [
+          { id: second, title: 'Capitolo 2' },
+          { id: index, title: 'Indice e sommario' },
+          { id: first, title: 'Capitolo 1' },
+        ],
+      },
+      NOW,
+    );
+    expect(bossOf(db, thesis.id)).toMatchObject({ name: 'Tesi di laurea', hp: 40, hpMax: 60 });
+    expect(stepsOf(db, thesis.id)).toEqual([
+      { id: second, title: 'Capitolo 2', done: false },
+      { id: index, title: 'Indice e sommario', done: true },
+      { id: first, title: 'Capitolo 1', done: false },
+    ]);
+    expect(eventsOf(db, 'boss.updated')).toEqual([
+      expect.objectContaining({
+        bossId: thesis.id,
+        payload: expect.objectContaining({ steps: 3, added: 0, removed: 0, hp: 40, hpMax: 60 }),
+      }),
+    ]);
+    expectHeroMatchesLog(db);
+  });
+
+  it('adds a step after some damage: 20 more hit points, the damage stays', () => {
+    const db = newGame(['journal', 'read_pages']);
+    const read = missionId(db, 'journal');
+    const thesis = createBoss(db, { ...THESIS, missionIds: [read] }, NOW);
+    const ids = stepIds(db, thesis.id);
+    completeBossStep(db, ids[0], NOW);
+    completeMission(db, { missionId: read, source: 'app', ...NOW });
+    const damaged = bossOf(db, thesis.id);
+    const taken = damaged.hpMax - damaged.hp;
+    updateBoss(
+      db,
+      thesis.id,
+      {
+        name: 'Tesi',
+        steps: [...ids.map((id, i) => ({ id, title: THESIS.steps[i] })), { title: 'Bibliografia' }],
+      },
+      NOW,
+    );
+    const edited = bossOf(db, thesis.id);
+    expect(edited.hpMax).toBe(80);
+    expect(edited.hp).toBe(damaged.hp + 20);
+    expect(edited.hpMax - edited.hp).toBe(taken);
+    expect(stepsOf(db, thesis.id).map((step) => step.title)).toEqual([
+      'Indice',
+      'Capitolo 1',
+      'Capitolo 2',
+      'Bibliografia',
+    ]);
+    expectHeroMatchesLog(db);
+  });
+
+  it('takes away a step to do after some damage, never below the protected part', () => {
+    const db = newGame(['journal', 'read_pages']);
+    const read = missionId(db, 'journal');
+    const steps = ['Uno', 'Due', 'Tre', 'Quattro'];
+    const move = createBoss(db, { ...THESIS, steps, missionIds: [read] }, NOW);
+    const ids = stepIds(db, move.id);
+    completeBossStep(db, ids[0], NOW);
+    completeMission(db, { missionId: read, source: 'app', ...NOW });
+    const damaged = bossOf(db, move.id);
+    updateBoss(
+      db,
+      move.id,
+      { name: 'Tesi', steps: [ids[0], ids[1], ids[2]].map((id, i) => ({ id, title: steps[i] })) },
+      NOW,
+    );
+    const edited = bossOf(db, move.id);
+    expect(edited.hpMax).toBe(60);
+    expect(edited.hp).toBe(Math.max(damaged.hp - 20, 20));
+    expect(stepsOf(db, move.id)).toHaveLength(3);
+    expect(eventsOf(db, 'boss.updated')[0].payload).toMatchObject({ added: 0, removed: 1 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('keeps the steps done: they cannot be taken away', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    const [index, first, second] = stepIds(db, thesis.id);
+    completeBossStep(db, index, NOW);
+    expect(() =>
+      updateBoss(
+        db,
+        thesis.id,
+        {
+          name: 'Tesi',
+          steps: [
+            { id: first, title: 'Capitolo 1' },
+            { id: second, title: 'Capitolo 2' },
+          ],
+        },
+        NOW,
+      ),
+    ).toThrow(RangeError);
+    expect(stepsOf(db, thesis.id)).toHaveLength(3);
+  });
+
+  it('refuses no step left to do, too few or too many steps and steps of another boss', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    const other = createBoss(db, { ...THESIS, name: 'Trasloco' }, NOW);
+    const [index, first, second] = stepIds(db, thesis.id);
+    completeBossStep(db, index, NOW);
+    completeBossStep(db, first, NOW);
+    const done = [
+      { id: index, title: 'Indice' },
+      { id: first, title: 'Capitolo 1' },
+    ];
+    // Only the last step is to do: taking it away would win without the final blow.
+    expect(() => updateBoss(db, thesis.id, { name: 'Tesi', steps: done }, NOW)).toThrow(RangeError);
+    const keep = [...done, { id: second, title: 'Capitolo 2' }];
+    const many = Array.from({ length: 18 }, (_, i) => ({ title: `Passo ${i}` }));
+    expect(() =>
+      updateBoss(db, thesis.id, { name: 'Tesi', steps: [...keep, ...many] }, NOW),
+    ).toThrow(RangeError);
+    const foreign = { id: stepIds(db, other.id)[0], title: 'Altro' };
+    expect(() =>
+      updateBoss(db, thesis.id, { name: 'Tesi', steps: [...keep, foreign] }, NOW),
+    ).toThrow(RangeError);
+    expect(() => updateBoss(db, thesis.id, { name: ' ', steps: keep }, NOW)).toThrow(RangeError);
+    expect(() =>
+      updateBoss(db, thesis.id, { name: 'Tesi', steps: [...keep, { title: '  ' }] }, NOW),
+    ).toThrow(RangeError);
+    archiveBoss(db, other.id, NOW);
+    const two = createBoss(db, { ...THESIS, steps: ['Uno', 'Due'] }, NOW);
+    expect(() =>
+      updateBoss(
+        db,
+        two.id,
+        { name: 'Tesi', steps: [{ id: stepIds(db, two.id)[0], title: 'Uno' }] },
+        NOW,
+      ),
+    ).toThrow(RangeError);
+    expect(stepsOf(db, thesis.id)).toHaveLength(3);
+    expect(eventsOf(db, 'boss.updated')).toEqual([]);
+  });
+
+  it('changes the linked missions and refuses a boss that is not active or the starter quest', () => {
+    const db = newGame(['journal', 'read_pages']);
+    const journal = missionId(db, 'journal');
+    const read = missionId(db, 'read_pages');
+    const thesis = createBoss(db, { ...THESIS, missionIds: [journal] }, NOW);
+    const steps = stepIds(db, thesis.id).map((id, i) => ({ id, title: THESIS.steps[i] }));
+    updateBoss(db, thesis.id, { name: 'Tesi', steps, missionIds: [read] }, NOW);
+    const linked = db
+      .select({ id: missions.id })
+      .from(missions)
+      .where(eq(missions.bossId, thesis.id))
+      .all()
+      .map((row) => row.id);
+    expect(linked).toEqual([read]);
+    const quest = starterQuest(db);
+    const questSteps = stepIds(db, quest.id).map((id) => ({ id, title: 'x' }));
+    expect(() => updateBoss(db, quest.id, { name: 'x', steps: questSteps }, NOW)).toThrow(
+      RangeError,
+    );
+    archiveBoss(db, thesis.id, NOW);
+    expect(() => updateBoss(db, thesis.id, { name: 'Tesi', steps }, NOW)).toThrow(RangeError);
+  });
+
+  it('moves the deadline in the same change and starts the warning again', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    const steps = stepIds(db, thesis.id).map((id, i) => ({ id, title: THESIS.steps[i] }));
+    checkBossDeadlines(db, clockAt(9, 10));
+    const same = updateBoss(db, thesis.id, { name: 'Tesi', steps, deadlineDay: '2026-11-12' }, NOW);
+    expect(same).toMatchObject({ deadlineDay: '2026-11-12', deadlineWarned: true });
+    const moved = updateBoss(
+      db,
+      thesis.id,
+      { name: 'Tesi', steps, deadlineDay: '2026-11-30' },
+      NOW,
+    );
+    expect(moved).toMatchObject({ deadlineDay: '2026-11-30', deadlineWarned: false });
+    expect(eventsOf(db, 'boss.updated').at(-1)?.payload).toMatchObject({
+      deadlineDay: '2026-11-30',
+    });
+    expect(() =>
+      updateBoss(db, thesis.id, { name: 'Tesi', steps, deadlineDay: '2026-11-01' }, NOW),
+    ).toThrow(RangeError);
+    expect(bossOf(db, thesis.id).deadlineDay).toBe('2026-11-30');
+  });
+
+  it('gives the reward of the new number of steps at the victory', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    const ids = stepIds(db, thesis.id);
+    updateBoss(
+      db,
+      thesis.id,
+      {
+        name: 'Tesi',
+        steps: [...ids.map((id, i) => ({ id, title: THESIS.steps[i] })), { title: 'Discussione' }],
+      },
+      NOW,
+    );
+    for (const id of stepIds(db, thesis.id)) {
+      completeBossStep(db, id, NOW);
+    }
+    // 4 steps × 10 XP × 1.5 (medium) = 60 XP and 12 coins.
+    expect(db.select().from(hero).get()).toMatchObject({ xpTotal: 60, coins: 12 });
+    expect(bossOf(db, thesis.id)).toMatchObject({ status: 'defeated', hp: 0 });
+    expectHeroMatchesLog(db);
+  });
+});
+
+describe('setBossDeadline', () => {
+  it('sets a new deadline, starts the 3-day warning again and lets the boss steal once more', () => {
+    const db = newGame(['journal']);
+    giveCoins(db, 1000);
+    const thesis = createBoss(db, THESIS, NOW);
+    expect(checkBossDeadlines(db, clockAt(9, 10)).warned).toEqual([thesis.id]);
+    expect(checkBossDeadlines(db, clockAt(13, 10)).robbed).toHaveLength(1);
+    setBossDeadline(db, thesis.id, '2026-11-20', clockAt(13, 11));
+    expect(bossOf(db, thesis.id)).toMatchObject({
+      deadlineDay: '2026-11-20',
+      deadlineWarned: false,
+    });
+    expect(checkBossDeadlines(db, clockAt(14, 10))).toEqual({ warned: [], robbed: [] });
+    expect(checkBossDeadlines(db, clockAt(17, 10)).warned).toEqual([thesis.id]);
+    expect(checkBossDeadlines(db, clockAt(21, 10)).robbed).toEqual([
+      { bossId: thesis.id, coins: 90 },
+    ]);
+    expect(eventsOf(db, 'boss.updated')).toEqual([
+      expect.objectContaining({ bossId: thesis.id, payload: { deadlineDay: '2026-11-20' } }),
+    ]);
+    expectHeroMatchesLog(db);
+  });
+
+  it('takes the deadline away, and refuses a past day or a boss that is not active', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    expect(() => setBossDeadline(db, thesis.id, '2026-11-05', NOW)).toThrow(RangeError);
+    setBossDeadline(db, thesis.id, null, NOW);
+    expect(bossOf(db, thesis.id).deadlineDay).toBeNull();
+    expect(checkBossDeadlines(db, clockAt(20, 10))).toEqual({ warned: [], robbed: [] });
+    archiveBoss(db, thesis.id, NOW);
+    expect(() => setBossDeadline(db, thesis.id, '2026-11-20', NOW)).toThrow(RangeError);
+  });
+});
+
+describe('deleteBoss', () => {
+  it('takes the boss out of every list, unlinks its missions and keeps the hero', () => {
+    const db = newGame(['journal', 'read_pages']);
+    const read = missionId(db, 'journal');
+    const thesis = createBoss(db, { ...THESIS, missionIds: [read] }, NOW);
+    completeBossStep(db, stepIds(db, thesis.id)[0], NOW);
+    completeMission(db, { missionId: read, source: 'app', ...NOW });
+    const before = db.select().from(hero).get();
+    deleteBoss(db, thesis.id, NOW);
+    expect(bossOf(db, thesis.id).status).toBe('deleted');
+    expect(db.select().from(missions).where(eq(missions.id, read)).get()?.bossId).toBeNull();
+    expect(listActiveBosses(db).map((item) => item.id)).not.toContain(thesis.id);
+    const goals = getGoalsView(db, NOW);
+    expect([...goals.active, ...goals.archived].map((item) => item.boss.id)).not.toContain(
+      thesis.id,
+    );
+    expect(getBossView(db, thesis.id, NOW)).toBeNull();
+    expect(eventsOf(db, 'boss.deleted').map((event) => event.bossId)).toEqual([thesis.id]);
+    // The stat points of the step stay: the log keeps what the boss gave.
+    expect(db.select().from(hero).get()).toEqual(before);
+    expectHeroMatchesLog(db);
+  });
+
+  it('frees a place, never steals after the deadline and refuses a boss that is not active', () => {
+    const db = newGame(['journal']);
+    giveCoins(db, 1000);
+    const thesis = createBoss(db, THESIS, NOW);
+    createBoss(db, { ...THESIS, name: 'Trasloco' }, NOW);
+    deleteBoss(db, thesis.id, NOW);
+    expect(() => createBoss(db, { ...THESIS, name: 'Maratona' }, NOW)).not.toThrow();
+    expect(checkBossDeadlines(db, clockAt(20, 10)).robbed.map((item) => item.bossId)).not.toContain(
+      thesis.id,
+    );
+    expect(() => deleteBoss(db, thesis.id, NOW)).toThrow(RangeError);
+    expect(() => deleteBoss(db, 'missing', NOW)).toThrow(RangeError);
   });
 });

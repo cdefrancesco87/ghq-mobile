@@ -722,7 +722,14 @@
       "archiveMessage": "El objetivo sale de la lista y libera un hueco. Los pasos hechos se quedan, pero no se podrá retomar.",
       "archivedToast": "Objetivo archivado",
       "archived": "Archivado",
-      "defeatedOn": "Derrotado el {{day}} de {{month}}"
+      "defeatedOn": "Derrotado el {{day}} de {{month}}",
+      "edit": "Editar",
+      "deadline": "Nuevo plazo",
+      "deadlineToast": "Plazo actualizado",
+      "delete": "Eliminar",
+      "deleteTitle": "¿Eliminar «{{name}}»?",
+      "deleteMessage": "El objetivo desaparece de todas las listas y las misiones vinculadas ya no lo golpean. Lo que ya ganaste se queda. No se puede deshacer.",
+      "deletedToast": "Objetivo eliminado"
     }
   },
   "skipReasons": {
@@ -894,7 +901,11 @@
       "create_fantasy": "Desafía a la Némesis",
       "create_cyberpunk": "Iniciar la intrusión",
       "create_lovecraft": "Invoca al Horror",
-      "create_minimal": "Crear objetivo"
+      "create_minimal": "Crear objetivo",
+      "editTitle": "Editar objetivo",
+      "editPreview": "Vida {{hp}} de {{max}} · Recompensa {{xp}} {{xpTerm}} y {{coins}} {{coinsTerm}}",
+      "stepDoneLabel": "Paso {{position}} de {{total}}, hecho",
+      "stepLeftMissing": "Hace falta al menos un paso por hacer para el golpe final"
     }
   }
 }

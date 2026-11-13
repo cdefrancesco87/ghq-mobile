@@ -12,8 +12,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createBoss } from '@/db/repositories/boss';
-import { listLinkableMissions, type LinkableMission } from '@/db/repositories/goalsView';
+import { createBoss, updateBoss } from '@/db/repositories/boss';
+import {
+  getBossEdit,
+  listLinkableMissions,
+  type BossEditView,
+  type LinkableMission,
+} from '@/db/repositories/goalsView';
 import { gameDayOf, getSetting } from '@/db/repositories/settings';
 import { ChoiceButton } from '@/features/editor/ChoiceButton';
 import { DueDaySheet } from '@/features/editor/DueDaySheet';
@@ -28,8 +33,8 @@ import { statIcon } from '@/features/shared/icons';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useLargeText } from '@/features/shared/useLargeText';
-import { bossPreview } from '@/rules/boss';
-import { BOSS, STATS } from '@/rules/config';
+import { bossPreview, editedBossHp } from '@/rules/boss';
+import { BOSS, BOSS_EDIT, STATS } from '@/rules/config';
 import {
   DIFFICULTIES,
   STAT_KEYS,
@@ -52,6 +57,26 @@ interface Step {
   /** Stable while the steps move, for the keys of the rows. */
   readonly key: number;
   readonly title: string;
+  /** The step of the boss being changed; none for a new step. */
+  readonly id?: string;
+  /** Its title when the change started: a done step left empty keeps it. */
+  readonly original?: string;
+  readonly done?: boolean;
+}
+
+export interface BossEditorProps {
+  /** The active boss to change («Modifica», design-sezioni.md 5.3); a new boss when missing. */
+  readonly bossId?: string;
+}
+
+function stepsOf(edit: BossEditView | null): Step[] {
+  return (edit?.steps ?? []).map((step, index) => ({
+    key: -(index + 1),
+    title: step.title,
+    id: step.id,
+    original: step.title,
+    done: step.done,
+  }));
 }
 
 /**
@@ -60,8 +85,13 @@ interface Step {
  * 5 di 20, at least 2), difficulty with its multiplier and the sprite in the preview, optional
  * deadline and stat, linked missions with their damage (moving one from another boss asks first),
  * then the bar with hit points and reward and the button in the lexicon of the theme.
+ *
+ * With `bossId` it is «Modifica» of an active boss (5.3; US-BOSS-01), in the same screen: name,
+ * steps, deadline and linked missions. Provisional until CLAUDE.md choice 21 (BOSS_EDIT): the done
+ * steps are renamed and moved but not taken away, a step to do must stay, and difficulty and stat
+ * stay those of the creation, since they fix the reward and the points of a fight already started.
  */
-export function BossEditor() {
+export function BossEditor({ bossId }: BossEditorProps = {}) {
   const { t } = useTranslation();
   const { colors, family, typography } = useTheme();
   const router = useRouter();
@@ -69,13 +99,16 @@ export function BossEditor() {
   const { nameOf } = useBossTexts();
   const { top, bottom } = useSafeAreaInsets();
   const { db, clock } = getSession();
-  const [name, setName] = useState('');
-  const [steps, setSteps] = useState<readonly Step[]>([]);
+  // Read once: the screen keeps its own copy while the user changes it.
+  const [edit] = useState(() => (bossId === undefined ? null : getBossEdit(db, bossId)));
+  const editing = edit !== null;
+  const [name, setName] = useState(edit?.boss.name ?? '');
+  const [steps, setSteps] = useState<readonly Step[]>(() => stepsOf(edit));
   const [newStep, setNewStep] = useState('');
-  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
-  const [deadline, setDeadline] = useState<GameDay | null>(null);
-  const [stat, setStat] = useState<StatKey | null>(null);
-  const [linked, setLinked] = useState<ReadonlySet<string>>(new Set());
+  const [difficulty, setDifficulty] = useState<Difficulty>(edit?.boss.difficulty ?? 'medium');
+  const [deadline, setDeadline] = useState<GameDay | null>(edit?.boss.deadlineDay ?? null);
+  const [stat, setStat] = useState<StatKey | null>(edit?.boss.statKey ?? null);
+  const [linked, setLinked] = useState<ReadonlySet<string>>(() => new Set(edit?.missionIds));
   const [moving, setMoving] = useState<LinkableMission | null>(null);
   const [deadlineOpen, setDeadlineOpen] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -89,9 +122,29 @@ export function BossEditor() {
     return gameDayOf(now, tzOffset, getSetting(db, 'day_change'));
   }, [db, clock]);
 
-  const titles = steps.map((step) => step.title.trim()).filter((title) => title !== '');
+  // A new step left empty goes away; a done one keeps the title it had.
+  const kept = steps
+    .map((step) => ({
+      ...step,
+      title: step.title.trim() === '' && step.done === true ? (step.original ?? '') : step.title,
+    }))
+    .filter((step) => step.title.trim() !== '');
+  const titles = kept.map((step) => step.title.trim());
+  const stepsLeft = kept.filter((step) => step.done !== true).length;
   const trimmed = name.trim();
   const preview = bossPreview(titles.length, difficulty);
+  // The hit points after the change (provisional rule, BOSS_EDIT).
+  const editedHp =
+    edit === null || preview === null
+      ? null
+      : editedBossHp(
+          {
+            hp: edit.boss.hp,
+            stepsLeft: edit.steps.filter((step) => !step.done).length,
+          },
+          stepsLeft,
+          preview.hp,
+        );
   const full = titles.length >= BOSS.maxSteps;
   const shape = SHAPES[family].control;
   const radius = shape.kind === 'rounded' ? shape.radius : 0;
@@ -108,7 +161,9 @@ export function BossEditor() {
       ? t('goals.editor.nameMissing')
       : preview === null
         ? t('goals.editor.stepsMissing', { count: BOSS.minSteps })
-        : null;
+        : editing && stepsLeft < BOSS_EDIT.minStepsLeft
+          ? t('goals.editor.stepLeftMissing')
+          : null;
 
   const changed = () => setFailed(false);
 
@@ -145,13 +200,17 @@ export function BossEditor() {
     });
   };
 
+  // The boss being changed is not «another» boss for its own missions.
+  const otherBoss = (item: LinkableMission) =>
+    item.boss === null || item.boss.id === edit?.boss.id ? null : item.boss;
+
   const toggleMission = (item: LinkableMission) => {
     const { id } = item.mission;
     if (linked.has(id)) {
       setLinked((current) => new Set([...current].filter((other) => other !== id)));
       return;
     }
-    if (item.boss !== null) {
+    if (otherBoss(item) !== null) {
       // A mission hits one boss at a time: choosing it here takes it away from the other one.
       setMoving(item);
       return;
@@ -164,23 +223,44 @@ export function BossEditor() {
       return;
     }
     saving.current = true;
+    const missionIds = missions
+      .filter((item) => linked.has(item.mission.id))
+      .map((item) => item.mission.id);
     try {
-      runAction((tx, actionClock) =>
-        createBoss(
-          tx,
-          {
-            name: trimmed,
-            difficulty,
-            statKey: stat,
-            deadlineDay: deadline,
-            steps: titles,
-            missionIds: missions
-              .filter((item) => linked.has(item.mission.id))
-              .map((item) => item.mission.id),
-          },
-          actionClock,
-        ),
-      );
+      if (edit !== null) {
+        // The archived missions are not in the list: they keep hitting the boss.
+        const hidden = edit.missionIds.filter(
+          (id) => !missions.some((item) => item.mission.id === id),
+        );
+        runAction((tx, actionClock) =>
+          updateBoss(
+            tx,
+            edit.boss.id,
+            {
+              name: trimmed,
+              steps: kept.map((step) => ({ id: step.id, title: step.title })),
+              missionIds: [...missionIds, ...hidden],
+              deadlineDay: deadline,
+            },
+            actionClock,
+          ),
+        );
+      } else {
+        runAction((tx, actionClock) =>
+          createBoss(
+            tx,
+            {
+              name: trimmed,
+              difficulty,
+              statKey: stat,
+              deadlineDay: deadline,
+              steps: titles,
+              missionIds,
+            },
+            actionClock,
+          ),
+        );
+      }
     } catch {
       saving.current = false;
       setFailed(true);
@@ -192,13 +272,19 @@ export function BossEditor() {
   const reward =
     preview === null
       ? null
-      : t('goals.editor.preview', {
-          hp: preview.hp,
+      : t(editedHp === null ? 'goals.editor.preview' : 'goals.editor.editPreview', {
+          hp: editedHp ?? preview.hp,
+          max: preview.hp,
           xp: preview.xp,
           xpTerm,
           coins: preview.coins,
           coinsTerm,
         });
+
+  if (bossId !== undefined && edit === null) {
+    // The boss is no longer active: there is nothing to change.
+    return null;
+  }
 
   return (
     <KeyboardAvoidingView
@@ -218,7 +304,7 @@ export function BossEditor() {
           <Icon name="chiudi" color={colors.text} />
         </Pressable>
         <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.title}>
-          {t('goals.editor.title')}
+          {editing ? t('goals.editor.editTitle') : t('goals.editor.title')}
         </ThemedText>
         <View style={styles.close} />
       </View>
@@ -233,7 +319,7 @@ export function BossEditor() {
               setName(text);
               changed();
             }}
-            autoFocus
+            autoFocus={!editing}
             submitBehavior="submit"
             returnKeyType="next"
             onSubmitEditing={() => stepField.current?.focus()}
@@ -250,15 +336,19 @@ export function BossEditor() {
           <Card>
             {steps.map((step, index) => (
               <View key={step.key} testID={`goal-editor-step-${index}`} style={styles.stepRow}>
-                <Icon name="trascina" size={20} color={colors.textMuted} />
+                {step.done === true ? (
+                  <Icon name="completa" size={20} color={colors.primary} />
+                ) : (
+                  <Icon name="trascina" size={20} color={colors.textMuted} />
+                )}
                 <TextInput
                   testID={`goal-editor-step-${index}-title`}
                   value={step.title}
                   onChangeText={(title) => editStep(step.key, title)}
-                  accessibilityLabel={t('goals.editor.stepLabel', {
-                    position: index + 1,
-                    total: steps.length,
-                  })}
+                  accessibilityLabel={t(
+                    step.done === true ? 'goals.editor.stepDoneLabel' : 'goals.editor.stepLabel',
+                    { position: index + 1, total: steps.length },
+                  )}
                   style={[textStyleOf(typography.body), styles.flex, { color: colors.text }]}
                 />
                 <Pressable
@@ -291,15 +381,20 @@ export function BossEditor() {
                     color={index === steps.length - 1 ? colors.track : colors.textMuted}
                   />
                 </Pressable>
-                <Pressable
-                  testID={`goal-editor-step-${index}-remove`}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('goals.editor.removeStep', { step: step.title })}
-                  onPress={() => removeStep(step.key)}
-                  style={styles.icon}
-                >
-                  <Icon name="chiudi" size={20} color={colors.textMuted} />
-                </Pressable>
+                {step.done === true && !BOSS_EDIT.canRemoveDoneSteps ? (
+                  // A done step stays (provisional, BOSS_EDIT): the place keeps the rows aligned.
+                  <View style={styles.icon} />
+                ) : (
+                  <Pressable
+                    testID={`goal-editor-step-${index}-remove`}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('goals.editor.removeStep', { step: step.title })}
+                    onPress={() => removeStep(step.key)}
+                    style={styles.icon}
+                  >
+                    <Icon name="chiudi" size={20} color={colors.textMuted} />
+                  </Pressable>
+                )}
               </View>
             ))}
             {full ? (
@@ -331,55 +426,61 @@ export function BossEditor() {
             <ThemedText testID="goal-editor-steps-min" variant="caption" color={colors.textMuted}>
               {t('goals.editor.stepsMissing', { count: BOSS.minSteps })}
             </ThemedText>
+          ) : editing && stepsLeft < BOSS_EDIT.minStepsLeft ? (
+            <ThemedText testID="goal-editor-steps-left" variant="caption" color={colors.textMuted}>
+              {t('goals.editor.stepLeftMissing')}
+            </ThemedText>
           ) : null}
         </View>
-        <View style={styles.block}>
-          <ThemedText variant="label" color={colors.textMuted}>
-            {t('editor.difficulty')}
-          </ThemedText>
-          <View
-            testID="goal-editor-difficulty"
-            accessibilityRole="radiogroup"
-            accessibilityLabel={t('editor.difficulty')}
-            style={large ? styles.column : styles.row}
-          >
-            {DIFFICULTIES.map((level, index) => {
-              const label = t(`shared.difficulty.${level}`);
-              const multiplier = t('goals.editor.multiplier', {
-                value: BOSS.difficultyMultiplier[level],
-              });
-              return (
-                <ChoiceButton
-                  key={level}
-                  testID={`goal-editor-difficulty-${level}`}
-                  selected={level === difficulty}
-                  onPress={() => {
-                    setDifficulty(level);
-                    changed();
-                  }}
-                  accessibilityLabel={t('goals.editor.difficultyLabel', {
-                    name: label,
-                    multiplier,
-                    position: index + 1,
-                    total: DIFFICULTIES.length,
-                  })}
-                  style={[styles.difficulty, large ? undefined : styles.flex]}
-                >
-                  {(color) => (
-                    <View style={styles.choice}>
-                      <ThemedText variant="label" color={color}>
-                        {label}
-                      </ThemedText>
-                      <ThemedText variant="caption" color={color}>
-                        {multiplier}
-                      </ThemedText>
-                    </View>
-                  )}
-                </ChoiceButton>
-              );
-            })}
+        {editing ? null : (
+          <View style={styles.block}>
+            <ThemedText variant="label" color={colors.textMuted}>
+              {t('editor.difficulty')}
+            </ThemedText>
+            <View
+              testID="goal-editor-difficulty"
+              accessibilityRole="radiogroup"
+              accessibilityLabel={t('editor.difficulty')}
+              style={large ? styles.column : styles.row}
+            >
+              {DIFFICULTIES.map((level, index) => {
+                const label = t(`shared.difficulty.${level}`);
+                const multiplier = t('goals.editor.multiplier', {
+                  value: BOSS.difficultyMultiplier[level],
+                });
+                return (
+                  <ChoiceButton
+                    key={level}
+                    testID={`goal-editor-difficulty-${level}`}
+                    selected={level === difficulty}
+                    onPress={() => {
+                      setDifficulty(level);
+                      changed();
+                    }}
+                    accessibilityLabel={t('goals.editor.difficultyLabel', {
+                      name: label,
+                      multiplier,
+                      position: index + 1,
+                      total: DIFFICULTIES.length,
+                    })}
+                    style={[styles.difficulty, large ? undefined : styles.flex]}
+                  >
+                    {(color) => (
+                      <View style={styles.choice}>
+                        <ThemedText variant="label" color={color}>
+                          {label}
+                        </ThemedText>
+                        <ThemedText variant="caption" color={color}>
+                          {multiplier}
+                        </ThemedText>
+                      </View>
+                    )}
+                  </ChoiceButton>
+                );
+              })}
+            </View>
           </View>
-        </View>
+        )}
         <Card>
           <OptionRow
             testID="goal-editor-deadline"
@@ -389,44 +490,46 @@ export function BossEditor() {
             onPress={() => setDeadlineOpen(true)}
           />
         </Card>
-        <View style={styles.block}>
-          <ThemedText variant="label" color={colors.textMuted}>
-            {stat === null
-              ? t('goals.editor.stat')
-              : t('goals.editor.statChosen', { stat: statName(stat) })}
-          </ThemedText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View
-              accessibilityRole="radiogroup"
-              accessibilityLabel={t('goals.editor.stat')}
-              style={styles.row}
-            >
-              {STAT_KEYS.map((key, index) => (
-                <ChoiceButton
-                  key={key}
-                  testID={`goal-editor-stat-${key}`}
-                  selected={key === stat}
-                  // The stat is optional: a second tap takes it away.
-                  onPress={() => {
-                    setStat((current) => (current === key ? null : key));
-                    changed();
-                  }}
-                  accessibilityLabel={t('editor.statLabel', {
-                    stat: statName(key),
-                    position: index + 1,
-                    total: STAT_KEYS.length,
-                  })}
-                  style={styles.stat}
-                >
-                  {(color) => <Icon name={statIcon(key)} size={20} color={color} />}
-                </ChoiceButton>
-              ))}
-            </View>
-          </ScrollView>
-          <ThemedText variant="caption" color={colors.textMuted}>
-            {t('goals.editor.statNote', { points: STATS.bossStepPoints })}
-          </ThemedText>
-        </View>
+        {editing ? null : (
+          <View style={styles.block}>
+            <ThemedText variant="label" color={colors.textMuted}>
+              {stat === null
+                ? t('goals.editor.stat')
+                : t('goals.editor.statChosen', { stat: statName(stat) })}
+            </ThemedText>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View
+                accessibilityRole="radiogroup"
+                accessibilityLabel={t('goals.editor.stat')}
+                style={styles.row}
+              >
+                {STAT_KEYS.map((key, index) => (
+                  <ChoiceButton
+                    key={key}
+                    testID={`goal-editor-stat-${key}`}
+                    selected={key === stat}
+                    // The stat is optional: a second tap takes it away.
+                    onPress={() => {
+                      setStat((current) => (current === key ? null : key));
+                      changed();
+                    }}
+                    accessibilityLabel={t('editor.statLabel', {
+                      stat: statName(key),
+                      position: index + 1,
+                      total: STAT_KEYS.length,
+                    })}
+                    style={styles.stat}
+                  >
+                    {(color) => <Icon name={statIcon(key)} size={20} color={color} />}
+                  </ChoiceButton>
+                ))}
+              </View>
+            </ScrollView>
+            <ThemedText variant="caption" color={colors.textMuted}>
+              {t('goals.editor.statNote', { points: STATS.bossStepPoints })}
+            </ThemedText>
+          </View>
+        )}
         <View style={styles.block}>
           <ThemedText variant="label" color={colors.textMuted}>
             {t('goals.editor.missions')}
@@ -440,7 +543,8 @@ export function BossEditor() {
               {missions.map((item) => {
                 const checked = linked.has(item.mission.id);
                 const damage = t('goals.editor.damage', { count: item.damage });
-                const other = item.boss === null ? null : nameOf(item.boss);
+                const hit = otherBoss(item);
+                const other = hit === null ? null : nameOf(hit);
                 return (
                   <Pressable
                     key={item.mission.id}
@@ -499,7 +603,7 @@ export function BossEditor() {
         </View>
         <Button
           testID="goal-editor-save"
-          label={t('goals.editor.create', { context: family })}
+          label={editing ? t('editor.save') : t('goals.editor.create', { context: family })}
           onPress={save}
           disabled={missing !== null}
           disabledReason={missing ?? undefined}

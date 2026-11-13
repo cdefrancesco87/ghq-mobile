@@ -154,9 +154,9 @@ describe('appendEvent', () => {
 });
 
 describe('EVENT_TYPES', () => {
-  it('lists the 31 event types of the data model plus hero.created', () => {
-    expect(EVENT_TYPES).toHaveLength(32);
-    expect(new Set(EVENT_TYPES).size).toBe(32);
+  it('lists the 31 event types of the data model plus hero.created and the provisional boss ones', () => {
+    expect(EVENT_TYPES).toHaveLength(34);
+    expect(new Set(EVENT_TYPES).size).toBe(34);
     expect(EVENT_TYPES).toEqual(
       expect.arrayContaining([
         'mission.deleted',
@@ -164,6 +164,8 @@ describe('EVENT_TYPES', () => {
         'event.reverted',
         'day.closed',
         'boss.deadline_missed',
+        'boss.updated',
+        'boss.deleted',
         'companion.stage_up',
         'hero.created',
         'shield.consumed',

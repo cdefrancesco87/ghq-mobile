@@ -93,7 +93,8 @@ export const boss = sqliteTable(
     deadlineDay: text('deadline_day').$type<GameDay>(),
     /** The warning 3 days before the deadline has been sent. */
     deadlineWarned: integer('deadline_warned', { mode: 'boolean' }).notNull().default(false),
-    status: text('status', { enum: ['active', 'defeated', 'archived'] })
+    /** `deleted` is the logical deletion of a boss (provisional, CLAUDE.md choice 21): no list shows it. */
+    status: text('status', { enum: ['active', 'defeated', 'archived', 'deleted'] })
       .notNull()
       .default('active'),
     defeatedAt: integer('defeated_at'),

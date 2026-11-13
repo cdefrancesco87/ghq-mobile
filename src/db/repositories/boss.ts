@@ -6,12 +6,13 @@ import {
   bossHpMax,
   canCreateBoss,
   deadlineSteal,
+  editedBossHp,
   shouldWarnDeadline,
   starterQuestReward,
   stepStatPoints,
   victoryReward,
 } from '../../rules/boss';
-import { BOSS } from '../../rules/config';
+import { BOSS, BOSS_EDIT } from '../../rules/config';
 import { isGameDay } from '../../rules/gameDay';
 import {
   DIFFICULTIES,
@@ -314,6 +315,207 @@ export function archiveBoss(db: Db, bossId: string, clock: ActionClock): void {
       .where(eq(boss.id, bossId))
       .run();
     appendEvent(tx, { ...eventBase(clock, bossId), type: 'boss.archived' });
+  });
+}
+
+/** A step of a boss being changed: `id` for a step that exists, none for a new one. */
+export interface BossStepEdit {
+  readonly id?: string;
+  readonly title: string;
+}
+
+export interface BossEdit {
+  readonly name: string;
+  /** Every step, in the new order; a step of the boss left out is taken away. */
+  readonly steps: readonly BossStepEdit[];
+  /** The missions linked to the boss after the change; the links stay when missing. */
+  readonly missionIds?: readonly string[];
+  /** The new deadline, null for none; the deadline stays when missing or the same. */
+  readonly deadlineDay?: GameDay | null;
+}
+
+function activeBoss(tx: Db, bossId: string): Boss {
+  const target = tx.select().from(boss).where(eq(boss.id, bossId)).get();
+  if (target === undefined || target.status !== 'active') {
+    throw new RangeError(`There is no active boss ${bossId}`);
+  }
+  return target;
+}
+
+/** A new deadline from today on, or none: the warning 3 days before starts again. */
+function moveDeadline(tx: Db, bossId: string, deadlineDay: GameDay | null, clock: ActionClock) {
+  if (deadlineDay !== null && (!isGameDay(deadlineDay) || deadlineDay < todayOf(tx, clock))) {
+    throw new RangeError(`The deadline must be today or later: ${deadlineDay}`);
+  }
+  tx.update(boss)
+    .set({ deadlineDay, deadlineWarned: false, updatedAt: clock.now })
+    .where(eq(boss.id, bossId))
+    .run();
+}
+
+/** Links exactly these missions to the boss: the others that hit it are left without a boss. */
+function linkMissions(tx: Db, bossId: string, missionIds: readonly string[], now: number): void {
+  if (missionIds.length > 0) {
+    const found = tx
+      .select({ id: missions.id })
+      .from(missions)
+      .where(and(inArray(missions.id, missionIds), notDeleted(missions)))
+      .all();
+    if (found.length !== missionIds.length) {
+      throw new RangeError('A linked mission does not exist');
+    }
+  }
+  const unlinked = tx
+    .select({ id: missions.id })
+    .from(missions)
+    .where(eq(missions.bossId, bossId))
+    .all()
+    .map((row) => row.id)
+    .filter((id) => !missionIds.includes(id));
+  if (unlinked.length > 0) {
+    tx.update(missions)
+      .set({ bossId: null, updatedAt: now })
+      .where(inArray(missions.id, unlinked))
+      .run();
+  }
+  if (missionIds.length > 0) {
+    tx.update(missions)
+      .set({ bossId, updatedAt: now })
+      .where(inArray(missions.id, [...missionIds]))
+      .run();
+  }
+}
+
+/**
+ * Changes an active boss after its creation (US-BOSS-01): name, steps added, taken away, moved
+ * and renamed, linked missions. The hit points follow `editedBossHp` and the victory pays the new
+ * number of steps. Provisional until CLAUDE.md choice 21 (BOSS_EDIT): a done step cannot be taken
+ * away and at least one step to do stays. The quest of the first launch keeps its steps.
+ */
+export function updateBoss(db: Db, bossId: string, input: BossEdit, clock: ActionClock): Boss {
+  const name = input.name.trim();
+  if (name === '') {
+    throw new RangeError('The boss needs a name');
+  }
+  const wanted = input.steps.map((step) => ({ id: step.id, title: step.title.trim() }));
+  if (wanted.some((step) => step.title === '')) {
+    throw new RangeError('Every step needs a title');
+  }
+  const hpMax = bossHpMax(wanted.length);
+  return db.transaction((tx) => {
+    const target = activeBoss(tx, bossId);
+    if (target.kind === 'starter') {
+      throw new RangeError('The quest of the first launch cannot be changed');
+    }
+    const current = tx.select().from(bossSteps).where(eq(bossSteps.bossId, bossId)).all();
+    const kept = wanted.flatMap((step) => (step.id === undefined ? [] : [step.id]));
+    if (new Set(kept).size !== kept.length) {
+      throw new RangeError('A step is there twice');
+    }
+    if (kept.some((id) => !current.some((step) => step.id === id))) {
+      throw new RangeError('A step is not of this boss');
+    }
+    const removed = current.filter((step) => !kept.includes(step.id));
+    if (!BOSS_EDIT.canRemoveDoneSteps && removed.some((step) => step.doneAt !== null)) {
+      throw new RangeError('A done step cannot be taken away');
+    }
+    const stepsLeftBefore = current.filter((step) => step.doneAt === null).length;
+    const stepsLeft = wanted.filter(
+      (step) => step.id === undefined || current.find((row) => row.id === step.id)?.doneAt === null,
+    ).length;
+    if (stepsLeft < BOSS_EDIT.minStepsLeft) {
+      throw new RangeError('The boss needs a step to do for the final blow');
+    }
+    const hp = editedBossHp({ hp: target.hp, stepsLeft: stepsLeftBefore }, stepsLeft, hpMax);
+    if (removed.length > 0) {
+      tx.delete(bossSteps)
+        .where(
+          inArray(
+            bossSteps.id,
+            removed.map((step) => step.id),
+          ),
+        )
+        .run();
+    }
+    wanted.forEach((step, position) => {
+      if (step.id === undefined) {
+        tx.insert(bossSteps).values({ id: uuidv7(), bossId, position, title: step.title }).run();
+        return;
+      }
+      tx.update(bossSteps)
+        .set({ position, title: step.title })
+        .where(eq(bossSteps.id, step.id))
+        .run();
+    });
+    const missionIds = input.missionIds === undefined ? null : [...new Set(input.missionIds)];
+    if (missionIds !== null) {
+      linkMissions(tx, bossId, missionIds, clock.now);
+    }
+    const deadlineDay = input.deadlineDay;
+    const newDeadline = deadlineDay !== undefined && deadlineDay !== target.deadlineDay;
+    if (newDeadline) {
+      moveDeadline(tx, bossId, deadlineDay, clock);
+    }
+    const updated = tx
+      .update(boss)
+      .set({ name, hp, hpMax, updatedAt: clock.now })
+      .where(eq(boss.id, bossId))
+      .returning()
+      .get();
+    appendEvent(tx, {
+      ...eventBase(clock, bossId),
+      type: 'boss.updated',
+      payload: {
+        name,
+        steps: wanted.length,
+        added: wanted.length - kept.length,
+        removed: removed.length,
+        hp,
+        hpMax,
+        ...(missionIds === null ? {} : { missionIds }),
+        ...(newDeadline ? { deadlineDay } : {}),
+      },
+    });
+    return updated;
+  });
+}
+
+/**
+ * «Nuova scadenza» of an active boss (design-sezioni.md 5.3, 5.6; US-BOSS-03): a day from today
+ * on, or none. The warning 3 days before starts again, and a new deadline can be missed once.
+ */
+export function setBossDeadline(
+  db: Db,
+  bossId: string,
+  deadlineDay: GameDay | null,
+  clock: ActionClock,
+): void {
+  db.transaction((tx) => {
+    activeBoss(tx, bossId);
+    moveDeadline(tx, bossId, deadlineDay, clock);
+    appendEvent(tx, {
+      ...eventBase(clock, bossId),
+      type: 'boss.updated',
+      payload: { deadlineDay },
+    });
+  });
+}
+
+/**
+ * Deletes an active boss (design-sezioni.md 5.3), provisional until CLAUDE.md choice 21: the data
+ * model has no deletion of a boss, so it is logical (`status = 'deleted'`). It leaves every list,
+ * frees its place, its missions hit no boss any more and it never steals; the steps stay, and so
+ * does what it already gave to the hero, since the log is never rewritten.
+ */
+export function deleteBoss(db: Db, bossId: string, clock: ActionClock): void {
+  db.transaction((tx) => {
+    activeBoss(tx, bossId);
+    linkMissions(tx, bossId, [], clock.now);
+    tx.update(boss)
+      .set({ status: 'deleted', updatedAt: clock.now })
+      .where(eq(boss.id, bossId))
+      .run();
+    appendEvent(tx, { ...eventBase(clock, bossId), type: 'boss.deleted' });
   });
 }
 

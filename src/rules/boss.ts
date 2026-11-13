@@ -1,5 +1,5 @@
 import { roundXp } from './completion';
-import { BOSS, STARTER_QUEST_REWARD, STATS } from './config';
+import { BOSS, BOSS_EDIT, STARTER_QUEST_REWARD, STATS } from './config';
 import { diffDays } from './gameDay';
 import { xpToNext } from './level';
 import {
@@ -76,6 +76,25 @@ export function protectedHp({ hp, stepsLeft }: BossHealth): number {
   assertNonNegativeInteger(hp, 'Boss hit points');
   assertNonNegativeInteger(stepsLeft, 'Steps left');
   return Math.min(hp, BOSS.minHpPerRemainingStep * stepsLeft);
+}
+
+/**
+ * Hit points of a boss whose steps changed after its creation (BOSS_EDIT, provisional until
+ * CLAUDE.md choice 21): every step to do added brings 20 hit points and every one taken away takes
+ * 20, so the damage already dealt stays; a done step moved or renamed changes nothing. The result
+ * never goes below the protected part (10 per step left) nor above the new maximum.
+ *
+ * @param health Hit points and steps to do before the change.
+ * @param stepsLeft Steps to do after the change.
+ * @param hpMax Maximum hit points after the change.
+ */
+export function editedBossHp(health: BossHealth, stepsLeft: number, hpMax: number): number {
+  assertNonNegativeInteger(health.hp, 'Boss hit points');
+  assertNonNegativeInteger(health.stepsLeft, 'Steps left');
+  assertNonNegativeInteger(stepsLeft, 'Steps left');
+  assertNonNegativeInteger(hpMax, 'Boss maximum hit points');
+  const hp = health.hp + BOSS_EDIT.hpPerStepToDo * (stepsLeft - health.stepsLeft);
+  return Math.min(hpMax, Math.max(hp, BOSS.minHpPerRemainingStep * stepsLeft));
 }
 
 /** Reward of a victory: steps × 10 XP × boss difficulty (1, 1.5, 2), and a fifth of it in coins. */

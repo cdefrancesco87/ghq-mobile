@@ -722,7 +722,14 @@
       "archiveMessage": "L'objectif quitte la liste et libère une place. Les étapes faites restent, mais il ne pourra pas être repris.",
       "archivedToast": "Objectif archivé",
       "archived": "Archivé",
-      "defeatedOn": "Vaincu le {{day}} {{month}}"
+      "defeatedOn": "Vaincu le {{day}} {{month}}",
+      "edit": "Modifier",
+      "deadline": "Nouvelle échéance",
+      "deadlineToast": "Échéance mise à jour",
+      "delete": "Supprimer",
+      "deleteTitle": "Supprimer « {{name}} » ?",
+      "deleteMessage": "L'objectif disparaît de toutes les listes et les missions liées ne le frappent plus. Ce que tu as déjà gagné reste. C'est définitif.",
+      "deletedToast": "Objectif supprimé"
     }
   },
   "skipReasons": {
@@ -894,7 +901,11 @@
       "create_fantasy": "Défier la Némésis",
       "create_cyberpunk": "Lancer l'intrusion",
       "create_lovecraft": "Invoquer l'Horreur",
-      "create_minimal": "Créer l'objectif"
+      "create_minimal": "Créer l'objectif",
+      "editTitle": "Modifier l'objectif",
+      "editPreview": "Vie {{hp}} sur {{max}} · Récompense {{xp}} {{xpTerm}} et {{coins}} {{coinsTerm}}",
+      "stepDoneLabel": "Étape {{position}} sur {{total}}, faite",
+      "stepLeftMissing": "Il faut au moins une étape à faire pour le coup final"
     }
   }
 }

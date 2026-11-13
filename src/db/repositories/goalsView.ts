@@ -2,7 +2,7 @@ import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 
 import { DIFFICULTY_VALUES } from '../../rules/config';
 import type { GameDay } from '../../rules/types';
-import { boss, events, missions } from '../schema';
+import { boss, bossSteps, events, missions } from '../schema';
 import type { Db } from '../types';
 import { listActiveBosses, withSteps, type Boss, type BossProgress } from './boss';
 import { notDeleted } from './events';
@@ -92,4 +92,43 @@ export function listLinkableMissions(db: Db): LinkableMission[] {
     damage: DIFFICULTY_VALUES[mission.difficulty].bossDamage,
     boss: bosses.find((item) => item.id === mission.bossId) ?? null,
   }));
+}
+
+export interface BossEditStep {
+  readonly id: string;
+  readonly title: string;
+  readonly done: boolean;
+}
+
+/** What «Modifica» of a boss starts from (design-sezioni.md 5.3): an active boss only. */
+export interface BossEditView {
+  readonly boss: Boss;
+  /** The steps in their order. */
+  readonly steps: readonly BossEditStep[];
+  /** Every mission that hits the boss, archived ones included. */
+  readonly missionIds: readonly string[];
+}
+
+/** The boss to change, null when it is not active: only an active boss can be changed. */
+export function getBossEdit(db: Db, bossId: string): BossEditView | null {
+  const target = db.select().from(boss).where(eq(boss.id, bossId)).get();
+  if (target === undefined || target.status !== 'active') {
+    return null;
+  }
+  const steps = db
+    .select()
+    .from(bossSteps)
+    .where(eq(bossSteps.bossId, bossId))
+    .orderBy(asc(bossSteps.position))
+    .all();
+  const linked = db
+    .select({ id: missions.id })
+    .from(missions)
+    .where(and(eq(missions.bossId, bossId), notDeleted(missions)))
+    .all();
+  return {
+    boss: target,
+    steps: steps.map((step) => ({ id: step.id, title: step.title, done: step.doneAt !== null })),
+    missionIds: linked.map((row) => row.id),
+  };
 }

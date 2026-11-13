@@ -4,6 +4,7 @@ import {
   bossPreview,
   canCreateBoss,
   deadlineSteal,
+  editedBossHp,
   protectedHp,
   shouldWarnDeadline,
   starterQuestReward,
@@ -195,5 +196,28 @@ describe('protectedHp', () => {
   it('accepts only non-negative integers', () => {
     expect(() => protectedHp({ hp: -1, stepsLeft: 2 })).toThrow(RangeError);
     expect(() => protectedHp({ hp: 40, stepsLeft: 1.5 })).toThrow(RangeError);
+  });
+});
+
+describe('editedBossHp', () => {
+  it('adds or takes away 20 hit points for every step to do, keeping the damage dealt', () => {
+    // 4 steps, 1 done and 15 damage from the missions: 80 − 20 − 15 = 45 hit points.
+    expect(editedBossHp({ hp: 45, stepsLeft: 3 }, 4, 100)).toBe(65);
+    expect(editedBossHp({ hp: 45, stepsLeft: 3 }, 2, 60)).toBe(25);
+  });
+
+  it('changes nothing when the steps to do stay the same', () => {
+    expect(editedBossHp({ hp: 45, stepsLeft: 3 }, 3, 80)).toBe(45);
+  });
+
+  it('never goes below the protected part nor above the maximum', () => {
+    // 3 steps to do at the floor (30): one taken away leaves 2 steps, floor 20.
+    expect(editedBossHp({ hp: 30, stepsLeft: 3 }, 2, 40)).toBe(20);
+    expect(editedBossHp({ hp: 60, stepsLeft: 3 }, 4, 70)).toBe(70);
+  });
+
+  it('refuses values that are not non-negative integers', () => {
+    expect(() => editedBossHp({ hp: -1, stepsLeft: 2 }, 2, 40)).toThrow(RangeError);
+    expect(() => editedBossHp({ hp: 40, stepsLeft: 2 }, 1.5, 40)).toThrow(RangeError);
   });
 });

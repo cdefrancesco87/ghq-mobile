@@ -93,14 +93,14 @@ function dealtByMission(db: Db, bossId: string): Map<string, number> {
   return dealt;
 }
 
-/** The card of a boss, whatever its state; null when it does not exist. */
+/** The card of a boss, whatever its state; null when it does not exist or was deleted. */
 export function getBossView(
   db: Db,
   bossId: string,
   clock: { now: number; tzOffset: number },
 ): BossView | null {
   const target = db.select().from(boss).where(eq(boss.id, bossId)).get();
-  if (target === undefined) {
+  if (target === undefined || target.status === 'deleted') {
     return null;
   }
   const dayChange = getSetting(db, 'day_change');

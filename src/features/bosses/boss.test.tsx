@@ -4,11 +4,16 @@ import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-librar
 import type { ComponentType } from 'react';
 import { StyleSheet } from 'react-native';
 
-import { completeBossStep, createBoss, type NewBoss } from '@/db/repositories/boss';
+import {
+  checkBossDeadlines,
+  completeBossStep,
+  createBoss,
+  type NewBoss,
+} from '@/db/repositories/boss';
 import { completeMission } from '@/db/repositories/completion';
 import { loadHero } from '@/db/repositories/hero';
 import { setSetting } from '@/db/repositories/settings';
-import { boss, bossSteps, events } from '@/db/schema';
+import { boss, bossSteps, events, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { MOMENT_MAX_MS } from '@/features/shared/MomentQueue';
 import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
@@ -26,12 +31,14 @@ import New from '../../../app/(tabs)/new';
 import Profile from '../../../app/(tabs)/profile';
 import Today from '../../../app/(tabs)/today';
 import BossRoute from '../../../app/boss/[id]';
+import GoalEditor from '../../../app/goal-editor';
 import Index from '../../../app/index';
 import { at, clockAt, expectHeroMatchesLog, FRIDAY, missionId, newGame } from '../../../test/game';
 
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
   'boss/[id]': BossRoute,
+  'goal-editor': GoalEditor,
   '(tabs)/_layout': TabsLayoutRoute,
   '(tabs)/today': Today,
   '(tabs)/habits': Habits,
@@ -304,5 +311,184 @@ describe('Scheda del boss', () => {
     expect(screen.getByRole('header', { name: 'Boss' })).toBeOnTheScreen();
     expect(screen.getByTestId('boss-sprite', { includeHiddenElements: true })).toBeOnTheScreen();
     expect(screen.getByText('STAGE 0/3')).toBeOnTheScreen();
+  });
+});
+
+function stepTitles(db: Db, bossId: string): string[] {
+  return db
+    .select({ title: bossSteps.title })
+    .from(bossSteps)
+    .where(eq(bossSteps.bossId, bossId))
+    .orderBy(asc(bossSteps.position))
+    .all()
+    .map((row) => row.title);
+}
+
+/** «Altro», then an item of the menu once the menu has slid away. */
+async function fromMenu(item: string) {
+  await fireEvent.press(screen.getByTestId('boss-more'));
+  await act(async () => jest.advanceTimersByTime(SHEET_DURATION_MS));
+  await fireEvent.press(screen.getByTestId(`boss-menu-${item}`));
+  await act(async () => jest.advanceTimersByTime(SHEET_DURATION_MS));
+}
+
+describe('Modifica del boss', () => {
+  it('lists Modifica, Nuova scadenza, Archivia and Elimina; the starter quest has no Modifica', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    await openBoss(db, thesis.id);
+    await fireEvent.press(screen.getByTestId('boss-more'));
+    for (const item of ['edit', 'deadline', 'archive', 'delete']) {
+      expect(screen.getByTestId(`boss-menu-${item}`)).toBeOnTheScreen();
+    }
+    await fireEvent.press(screen.getByTestId('boss-menu-archive'));
+    await act(async () => jest.advanceTimersByTime(SHEET_DURATION_MS));
+    await fireEvent.press(screen.getByTestId('boss-archive-dialog-cancel'));
+
+    const quest = db.select().from(boss).where(eq(boss.kind, 'starter')).get();
+    await act(async () => {
+      useAppStore.getState().reset();
+    });
+    await open(db, `/boss/${quest?.id}`);
+    await fireEvent.press(await screen.findByTestId('boss-more'));
+    expect(screen.queryByTestId('boss-menu-edit')).toBeNull();
+    expect(screen.getByTestId('boss-menu-delete')).toBeOnTheScreen();
+  });
+
+  it('changes name and steps in the screen of the creation, after a step done', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    completeBossStep(db, stepIds(db, thesis.id)[0], NOW);
+    await openBoss(db, thesis.id);
+    await fromMenu('edit');
+
+    expect(await screen.findByText('Modifica obiettivo')).toBeOnTheScreen();
+    expect(screen.getByTestId('goal-editor-name').props.value).toBe('Tesi');
+    expect(screen.getByTestId('goal-editor-step-0-title').props.value).toBe('Indice');
+    // The done step stays; difficulty and stat are those of the creation.
+    expect(screen.queryByTestId('goal-editor-step-0-remove')).toBeNull();
+    expect(screen.getByTestId('goal-editor-step-1-remove')).toBeOnTheScreen();
+    expect(screen.queryByTestId('goal-editor-difficulty')).toBeNull();
+    expect(screen.getByTestId('goal-editor-preview')).toHaveTextContent(
+      'Vita 40 di 60 · Ricompensa 45 XP e 9 Monete',
+    );
+
+    await fireEvent.changeText(screen.getByTestId('goal-editor-name'), 'Tesi di laurea');
+    await fireEvent.press(screen.getByTestId('goal-editor-step-2-up'));
+    await fireEvent.changeText(screen.getByTestId('goal-editor-new-step'), 'Bibliografia');
+    await fireEvent(screen.getByTestId('goal-editor-new-step'), 'submitEditing');
+    await fireEvent.changeText(screen.getByTestId('goal-editor-new-step'), 'Discussione');
+    await fireEvent(screen.getByTestId('goal-editor-new-step'), 'submitEditing');
+    await fireEvent.press(screen.getByTestId('goal-editor-step-2-remove'));
+    // 4 steps, 3 to do: 40 + 20 hit points of 80.
+    expect(screen.getByTestId('goal-editor-preview')).toHaveTextContent(
+      'Vita 60 di 80 · Ricompensa 60 XP e 12 Monete',
+    );
+    await fireEvent.press(screen.getByTestId('goal-editor-save'));
+
+    expect(await screen.findByTestId('boss-screen')).toBeOnTheScreen();
+    expect(screen.getByTestId('boss-name')).toHaveTextContent('Tesi di laurea');
+    expect(stepTitles(db, thesis.id)).toEqual([
+      'Indice',
+      'Capitolo 2',
+      'Bibliografia',
+      'Discussione',
+    ]);
+    expect(bossRow(db, thesis.id)).toMatchObject({ hp: 60, hpMax: 80 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('keeps a step to do for the final blow', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, NOW);
+    const [first, second] = stepIds(db, thesis.id);
+    completeBossStep(db, first, NOW);
+    completeBossStep(db, second, NOW);
+    await openBoss(db, thesis.id);
+    await fromMenu('edit');
+
+    await fireEvent.press(await screen.findByTestId('goal-editor-step-2-remove'));
+    expect(screen.getByTestId('goal-editor-steps-left')).toHaveTextContent(
+      'Serve almeno un passo da fare per il colpo finale',
+    );
+    expect(screen.getByTestId('goal-editor-save')).toBeDisabled();
+    expect(stepTitles(db, thesis.id)).toHaveLength(3);
+  });
+
+  it('changes the linked missions without asking to move them from the same boss', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal', 'read_pages']);
+    const journal = missionId(db, 'journal');
+    const read = missionId(db, 'read_pages');
+    const thesis = createBoss(db, { ...THESIS, missionIds: [journal] }, NOW);
+    await openBoss(db, thesis.id);
+    await fromMenu('edit');
+
+    await fireEvent.press(await screen.findByTestId(`goal-editor-mission-${journal}`));
+    await fireEvent.press(screen.getByTestId(`goal-editor-mission-${journal}`));
+    expect(screen.queryByText(/Spostare/)).toBeNull();
+    await fireEvent.press(screen.getByTestId(`goal-editor-mission-${journal}`));
+    await fireEvent.press(screen.getByTestId(`goal-editor-mission-${read}`));
+    await fireEvent.press(screen.getByTestId('goal-editor-save'));
+
+    await screen.findByTestId('boss-screen');
+    expect(
+      db
+        .select({ id: missions.id })
+        .from(missions)
+        .where(eq(missions.bossId, thesis.id))
+        .all()
+        .map((row) => row.id),
+    ).toEqual([read]);
+  });
+
+  it('sets a new deadline from «Altro» and starts the warning again', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, { ...THESIS, deadlineDay: '2026-11-08' }, NOW);
+    checkBossDeadlines(db, NOW);
+    expect(bossRow(db, thesis.id)?.deadlineWarned).toBe(true);
+    await openBoss(db, thesis.id);
+    await fromMenu('deadline');
+
+    await fireEvent.press(screen.getByTestId('editor-due-none'));
+    await fireEvent.press(screen.getByTestId('editor-due-done'));
+    expect(bossRow(db, thesis.id)).toMatchObject({ deadlineDay: null, deadlineWarned: false });
+    expect(screen.queryByTestId('boss-chip-deadline')).toBeNull();
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent('Scadenza aggiornata');
+
+    await act(async () => jest.advanceTimersByTime(SHEET_DURATION_MS));
+    await fromMenu('deadline');
+    await fireEvent.press(screen.getByTestId('editor-due-day'));
+    await fireEvent.press(screen.getByTestId('editor-due-done'));
+    expect(bossRow(db, thesis.id)?.deadlineDay).toBe('2026-11-06');
+    expect(screen.getByTestId('boss-chip-deadline')).toHaveTextContent('Scade oggi');
+  });
+
+  it('deletes the boss after the dialog and goes back to Obiettivi', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, { ...THESIS, missionIds: [missionId(db, 'journal')] }, NOW);
+    await openBoss(db, thesis.id);
+    await fromMenu('delete');
+
+    expect(screen.getByText('Eliminare «Tesi»?')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('boss-delete-dialog-confirm'));
+
+    expect(bossRow(db, thesis.id)?.status).toBe('deleted');
+    expect(await screen.findByTestId('goals-screen')).toBeOnTheScreen();
+    expect(screen.queryByTestId(`goals-boss-${thesis.id}`)).toBeNull();
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent('Obiettivo eliminato');
+    expect(
+      db
+        .select()
+        .from(missions)
+        .where(eq(missions.id, missionId(db, 'journal')))
+        .get()?.bossId,
+    ).toBeNull();
+    expectHeroMatchesLog(db);
   });
 });

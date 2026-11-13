@@ -131,6 +131,22 @@ export const BOSS = {
   maxSteps: 20,
 } as const;
 
+/**
+ * Changing the steps of a boss after its creation (CLAUDE.md, choice 21, still reserved: task C13a).
+ * PROVISIONAL until Claudio decides: a step added to do brings its hit points, a step to do taken
+ * away takes them with it, and the hit points never go below the protected part (10 per step
+ * left). A done step can be renamed and moved, not taken away; at least one step to do stays, for
+ * the final blow. A deleted boss leaves every list and its missions, and the log keeps what it gave.
+ */
+export const BOSS_EDIT = {
+  /** Hit points gained or lost by the boss for every step to do added or taken away. */
+  hpPerStepToDo: BOSS.hpPerStep,
+  /** Done steps can be taken away from a boss. */
+  canRemoveDoneSteps: false,
+  /** Steps to do that must stay after a change. */
+  minStepsLeft: 1,
+} as const;
+
 /** Victory of the quest of the first launch (CLAUDE.md, choice 12): not the formula of the bosses. */
 export const STARTER_QUEST_REWARD = {
   /** The XP missing to reach this level. */

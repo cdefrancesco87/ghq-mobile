@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 
 import { archiveBoss, completeBossStep, createBoss, type NewBoss } from '@/db/repositories/boss';
-import { getGoalsView, listLinkableMissions } from '@/db/repositories/goalsView';
+import { getBossEdit, getGoalsView, listLinkableMissions } from '@/db/repositories/goalsView';
 import {
   archiveMission,
   createMission,
@@ -112,5 +112,36 @@ describe('listLinkableMissions', () => {
     const db = newGame(['journal']);
     deleteMission(db, missionId(db, 'journal'), clockAt(FRIDAY, 10));
     expect(listLinkableMissions(db)).toEqual([]);
+  });
+});
+
+describe('getBossEdit', () => {
+  it('gives the steps in order with their state and every linked mission, archived included', () => {
+    const db = newGame(['journal', 'read_pages', 'meditation']);
+    const read = missionId(db, 'read_pages');
+    const meditation = missionId(db, 'meditation');
+    const thesis = createBoss(
+      db,
+      { ...THESIS, missionIds: [read, meditation] },
+      clockAt(FRIDAY, 10),
+    );
+    completeBossStep(db, firstStep(db, thesis.id), clockAt(FRIDAY, 11));
+    archiveMission(db, meditation, clockAt(FRIDAY, 12));
+    const edit = getBossEdit(db, thesis.id);
+    expect(edit?.boss.id).toBe(thesis.id);
+    expect(edit?.steps.map(({ title, done }) => ({ title, done }))).toEqual([
+      { title: 'Indice', done: true },
+      { title: 'Capitolo 1', done: false },
+      { title: 'Capitolo 2', done: false },
+    ]);
+    expect([...(edit?.missionIds ?? [])].sort()).toEqual([read, meditation].sort());
+  });
+
+  it('is null for a boss that is not active or does not exist', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, THESIS, clockAt(FRIDAY, 10));
+    archiveBoss(db, thesis.id, clockAt(FRIDAY, 11));
+    expect(getBossEdit(db, thesis.id)).toBeNull();
+    expect(getBossEdit(db, 'missing')).toBeNull();
   });
 });

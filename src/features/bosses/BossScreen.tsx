@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { archiveBoss } from '@/db/repositories/boss';
+import { archiveBoss, deleteBoss, setBossDeadline } from '@/db/repositories/boss';
 import type { BossView } from '@/db/repositories/bossView';
+import { DueDaySheet } from '@/features/editor/DueDaySheet';
 import { ActionSheet } from '@/features/shared/ActionSheet';
 import { announceOnIos } from '@/features/shared/announce';
 import { Bar } from '@/features/shared/Bar';
@@ -20,6 +21,7 @@ import { Icon } from '@/features/shared/Icon';
 import { categoryIcon, type IconName } from '@/features/shared/icons';
 import { ProgressRing, ringStroke } from '@/features/shared/ProgressRing';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
+import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useUndoToast } from '@/features/shared/UndoToast';
@@ -70,8 +72,9 @@ function InfoChip({
  * note, chips of steps, deadline and difficulty; the steps with the day they were done and the
  * next one in evidence, each completed with a touch, a notice and «Annulla» (not the step that
  * wins: choice 25); the linked missions with their damage and the damage they dealt. «Altro» has
- * Archivia; Modifica, Nuova scadenza and Elimina come with T49. A defeated or archived boss is
- * only read: it is also the trophy until the Hall of trophies (T65).
+ * Modifica (not for the quest of the first launch, whose steps are fixed texts), Nuova scadenza,
+ * Archivia and Elimina with a dialog. A defeated or archived boss is only read: it is also the
+ * trophy until the Hall of trophies (T65).
  */
 export function BossScreen({ view }: BossScreenProps) {
   const { t } = useTranslation();
@@ -83,6 +86,11 @@ export function BossScreen({ view }: BossScreenProps) {
   const { nameOf, stepTitleOf } = useBossTexts();
   const [menu, setMenu] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
+  // What the menu asked waits for the menu to slide away: on iOS a modal shown while another one
+  // is still closing may never appear (as in useHabitActions).
+  const [queued, setQueued] = useState<'archive' | 'deadline' | 'delete' | null>(null);
   const { boss } = view;
   const name = nameOf(boss);
   const active = boss.status === 'active';
@@ -92,6 +100,19 @@ export function BossScreen({ view }: BossScreenProps) {
     hit === null
       ? null
       : t('bosses.sheet.hitLabel', { damage: hit.dealt, hp: hit.hp, max: boss.hpMax });
+
+  useEffect(() => {
+    if (queued === null || menu) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setConfirm(queued === 'archive');
+      setDeadlineOpen(queued === 'deadline');
+      setDeleting(queued === 'delete');
+      setQueued(null);
+    }, SHEET_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [queued, menu]);
 
   // The hits are said aloud (5.11): on Android the live region of the number does it.
   useEffect(() => {
@@ -133,6 +154,32 @@ export function BossScreen({ view }: BossScreenProps) {
     }
     toast.show({ message: t('bosses.sheet.archivedToast') });
     router.back();
+  };
+
+  const remove = () => {
+    setDeleting(false);
+    try {
+      runAction((db, clock) => deleteBoss(db, boss.id, clock));
+    } catch {
+      toast.show({ message: t('today.missions.errors.failed') });
+      return;
+    }
+    toast.show({ message: t('bosses.sheet.deletedToast') });
+    router.back();
+  };
+
+  const moveDeadline = (day: GameDay | null) => {
+    setDeadlineOpen(false);
+    if (day === boss.deadlineDay) {
+      return;
+    }
+    try {
+      runAction((db, clock) => setBossDeadline(db, boss.id, day, clock));
+    } catch {
+      toast.show({ message: t('today.missions.errors.failed') });
+      return;
+    }
+    toast.show({ message: t('bosses.sheet.deadlineToast') });
   };
 
   return (
@@ -388,13 +435,53 @@ export function BossScreen({ view }: BossScreenProps) {
         visible={menu}
         onClose={() => setMenu(false)}
         items={[
+          ...(boss.kind === 'starter'
+            ? []
+            : [
+                {
+                  key: 'edit',
+                  label: t('bosses.sheet.edit'),
+                  icon: <Icon name="modifica" size={20} color={colors.text} />,
+                  onPress: () =>
+                    router.push({ pathname: '/goal-editor', params: { bossId: boss.id } }),
+                },
+              ]),
+          {
+            key: 'deadline',
+            label: t('bosses.sheet.deadline'),
+            icon: <Icon name="calendario" size={20} color={colors.text} />,
+            onPress: () => setQueued('deadline'),
+          },
           {
             key: 'archive',
             label: t('bosses.sheet.archive'),
             icon: <Icon name="archivio" size={20} color={colors.text} />,
-            onPress: () => setConfirm(true),
+            onPress: () => setQueued('archive'),
+          },
+          {
+            key: 'delete',
+            label: t('bosses.sheet.delete'),
+            destructive: true,
+            icon: <Icon name="elimina" size={20} color={colors.dangerText} />,
+            onPress: () => setQueued('delete'),
           },
         ]}
+      />
+      <DueDaySheet
+        visible={deadlineOpen}
+        value={boss.deadlineDay}
+        today={view.day}
+        onClose={() => setDeadlineOpen(false)}
+        onDone={moveDeadline}
+      />
+      <ConfirmDialog
+        testID="boss-delete-dialog"
+        visible={deleting}
+        title={t('bosses.sheet.deleteTitle', { name })}
+        message={t('bosses.sheet.deleteMessage')}
+        confirmLabel={t('bosses.sheet.delete')}
+        onConfirm={remove}
+        onCancel={() => setDeleting(false)}
       />
       <ConfirmDialog
         testID="boss-archive-dialog"

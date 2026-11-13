@@ -722,7 +722,14 @@
       "archiveMessage": "L'obiettivo lascia l'elenco e libera un posto. I passi fatti restano, ma non si potrà riprendere.",
       "archivedToast": "Obiettivo archiviato",
       "archived": "Archiviato",
-      "defeatedOn": "Sconfitto il {{day}} {{month}}"
+      "defeatedOn": "Sconfitto il {{day}} {{month}}",
+      "edit": "Modifica",
+      "deadline": "Nuova scadenza",
+      "deadlineToast": "Scadenza aggiornata",
+      "delete": "Elimina",
+      "deleteTitle": "Eliminare «{{name}}»?",
+      "deleteMessage": "L'obiettivo sparisce da tutti gli elenchi e le missioni collegate non lo colpiscono più. Quello che hai già guadagnato resta. Non si può annullare.",
+      "deletedToast": "Obiettivo eliminato"
     }
   },
   "skipReasons": {
@@ -894,7 +901,11 @@
       "create_fantasy": "Sfida la Nemesi",
       "create_cyberpunk": "Avvia l'intrusione",
       "create_lovecraft": "Evoca l'Orrore",
-      "create_minimal": "Crea obiettivo"
+      "create_minimal": "Crea obiettivo",
+      "editTitle": "Modifica obiettivo",
+      "editPreview": "Vita {{hp}} di {{max}} · Ricompensa {{xp}} {{xpTerm}} e {{coins}} {{coinsTerm}}",
+      "stepDoneLabel": "Passo {{position}} di {{total}}, fatto",
+      "stepLeftMissing": "Serve almeno un passo da fare per il colpo finale"
     }
   }
 }
