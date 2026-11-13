@@ -1354,6 +1354,8 @@
     "statLabel": "{{name}}, level {{level}}, {{points}} points of {{max}}",
     "statLabel_max": "{{name}}, highest level, {{points}} points",
     "statHint": "Opens the detail",
+    "formUp": "rising",
+    "formDown": "falling",
     "detail": {
       "title": "{{name}} · Lv {{level}}",
       "subtitle": "Stat level",

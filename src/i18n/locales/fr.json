@@ -1354,6 +1354,8 @@
     "statLabel": "{{name}}, niveau {{level}}, {{points}} points sur {{max}}",
     "statLabel_max": "{{name}}, niveau maximum, {{points}} points",
     "statHint": "Ouvre le détail",
+    "formUp": "en hausse",
+    "formDown": "en baisse",
     "detail": {
       "title": "{{name}} · Niv {{level}}",
       "subtitle": "Niveau de la statistique",

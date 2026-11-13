@@ -21,16 +21,17 @@ export interface StatTileProps {
 /**
  * A tile of the character sheet (design-sezioni.md 9.4; mockup B7): icon and name of the stat in
  * the lexicon of the theme, «Lv 4» and the bar towards the next level; «Max» with the full bar at
- * the cap; «Completa missioni di questo tipo» while the stat is at 0. The form arrow comes with
- * T69. Read as «Forza, livello 4, 340 punti su 500» (9.11).
+ * the cap; «Completa missioni di questo tipo» while the stat is at 0; the form arrow, ↑ in the
+ * done colour and ↓ in muted text (signals, does not punish). Read as «Forza, livello 4, 340 punti
+ * su 500, in crescita» (9.11).
  */
 export function StatTile({ row, onPress, fullWidth }: StatTileProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
-  const { stat, points, progress } = row;
+  const { stat, points, progress, form } = row;
   const name = t(`stats.${stat}`, { context: family });
   const total = progress.toNext ?? Math.max(progress.inLevel, 1);
-  const label = progress.max
+  const base = progress.max
     ? t('profile.statLabel', { context: 'max', name, points })
     : t('profile.statLabel', {
         name,
@@ -38,6 +39,8 @@ export function StatTile({ row, onPress, fullWidth }: StatTileProps) {
         points: progress.inLevel,
         max: progress.toNext,
       });
+  const label =
+    form === null ? base : `${base}, ${t(form === 'up' ? 'profile.formUp' : 'profile.formDown')}`;
 
   return (
     <Pressable
@@ -55,9 +58,23 @@ export function StatTile({ row, onPress, fullWidth }: StatTileProps) {
           {name}
         </ThemedText>
       </View>
-      <ThemedText testID={`profile-stat-${stat}-level`} variant="sectionTitle">
-        {progress.max ? t('profile.statMax') : t('profile.statLevel', { level: progress.level })}
-      </ThemedText>
+      <View style={styles.head}>
+        <ThemedText
+          testID={`profile-stat-${stat}-level`}
+          variant="sectionTitle"
+          style={styles.flex}
+        >
+          {progress.max ? t('profile.statMax') : t('profile.statLevel', { level: progress.level })}
+        </ThemedText>
+        {form === null ? null : (
+          <Icon
+            testID={`profile-stat-${stat}-form-${form}`}
+            name={form === 'up' ? 'freccia-su' : 'freccia-giu'}
+            size={20}
+            color={form === 'up' ? colors.done : colors.textMuted}
+          />
+        )}
+      </View>
       <Bar
         kind="stat"
         label={name}

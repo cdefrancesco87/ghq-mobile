@@ -2,11 +2,13 @@ import { eq } from 'drizzle-orm';
 
 import { archiveBoss, completeBossStep, createBoss, deleteBoss } from '@/db/repositories/boss';
 import { completeMission } from '@/db/repositories/completion';
+import { appendEvent } from '@/db/repositories/events';
 import { deleteMission, updateMission } from '@/db/repositories/missions';
 import { getProfileView, getStatDetail, renameHero } from '@/db/repositories/profile';
 import { undoEvent } from '@/db/repositories/undo';
 import { bossSteps, events, hero, heroStats, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
+import type { GameDay, StatKey } from '@/rules/types';
 import { PROFILE } from '@/rules/config';
 
 import {
@@ -107,6 +109,59 @@ describe('getProfileView', () => {
     const db = newGame(['journal']);
     db.update(hero).set({ level: 50, xpInLevel: 0 }).run();
     expect(getProfileView(db, clockAt(FRIDAY, 10)).xpToNext).toBeNull();
+  });
+});
+
+describe('form arrow in getProfileView', () => {
+  // Today is Friday 6 November: the last 30 days go from 8 October, the 30 before from 8 September.
+  const gain = (db: Db, gameDay: string, stat: StatKey, points: number) =>
+    appendEvent(db, {
+      type: 'mission.completed',
+      occurredAt: at(FRIDAY, 10),
+      tzOffset: TZ,
+      source: 'app',
+      gameDay: gameDay as GameDay,
+      deltas: { stats: { [stat]: points } },
+    });
+  const formOf = (db: Db, stat: StatKey) =>
+    getProfileView(db, clockAt(FRIDAY, 10)).stats.find((row) => row.stat === stat)?.form;
+
+  it('has no arrow in the first 30 days of use', () => {
+    const db = newGame(['journal'], FRIDAY - 29);
+    gain(db, '2026-11-06', 'strength', 100);
+    expect(formOf(db, 'strength')).toBeNull();
+  });
+
+  it('shows up, down or nothing after 30 days, from the points of the two windows', () => {
+    const db = newGame(['journal'], FRIDAY - 30);
+    gain(db, '2026-10-08', 'strength', 110);
+    gain(db, '2026-10-07', 'strength', 100);
+    gain(db, '2026-11-06', 'wisdom', 90);
+    gain(db, '2026-09-08', 'wisdom', 100);
+    gain(db, '2026-09-07', 'wisdom', 500);
+    gain(db, '2026-11-01', 'charisma', 105);
+    gain(db, '2026-10-01', 'charisma', 100);
+    expect(formOf(db, 'strength')).toBe('up');
+    expect(formOf(db, 'wisdom')).toBe('down');
+    expect(formOf(db, 'charisma')).toBeNull();
+    expect(formOf(db, 'discipline')).toBeNull();
+  });
+
+  it('leaves out the undone gains', () => {
+    const db = newGame(['journal'], FRIDAY - 40);
+    gain(db, '2026-10-01', 'strength', 100);
+    const { event } = gain(db, '2026-11-06', 'strength', 200);
+    expect(formOf(db, 'strength')).toBe('up');
+    appendEvent(db, {
+      type: 'event.reverted',
+      occurredAt: at(FRIDAY, 11),
+      tzOffset: TZ,
+      source: 'app',
+      gameDay: '2026-11-06' as GameDay,
+      revertsId: event.id,
+      deltas: { stats: { strength: -200 } },
+    });
+    expect(formOf(db, 'strength')).toBe('down');
   });
 });
 

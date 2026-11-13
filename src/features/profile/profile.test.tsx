@@ -5,8 +5,10 @@ import type { ComponentType } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 
 import { completeMission } from '@/db/repositories/completion';
+import { appendEvent } from '@/db/repositories/events';
 import { events, hero, heroStats, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
+import type { GameDay, StatKey } from '@/rules/types';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
 import { PROFILE } from '@/rules/config';
@@ -61,6 +63,8 @@ async function open(db: Db, url = '/profile') {
     await screen.findByTestId('profile-screen');
   }
 }
+
+const hidden = { includeHiddenElements: true };
 
 const text = (id: string) => screen.getByTestId(id).props.children as string;
 
@@ -148,6 +152,47 @@ describe('Profile', () => {
     expect(
       screen.getByRole('button', { name: 'Equilibrio, livello massimo, 5500 punti' }),
     ).toBeOnTheScreen();
+  });
+
+  it('shows the form arrow up and down after 30 days, and reads it', async () => {
+    const db = newGame(['meditation'], FRIDAY - 40);
+    const gain = (gameDay: string, stat: StatKey, points: number) =>
+      appendEvent(db, {
+        type: 'mission.completed',
+        occurredAt: at(FRIDAY, 10),
+        tzOffset: TZ,
+        source: 'app',
+        gameDay: gameDay as GameDay,
+        deltas: { stats: { [stat]: points } },
+      });
+    gain('2026-11-01', 'strength', 200);
+    gain('2026-10-01', 'strength', 100);
+    gain('2026-11-01', 'wisdom', 50);
+    gain('2026-10-01', 'wisdom', 100);
+    setPoints(db, 'strength', 300);
+    setPoints(db, 'wisdom', 150);
+    await open(db);
+    expect(screen.getByTestId('profile-stat-strength-form-up', hidden)).toBeOnTheScreen();
+    expect(screen.getByTestId('profile-stat-wisdom-form-down', hidden)).toBeOnTheScreen();
+    expect(screen.queryByTestId('profile-stat-charisma-form-up', hidden)).toBeNull();
+    expect(screen.queryByTestId('profile-stat-charisma-form-down', hidden)).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Movimento, livello 2, 0 punti su 300, in crescita' }),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: /^Equilibrio, .*, in calo$/ })).toBeOnTheScreen();
+  });
+
+  it('shows no form arrow in the first 30 days', async () => {
+    const db = newGame(['meditation']);
+    appendEvent(db, {
+      type: 'mission.completed',
+      occurredAt: at(FRIDAY, 10),
+      tzOffset: TZ,
+      source: 'app',
+      deltas: { stats: { strength: 100 } },
+    });
+    await open(db);
+    expect(screen.queryByTestId('profile-stat-strength-form-up', hidden)).toBeNull();
   });
 
   it('opens the detail of a stat with points, latest gains and missions', async () => {

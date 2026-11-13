@@ -1,9 +1,23 @@
-import { and, asc, count, desc, eq, inArray, isNotNull, ne, notExists, or, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  between,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  ne,
+  notExists,
+  or,
+  sql,
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
-import { HERO_LEVELS, PROFILE } from '../../rules/config';
+import { HERO_LEVELS, PROFILE, STATS } from '../../rules/config';
+import { addDays, diffDays } from '../../rules/gameDay';
 import { xpToNext } from '../../rules/level';
-import { statProgress, type StatProgress } from '../../rules/stats';
+import { formArrow, statProgress, type FormArrow, type StatProgress } from '../../rules/stats';
 import { STAT_KEYS, type GameDay, type StatKey } from '../../rules/types';
 import { boss, events, hero, heroStats, missionDays, missions } from '../schema';
 import type { Db } from '../types';
@@ -20,6 +34,11 @@ export interface StatRow {
   /** All the points gained, also above the cap. */
   readonly points: number;
   readonly progress: StatProgress;
+  /**
+   * The form arrow (US-PROF-05, design-sezioni.md 9.4): points of the last 30 days against the
+   * 30 before; null when the change is small or in the first 30 days of use.
+   */
+  readonly form: FormArrow | null;
 }
 
 export interface ProfileView {
@@ -63,8 +82,43 @@ function statRows(db: Db): Map<StatKey, number> {
   );
 }
 
-function rowOf(stat: StatKey, points: number): StatRow {
-  return { stat, points, progress: statProgress(points) };
+function rowOf(stat: StatKey, points: number, form: FormArrow | null = null): StatRow {
+  return { stat, points, progress: statProgress(points), form };
+}
+
+/** Net points of a stat gained between two game days, inclusive; undos count as negative. */
+function pointsBetween(db: Db, stat: StatKey, from: GameDay, to: GameDay): number {
+  const gained = sql<number>`coalesce(sum(json_extract(${events.dStats}, ${`$.${stat}`})), 0)`;
+  const total = db
+    .select({ value: gained })
+    .from(events)
+    .where(between(events.gameDay, from, to))
+    .get()?.value;
+  return Math.max(0, total ?? 0);
+}
+
+/**
+ * The form arrow of every stat on `today`: the window is STATS.formWindowDays long and ends
+ * today; the days of use start from the game day of the hero's creation.
+ */
+function formArrows(db: Db, heroDay: GameDay, today: GameDay): Map<StatKey, FormArrow | null> {
+  const window = STATS.formWindowDays;
+  const daysOfUse = Math.max(1, diffDays(heroDay, today) + 1);
+  const lastFrom = addDays(today, -(window - 1));
+  const prevTo = addDays(lastFrom, -1);
+  const prevFrom = addDays(prevTo, -(window - 1));
+  return new Map(
+    STAT_KEYS.map((stat) => [
+      stat,
+      daysOfUse <= STATS.formHiddenFirstDays
+        ? null
+        : formArrow(
+            pointsBetween(db, stat, lastFrom, today),
+            pointsBetween(db, stat, prevFrom, prevTo),
+            daysOfUse,
+          ),
+    ]),
+  );
 }
 
 /** Everything the Profile shows, on the game day of `clock`. */
@@ -80,12 +134,15 @@ export function getProfileView(db: Db, clock: { now: number; tzOffset: number })
   const bossesDefeated =
     db.select({ value: count() }).from(boss).where(eq(boss.status, 'defeated')).get()?.value ?? 0;
   const points = statRows(db);
+  const dayChange = getSetting(db, 'day_change');
+  const today = gameDayOf(clock.now, clock.tzOffset, dayChange);
+  const forms = formArrows(db, gameDayOf(current.createdAt, clock.tzOffset, dayChange), today);
   return {
     hero: current,
     xpToNext: current.level === HERO_LEVELS.max ? null : xpToNext(current.level),
     completionsTotal,
     bossesDefeated,
-    stats: STAT_KEYS.map((stat) => rowOf(stat, points.get(stat) ?? 0)),
+    stats: STAT_KEYS.map((stat) => rowOf(stat, points.get(stat) ?? 0, forms.get(stat) ?? null)),
     companion: getCompanionView(db, clock),
   };
 }

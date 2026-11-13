@@ -1354,6 +1354,8 @@
     "statLabel": "{{name}}, Level {{level}}, {{points}} von {{max}} Punkten",
     "statLabel_max": "{{name}}, höchstes Level, {{points}} Punkte",
     "statHint": "Öffnet die Details",
+    "formUp": "steigend",
+    "formDown": "fallend",
     "detail": {
       "title": "{{name}} · Lv {{level}}",
       "subtitle": "Level des Attributs",
