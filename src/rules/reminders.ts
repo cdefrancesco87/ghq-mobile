@@ -48,9 +48,10 @@ export interface PlannedRemindersInput {
   readonly dayChange: string | ((day: GameDay) => string);
   /** Minutes east of UTC (local time = UTC + offset). */
   readonly tzOffset: number;
-  readonly weekStart: Weekday;
+  /** The first day of the week: one for every day, or the one of each day while it changes. */
+  readonly weekStart: Weekday | ((day: GameDay) => Weekday);
   /** No mission is due on a rest day, so no reminder fires. */
-  readonly restDays: readonly Weekday[];
+  readonly restDays: readonly Weekday[] | ((day: GameDay) => readonly Weekday[]);
 }
 
 export interface PlannedReminder {
@@ -116,12 +117,15 @@ function afterQuietHours(local: number, quietHours: readonly QuietInterval[]): n
 export function plannedReminders(input: PlannedRemindersInput): PlannedReminder[] {
   const { dayChange } = input;
   const dayChangeOf = typeof dayChange === 'string' ? () => dayChange : dayChange;
+  const { weekStart, restDays } = input;
+  const weekStartOn = typeof weekStart === 'function' ? weekStart : () => weekStart;
+  const restDaysOn = typeof restDays === 'function' ? restDays : () => restDays;
   const missionsById = new Map(input.missions.map((mission) => [mission.id, mission]));
   const planned = new Map<string, PlannedReminder>();
 
   for (let offset = 0; offset < input.days; offset++) {
     const day = addDays(input.fromDay, offset);
-    if (input.restDays.includes(weekday(day))) {
+    if (restDaysOn(day).includes(weekday(day))) {
       continue;
     }
     const dayStart = localMinutes(day, minutesOf(dayChangeOf(addDays(day, -1))));
@@ -142,7 +146,7 @@ export function plannedReminders(input: PlannedRemindersInput): PlannedReminder[
         .map((row) => row.day);
       if (
         completedDays.includes(day) ||
-        !isDueToday(mission, day, { weekStart: input.weekStart, completedDays })
+        !isDueToday(mission, day, { weekStart: weekStartOn(day), completedDays })
       ) {
         continue;
       }

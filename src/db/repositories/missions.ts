@@ -15,7 +15,7 @@ import {
 import { dayPlan, missionDays, missionReminders, missions, scheduledReminders } from '../schema';
 import type { Db } from '../types';
 import { appendEvent, notDeleted, type EventType } from './events';
-import { gameDayOf, getSetting } from './settings';
+import { gameDayOf, getSetting, weekRulesOn } from './settings';
 
 // The life of a mission: create, change, pause, archive and delete (analisi-funzionale.md,
 // sections 3 and 4; modello-dati.md 3.3 and 4.5). Every action is one transaction with its event.
@@ -508,10 +508,10 @@ export function listTodayMissions(db: Db, day: GameDay): Mission[] {
   if (!isGameDay(day)) {
     throw new RangeError(`Invalid game day: ${day}`);
   }
-  if (getSetting(db, 'rest_days').includes(weekday(day))) {
+  const { weekStart, restDays } = weekRulesOn(db, day);
+  if (restDays.includes(weekday(day))) {
     return [];
   }
-  const weekStart = getSetting(db, 'week_start');
   const candidates = db
     .select()
     .from(missions)

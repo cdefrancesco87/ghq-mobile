@@ -7,7 +7,7 @@ import {
 } from '@/db/repositories/completion';
 import { changeHero } from '@/db/repositories/hero';
 import { createMission, deleteMission, pauseMission } from '@/db/repositories/missions';
-import { setSetting } from '@/db/repositories/settings';
+import { setSetting, setWeekRules } from '@/db/repositories/settings';
 import { getTodayView } from '@/db/repositories/todayView';
 import { undoEvent } from '@/db/repositories/undo';
 import { daySummaries, hero, missionReminders } from '@/db/schema';
@@ -86,6 +86,16 @@ describe('getTodayView', () => {
     expect(view.restDay).toBe(true);
     expect(view.missions).toEqual([]);
     expect(view.totalCount).toBe(0);
+  });
+
+  it('keeps the missions of today when today becomes a rest day from tomorrow', () => {
+    const db = newGame(['meditation']);
+    setWeekRules(db, { restDays: [5, 6] }, { today: TODAY, now: at(FRIDAY, 9) });
+
+    expect(getTodayView(db, clockAt(FRIDAY, 12)).restDay).toBe(false);
+    expect(getTodayView(db, clockAt(FRIDAY, 12)).missions).toHaveLength(1);
+    expect(getTodayView(db, clockAt(FRIDAY + 1, 12)).restDay).toBe(true);
+    expect(getTodayView(db, clockAt(FRIDAY + 1, 12)).missions).toEqual([]);
   });
 
   it('tells when the hero is exhausted today', () => {

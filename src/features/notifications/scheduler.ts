@@ -1,11 +1,12 @@
 import { and, inArray, ne } from 'drizzle-orm';
 
 import { notDeleted } from '../../db/repositories/events';
-import { dayChangeOn, gameDayOf, getSetting } from '../../db/repositories/settings';
+import { dayChangeOn, gameDayOf, getSetting, weekRulesOn } from '../../db/repositories/settings';
 import { missionDays, missionReminders, missions, scheduledReminders } from '../../db/schema';
 import type { Db } from '../../db/types';
 import { REMINDERS } from '../../rules/config';
-import { weekStartOf } from '../../rules/gameDay';
+import { addDays, weekStartOf } from '../../rules/gameDay';
+import type { GameDay } from '../../rules/types';
 import { plannedReminders, type PlannedReminder } from '../../rules/reminders';
 import { scheduleReminder, type ReminderScheduler } from './reminders';
 
@@ -29,8 +30,15 @@ export interface SyncResult {
 /** The reminders that should be scheduled from `now` on, with the game day of `now`. */
 function plan(db: Db, { now, tzOffset }: SyncInput) {
   const dayChange = getSetting(db, 'day_change');
-  const weekStart = getSetting(db, 'week_start');
   const today = gameDayOf(now, tzOffset, dayChange);
+  // The general switch of the Settings off: no reminder is wanted, the scheduled ones go.
+  if (!getSetting(db, 'reminders_enabled')) {
+    return { today, planned: [] };
+  }
+  // A change of the week rules counts at the latest from tomorrow: the days after are the same.
+  const tomorrow = addDays(today, 1);
+  const rules = { today: weekRulesOn(db, today), later: weekRulesOn(db, tomorrow) };
+  const rulesOn = (day: GameDay) => (day < tomorrow ? rules.today : rules.later);
   const candidates = db
     .select()
     .from(missions)
@@ -45,8 +53,11 @@ function plan(db: Db, { now, tzOffset }: SyncInput) {
     .from(missionReminders)
     .where(inArray(missionReminders.missionId, ids))
     .all();
-  // A skip counts like a completion: the mission is not expected any more that day.
-  const thisWeek = weekStartOf(today, weekStart);
+  // A skip counts like a completion: the mission is not expected any more that day. With a
+  // first day of the week changing tomorrow, the earlier of the two weeks is read.
+  const thisWeek = [today, tomorrow]
+    .map((day) => weekStartOf(today, rulesOn(day).weekStart))
+    .reduce((first, start) => (start < first ? start : first));
   const taskIds = new Set(candidates.filter((m) => m.kind === 'task').map((m) => m.id));
   const done = db
     .select({ missionId: missionDays.missionId, day: missionDays.gameDay })
@@ -65,8 +76,8 @@ function plan(db: Db, { now, tzOffset }: SyncInput) {
     quietHours: getSetting(db, 'quiet_hours'),
     dayChange: (day) => dayChangeOn(dayChange, day),
     tzOffset,
-    weekStart,
-    restDays: getSetting(db, 'rest_days'),
+    weekStart: (day) => rulesOn(day).weekStart,
+    restDays: (day) => rulesOn(day).restDays,
   });
   return { today, planned };
 }

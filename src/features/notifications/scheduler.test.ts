@@ -8,7 +8,7 @@ import {
   restoreMission,
   updateMission,
 } from '@/db/repositories/missions';
-import { setSetting } from '@/db/repositories/settings';
+import { setSetting, setWeekRules } from '@/db/repositories/settings';
 import { undoEvent } from '@/db/repositories/undo';
 import { scheduledReminders } from '@/db/schema';
 import type { Db } from '@/db/types';
@@ -104,6 +104,30 @@ describe('syncReminders', () => {
     await syncReminders(db, scheduler, SYNC);
     expect(scheduler.times().slice(0, 2)).toEqual(['Journal@06 21:30', 'Journal@07 21:30']);
     expect(rows(db)).toHaveLength(7);
+  });
+
+  it('cancels every reminder with the general switch off and schedules them again on', async () => {
+    const { db, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    setSetting(db, 'reminders_enabled', false, NOW);
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.pending.size).toBe(0);
+    expect(rows(db)).toEqual([]);
+    setSetting(db, 'reminders_enabled', true, NOW);
+    await syncReminders(db, scheduler, SYNC);
+    expect(rows(db)).toHaveLength(13);
+  });
+
+  it('follows rest days that count from tomorrow, and keeps the reminders of today', async () => {
+    const { db, scheduler } = setUp();
+    // Friday and Saturday become rest days from Saturday 7.
+    setWeekRules(db, { restDays: [5, 6] }, { today: '2026-11-06', now: NOW });
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.times().slice(0, 3)).toEqual([
+      'Journal@06 21:00',
+      'Journal@08 08:00',
+      'Journal@08 21:00',
+    ]);
   });
 
   it('gives a completed mission no more reminders that day, and gives them back on undo', async () => {

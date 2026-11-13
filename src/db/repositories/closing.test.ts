@@ -5,7 +5,7 @@ import { completeMission, skipMission } from '@/db/repositories/completion';
 import { appendEvent, type EventType } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
 import { createMission } from '@/db/repositories/missions';
-import { setSetting } from '@/db/repositories/settings';
+import { getSetting, pendingWeekRules, setSetting, setWeekRules } from '@/db/repositories/settings';
 import { buyItem } from '@/db/repositories/shop';
 import { daySummaries, events, hero, inventory, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
@@ -146,4 +146,19 @@ describe('closePendingDays', () => {
       expectHeroMatchesLog(db);
     },
   );
+
+  it('closes the day of a change of the rest days with the old rules and the next with the new', () => {
+    // Friday 6: Saturday and Sunday become rest days from Saturday; the journal is missed.
+    const db = newGame(['journal']);
+    setWeekRules(db, { restDays: [5, 6, 7] }, { today: '2026-11-06', now: at(6, 10) });
+    closePendingDays(db, clockAt(8, 10));
+    const summaries = db.select().from(daySummaries).orderBy(asc(daySummaries.gameDay)).all();
+    expect(summaries.map((row) => [row.gameDay, row.isRestDay])).toEqual([
+      ['2026-11-06', false],
+      ['2026-11-07', true],
+    ]);
+    expect(pendingWeekRules(db)).toBeNull();
+    expect(getSetting(db, 'rest_days')).toEqual([5, 6, 7]);
+    expectHeroMatchesLog(db);
+  });
 });

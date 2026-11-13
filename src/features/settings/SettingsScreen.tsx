@@ -1,0 +1,570 @@
+import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
+import { useState, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+
+import { setDayChange, setSetting, setWeekRules } from '@/db/repositories/settings';
+import { Button } from '@/features/shared/Button';
+import { Card } from '@/features/shared/Card';
+import { formatClock } from '@/features/shared/formatClock';
+import { Frame } from '@/features/shared/Frame';
+import { Icon } from '@/features/shared/Icon';
+import { ScreenHeader } from '@/features/shared/ScreenHeader';
+import { Sheet } from '@/features/shared/Sheet';
+import { ThemedText } from '@/features/shared/ThemedText';
+import { MIN_TOUCH } from '@/features/shared/touch';
+import { useUndoToast } from '@/features/shared/UndoToast';
+import { LANGUAGE_NAMES, type Language } from '@/i18n';
+import type { Weekday } from '@/rules/gameDay';
+import type { GameDay } from '@/rules/types';
+import { runAction } from '@/stores/app';
+import { useSettingsStore } from '@/stores/settings';
+import { textStyleOf } from '@/theme/fonts';
+import { SHAPES } from '@/theme/shapes';
+import { MAX_TEXT_SCALE } from '@/theme/textScale';
+import { useTheme } from '@/theme/ThemeProvider';
+import { ChoiceSheet } from './ChoiceSheet';
+import { DAY_CHANGE_TIMES, dayAndMonth, quietTimes, restDaysText, weekdayName } from './format';
+import { RestDaysSheet } from './RestDaysSheet';
+import { SettingsRow } from './SettingsRow';
+import { TimeSheet } from './TimeSheet';
+import { useNotificationPermission, useSettingsView } from './useSettingsView';
+
+const GROUPS = ['appearance', 'day', 'notifications', 'data', 'about'] as const;
+type Group = (typeof GROUPS)[number];
+type OpenSheet =
+  | 'language'
+  | 'dayChange'
+  | 'weekStart'
+  | 'restDays'
+  | 'eveningTime'
+  | 'privacy'
+  | 'licenses'
+  | null;
+
+const FIELD_HEIGHT = 48;
+const LANGUAGES = Object.keys(LANGUAGE_NAMES) as Language[];
+const WEEK_STARTS: readonly Weekday[] = [1, 7];
+
+/** Lower case and without accents, so «lunedi» finds «Lunedì». */
+const searchable = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase();
+
+interface RowSpec {
+  readonly key: string;
+  readonly group: Group;
+  /** The words the search looks in: the name of the row. */
+  readonly label: string;
+  readonly render: (last: boolean) => ReactElement;
+}
+
+/**
+ * Impostazioni (analisi-funzionale.md section 10; design-sezioni.md 10.1–10.3, 10.5, 10.6, 10.9,
+ * 10.10, 10.12; mockups D36): one page in groups (Aspetto, Giornata, Notifiche, Dati, Informazioni)
+ * with a search that filters the rows while typing. Theme and «Non disturbare» open their page;
+ * language, day and times open a sheet. The changes of the group Giornata count from tomorrow and
+ * the row says so («Dal 7 novembre»). Every change that touches the reminders goes through
+ * `runAction`, which schedules them again. Gioco, Accessibilità and the rest of Dati come with
+ * their tasks (T71, T72, T56, T57).
+ */
+export function SettingsScreen() {
+  const { t, i18n } = useTranslation();
+  const { colors, family, typography } = useTheme();
+  const router = useRouter();
+  const toast = useUndoToast();
+  const { settings, theme, day } = useSettingsView();
+  const { permission, ask } = useNotificationPermission();
+  const [query, setQuery] = useState('');
+  const [sheet, setSheet] = useState<OpenSheet>(null);
+  const language = i18n.language;
+
+  const from = (fromDay: GameDay) => t('settings.from', { date: dayAndMonth(fromDay, language) });
+  const close = () => setSheet(null);
+
+  // Giornata: what counts today, and the change waiting for tomorrow.
+  const dayChange = day.next.dayChange?.value ?? day.dayChange;
+  const nextWeek = day.next.weekRules;
+  const weekStart = nextWeek?.weekStart ?? day.weekRules.weekStart;
+  const restDays = nextWeek?.restDays ?? day.weekRules.restDays;
+  const sameDays = (a: readonly Weekday[], b: readonly Weekday[]) =>
+    a.length === b.length && a.every((item) => b.includes(item));
+  const restDaysValue =
+    restDays.length === 0
+      ? t('settings.restDaysNone')
+      : restDaysText(restDays, weekStart, language);
+
+  const themeFamily = theme.startsWith('minimal') ? 'minimal' : theme;
+  const themeMode =
+    theme === 'minimal-chiaro' ? 'light' : theme === 'minimal-scuro' ? 'dark' : 'automatic';
+  const themeValue =
+    themeFamily === 'minimal'
+      ? `${t('shared.themeCarousel.themes.minimal.name')} · ${t(`shared.themeCarousel.modes.${themeMode}`)}`
+      : t(`shared.themeCarousel.themes.${themeFamily}.name`);
+
+  const quiet = settings.quiet_hours.map((interval) => quietTimes(interval, language));
+  const evening = settings.evening_summary;
+
+  const chooseLanguage = (next: Language) => {
+    useSettingsStore.getState().update('language', next);
+    void i18n.changeLanguage(next);
+    close();
+  };
+  const setReminders = (enabled: boolean) => {
+    runAction((db, clock) => setSetting(db, 'reminders_enabled', enabled, clock.now));
+    if (enabled && permission === 'undetermined') {
+      void ask();
+    }
+  };
+
+  const rows: RowSpec[] = [
+    {
+      key: 'theme',
+      group: 'appearance',
+      label: t('settings.theme'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-theme"
+          icon="tema"
+          label={t('settings.theme')}
+          value={themeValue}
+          onPress={() => router.push('/settings/theme')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'language',
+      group: 'appearance',
+      label: t('settings.language'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-language"
+          icon="lingua"
+          label={t('settings.language')}
+          value={LANGUAGE_NAMES[settings.language]}
+          onPress={() => setSheet('language')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'textSize',
+      group: 'appearance',
+      label: t('settings.textSize'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-text-size"
+          icon="accessibilita"
+          label={t('settings.textSize')}
+          value={t('settings.textSizeValue')}
+          onPress={() => void Linking.openSettings()}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'dayChange',
+      group: 'day',
+      label: t('settings.dayChange'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-day-change"
+          icon="sole"
+          label={t('settings.dayChange')}
+          value={formatClock(dayChange, language)}
+          caption={day.next.dayChange === null ? undefined : from(day.next.dayChange.fromDay)}
+          onPress={() => setSheet('dayChange')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'weekStart',
+      group: 'day',
+      label: t('settings.weekStart'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-week-start"
+          icon="calendario"
+          label={t('settings.weekStart')}
+          value={weekdayName(weekStart, language)}
+          caption={
+            nextWeek === null || nextWeek.weekStart === day.weekRules.weekStart
+              ? undefined
+              : from(nextWeek.fromDay)
+          }
+          onPress={() => setSheet('weekStart')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'restDays',
+      group: 'day',
+      label: t('settings.restDays'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-rest-days"
+          icon="riposo"
+          label={t('settings.restDays')}
+          value={restDaysValue}
+          caption={
+            nextWeek === null || sameDays(nextWeek.restDays, day.weekRules.restDays)
+              ? undefined
+              : from(nextWeek.fromDay)
+          }
+          onPress={() => setSheet('restDays')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'reminders',
+      group: 'notifications',
+      label: t('settings.reminders'),
+      render: (last) =>
+        permission === 'denied' ? (
+          <View
+            testID="settings-reminders-blocked"
+            style={[
+              styles.blocked,
+              last ? null : { borderBottomWidth: StyleSheet.hairlineWidth },
+              { borderColor: colors.border },
+            ]}
+          >
+            <View style={styles.blockedTitle}>
+              <Icon name="notifiche-bloccate" size={20} color={colors.dangerText} />
+              <ThemedText variant="label" style={styles.flex}>
+                {t('settings.blocked')}
+              </ThemedText>
+            </View>
+            <ThemedText variant="caption" color={colors.textMuted}>
+              {t('settings.blockedBody')}
+            </ThemedText>
+            <Button
+              testID="settings-open-system"
+              variant="text"
+              label={t('settings.openSystemSettings')}
+              onPress={() => void Linking.openSettings()}
+            />
+          </View>
+        ) : (
+          <SettingsRow
+            testID="settings-reminders"
+            icon="promemoria"
+            label={t('settings.reminders')}
+            switchValue={settings.reminders_enabled}
+            onSwitch={setReminders}
+            last={last}
+          />
+        ),
+    },
+    {
+      key: 'eveningSummary',
+      group: 'notifications',
+      label: t('settings.eveningSummary'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-evening"
+          icon="sole"
+          label={t('settings.eveningSummary')}
+          switchValue={evening.enabled}
+          onSwitch={(enabled) =>
+            runAction((db, clock) =>
+              setSetting(db, 'evening_summary', { ...evening, enabled }, clock.now),
+            )
+          }
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'eveningTime',
+      group: 'notifications',
+      label: t('settings.eveningTime'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-evening-time"
+          icon="timer"
+          label={t('settings.eveningTime')}
+          value={formatClock(evening.time, language)}
+          onPress={() => setSheet('eveningTime')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'quietHours',
+      group: 'notifications',
+      label: t('settings.quietHours'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-quiet-hours"
+          icon="non-disturbare"
+          label={t('settings.quietHours')}
+          value={
+            quiet.length === 0
+              ? t('settings.quietNone')
+              : quiet.map((times) => t('settings.quietRange', times)).join(', ')
+          }
+          valueLabel={
+            quiet.length === 0
+              ? t('settings.quietNone')
+              : quiet.map((times) => t('settings.quietRangeLabel', times)).join(', ')
+          }
+          onPress={() => router.push('/settings/quiet-hours')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'backup',
+      group: 'data',
+      label: t('settings.backup'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-backup"
+          icon="backup"
+          label={t('settings.backup')}
+          value={t('settings.backupNone')}
+          onPress={() => toast.show({ message: t('settings.backupSoon') })}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'version',
+      group: 'about',
+      label: t('settings.version'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-version"
+          icon="informazioni"
+          label={t('settings.version')}
+          value={Constants.expoConfig?.version ?? '–'}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'privacy',
+      group: 'about',
+      label: t('settings.privacy'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-privacy"
+          icon="lucchetto"
+          label={t('settings.privacy')}
+          onPress={() => setSheet('privacy')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'licenses',
+      group: 'about',
+      label: t('settings.licenses'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-licenses"
+          icon="nota"
+          label={t('settings.licenses')}
+          onPress={() => setSheet('licenses')}
+          last={last}
+        />
+      ),
+    },
+  ];
+
+  const needle = searchable(query.trim());
+  const visible = rows.filter(
+    (row) =>
+      needle === '' ||
+      searchable(row.label).includes(needle) ||
+      searchable(t(`settings.groups.${row.group}`)).includes(needle),
+  );
+
+  return (
+    <View testID="settings-screen" style={[styles.screen, { backgroundColor: colors.background }]}>
+      <ScreenHeader
+        testID="settings-header"
+        title={t('settings.title', { context: family })}
+        compact
+        onBack={() => router.back()}
+      />
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+        <View style={styles.search}>
+          <Frame shape={SHAPES[family].control} fill={colors.surface} stroke={colors.textMuted} />
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Icon name="cerca" size={20} color={colors.textMuted} />
+          </View>
+          <TextInput
+            testID="settings-search"
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t('settings.search')}
+            placeholderTextColor={colors.textMuted}
+            selectionColor={colors.primary}
+            maxFontSizeMultiplier={MAX_TEXT_SCALE}
+            autoCorrect={false}
+            returnKeyType="search"
+            accessibilityLabel={t('settings.search')}
+            style={[styles.input, textStyleOf(typography.body), { color: colors.text }]}
+          />
+          {query === '' ? null : (
+            <Pressable
+              testID="settings-search-clear"
+              accessibilityRole="button"
+              accessibilityLabel={t('settings.clearSearch')}
+              onPress={() => setQuery('')}
+              style={styles.clear}
+            >
+              <Icon name="chiudi" size={20} color={colors.textMuted} />
+            </Pressable>
+          )}
+        </View>
+
+        {visible.length === 0 ? (
+          <ThemedText testID="settings-no-results" color={colors.textMuted} style={styles.center}>
+            {t('settings.noResults')}
+          </ThemedText>
+        ) : null}
+        {GROUPS.map((group) => {
+          const groupRows = visible.filter((row) => row.group === group);
+          if (groupRows.length === 0) {
+            return null;
+          }
+          return (
+            <View key={group} testID={`settings-group-${group}`} style={styles.group}>
+              <ThemedText
+                variant="caption"
+                color={colors.textMuted}
+                accessibilityRole="header"
+                accessibilityLabel={t(`settings.groups.${group}`)}
+              >
+                {t(`settings.groups.${group}`).toLocaleUpperCase(language)}
+              </ThemedText>
+              <Card style={styles.card}>
+                {groupRows.map((row, index) => (
+                  <View key={row.key}>{row.render(index === groupRows.length - 1)}</View>
+                ))}
+              </Card>
+            </View>
+          );
+        })}
+      </ScrollView>
+
+      <ChoiceSheet
+        testID="settings-language-sheet"
+        visible={sheet === 'language'}
+        title={t('settings.language')}
+        choices={LANGUAGES.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
+        selected={settings.language}
+        onChoose={chooseLanguage}
+        onClose={close}
+      />
+      <ChoiceSheet
+        testID="settings-day-change-sheet"
+        visible={sheet === 'dayChange'}
+        title={t('settings.dayChange')}
+        choices={DAY_CHANGE_TIMES.map((value) => ({ value, label: formatClock(value, language) }))}
+        selected={dayChange}
+        notes={[
+          dayChange === '00:00'
+            ? t('settings.dayChangeMidnight')
+            : t('settings.dayChangeExample', { time: formatClock(dayChange, language) }),
+          t('settings.fromTomorrow'),
+        ]}
+        onChoose={(time) => {
+          runAction((db, clock) => setDayChange(db, time, { today: day.today, now: clock.now }));
+          close();
+        }}
+        onClose={close}
+      />
+      <ChoiceSheet
+        testID="settings-week-start-sheet"
+        visible={sheet === 'weekStart'}
+        title={t('settings.weekStart')}
+        choices={WEEK_STARTS.map((value) => ({ value, label: weekdayName(value, language) }))}
+        selected={weekStart}
+        notes={[t('settings.fromTomorrow')]}
+        onChoose={(value) => {
+          runAction((db, clock) =>
+            setWeekRules(db, { weekStart: value as 1 | 7 }, { today: day.today, now: clock.now }),
+          );
+          close();
+        }}
+        onClose={close}
+      />
+      <RestDaysSheet
+        visible={sheet === 'restDays'}
+        weekStart={weekStart}
+        value={restDays}
+        onDone={(days) => {
+          runAction((db, clock) =>
+            setWeekRules(db, { restDays: [...days] }, { today: day.today, now: clock.now }),
+          );
+          close();
+        }}
+        onClose={close}
+      />
+      <TimeSheet
+        testID="settings-evening-time-sheet"
+        visible={sheet === 'eveningTime'}
+        title={t('settings.eveningTime')}
+        value={evening.time}
+        onDone={(time) => {
+          runAction((db, clock) =>
+            setSetting(db, 'evening_summary', { ...evening, time }, clock.now),
+          );
+          close();
+        }}
+        onClose={close}
+      />
+      <Sheet
+        testID="settings-privacy-sheet"
+        visible={sheet === 'privacy'}
+        onClose={close}
+        title={t('settings.privacy')}
+      >
+        <ThemedText style={styles.sheetText}>{t('settings.privacyBody')}</ThemedText>
+      </Sheet>
+      <Sheet
+        testID="settings-licenses-sheet"
+        visible={sheet === 'licenses'}
+        onClose={close}
+        title={t('settings.licenses')}
+      >
+        <View style={styles.sheetText}>
+          <ThemedText>{t('settings.licensesFonts')}</ThemedText>
+          <ThemedText>{t('settings.licensesOther')}</ThemedText>
+        </View>
+      </Sheet>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  content: { gap: 24, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 48 },
+  search: {
+    minHeight: FIELD_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 12,
+  },
+  input: { flex: 1, minHeight: FIELD_HEIGHT },
+  clear: { width: MIN_TOUCH, height: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' },
+  center: { textAlign: 'center' },
+  group: { gap: 8 },
+  card: { paddingVertical: 0 },
+  blocked: { gap: 4, paddingVertical: 12, alignItems: 'flex-start' },
+  blockedTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  flex: { flexShrink: 1 },
+  sheetText: { gap: 12, paddingBottom: 16 },
+});

@@ -23,7 +23,7 @@ import { appendEvent } from './events';
 import { changeHero, loadHero, recordLevelUp, type ActionClock } from './hero';
 import { listTodayMissions, type Mission } from './missions';
 import { withMoments, type WithMoments } from './moments';
-import { gameDayOf, getSetting } from './settings';
+import { gameDayOf, getSetting, weekRulesOn } from './settings';
 
 // Completing, progressing and skipping a mission, and the day plan (modello-dati.md 3.5, 3.6 and
 // 4.4). A completion is the same from every source: app, notification, widget or health data.
@@ -407,7 +407,7 @@ export function skipMission(db: Db, input: SkipInput): { skipsLeft: number } {
     if (missionDay?.status === 'done' || missionDay?.status === 'skipped') {
       throw new RangeError(`The mission is already ${missionDay.status} today`);
     }
-    const weekStart = weekStartOf(day, getSetting(tx, 'week_start'));
+    const weekStart = weekStartOf(day, weekRulesOn(tx, day).weekStart);
     const skipsThisWeek = tx
       .select({ day: missionDays.gameDay })
       .from(missionDays)

@@ -20,6 +20,10 @@ const dayChangeTime = z
   .regex(/^(0[0-5]:(00|30)|06:00)$/, 'Expected a time from 00:00 to 06:00, every 30 minutes');
 const gameDay = z.custom<GameDay>(isGameDay, 'Expected a game day (YYYY-MM-DD)');
 const weekday = z.literal([1, 2, 3, 4, 5, 6, 7]);
+const weekStart = z.literal([1, 7]);
+const restDays = z
+  .array(weekday)
+  .refine((days) => new Set(days).size === days.length, 'Each weekday only once');
 
 export { LANGUAGES };
 
@@ -48,10 +52,19 @@ export const settingSchemas = {
     from_day: gameDay.nullable(),
   }),
   /** 1 = Monday, 7 = Sunday. */
-  week_start: z.literal([1, 7]),
-  rest_days: z
-    .array(weekday)
-    .refine((days) => new Set(days).size === days.length, 'Each weekday only once'),
+  week_start: weekStart,
+  rest_days: restDays,
+  /**
+   * A change of `week_start` and `rest_days` waiting for `from_day`: like the day change, it
+   * counts from the next day (design 10.5). Missing when there is none.
+   */
+  week_rules_next: z.strictObject({
+    week_start: weekStart,
+    rest_days: restDays,
+    from_day: gameDay,
+  }),
+  /** The general switch of the reminders in the Settings (design 10.6). */
+  reminders_enabled: z.boolean(),
   /** «Non disturbare» intervals; an interval can cross midnight (22:00–07:00). */
   quiet_hours: z.array(z.strictObject({ start: time, end: time })),
   evening_summary: z.strictObject({ enabled: z.boolean(), time }),
@@ -81,9 +94,13 @@ export type SettingKey = keyof typeof settingSchemas;
 export type SettingValue<K extends SettingKey> = z.infer<(typeof settingSchemas)[K]>;
 export type DayChangeSetting = SettingValue<'day_change'>;
 export type OnboardingDraft = SettingValue<'onboarding_draft'>;
+export type WeekRulesChange = SettingValue<'week_rules_next'>;
 
-/** Keys without a fixed default: the device id is created, the draft exists only for a while. */
-type KeyWithDefault = Exclude<SettingKey, 'device_id' | 'onboarding_draft'>;
+/**
+ * Keys without a fixed default: the device id is created, the draft and the change of the week
+ * rules exist only for a while.
+ */
+type KeyWithDefault = Exclude<SettingKey, 'device_id' | 'onboarding_draft' | 'week_rules_next'>;
 /** Keys written with setSetting: the day change has its own rule (setDayChange). */
 type EditableKey = Exclude<KeyWithDefault, 'day_change'>;
 
@@ -100,6 +117,7 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   reduce_motion: 'system',
   colorblind: false,
   backup: { auto: false, lastBackupAt: null },
+  reminders_enabled: true,
 };
 
 function readValid<K extends SettingKey>(db: Db, key: K): SettingValue<K> | undefined {
@@ -192,6 +210,112 @@ export function setDayChange(
       ? { value: inForce, next: null, from_day: null }
       : { value: inForce, next: newTime, from_day: addDays(today, 1) };
   write(db, 'day_change', setting, now);
+}
+
+export interface WeekRules {
+  readonly weekStart: SettingValue<'week_start'>;
+  readonly restDays: SettingValue<'rest_days'>;
+}
+
+/** The change of the week rules waiting for its day; null when there is none. */
+export function pendingWeekRules(db: Db): WeekRulesChange | null {
+  return readValid(db, 'week_rules_next') ?? null;
+}
+
+/** The first day of the week and the rest days in force on a game day. */
+export function weekRulesOn(db: Db, day: GameDay): WeekRules {
+  const pending = pendingWeekRules(db);
+  if (pending !== null && day >= pending.from_day) {
+    return { weekStart: pending.week_start, restDays: pending.rest_days };
+  }
+  return { weekStart: getSetting(db, 'week_start'), restDays: getSetting(db, 'rest_days') };
+}
+
+/**
+ * Puts in force the change of the week rules once its day has come: from then on `week_start`
+ * and `rest_days` hold it. The day closing calls it between the days before and after the change.
+ */
+export function promoteWeekRules(db: Db, day: GameDay, now: number): void {
+  const pending = pendingWeekRules(db);
+  if (pending === null || day < pending.from_day) {
+    return;
+  }
+  write(db, 'week_start', pending.week_start, now);
+  write(db, 'rest_days', pending.rest_days, now);
+  db.delete(settings).where(eq(settings.key, 'week_rules_next')).run();
+}
+
+/**
+ * Changes the first day of the week or the rest days from tomorrow, so the day in progress keeps
+ * its rules (design 10.5). Choosing again the rules in force cancels a pending change.
+ */
+export function setWeekRules(
+  db: Db,
+  change: Partial<WeekRules>,
+  { today, now }: { today: GameDay; now: number },
+): void {
+  promoteWeekRules(db, today, now);
+  const inForce = weekRulesOn(db, today);
+  const pending = pendingWeekRules(db);
+  const weekStart = change.weekStart ?? pending?.week_start ?? inForce.weekStart;
+  const days = [...(change.restDays ?? pending?.rest_days ?? inForce.restDays)].sort(
+    (a, b) => a - b,
+  );
+  const same =
+    weekStart === inForce.weekStart &&
+    days.length === inForce.restDays.length &&
+    days.every((day) => inForce.restDays.includes(day));
+  if (same) {
+    db.delete(settings).where(eq(settings.key, 'week_rules_next')).run();
+    return;
+  }
+  write(
+    db,
+    'week_rules_next',
+    { week_start: weekStart, rest_days: days, from_day: addDays(today, 1) },
+    now,
+  );
+}
+
+export interface DaySettings {
+  readonly today: GameDay;
+  /** The day change time in force today. */
+  readonly dayChange: string;
+  readonly weekRules: WeekRules;
+  /** The changes that count from a later day, as the Settings show them («Dal …»). */
+  readonly next: {
+    readonly dayChange: { readonly value: string; readonly fromDay: GameDay } | null;
+    readonly weekRules: (WeekRules & { readonly fromDay: GameDay }) | null;
+  };
+}
+
+/** The group Giornata of the Settings: the rules of today and the changes from tomorrow. */
+export function getDaySettings(
+  db: Db,
+  { now, tzOffset }: { now: number; tzOffset: number },
+): DaySettings {
+  const dayChange = getSetting(db, 'day_change');
+  const today = gameDayOf(now, tzOffset, dayChange);
+  const pending = pendingWeekRules(db);
+  return {
+    today,
+    dayChange: dayChangeOn(dayChange, today),
+    weekRules: weekRulesOn(db, today),
+    next: {
+      dayChange:
+        dayChange.next !== null && dayChange.from_day !== null && dayChange.from_day > today
+          ? { value: dayChange.next, fromDay: dayChange.from_day }
+          : null,
+      weekRules:
+        pending !== null && pending.from_day > today
+          ? {
+              weekStart: pending.week_start,
+              restDays: pending.rest_days,
+              fromDay: pending.from_day,
+            }
+          : null,
+    },
+  };
 }
 
 /** The id of this device, created as a UUID v7 the first time and then always the same. */

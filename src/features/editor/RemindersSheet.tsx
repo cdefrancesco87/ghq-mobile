@@ -10,7 +10,7 @@ import {
 } from '@/features/notifications/system';
 import { Button } from '@/features/shared/Button';
 import { Chip } from '@/features/shared/Chip';
-import { formatClock } from '@/features/shared/formatClock';
+import { formatClock, timeOf } from '@/features/shared/formatClock';
 import { Icon } from '@/features/shared/Icon';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
@@ -18,13 +18,6 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 /** The time the picker starts from. */
 const DEFAULT_HOUR = 8;
-
-const pad = (value: number) => String(value).padStart(2, '0');
-
-/** `HH:MM` of the time chosen in the picker, in the time of the phone. */
-export function timeOf(date: Date): string {
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
 
 export interface RemindersSheetProps {
   readonly visible: boolean;

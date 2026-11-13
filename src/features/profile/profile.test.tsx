@@ -22,7 +22,7 @@ import Profile from '../../../app/(tabs)/profile';
 import Today from '../../../app/(tabs)/today';
 import CompanionRoute from '../../../app/companion';
 import Index from '../../../app/index';
-import SettingsRoute from '../../../app/settings';
+import SettingsRoute from '../../../app/settings/index';
 import ShopRoute from '../../../app/shop';
 import StatsRoute from '../../../app/stats';
 import { at, FRIDAY, clockAt, missionId, newGame, TZ } from '../../../test/game';
@@ -30,7 +30,7 @@ import { at, FRIDAY, clockAt, missionId, newGame, TZ } from '../../../test/game'
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
   companion: CompanionRoute,
-  settings: SettingsRoute,
+  'settings/index': SettingsRoute,
   shop: ShopRoute,
   stats: StatsRoute,
   '(tabs)/_layout': TabsLayoutRoute,
@@ -227,7 +227,7 @@ describe('Profile', () => {
     async (button) => {
       await open(newGame(['meditation']));
       await fireEvent.press(screen.getByTestId(button));
-      expect(await screen.findByText('Questa schermata arriverà presto.')).toBeOnTheScreen();
+      expect(await screen.findByTestId('settings-screen')).toBeOnTheScreen();
     },
   );
 

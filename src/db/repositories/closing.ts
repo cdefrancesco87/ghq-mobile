@@ -7,7 +7,7 @@ import { daySummaries, events, hero, inventory, missionDays, missions } from '..
 import type { Db } from '../types';
 import { appendEvent } from './events';
 import { changeHero, loadHero, type ActionClock } from './hero';
-import { gameDayOf, getSetting } from './settings';
+import { gameDayOf, getSetting, pendingWeekRules, promoteWeekRules } from './settings';
 
 // The day change (modello-dati.md 3.7 and 5): every whole game day not closed yet is closed by
 // closeDays (src/rules/closeDays.ts) and saved here, in one transaction. A day with a row in
@@ -85,113 +85,124 @@ function bonusDays(tx: Db, from: GameDay, to: GameDay) {
 export function closePendingDays(db: Db, clock: ActionClock): DaySummary[] {
   return db.transaction((tx) => {
     const today = gameDayOf(clock.now, clock.tzOffset, getSetting(tx, 'day_change'));
-    const lastClosed = lastClosedDay(tx);
-    if (lastClosed === null || addDays(lastClosed, 1) >= today) {
-      return [];
-    }
-    const settings = {
-      gameMode: getSetting(tx, 'game_mode'),
-      weekStart: getSetting(tx, 'week_start'),
-      restDays: getSetting(tx, 'rest_days'),
-    };
-    const created = creationDays(tx, 'mission.created');
-    const rows = tx.select().from(missions).all();
-    const closeMissions: CloseMission[] = rows.map((mission) => ({
-      ...mission,
-      createdDay:
-        created.get(mission.id) ??
-        gameDayOf(mission.createdAt, clock.tzOffset, getSetting(tx, 'day_change')),
-    }));
-    // The days that can still matter: the weeks of the days to close for the habits counted per
-    // week, every completion for the tasks.
-    const taskIds = rows.filter((mission) => mission.kind === 'task').map((mission) => mission.id);
-    const days = tx
-      .select({
-        missionId: missionDays.missionId,
-        gameDay: missionDays.gameDay,
-        status: missionDays.status,
-      })
-      .from(missionDays)
-      .where(
-        and(
-          lt(missionDays.gameDay, today),
-          or(
-            gte(missionDays.gameDay, weekStartOf(addDays(lastClosed, 1), settings.weekStart)),
-            inArray(missionDays.missionId, taskIds),
-          ),
+    // A change of the week rules counts from its day: the days before it close with the old
+    // rules, then the change is put in force for the days after it.
+    const pending = pendingWeekRules(tx);
+    const before =
+      pending !== null && pending.from_day <= today ? closeUntil(tx, clock, pending.from_day) : [];
+    promoteWeekRules(tx, today, clock.now);
+    return [...before, ...closeUntil(tx, clock, today)];
+  });
+}
+
+/** Closes the days before `today` not closed yet, with the week rules in force. */
+function closeUntil(tx: Db, clock: ActionClock, today: GameDay): DaySummary[] {
+  const lastClosed = lastClosedDay(tx);
+  if (lastClosed === null || addDays(lastClosed, 1) >= today) {
+    return [];
+  }
+  const settings = {
+    gameMode: getSetting(tx, 'game_mode'),
+    weekStart: getSetting(tx, 'week_start'),
+    restDays: getSetting(tx, 'rest_days'),
+  };
+  const created = creationDays(tx, 'mission.created');
+  const rows = tx.select().from(missions).all();
+  const closeMissions: CloseMission[] = rows.map((mission) => ({
+    ...mission,
+    createdDay:
+      created.get(mission.id) ??
+      gameDayOf(mission.createdAt, clock.tzOffset, getSetting(tx, 'day_change')),
+  }));
+  // The days that can still matter: the weeks of the days to close for the habits counted per
+  // week, every completion for the tasks.
+  const taskIds = rows.filter((mission) => mission.kind === 'task').map((mission) => mission.id);
+  const days = tx
+    .select({
+      missionId: missionDays.missionId,
+      gameDay: missionDays.gameDay,
+      status: missionDays.status,
+    })
+    .from(missionDays)
+    .where(
+      and(
+        lt(missionDays.gameDay, today),
+        or(
+          gte(missionDays.gameDay, weekStartOf(addDays(lastClosed, 1), settings.weekStart)),
+          inArray(missionDays.missionId, taskIds),
         ),
-      )
-      .all();
-    const current = loadHero(tx);
-    const shields =
-      tx.select().from(inventory).where(eq(inventory.itemKey, 'shield')).get()?.quantity ?? 0;
+      ),
+    )
+    .all();
+  const current = loadHero(tx);
+  const shields =
+    tx.select().from(inventory).where(eq(inventory.itemKey, 'shield')).get()?.quantity ?? 0;
 
-    const result = closeDays({
-      lastClosedDay: lastClosed,
-      today,
-      missions: closeMissions,
-      missionDays: days,
-      hero: current,
-      inventory: { shields },
-      settings,
-      bonuses: bonusDays(tx, lastClosed, today),
+  const result = closeDays({
+    lastClosedDay: lastClosed,
+    today,
+    missions: closeMissions,
+    missionDays: days,
+    hero: current,
+    inventory: { shields },
+    settings,
+    bonuses: bonusDays(tx, lastClosed, today),
+  });
+
+  const base = { occurredAt: clock.now, tzOffset: clock.tzOffset, source: SYSTEM } as const;
+  for (const day of result.days) {
+    const { gameDay } = day.summary;
+    tx.insert(daySummaries)
+      .values({ ...day.summary, closedAt: clock.now })
+      .run();
+    const change = changeHero(tx, { hp: day.hpDelta }, clock.now);
+    appendEvent(tx, {
+      ...base,
+      type: 'day.closed',
+      gameDay,
+      idemKey: `day.closed:${gameDay}`,
+      deltas: change.deltas,
+      payload: {
+        scheduledCount: day.summary.scheduledCount,
+        doneCount: day.summary.doneCount,
+        missedXp: day.summary.missedXp,
+        hpLost: day.summary.hpLost,
+        heroStreak: day.heroStreak.streak,
+      },
     });
-
-    const base = { occurredAt: clock.now, tzOffset: clock.tzOffset, source: SYSTEM } as const;
-    for (const day of result.days) {
-      const { gameDay } = day.summary;
-      tx.insert(daySummaries)
-        .values({ ...day.summary, closedAt: clock.now })
-        .run();
-      const change = changeHero(tx, { hp: day.hpDelta }, clock.now);
+    if (day.summary.shieldUsed) {
+      appendEvent(tx, { ...base, type: 'shield.consumed', gameDay, itemKey: 'shield' });
+    }
+    if (day.exhaustedNextDay) {
       appendEvent(tx, {
         ...base,
-        type: 'day.closed',
+        type: 'hero.exhausted',
         gameDay,
-        idemKey: `day.closed:${gameDay}`,
-        deltas: change.deltas,
-        payload: {
-          scheduledCount: day.summary.scheduledCount,
-          doneCount: day.summary.doneCount,
-          missedXp: day.summary.missedXp,
-          hpLost: day.summary.hpLost,
-          heroStreak: day.heroStreak.streak,
-        },
+        payload: { exhaustedDay: addDays(gameDay, 1) },
       });
-      if (day.summary.shieldUsed) {
-        appendEvent(tx, { ...base, type: 'shield.consumed', gameDay, itemKey: 'shield' });
-      }
-      if (day.exhaustedNextDay) {
-        appendEvent(tx, {
-          ...base,
-          type: 'hero.exhausted',
-          gameDay,
-          payload: { exhaustedDay: addDays(gameDay, 1) },
-        });
-      }
     }
+  }
 
-    tx.update(hero)
-      .set({
-        streak: result.hero.streak,
-        streakBest: result.hero.streakBest,
-        exhaustedDay: result.hero.exhaustedDay,
-        updatedAt: clock.now,
-      })
-      .where(eq(hero.id, current.id))
+  tx.update(hero)
+    .set({
+      streak: result.hero.streak,
+      streakBest: result.hero.streakBest,
+      exhaustedDay: result.hero.exhaustedDay,
+      updatedAt: clock.now,
+    })
+    .where(eq(hero.id, current.id))
+    .run();
+  if (result.inventory.shields !== shields) {
+    tx.update(inventory)
+      .set({ quantity: result.inventory.shields })
+      .where(eq(inventory.itemKey, 'shield'))
       .run();
-    if (result.inventory.shields !== shields) {
-      tx.update(inventory)
-        .set({ quantity: result.inventory.shields })
-        .where(eq(inventory.itemKey, 'shield'))
-        .run();
-    }
-    for (const change of result.missionStreaks) {
-      tx.update(missions)
-        .set({ streak: change.streak, streakBest: change.best })
-        .where(eq(missions.id, change.missionId))
-        .run();
-    }
-    return result.days.map((day) => day.summary);
-  });
+  }
+  for (const change of result.missionStreaks) {
+    tx.update(missions)
+      .set({ streak: change.streak, streakBest: change.best })
+      .where(eq(missions.id, change.missionId))
+      .run();
+  }
+  return result.days.map((day) => day.summary);
 }

@@ -20,7 +20,7 @@ import { listActiveBosses, withSteps, type BossProgress } from './boss';
 import { bonusGiven } from './completion';
 import { loadHero, type Hero } from './hero';
 import { listTodayMissions, type Mission } from './missions';
-import { gameDayOf, getSetting } from './settings';
+import { gameDayOf, getSetting, weekRulesOn } from './settings';
 
 // Everything the upper part of Today shows, read with one call (T39; design-sezioni.md 2.1–2.8).
 // It only reads: the actions stay in the other repositories.
@@ -298,7 +298,7 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
   const doneCount = today.filter((item) => item.state === 'done').length;
   return {
     day,
-    restDay: getSetting(db, 'rest_days').includes(weekday(day)),
+    restDay: weekRulesOn(db, day).restDays.includes(weekday(day)),
     hero: current,
     xpToNext: xpToNext(current.level),
     companion: companionOn(db, day, doneCount),

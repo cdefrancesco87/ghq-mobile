@@ -13,9 +13,13 @@ import { deviceLanguage, deviceLocaleTags } from '../i18n';
 import { getSession } from './session';
 
 // The settings read on every screen. The theme has its own store (theme.ts); `device_id` is an
-// internal value of the event log and `onboarding_draft` of the first launch: they stay out.
+// internal value of the event log, `onboarding_draft` of the first launch and `week_rules_next` of
+// the Settings (read with `weekRulesOn` for a day): they stay out.
 
-type StoredKey = Exclude<SettingKey, 'device_id' | 'onboarding_draft' | 'theme'>;
+type StoredKey = Exclude<
+  SettingKey,
+  'device_id' | 'onboarding_draft' | 'theme' | 'week_rules_next'
+>;
 /** The keys written with `update`: the day change has its own rule (setDayChange). */
 type EditableKey = Exclude<StoredKey, 'day_change'>;
 
@@ -32,6 +36,7 @@ const KEYS: readonly StoredKey[] = [
   'reduce_motion',
   'colorblind',
   'backup',
+  'reminders_enabled',
 ];
 
 function readAll(read: <K extends StoredKey>(key: K) => SettingValue<K>): AppSettings {

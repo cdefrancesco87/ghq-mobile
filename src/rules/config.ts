@@ -231,3 +231,12 @@ export const PROFILE = {
    */
   recentGainsMax: 5,
 } as const;
+
+/** The Settings (design-sezioni.md 10.6). */
+export const SETTINGS_SCREEN = {
+  /**
+   * The interval of «Non disturbare» added with «+ Aggiungi intervallo», then changed by the user.
+   * PROVISIONAL (backlog T55): the documents give only the example 22:00–07:00.
+   */
+  newQuietInterval: { start: '22:00', end: '07:00' },
+} as const;
