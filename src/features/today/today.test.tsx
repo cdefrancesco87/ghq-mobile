@@ -50,6 +50,7 @@ import {
   expectHeroMatchesLog,
   missionId,
   newGame,
+  withBadgesUnlocked,
 } from '../../../test/game';
 
 const ROUTES: Record<string, ComponentType> = {
@@ -67,6 +68,8 @@ const ROUTES: Record<string, ComponentType> = {
 };
 
 async function openToday(db: Db, clock = () => clockAt(FRIDAY, 10)) {
+  // The badges have their own tests: here they would change gains and moments.
+  withBadgesUnlocked(db);
   await startApp({ openDatabase: () => Promise.resolve(db), clock });
   const i18n = await createI18n('it');
   await renderRouter(

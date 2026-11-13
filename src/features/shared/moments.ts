@@ -26,7 +26,14 @@ export type Moment =
   /** The egg hatches at the first completion, with the choice of the name (design 1.8, 6.5). */
   | { readonly kind: 'hatch'; readonly id: string }
   | { readonly kind: 'companion_stage'; readonly id: string; readonly stage: CompanionStage }
-  | { readonly kind: 'badge'; readonly id: string };
+  | {
+      readonly kind: 'badge';
+      readonly id: string;
+      /** The key of src/content/badges.ts. */
+      readonly badgeKey: string;
+      /** The bonus coins of the badge. */
+      readonly coins: number;
+    };
 
 const MOMENT_ORDER: readonly Moment['kind'][] = [
   'level_up',
@@ -63,7 +70,12 @@ function momentOf(event: EventRow): Moment | null {
       return to === 'baby' ? { kind: 'hatch', id } : { kind: 'companion_stage', id, stage: to };
     }
     case 'badge.unlocked':
-      return { kind: 'badge', id };
+      return {
+        kind: 'badge',
+        id,
+        badgeKey: (payload as { badge?: string }).badge ?? '',
+        coins: event.dCoins,
+      };
     default:
       return null;
   }

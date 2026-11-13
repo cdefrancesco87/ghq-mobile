@@ -13,10 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgXml } from 'react-native-svg';
 
 import { TITLE_KEYS } from '@/content/titles';
+import { termInSentence } from '@/i18n/lexicon';
 import { companionName } from '@/rules/companion';
 import { useHeroStore } from '@/stores/hero';
 import { useTheme } from '@/theme/ThemeProvider';
 import { announceOnIos } from './announce';
+import { useBadgeTexts } from './badgeTexts';
 import { Button } from './Button';
 import { CompanionSprite } from './CompanionSprite';
 import { iconXml, type IconName } from './icons';
@@ -90,9 +92,10 @@ function useCountUp(value: number, run: boolean): number {
 }
 
 function useMomentTexts(moment: Moment): MomentTexts {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { family } = useTheme();
   const chosenName = useHeroStore((state) => state.companionName);
+  const badgeTexts = useBadgeTexts();
   switch (moment.kind) {
     case 'level_up':
       return {
@@ -129,8 +132,22 @@ function useMomentTexts(moment: Moment): MomentTexts {
         }),
         detail: t(`shared.moments.companionStage.${moment.stage}`),
       };
-    case 'badge':
-      return { title: t('shared.moments.badge') };
+    case 'badge': {
+      const badge = badgeTexts.find(moment.badgeKey);
+      if (badge === undefined) {
+        return { title: t('shared.moments.badge') };
+      }
+      const values = {
+        name: badgeTexts.nameOf(badge),
+        coins: moment.coins,
+        coinsTerm: termInSentence(t('lexicon.coins_pl', { context: family }), i18n.language),
+      };
+      return {
+        title: t('shared.moments.badge'),
+        detail: t('shared.moments.badgeDetail', values),
+        spokenDetail: t('shared.moments.badgeDetailLabel', values),
+      };
+    }
   }
 }
 

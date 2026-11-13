@@ -33,7 +33,15 @@ import Today from '../../../app/(tabs)/today';
 import BossRoute from '../../../app/boss/[id]';
 import GoalEditor from '../../../app/goal-editor';
 import Index from '../../../app/index';
-import { at, clockAt, expectHeroMatchesLog, FRIDAY, missionId, newGame } from '../../../test/game';
+import {
+  at,
+  clockAt,
+  expectHeroMatchesLog,
+  FRIDAY,
+  missionId,
+  newGame,
+  withBadgesUnlocked,
+} from '../../../test/game';
 
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
@@ -56,6 +64,8 @@ const THESIS: NewBoss = {
 const NOW = clockAt(FRIDAY, 10);
 
 async function open(db: Db, url: string) {
+  // The badges have their own tests: here they would change gains and moments.
+  withBadgesUnlocked(db);
   await startApp({ openDatabase: () => Promise.resolve(db), clock: () => clockAt(FRIDAY, 12) });
   const i18n = await createI18n('it');
   await renderRouter(

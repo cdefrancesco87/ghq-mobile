@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 
+import { unlockBadges } from '../db/repositories/badges';
 import { getPhoneSettings, keepPhoneSettings } from '../db/repositories/backup';
+import type { EventRow } from '../db/repositories/events';
 import { checkBossDeadlines } from '../db/repositories/boss';
 import { closePendingDays } from '../db/repositories/closing';
 import type { ActionClock } from '../db/repositories/hero';
@@ -223,13 +225,52 @@ export function onActionDone(listener: ActionListener): () => void {
   };
 }
 
+type BadgeListener = (events: readonly EventRow[]) => void;
+
+const badgeListeners = new Set<BadgeListener>();
+
 /**
- * Runs an action of a repository with the database and the clock of the app, then refreshes the
- * stores. If the action throws, the database did not change and the stores stay as they are.
+ * Calls `listener` with the `badge.unlocked` events written after an action, for their moments.
+ * Returns the function that stops listening.
+ */
+export function onBadgesUnlocked(listener: BadgeListener): () => void {
+  badgeListeners.add(listener);
+  return () => {
+    badgeListeners.delete(listener);
+  };
+}
+
+/** The badges whose condition the action met (backlog T70), in a transaction of their own. */
+function checkBadgesAfter(db: Db, clock: ActionClock): void {
+  let unlocked: readonly EventRow[];
+  try {
+    unlocked = unlockBadges(db, clock).moments;
+  } catch {
+    // The action is already saved: the badges wait for the next one.
+    return;
+  }
+  if (unlocked.length === 0) {
+    return;
+  }
+  for (const listener of badgeListeners) {
+    try {
+      listener(unlocked);
+    } catch {
+      // A moment that cannot be shown does not undo the badge.
+    }
+  }
+}
+
+/**
+ * Runs an action of a repository with the database and the clock of the app, unlocks the badges
+ * it made reachable, then refreshes the stores. If the action throws, the database did not change
+ * and the stores stay as they are.
  */
 export function runAction<T>(action: (db: Db, clock: ActionClock) => T): T {
   const { db, clock } = getSession();
-  const result = action(db, clock());
+  const now = clock();
+  const result = action(db, now);
+  checkBadgesAfter(db, now);
   loadStores(db);
   useAppStore.setState({ hasProfile: hasProfile(db) });
   for (const listener of actionListeners) {

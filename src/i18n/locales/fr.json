@@ -555,7 +555,9 @@
       "rewardLabel": "Plus {{xp}} {{xpTerm}}, plus {{coins}} {{coinsTerm}}",
       "hatched": "Il est né !",
       "hatchName": "Donne-lui un nom",
-      "hatchConfirm": "Confirmer"
+      "hatchConfirm": "Confirmer",
+      "badgeDetail": "{{name}} · +{{coins}} {{coinsTerm}}",
+      "badgeDetailLabel": "{{name}}, plus {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -1496,6 +1498,55 @@
       "newer": "Cette sauvegarde vient d'une version plus récente de l'app. Mettez l'app à jour et réessayez.",
       "corrupt": "La sauvegarde est endommagée et inutilisable. Faites-en une nouvelle.",
       "unknown": "Un problème est survenu, réessayez."
+    }
+  },
+  "badges": {
+    "title": "Badges",
+    "counter": "Badges · {{unlocked}} sur {{total}}",
+    "counterLabel": "Badges : {{unlocked}} débloqués sur {{total}}",
+    "seeAll": "Tout voir",
+    "seeAllLabel": "Voir tous les badges",
+    "none": "Ton premier badge t'attend",
+    "progress": "{{current}} sur {{target}}",
+    "unlockedOn": "Débloqué le {{date}}",
+    "locked": "Verrouillé",
+    "coins": "+{{coins}} {{coinsTerm}} bonus",
+    "coinsLabel": "Plus {{coins}} {{coinsTerm}} bonus",
+    "tileUnlocked": "{{name}}, débloqué le {{date}}",
+    "tileLocked": "{{name}}, verrouillé. {{condition}} : {{current}} sur {{target}}",
+    "openHint": "Ouvre le détail",
+    "name": {
+      "completions": "{{n}} {{missions}}",
+      "streakBest": "{{streak}} de {{n}}",
+      "bossesDefeated": "{{n}} {{bosses}}",
+      "level": "{{level}} {{n}}",
+      "fullDays": "{{fullDay}} ×{{n}}",
+      "plans": "{{plan}} ×{{n}}",
+      "statLevelMax": "Talent {{n}}",
+      "completions_1": "Premier pas",
+      "bossesDefeated_1": "Première victoire",
+      "fullDays_1": "{{fullDay}}",
+      "plans_1": "{{plan}}",
+      "companionStage_1": "Éclos",
+      "companionStage_2": "Grandis ensemble"
+    },
+    "condition": {
+      "completions_one": "Accomplis {{count}} {{mission}}",
+      "completions_other": "Accomplis {{count}} {{missions}}",
+      "streakBest_one": "{{streak}} : {{count}} jour d'affilée",
+      "streakBest_other": "{{streak}} : {{count}} jours d'affilée",
+      "bossesDefeated_one": "Bats {{count}} {{boss}}",
+      "bossesDefeated_other": "Bats {{count}} {{bosses}}",
+      "level_one": "Atteins {{levelLower}} {{count}}",
+      "level_other": "Atteins {{levelLower}} {{count}}",
+      "fullDays_one": "Obtiens le bonus « {{fullDay}} »",
+      "fullDays_other": "Obtiens le bonus « {{fullDay}} » {{count}} fois",
+      "plans_one": "Obtiens le bonus « {{plan}} »",
+      "plans_other": "Obtiens le bonus « {{plan}} » {{count}} fois",
+      "companionStage_one": "Fais éclore l'œuf",
+      "companionStage_other": "Fais grandir {{companion}} jusqu'à l'âge adulte",
+      "statLevelMax_one": "Amène une statistique au niveau {{count}}",
+      "statLevelMax_other": "Amène une statistique au niveau {{count}}"
     }
   }
 }

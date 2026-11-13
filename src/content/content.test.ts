@@ -1,7 +1,10 @@
+import { BADGE_LIST, NAMED_BADGES } from '@/content/badges';
+import { BADGE_METRICS } from '@/rules/badges';
+import { COMPANION_STAGES } from '@/rules/companion';
 import { SHOP_ITEMS } from '@/content/shop';
 import { MISSION_TEMPLATES, TEMPLATE_CATEGORIES } from '@/content/templates';
 import { TITLE_KEYS, TITLE_THEMES } from '@/content/titles';
-import { SHOP } from '@/rules/config';
+import { HERO_LEVELS, SHOP, STATS } from '@/rules/config';
 import { frequencySchema } from '@/rules/frequency';
 import { DIFFICULTIES, STAT_KEYS } from '@/rules/types';
 
@@ -91,5 +94,31 @@ describe('hero titles', () => {
     expect(TITLE_KEYS.cyberpunk.slice(0, 3)).toEqual(['street_kid', 'runner', 'netrunner']);
     expect(TITLE_KEYS.lovecraft.slice(0, 3)).toEqual(['curious', 'scholar', 'investigator']);
     expect(TITLE_KEYS.minimal.slice(0, 3)).toEqual(['beginner', 'steady', 'expert']);
+  });
+});
+
+describe('badges', () => {
+  it('has at least 20 badges with unique keys and positive targets (US-PROF-02)', () => {
+    expect(BADGE_LIST.length).toBeGreaterThanOrEqual(20);
+    expect(new Set(BADGE_LIST.map((badge) => badge.key)).size).toBe(BADGE_LIST.length);
+    for (const badge of BADGE_LIST) {
+      expect(BADGE_METRICS).toContain(badge.metric);
+      expect(Number.isInteger(badge.target) && badge.target > 0).toBe(true);
+    }
+  });
+
+  it('names only badges of the list', () => {
+    const keys = BADGE_LIST.map((badge) => badge.key);
+    for (const key of NAMED_BADGES) {
+      expect(keys).toContain(key);
+    }
+  });
+
+  it('keeps the targets within reach: levels, stats and companion stages', () => {
+    const highest = (metric: string) =>
+      Math.max(...BADGE_LIST.filter((b) => b.metric === metric).map((b) => b.target));
+    expect(highest('level')).toBeLessThanOrEqual(HERO_LEVELS.max);
+    expect(highest('statLevelMax')).toBeLessThanOrEqual(STATS.levelMax);
+    expect(highest('companionStage')).toBe(COMPANION_STAGES.length - 1);
   });
 });

@@ -555,7 +555,9 @@
       "rewardLabel": "Più {{xp}} {{xpTerm}}, più {{coins}} {{coinsTerm}}",
       "hatched": "È nato!",
       "hatchName": "Dagli un nome",
-      "hatchConfirm": "Conferma"
+      "hatchConfirm": "Conferma",
+      "badgeDetail": "{{name}} · +{{coins}} {{coinsTerm}}",
+      "badgeDetailLabel": "{{name}}, più {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -1496,6 +1498,55 @@
       "newer": "Questo backup viene da una versione più nuova dell'app. Aggiorna l'app e riprova.",
       "corrupt": "Il backup è danneggiato e non si può usare. Fanne uno nuovo.",
       "unknown": "Qualcosa è andato storto, riprova."
+    }
+  },
+  "badges": {
+    "title": "Badge",
+    "counter": "Badge · {{unlocked}} di {{total}}",
+    "counterLabel": "Badge: {{unlocked}} sbloccati su {{total}}",
+    "seeAll": "Vedi tutti",
+    "seeAllLabel": "Vedi tutti i badge",
+    "none": "Il primo badge ti aspetta",
+    "progress": "{{current}} di {{target}}",
+    "unlockedOn": "Sbloccato il {{date}}",
+    "locked": "Bloccato",
+    "coins": "+{{coins}} {{coinsTerm}} bonus",
+    "coinsLabel": "Più {{coins}} {{coinsTerm}} bonus",
+    "tileUnlocked": "{{name}}, sbloccato il {{date}}",
+    "tileLocked": "{{name}}, bloccato. {{condition}}: {{current}} di {{target}}",
+    "openHint": "Apre il dettaglio",
+    "name": {
+      "completions": "{{n}} {{missions}}",
+      "streakBest": "{{streak}} di {{n}}",
+      "bossesDefeated": "{{n}} {{bosses}}",
+      "level": "{{level}} {{n}}",
+      "fullDays": "{{fullDay}} ×{{n}}",
+      "plans": "{{plan}} ×{{n}}",
+      "statLevelMax": "Talento {{n}}",
+      "completions_1": "Primo passo",
+      "bossesDefeated_1": "Prima vittoria",
+      "fullDays_1": "{{fullDay}}",
+      "plans_1": "{{plan}}",
+      "companionStage_1": "Schiusa",
+      "companionStage_2": "Cresciuti insieme"
+    },
+    "condition": {
+      "completions_one": "Completa {{count}} {{mission}}",
+      "completions_other": "Completa {{count}} {{missions}}",
+      "streakBest_one": "{{streak}}: {{count}} giorno di fila",
+      "streakBest_other": "{{streak}}: {{count}} giorni di fila",
+      "bossesDefeated_one": "Sconfiggi {{count}} {{boss}}",
+      "bossesDefeated_other": "Sconfiggi {{count}} {{bosses}}",
+      "level_one": "Raggiungi {{levelLower}} {{count}}",
+      "level_other": "Raggiungi {{levelLower}} {{count}}",
+      "fullDays_one": "Ottieni il bonus «{{fullDay}}»",
+      "fullDays_other": "Ottieni il bonus «{{fullDay}}» {{count}} volte",
+      "plans_one": "Ottieni il bonus «{{plan}}»",
+      "plans_other": "Ottieni il bonus «{{plan}}» {{count}} volte",
+      "companionStage_one": "Fai schiudere l'uovo",
+      "companionStage_other": "Fai crescere {{companion}} fino all'età adulta",
+      "statLevelMax_one": "Porta una statistica al livello {{count}}",
+      "statLevelMax_other": "Porta una statistica al livello {{count}}"
     }
   }
 }

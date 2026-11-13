@@ -17,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import type { EventRow } from '@/db/repositories/events';
+import { onBadgesUnlocked } from '@/stores/app';
 import { useTheme } from '@/theme/ThemeProvider';
 import { HatchMoment } from './HatchMoment';
 import { MomentScreen } from './MomentScreen';
@@ -49,6 +50,17 @@ const MomentQueueContext = createContext<MomentQueueApi | null>(null);
 export function MomentQueueProvider({ children }: { readonly children: ReactNode }) {
   const reduceMotion = useReduceMotion();
   const [queue, setQueue] = useState<readonly Moment[]>([]);
+  // The badges unlocked after an action (runAction) join the queue at the next render, after the
+  // moments of the action itself: the first of a queue stays on screen, and it must not be a badge.
+  const [badgeEvents, setBadgeEvents] = useState<readonly EventRow[]>([]);
+  if (badgeEvents.length > 0) {
+    setBadgeEvents([]);
+    setQueue(addMoments(queue, momentsFromEvents(badgeEvents)));
+  }
+  useEffect(
+    () => onBadgesUnlocked((unlocked) => setBadgeEvents((waiting) => [...waiting, ...unlocked])),
+    [],
+  );
   // Not state: nothing on screen changes until they are shown.
   const later = useRef<Moment[]>([]);
   const current = queue[0];

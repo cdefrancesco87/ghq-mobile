@@ -9,6 +9,7 @@ import {
   type QuestLogType,
 } from '@/db/repositories/questLog';
 import { undoEvent, UndoRefusedError } from '@/db/repositories/undo';
+import { useBadgeTexts } from '@/features/shared/badgeTexts';
 import { ActionSheet } from '@/features/shared/ActionSheet';
 import { Button } from '@/features/shared/Button';
 import { Card } from '@/features/shared/Card';
@@ -69,6 +70,7 @@ const kindKey = (type: QuestLogType) => type.replace('.', '_');
 export function QuestLog() {
   const { t, i18n } = useTranslation();
   const { colors, family } = useTheme();
+  const badgeTexts = useBadgeTexts();
   const toast = useUndoToast();
   const [filter, setFilter] = useState<QuestLogFilter>('all');
   const [range, setRange] = useState<QuestLogRange>(NO_RANGE);
@@ -133,6 +135,10 @@ export function QuestLog() {
         return entry.itemKey === 'potion' || entry.itemKey === 'shield'
           ? lexicon(entry.itemKey)
           : (entry.itemKey ?? '');
+      case 'badge.unlocked': {
+        const badge = badgeTexts.find(entry.itemKey ?? '');
+        return badge === undefined ? t('questLog.titles.badge_unlocked') : badgeTexts.nameOf(badge);
+      }
       case 'hero.level_up':
         return t('questLog.level', { term: lexicon('level'), level: entry.level ?? '' });
       case 'bonus.full_day':

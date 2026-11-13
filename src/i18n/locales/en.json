@@ -555,7 +555,9 @@
       "rewardLabel": "Plus {{xp}} {{xpTerm}}, plus {{coins}} {{coinsTerm}}",
       "hatched": "It hatched!",
       "hatchName": "Give it a name",
-      "hatchConfirm": "Confirm"
+      "hatchConfirm": "Confirm",
+      "badgeDetail": "{{name}} · +{{coins}} {{coinsTerm}}",
+      "badgeDetailLabel": "{{name}}, plus {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -1496,6 +1498,55 @@
       "newer": "This backup comes from a newer version of the app. Update the app and try again.",
       "corrupt": "The backup is damaged and cannot be used. Make a new one.",
       "unknown": "Something went wrong, try again."
+    }
+  },
+  "badges": {
+    "title": "Badges",
+    "counter": "Badges · {{unlocked}} of {{total}}",
+    "counterLabel": "Badges: {{unlocked}} unlocked of {{total}}",
+    "seeAll": "See all",
+    "seeAllLabel": "See all badges",
+    "none": "Your first badge is waiting",
+    "progress": "{{current}} of {{target}}",
+    "unlockedOn": "Unlocked on {{date}}",
+    "locked": "Locked",
+    "coins": "+{{coins}} bonus {{coinsTerm}}",
+    "coinsLabel": "Plus {{coins}} bonus {{coinsTerm}}",
+    "tileUnlocked": "{{name}}, unlocked on {{date}}",
+    "tileLocked": "{{name}}, locked. {{condition}}: {{current}} of {{target}}",
+    "openHint": "Opens the detail",
+    "name": {
+      "completions": "{{n}} {{missions}}",
+      "streakBest": "{{streak}} of {{n}}",
+      "bossesDefeated": "{{n}} {{bosses}}",
+      "level": "{{level}} {{n}}",
+      "fullDays": "{{fullDay}} ×{{n}}",
+      "plans": "{{plan}} ×{{n}}",
+      "statLevelMax": "Talent {{n}}",
+      "completions_1": "First step",
+      "bossesDefeated_1": "First victory",
+      "fullDays_1": "{{fullDay}}",
+      "plans_1": "{{plan}}",
+      "companionStage_1": "Hatched",
+      "companionStage_2": "Grown together"
+    },
+    "condition": {
+      "completions_one": "Complete {{count}} {{mission}}",
+      "completions_other": "Complete {{count}} {{missions}}",
+      "streakBest_one": "{{streak}}: {{count}} day in a row",
+      "streakBest_other": "{{streak}}: {{count}} days in a row",
+      "bossesDefeated_one": "Defeat {{count}} {{boss}}",
+      "bossesDefeated_other": "Defeat {{count}} {{bosses}}",
+      "level_one": "Reach {{levelLower}} {{count}}",
+      "level_other": "Reach {{levelLower}} {{count}}",
+      "fullDays_one": "Earn the «{{fullDay}}» bonus",
+      "fullDays_other": "Earn the «{{fullDay}}» bonus {{count}} times",
+      "plans_one": "Earn the «{{plan}}» bonus",
+      "plans_other": "Earn the «{{plan}}» bonus {{count}} times",
+      "companionStage_one": "Hatch the egg",
+      "companionStage_other": "Raise {{companion}} to adulthood",
+      "statLevelMax_one": "Bring a stat to level {{count}}",
+      "statLevelMax_other": "Bring a stat to level {{count}}"
     }
   }
 }

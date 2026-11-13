@@ -24,7 +24,7 @@ const event = (type: EventRow['type'], id: string, fields: Partial<EventRow> = {
 const LEVEL_UP = event('hero.level_up', 'level', { payload: { from: 4, to: 5 } });
 const VICTORY = event('boss.defeated', 'boss', { dXp: 120, dCoins: 24 });
 const STAGE_UP = event('companion.stage_up', 'stage', { payload: { from: 'baby', to: 'adult' } });
-const BADGE = event('badge.unlocked', 'badge');
+const BADGE = event('badge.unlocked', 'badge', { dCoins: 25, payload: { badge: 'completions_1' } });
 
 const ORIGIN = { x: 340, y: 500 };
 
@@ -63,7 +63,7 @@ describe('momentsFromEvents', () => {
     expect(moments).toEqual([
       { kind: 'boss_defeated', id: 'boss', xp: 120, coins: 24, starter: false },
       { kind: 'companion_stage', id: 'stage', stage: 'adult' },
-      { kind: 'badge', id: 'badge' },
+      { kind: 'badge', id: 'badge', badgeKey: 'completions_1', coins: 25 },
     ]);
   });
 

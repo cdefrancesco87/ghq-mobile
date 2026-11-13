@@ -555,7 +555,9 @@
       "rewardLabel": "Plus {{xp}} {{xpTerm}}, plus {{coins}} {{coinsTerm}}",
       "hatched": "Geschlüpft!",
       "hatchName": "Gib ihm einen Namen",
-      "hatchConfirm": "Bestätigen"
+      "hatchConfirm": "Bestätigen",
+      "badgeDetail": "{{name}} · +{{coins}} {{coinsTerm}}",
+      "badgeDetailLabel": "{{name}}, plus {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -1496,6 +1498,55 @@
       "newer": "Dieses Backup stammt aus einer neueren Version der App. Aktualisiere die App und versuche es erneut.",
       "corrupt": "Das Backup ist beschädigt und nicht nutzbar. Erstelle ein neues.",
       "unknown": "Etwas ist schiefgelaufen, versuche es erneut."
+    }
+  },
+  "badges": {
+    "title": "Abzeichen",
+    "counter": "Abzeichen · {{unlocked}} von {{total}}",
+    "counterLabel": "Abzeichen: {{unlocked}} von {{total}} freigeschaltet",
+    "seeAll": "Alle ansehen",
+    "seeAllLabel": "Alle Abzeichen ansehen",
+    "none": "Dein erstes Abzeichen wartet",
+    "progress": "{{current}} von {{target}}",
+    "unlockedOn": "Freigeschaltet am {{date}}",
+    "locked": "Gesperrt",
+    "coins": "+{{coins}} Bonus-{{coinsTerm}}",
+    "coinsLabel": "Plus {{coins}} Bonus-{{coinsTerm}}",
+    "tileUnlocked": "{{name}}, freigeschaltet am {{date}}",
+    "tileLocked": "{{name}}, gesperrt. {{condition}}: {{current}} von {{target}}",
+    "openHint": "Öffnet die Details",
+    "name": {
+      "completions": "{{n}} {{missions}}",
+      "streakBest": "{{streak}} von {{n}}",
+      "bossesDefeated": "{{n}} {{bosses}}",
+      "level": "{{level}} {{n}}",
+      "fullDays": "{{fullDay}} ×{{n}}",
+      "plans": "{{plan}} ×{{n}}",
+      "statLevelMax": "Talent {{n}}",
+      "completions_1": "Erster Schritt",
+      "bossesDefeated_1": "Erster Sieg",
+      "fullDays_1": "{{fullDay}}",
+      "plans_1": "{{plan}}",
+      "companionStage_1": "Geschlüpft",
+      "companionStage_2": "Zusammen gewachsen"
+    },
+    "condition": {
+      "completions_one": "Schließe {{count}} {{mission}} ab",
+      "completions_other": "Schließe {{count}} {{missions}} ab",
+      "streakBest_one": "{{streak}}: {{count}} Tag am Stück",
+      "streakBest_other": "{{streak}}: {{count}} Tage am Stück",
+      "bossesDefeated_one": "Besiege {{count}} {{boss}}",
+      "bossesDefeated_other": "Besiege {{count}} {{bosses}}",
+      "level_one": "Erreiche {{levelLower}} {{count}}",
+      "level_other": "Erreiche {{levelLower}} {{count}}",
+      "fullDays_one": "Hol dir den Bonus «{{fullDay}}»",
+      "fullDays_other": "Hol dir den Bonus «{{fullDay}}» {{count}}-mal",
+      "plans_one": "Hol dir den Bonus «{{plan}}»",
+      "plans_other": "Hol dir den Bonus «{{plan}}» {{count}}-mal",
+      "companionStage_one": "Lass das Ei schlüpfen",
+      "companionStage_other": "Zieh {{companion}} groß",
+      "statLevelMax_one": "Bring einen Wert auf Level {{count}}",
+      "statLevelMax_other": "Bring einen Wert auf Level {{count}}"
     }
   }
 }

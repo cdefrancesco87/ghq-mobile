@@ -21,6 +21,7 @@ import { formArrow, statProgress, type FormArrow, type StatProgress } from '../.
 import { STAT_KEYS, type GameDay, type StatKey } from '../../rules/types';
 import { boss, events, hero, heroStats, missionDays, missions } from '../schema';
 import type { Db } from '../types';
+import { getBadgesView, type BadgesView } from './badges';
 import { getCompanionView, type CompanionView } from './companion';
 import { appendEvent, notDeleted } from './events';
 import { loadHero, type ActionClock, type Hero } from './hero';
@@ -53,6 +54,8 @@ export interface ProfileView {
   readonly stats: readonly StatRow[];
   /** For the row of the companion among the links (9.7). */
   readonly companion: CompanionView;
+  /** The row of the badges (9.6). */
+  readonly badges: BadgesView;
 }
 
 /** A gain of points of a stat, from the log: «+20 Corsa, ieri» (design-sezioni.md 9.5). */
@@ -144,6 +147,7 @@ export function getProfileView(db: Db, clock: { now: number; tzOffset: number })
     bossesDefeated,
     stats: STAT_KEYS.map((stat) => rowOf(stat, points.get(stat) ?? 0, forms.get(stat) ?? null)),
     companion: getCompanionView(db, clock),
+    badges: getBadgesView(db),
   };
 }
 

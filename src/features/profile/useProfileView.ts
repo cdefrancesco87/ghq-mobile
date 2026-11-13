@@ -6,6 +6,7 @@ import {
   type ProfileView,
   type StatDetail,
 } from '@/db/repositories/profile';
+import { getBadgesView, type BadgesView } from '@/db/repositories/badges';
 import type { StatKey } from '@/rules/types';
 import { useHeroStore } from '@/stores/hero';
 import { getSession } from '@/stores/session';
@@ -39,4 +40,15 @@ export function useStatDetail(stat: StatKey | null): StatDetail | null {
     const { db, clock } = getSession();
     return getStatDetail(db, stat, clock());
   }, [hero, stat]);
+}
+
+/** The badges, read again after every action like the Profile. Null before the profile exists. */
+export function useBadgesView(): BadgesView | null {
+  const hero = useHeroStore((state) => state.hero);
+  return useMemo(() => {
+    if (hero === null) {
+      return null;
+    }
+    return getBadgesView(getSession().db);
+  }, [hero]);
 }

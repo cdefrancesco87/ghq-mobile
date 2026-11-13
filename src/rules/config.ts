@@ -336,3 +336,14 @@ export const BACKUP = {
    */
   autoMinGapHours: 20,
 } as const;
+
+/** The badges (analisi-funzionale.md US-PROF-02; design-sezioni.md 9.6). */
+export const BADGES = {
+  /**
+   * Coins of every unlocked badge. PROVISIONAL (backlog T70): xp-e-monete.md section 2 says
+   * «monete bonus, valore ancora da definire» and task C13 is not decided.
+   */
+  coins: 25,
+  /** The latest unlocked badges in the row of the Profile. PROVISIONAL (backlog T70). */
+  profileRecent: 3,
+} as const;

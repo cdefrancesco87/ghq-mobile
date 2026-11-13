@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 
 import { createProfile } from '@/db/repositories/onboarding';
-import { missions } from '@/db/schema';
+import { BADGE_LIST } from '@/content/badges';
+import { badges, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
 
 import { createTestDb, heroTotals, totalsFromLog } from './db';
@@ -46,4 +47,16 @@ export function missionId(db: Db, templateKey: string): string {
 /** The hero and the stats always add up to the event log (modello-dati.md, 4.3). */
 export function expectHeroMatchesLog(db: Db): void {
   expect(heroTotals(db)).toEqual(totalsFromLog(db));
+}
+
+/**
+ * Marks every badge as already unlocked, without coins or events: for the tests of other screens,
+ * whose gains and moments must not change with the badges (backlog T70).
+ */
+export function withBadgesUnlocked(db: Db): Db {
+  db.insert(badges)
+    .values(BADGE_LIST.map((badge) => ({ badgeKey: badge.key, unlockedAt: 0 })))
+    .onConflictDoNothing()
+    .run();
+  return db;
 }

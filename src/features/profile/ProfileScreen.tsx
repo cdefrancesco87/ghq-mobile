@@ -24,6 +24,7 @@ import { textStyleOf } from '@/theme/fonts';
 import { SHAPES } from '@/theme/shapes';
 import { MAX_TEXT_SCALE } from '@/theme/textScale';
 import { useTheme } from '@/theme/ThemeProvider';
+import { BadgeGrid, useBadgeSheet } from './BadgesScreen';
 import { Emblem } from './Emblem';
 import { StatSheet } from './StatSheet';
 import { StatTile } from './StatTile';
@@ -54,7 +55,8 @@ export interface ProfileScreenProps {
  * name with a pencil (up to 24 characters, Invio confirms), title, level and experience; streak,
  * missions completed and bosses defeated; the character sheet, 2×3 or one column with very large
  * text, whose tiles open the detail of the stat; the links to Statistics, companion, shop, Hall of
- * trophies (a placeholder until T65) and Settings. Badges (T70) and the form arrow (T69) come later.
+ * trophies and Settings; between them the badges (9.6): «Badge · 12 di 38», the latest unlocked
+ * and «Vedi tutti».
  */
 export function ProfileScreen({ view }: ProfileScreenProps) {
   const { t, i18n } = useTranslation();
@@ -66,7 +68,9 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
   const [stat, setStat] = useState<StatKey | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const detail = useStatDetail(stat);
+  const badgeSheet = useBadgeSheet();
   const { hero, companion, stats } = view;
+  const counter = { unlocked: view.badges.unlocked, total: view.badges.total };
 
   const term = (key: string) => t(`lexicon.${key}`, { context: family });
   const inSentence = (key: string) => termInSentence(term(key), i18n.language);
@@ -250,6 +254,37 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
           ))}
         </View>
 
+        <View style={styles.sectionRow}>
+          <ThemedText
+            testID="profile-badges-counter"
+            variant="caption"
+            color={colors.textMuted}
+            accessibilityRole="header"
+            accessibilityLabel={t('badges.counterLabel', counter)}
+            style={styles.flex}
+          >
+            {t('badges.counter', counter)}
+          </ThemedText>
+          <Pressable
+            testID="profile-badges-all"
+            accessibilityRole="button"
+            accessibilityLabel={t('badges.seeAllLabel')}
+            onPress={() => router.push('/badges')}
+            style={styles.seeAll}
+          >
+            <ThemedText variant="label" color={colors.primary}>
+              {t('badges.seeAll')}
+            </ThemedText>
+          </Pressable>
+        </View>
+        {view.badges.recent.length === 0 ? (
+          <ThemedText testID="profile-badges-none" variant="body" color={colors.textMuted}>
+            {t('badges.none')}
+          </ThemedText>
+        ) : (
+          <BadgeGrid testID="profile-badges" items={view.badges.recent} onOpen={badgeSheet.open} />
+        )}
+
         <ThemedText variant="caption" color={colors.textMuted} accessibilityRole="header">
           {t('profile.more')}
         </ThemedText>
@@ -306,6 +341,7 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
         </Card>
       </ScrollView>
       <StatSheet visible={sheetOpen} detail={detail} onClose={() => setSheetOpen(false)} />
+      {badgeSheet.sheet}
     </View>
   );
 }
@@ -384,6 +420,8 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   links: { paddingVertical: 0 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  seeAll: { minHeight: MIN_TOUCH, justifyContent: 'center', paddingHorizontal: 4 },
   link: { minHeight: ROW_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: 16 },
   linkIcon: { width: COMPANION_ICON, alignItems: 'center' },
 });

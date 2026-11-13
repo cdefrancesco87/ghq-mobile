@@ -68,6 +68,7 @@ export interface QuestLogEntry {
   /** The name of the boss; for the quest of the first launch a key of the language files. */
   readonly bossName: string | null;
   readonly bossStarter: boolean;
+  /** The item of the shop; for `badge.unlocked` the key of the badge. */
   readonly itemKey: string | null;
   readonly xp: number;
   readonly coins: number;
@@ -225,7 +226,11 @@ export function getQuestLog(db: Db, clock: ActionClock, query: QuestLogQuery): Q
       bossId: row.bossId,
       bossName: row.bossName,
       bossStarter: row.bossKind === 'starter',
-      itemKey: row.itemKey,
+      // A badge carries its key in the payload: the entry names it like an item.
+      itemKey:
+        type === 'badge.unlocked' && typeof row.payload.badge === 'string'
+          ? row.payload.badge
+          : row.itemKey,
       xp: row.dXp,
       coins: row.dCoins,
       hp: row.dHp,
