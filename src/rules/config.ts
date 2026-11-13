@@ -242,6 +242,20 @@ export const STATS_SCREEN = {
 } as const;
 
 /**
+ * The heatmap of Statistics (design-sezioni.md 8.3). PROVISIONAL (backlog T66): the documents give
+ * the minimum cell, the space and the months, not how many weeks fit on screen.
+ */
+export const HEATMAP = {
+  /** Weeks of the strip: 12 months and the week of today. */
+  weeks: 53,
+  /** Weeks the cells try to fill on screen, about 5 months. */
+  visibleWeeks: 22,
+  /** Smallest side of a cell and the space between cells. */
+  minCell: 14,
+  gap: 3,
+} as const;
+
+/**
  * The detail of a mission (design-sezioni.md 8.5). PROVISIONAL (backlog T53): the documents do
  * not say how many columns the charts have nor how long the history is.
  */

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -15,9 +15,14 @@ import { ScreenHeader } from '@/features/shared/ScreenHeader';
 import { SegmentedControl } from '@/features/shared/SegmentedControl';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useLargeText } from '@/features/shared/useLargeText';
+import { announceOnIos } from '@/features/shared/announce';
 import { termInSentence } from '@/i18n/lexicon';
+import type { GameDay } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
+import { Heatmap } from './Heatmap';
+import { HeatmapDaySheet, longDay } from './HeatmapDaySheet';
 import { SummaryTile } from './SummaryTile';
+import { useHeatmapDay } from './useHeatmapDay';
 import { TrendRow } from './TrendRow';
 
 type Tab = 'overview' | 'log';
@@ -34,7 +39,7 @@ export interface StatsScreenProps {
  * (design-sezioni.md 8.1, 8.2, 8.4, 8.9, mockup B9, D29): the tabs Panoramica and Registro (a
  * placeholder until T67), the summary 2×2 (one column with very large text, 8.12) whose
  * comparisons appear only when positive, and the missions from the least constant in the period.
- * The heatmap arrives with T66.
+ * The heatmap (8.3) sits between the summary and the trends, its days open a sheet.
  */
 export function StatsScreen({ view }: StatsScreenProps) {
   const { t, i18n } = useTranslation();
@@ -42,6 +47,30 @@ export function StatsScreen({ view }: StatsScreenProps) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('overview');
   const [period, setPeriod] = useState<StatsPeriod>('week');
+  // The day stays while the sheet slides away.
+  const [openDay, setOpenDay] = useState<GameDay | null>(null);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const day = useHeatmapDay(openDay);
+
+  const showDay = (gameDay: GameDay) => {
+    setOpenDay(gameDay);
+    setSheetVisible(true);
+  };
+
+  // The day touched is said with its percentage (8.3); on Android the sheet title is read.
+  useEffect(() => {
+    if (sheetVisible && day !== null) {
+      announceOnIos(
+        t('statsScreen.heatmapDay', {
+          day: longDay(day.day, i18n.language),
+          value:
+            day.rate === null
+              ? t('statsScreen.heatmapLevels.none')
+              : t('statsScreen.percent', { rate: day.rate }),
+        }),
+      );
+    }
+  }, [sheetVisible, day, t, i18n.language]);
 
   const term = (count: number) =>
     termInSentence(
@@ -75,6 +104,12 @@ export function StatsScreen({ view }: StatsScreenProps) {
         ) : (
           <>
             <Summary summary={view.summary} term={term} />
+            <View style={styles.group}>
+              <ThemedText variant="label" accessibilityRole="header" color={colors.textMuted}>
+                {t('statsScreen.heatmap')}
+              </ThemedText>
+              <Heatmap view={view.heatmap} onOpenDay={showDay} />
+            </View>
             <View style={styles.group}>
               <ThemedText variant="label" accessibilityRole="header" color={colors.textMuted}>
                 {t('statsScreen.trends', { term: term(2) })}
@@ -121,6 +156,7 @@ export function StatsScreen({ view }: StatsScreenProps) {
           </>
         )}
       </ScrollView>
+      <HeatmapDaySheet visible={sheetVisible} day={day} onClose={() => setSheetVisible(false)} />
     </View>
   );
 }

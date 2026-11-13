@@ -1183,7 +1183,25 @@
     },
     "trendsEmpty": "Completa qualche {{termOne}}: tra qualche giorno vedrai l'andamento.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}}% nel periodo. Tocca due volte per aprire il dettaglio",
-    "trendLabelNoRate": "{{name}}, {{streak}}, nessun dato nel periodo. Tocca due volte per aprire il dettaglio"
+    "trendLabelNoRate": "{{name}}, {{streak}}, nessun dato nel periodo. Tocca due volte per aprire il dettaglio",
+    "heatmap": "Heatmap",
+    "heatmapRange": "Ultimi 12 mesi",
+    "heatmapEmpty": "I tuoi giorni compariranno qui.",
+    "heatmapLess": "Meno",
+    "heatmapMore": "Più",
+    "heatmapWeek_one": "Settimana del {{day}}: tutto fatto in {{full}} giorno su {{count}}",
+    "heatmapWeek_other": "Settimana del {{day}}: tutto fatto in {{full}} giorni su {{count}}",
+    "heatmapWeekHint": "Usa le azioni per scegliere un giorno",
+    "heatmapDay": "{{day}}: {{value}}",
+    "heatmapLevels": {
+      "none": "niente in programma",
+      "0": "niente fatto",
+      "1": "meno della metà",
+      "2": "almeno la metà",
+      "3": "tutto fatto"
+    },
+    "heatmapDayCount": "{{done}} {{term}} su {{scheduled}} · {{rate}}%",
+    "heatmapDayNothing": "Niente in programma in questo giorno."
   },
   "missionDetail": {
     "title": "Andamento",

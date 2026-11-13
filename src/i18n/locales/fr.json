@@ -1183,7 +1183,25 @@
     },
     "trendsEmpty": "Termine quelques {{term}} : dans quelques jours tu verras la progression.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}} % sur la période. Touche deux fois pour ouvrir le détail",
-    "trendLabelNoRate": "{{name}}, {{streak}}, aucune donnée sur la période. Touche deux fois pour ouvrir le détail"
+    "trendLabelNoRate": "{{name}}, {{streak}}, aucune donnée sur la période. Touche deux fois pour ouvrir le détail",
+    "heatmap": "Heatmap",
+    "heatmapRange": "12 derniers mois",
+    "heatmapEmpty": "Tes journées apparaîtront ici.",
+    "heatmapLess": "Moins",
+    "heatmapMore": "Plus",
+    "heatmapWeek_one": "Semaine du {{day}} : tout fait sur {{full}} jour sur {{count}}",
+    "heatmapWeek_other": "Semaine du {{day}} : tout fait sur {{full}} jours sur {{count}}",
+    "heatmapWeekHint": "Utilise les actions pour choisir un jour",
+    "heatmapDay": "{{day}} : {{value}}",
+    "heatmapLevels": {
+      "none": "rien de prévu",
+      "0": "rien de fait",
+      "1": "moins de la moitié",
+      "2": "au moins la moitié",
+      "3": "tout fait"
+    },
+    "heatmapDayCount": "{{done}} {{term}} sur {{scheduled}} · {{rate}} %",
+    "heatmapDayNothing": "Rien de prévu ce jour-là."
   },
   "missionDetail": {
     "title": "Évolution",

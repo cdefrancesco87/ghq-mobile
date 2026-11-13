@@ -1183,7 +1183,25 @@
     },
     "trendsEmpty": "Complete a few {{term}}: in a few days you will see the trend.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}}% in the period. Double tap to open the details",
-    "trendLabelNoRate": "{{name}}, {{streak}}, no data in the period. Double tap to open the details"
+    "trendLabelNoRate": "{{name}}, {{streak}}, no data in the period. Double tap to open the details",
+    "heatmap": "Heatmap",
+    "heatmapRange": "Last 12 months",
+    "heatmapEmpty": "Your days will show up here.",
+    "heatmapLess": "Less",
+    "heatmapMore": "More",
+    "heatmapWeek_one": "Week of {{day}}: everything done on {{full}} day out of {{count}}",
+    "heatmapWeek_other": "Week of {{day}}: everything done on {{full}} days out of {{count}}",
+    "heatmapWeekHint": "Use the actions to pick a day",
+    "heatmapDay": "{{day}}: {{value}}",
+    "heatmapLevels": {
+      "none": "nothing planned",
+      "0": "nothing done",
+      "1": "less than half",
+      "2": "at least half",
+      "3": "everything done"
+    },
+    "heatmapDayCount": "{{done}} {{term}} out of {{scheduled}} · {{rate}}%",
+    "heatmapDayNothing": "Nothing planned on this day."
   },
   "missionDetail": {
     "title": "Progress",

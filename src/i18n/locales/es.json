@@ -1183,7 +1183,25 @@
     },
     "trendsEmpty": "Cuando completes {{term}}, en unos días verás la evolución.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}} % en el periodo. Toca dos veces para abrir el detalle",
-    "trendLabelNoRate": "{{name}}, {{streak}}, sin datos en el periodo. Toca dos veces para abrir el detalle"
+    "trendLabelNoRate": "{{name}}, {{streak}}, sin datos en el periodo. Toca dos veces para abrir el detalle",
+    "heatmap": "Mapa de calor",
+    "heatmapRange": "Últimos 12 meses",
+    "heatmapEmpty": "Tus días aparecerán aquí.",
+    "heatmapLess": "Menos",
+    "heatmapMore": "Más",
+    "heatmapWeek_one": "Semana del {{day}}: todo hecho en {{full}} día de {{count}}",
+    "heatmapWeek_other": "Semana del {{day}}: todo hecho en {{full}} días de {{count}}",
+    "heatmapWeekHint": "Usa las acciones para elegir un día",
+    "heatmapDay": "{{day}}: {{value}}",
+    "heatmapLevels": {
+      "none": "nada previsto",
+      "0": "nada hecho",
+      "1": "menos de la mitad",
+      "2": "al menos la mitad",
+      "3": "todo hecho"
+    },
+    "heatmapDayCount": "{{done}} {{term}} de {{scheduled}} · {{rate}} %",
+    "heatmapDayNothing": "Nada previsto este día."
   },
   "missionDetail": {
     "title": "Evolución",

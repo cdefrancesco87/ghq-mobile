@@ -17,6 +17,7 @@ import type { GameDay } from '../../rules/types';
 import { events, missionDays, missions } from '../schema';
 import type { Db } from '../types';
 import { notDeleted, type EventType } from './events';
+import { getHeatmap, type HeatmapView } from './heatmap';
 import { loadHero, type ActionClock } from './hero';
 import type { Mission } from './missions';
 import { gameDayOf, getSetting } from './settings';
@@ -56,6 +57,8 @@ export interface StatsView {
   readonly summary: StatsSummary;
   /** The active habits by period, the least constant first and those without a rate last. */
   readonly trends: Readonly<Record<StatsPeriod, readonly MissionTrend[]>>;
+  /** The last 12 months by day (8.3). */
+  readonly heatmap: HeatmapView;
 }
 
 const RATE_EVENTS: EventType[] = [
@@ -206,6 +209,7 @@ export function getStatsView(db: Db, clock: ActionClock): StatsView {
     trends: Object.fromEntries(
       STATS_PERIODS.map((period) => [period, trendsFor(period)]),
     ) as Record<StatsPeriod, MissionTrend[]>,
+    heatmap: getHeatmap(db, clock),
   };
 }
 

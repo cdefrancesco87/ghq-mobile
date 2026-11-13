@@ -55,13 +55,18 @@ async function open(db: Db, day: number, url = '/stats') {
   }
 }
 
-function markDays(db: Db, id: string, days: readonly GameDay[]): void {
+function markDays(
+  db: Db,
+  id: string,
+  days: readonly GameDay[],
+  status: 'done' | 'skipped' = 'done',
+): void {
   db.insert(missionDays)
     .values(
       days.map((gameDay) => ({
         missionId: id,
         gameDay,
-        status: 'done' as const,
+        status,
         source: 'app' as const,
         doneAt: 0,
         updatedAt: 0,
@@ -217,5 +222,91 @@ describe('Statistics', () => {
 
     await setFontScale(1.3);
     expect(screen.getByTestId('stats-summary').children).toHaveLength(4);
+  });
+});
+
+describe('Statistics: heatmap', () => {
+  const has = (id: string) => expect(screen.getByTestId(id)).toBeOnTheScreen();
+
+  it('colours the days in four levels and leaves empty a day without missions', async () => {
+    const db = newGame(['journal', 'meditation', 'read_pages', 'no_social_evening']);
+    setSetting(db, 'rest_days', [7], at(6, 9));
+    const [journal, meditation, read, social] = [
+      'journal',
+      'meditation',
+      'read_pages',
+      'no_social_evening',
+    ].map((key) => missionId(db, key));
+    // Friday 6: nothing; Saturday 7: 1 of 4; Sunday 8: rest; Monday 9: 2 of 4; Tuesday 10: all.
+    markDays(db, journal, ['2026-11-07', '2026-11-09', '2026-11-10']);
+    markDays(db, meditation, ['2026-11-09', '2026-11-10']);
+    markDays(db, read, ['2026-11-10']);
+    markDays(db, social, ['2026-11-10']);
+    await open(db, 11);
+
+    has('stats-heatmap-2026-11-06-0');
+    has('stats-heatmap-2026-11-07-1');
+    has('stats-heatmap-2026-11-08-empty');
+    has('stats-heatmap-2026-11-09-2');
+    has('stats-heatmap-2026-11-10-3');
+    // Today, nothing done yet; before the hero, outside.
+    has('stats-heatmap-2026-11-11-0');
+    has('stats-heatmap-2026-11-05-out');
+    expect(text('stats-heatmap-caption')).toBe('Ultimi 12 mesi');
+  });
+
+  it('says that the days will come in the first days', async () => {
+    await open(newGame(['journal']), 6);
+    expect(text('stats-heatmap-caption')).toBe('I tuoi giorni compariranno qui.');
+  });
+
+  it('opens the sheet of a day with its missions, skipped ones out of the total', async () => {
+    const db = newGame(['journal', 'meditation', 'read_pages']);
+    const [journal, meditation, read] = ['journal', 'meditation', 'read_pages'].map((key) =>
+      missionId(db, key),
+    );
+    // Saturday 7: journal done, meditation skipped, reading missed.
+    markDays(db, journal, ['2026-11-07']);
+    markDays(db, meditation, ['2026-11-07'], 'skipped');
+    await open(db, 9);
+
+    has('stats-heatmap-2026-11-07-2');
+    await fireEvent.press(screen.getByTestId('stats-heatmap-2026-11-07'));
+    expect(await screen.findByText('Sabato 7 novembre')).toBeOnTheScreen();
+    expect(text('stats-day-count')).toBe('1 abitudine su 2 · 50%');
+    has(`stats-day-${journal}-done`);
+    has(`stats-day-${meditation}-skipped`);
+    has(`stats-day-${read}-missed`);
+    expect(screen.getByTestId(`stats-day-${read}-missed`)).toHaveAccessibleName(/: mancato$/);
+  });
+
+  it('reads the heatmap by week and reaches a day with the actions', async () => {
+    const db = newGame(['journal']);
+    // Week of Monday 2: the hero exists from Friday 6, all done on 6, 7 and 8.
+    markDays(db, missionId(db, 'journal'), range('2026-11-06', '2026-11-08'));
+    await open(db, 10);
+
+    const week = screen.getByTestId('stats-heatmap-week-2026-11-02');
+    expect(week).toHaveAccessibleName('Settimana del 2 novembre: tutto fatto in 3 giorni su 3');
+    expect(week.props.accessibilityActions.map((action: { name: string }) => action.name)).toEqual([
+      '2026-11-06',
+      '2026-11-07',
+      '2026-11-08',
+    ]);
+    expect(week.props.accessibilityActions[1].label).toBe('sabato 7 novembre: tutto fatto');
+    await fireEvent(week, 'accessibilityAction', { nativeEvent: { actionName: '2026-11-08' } });
+    expect(await screen.findByText('Domenica 8 novembre')).toBeOnTheScreen();
+    expect(text('stats-day-count')).toBe('1 abitudine su 1 · 100%');
+  });
+
+  it('shows today with the missions still to do', async () => {
+    const db = newGame(['journal', 'meditation']);
+    markDays(db, missionId(db, 'journal'), ['2026-11-06']);
+    await open(db, 6);
+
+    has('stats-heatmap-2026-11-06-2');
+    await fireEvent.press(screen.getByTestId('stats-heatmap-2026-11-06'));
+    expect(await screen.findByText('Venerdì 6 novembre')).toBeOnTheScreen();
+    has(`stats-day-${missionId(db, 'meditation')}-open`);
   });
 });

@@ -1183,7 +1183,25 @@
     },
     "trendsEmpty": "Schließe ein paar {{term}} ab: in einigen Tagen siehst du den Verlauf.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}} % im Zeitraum. Doppelt tippen, um die Details zu öffnen",
-    "trendLabelNoRate": "{{name}}, {{streak}}, keine Daten im Zeitraum. Doppelt tippen, um die Details zu öffnen"
+    "trendLabelNoRate": "{{name}}, {{streak}}, keine Daten im Zeitraum. Doppelt tippen, um die Details zu öffnen",
+    "heatmap": "Heatmap",
+    "heatmapRange": "Letzte 12 Monate",
+    "heatmapEmpty": "Deine Tage erscheinen hier.",
+    "heatmapLess": "Weniger",
+    "heatmapMore": "Mehr",
+    "heatmapWeek_one": "Woche vom {{day}}: alles erledigt an {{full}} von {{count}} Tag",
+    "heatmapWeek_other": "Woche vom {{day}}: alles erledigt an {{full}} von {{count}} Tagen",
+    "heatmapWeekHint": "Wähle einen Tag über die Aktionen",
+    "heatmapDay": "{{day}}: {{value}}",
+    "heatmapLevels": {
+      "none": "nichts geplant",
+      "0": "nichts erledigt",
+      "1": "weniger als die Hälfte",
+      "2": "mindestens die Hälfte",
+      "3": "alles erledigt"
+    },
+    "heatmapDayCount": "{{done}} {{term}} von {{scheduled}} · {{rate}} %",
+    "heatmapDayNothing": "An diesem Tag war nichts geplant."
   },
   "missionDetail": {
     "title": "Verlauf",
