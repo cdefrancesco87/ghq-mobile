@@ -126,8 +126,10 @@ export interface TodayView {
   readonly plan: readonly string[];
   /** The bonus of the plan was given today and no undo took it back (design-sezioni.md 2.3). */
   readonly planBonus: boolean;
-  /** Active bosses, the nearest deadline first and those without one last. */
+  /** Active bosses, the nearest deadline first and those without one last; not the Main Quest. */
   readonly bosses: readonly TodayBoss[];
+  /** The Main Quest, at the top of Today above the Plan (design-sezioni.md 5.8; task T83). */
+  readonly mainQuest: TodayBoss | null;
   /** The quest of the first launch, shown in its own card instead of the bosses (design 1.7). */
   readonly starterQuest: StarterQuestView | null;
   /** The full-day bonus was given today and no undo took it back (design-sezioni.md 2.7). */
@@ -419,6 +421,7 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
     .sort(listOrder);
   const doneCount = today.filter((item) => item.state === 'done').length;
   const bosses = activeBosses(db);
+  const mainQuest = bosses.find((item) => item.boss.isMain) ?? null;
   return {
     day,
     restDay: weekRulesOn(db, day).restDays.includes(weekday(day)),
@@ -435,7 +438,8 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
       .map((row) => row.missionId),
     planBonus: bonusGiven(db, 'bonus.plan', day),
     fullDay: bonusGiven(db, 'bonus.full_day', day),
-    bosses,
+    bosses: bosses.filter((item) => item !== mainQuest),
+    mainQuest,
     starterQuest: starterQuestOf(db),
     doneCount,
     totalCount: today.filter((item) => item.state !== 'skipped').length,

@@ -15,7 +15,13 @@ import { ICON_NAMES, iconSide, iconXml, type IconName } from './icons';
 import { Logo } from './Logo';
 import { EVOLUTION_STEPS, LOGO_PLACEHOLDERS, evolutionSpriteKey } from './placeholders';
 import { hasSprite } from './Sprite';
-import { bossSpriteKey, companionSpriteKey, spriteSide, type BossKind } from './sprites';
+import {
+  bossSpriteKey,
+  companionSpriteKey,
+  crownSpriteKey,
+  spriteSide,
+  type BossKind,
+} from './sprites';
 
 const FAMILIES: readonly ThemeFamily[] = ['minimal', 'arcade', 'fantasy', 'cyberpunk', 'lovecraft'];
 const LINE_FAMILIES = FAMILIES.filter((family) => family !== 'arcade');
@@ -173,6 +179,12 @@ describe('sprite files', () => {
       }
     }
     expect(bossSpriteKey('minimal', 'hard')).toBeNull();
+  });
+
+  it('has the crown of the Main Quest in every theme', () => {
+    for (const family of FAMILIES) {
+      expect(hasSprite(crownSpriteKey(family))).toBe(true);
+    }
   });
 
   it('has the placeholders of the evolution and of the logo', () => {

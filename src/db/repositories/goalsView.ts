@@ -21,6 +21,11 @@ export interface GoalsView {
   readonly day: GameDay;
   /** The active bosses, from the oldest: at most 3, the quest of the first launch included. */
   readonly active: readonly BossProgress[];
+  /**
+   * The bosses of a chain waiting for the victory of the one before them (task T83), from the
+   * oldest: shown under it with a padlock, not counted among the active ones.
+   */
+  readonly locked: readonly BossProgress[];
   /** The archived bosses, from the most recent (gap L16: a list to read, nothing to resume). */
   readonly archived: readonly ArchivedGoal[];
   /** The defeated bosses, from the most recent victory (design-sezioni.md 5.7). */
@@ -72,6 +77,10 @@ export function getGoalsView(db: Db, clock: { now: number; tzOffset: number }): 
   return {
     day: gameDayOf(clock.now, clock.tzOffset, dayChange),
     active: withSteps(db, listActiveBosses(db)),
+    locked: withSteps(
+      db,
+      db.select().from(boss).where(eq(boss.status, 'locked')).orderBy(asc(boss.createdAt)).all(),
+    ),
     // Same day: the order of the last change stays (the sort is stable).
     archived: archived.sort((a, b) => b.archivedDay.localeCompare(a.archivedDay)),
     trophies: listTrophies(db, clock),
@@ -104,7 +113,7 @@ export interface BossEditStep {
   readonly done: boolean;
 }
 
-/** What «Modifica» of a boss starts from (design-sezioni.md 5.3): an active boss only. */
+/** What «Modifica» of a boss starts from (design-sezioni.md 5.3): an active or locked boss. */
 export interface BossEditView {
   readonly boss: Boss;
   /** The steps in their order. */
@@ -113,10 +122,10 @@ export interface BossEditView {
   readonly missionIds: readonly string[];
 }
 
-/** The boss to change, null when it is not active: only an active boss can be changed. */
+/** The boss to change, null when it is neither active nor locked in a chain (task T83). */
 export function getBossEdit(db: Db, bossId: string): BossEditView | null {
   const target = db.select().from(boss).where(eq(boss.id, bossId)).get();
-  if (target === undefined || target.status !== 'active') {
+  if (target === undefined || (target.status !== 'active' && target.status !== 'locked')) {
     return null;
   }
   const steps = db

@@ -881,6 +881,23 @@
       "stepsKept_other": "I tuoi {{count}} passi restano.",
       "newDeadline": "Fissa una nuova scadenza",
       "archive": "Archivia l'obiettivo"
+    },
+    "main": {
+      "title": "Main Quest",
+      "crown": "Main Quest",
+      "pin": "Fissa come Main Quest",
+      "unpin": "Togli dalla Main Quest",
+      "pinnedToast": "«{{name}}» è la Main Quest",
+      "unpinnedToast": "Main Quest tolta"
+    },
+    "chain": {
+      "add": "Aggiungi il prossimo della catena",
+      "locked": "Bloccato",
+      "lockedAfter": "Si sblocca sconfiggendo «{{name}}»",
+      "lockedSummary": "bloccato, si sblocca sconfiggendo {{name}}",
+      "prev": "Viene dopo «{{name}}»",
+      "next": "Poi «{{name}}»",
+      "openHint": "Apre la scheda"
     }
   },
   "skipReasons": {
@@ -1144,7 +1161,8 @@
       "editTitle": "Modifica obiettivo",
       "editPreview": "Vita {{hp}} di {{max}} · Ricompensa {{xp}} {{xpTerm}} e {{coins}} {{coinsTerm}}",
       "stepDoneLabel": "Passo {{position}} di {{total}}, fatto",
-      "stepLeftMissing": "Serve almeno un passo da fare per il colpo finale"
+      "stepLeftMissing": "Serve almeno un passo da fare per il colpo finale",
+      "after": "Dopo «{{name}}»: si sblocca alla sua vittoria"
     }
   },
   "companion": {

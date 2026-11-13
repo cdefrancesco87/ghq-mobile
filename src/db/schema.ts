@@ -93,11 +93,18 @@ export const boss = sqliteTable(
     deadlineDay: text('deadline_day').$type<GameDay>(),
     /** The warning 3 days before the deadline has been sent. */
     deadlineWarned: integer('deadline_warned', { mode: 'boolean' }).notNull().default(false),
-    /** `deleted` is the logical deletion of a boss (provisional, CLAUDE.md choice 21): no list shows it. */
-    status: text('status', { enum: ['active', 'defeated', 'archived', 'deleted'] })
+    /**
+     * `deleted` is the logical deletion of a boss (provisional, CLAUDE.md choice 21): no list shows
+     * it. `locked` is a boss of a chain waiting for the victory of the one before it (task T83).
+     */
+    status: text('status', { enum: ['active', 'locked', 'defeated', 'archived', 'deleted'] })
       .notNull()
       .default('active'),
     defeatedAt: integer('defeated_at'),
+    /** The Main Quest, shown at the top of Today (task T83): one active boss at most. */
+    isMain: integer('is_main', { mode: 'boolean' }).notNull().default(false),
+    /** The boss this one follows in a chain of goals (task T83): its victory unlocks this one. */
+    chainPrevId: text('chain_prev_id'),
     ...timestamps,
   },
   (t) => [
@@ -105,6 +112,13 @@ export const boss = sqliteTable(
     index('boss_active_idx')
       .on(t.createdAt)
       .where(sql`${t.status} = 'active'`),
+    // One Main Quest at a time, and one next boss for every boss of a chain.
+    uniqueIndex('boss_main_idx')
+      .on(t.isMain)
+      .where(sql`${t.isMain} = 1`),
+    uniqueIndex('boss_chain_prev_idx')
+      .on(t.chainPrevId)
+      .where(sql`${t.chainPrevId} IS NOT NULL`),
   ],
 );
 

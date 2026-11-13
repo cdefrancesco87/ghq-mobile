@@ -82,7 +82,8 @@ export function endPauseIfOver(tx: Db, clock: ActionClock, today: GameDay): void
     .from(boss)
     .where(
       and(
-        eq(boss.status, 'active'),
+        // The locked bosses of a chain keep their deadline too (task T83).
+        inArray(boss.status, ['active', 'locked']),
         isNotNull(boss.deadlineDay),
         gte(boss.deadlineDay, pause.fromDay),
       ),

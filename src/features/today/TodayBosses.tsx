@@ -53,8 +53,10 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
   const current = Math.min(page, Math.max(bosses.length - 1, 0));
 
   if (bosses.length === 0) {
+    // The Main Quest has its own card above the plan: no row to Obiettivi under it (task T83).
     return (
-      quest ?? (
+      quest ??
+      (view.mainQuest !== null ? null : (
         <Pressable
           testID="today-bosses-empty"
           accessibilityRole="button"
@@ -67,7 +69,7 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
           </ThemedText>
           <Icon name="avanti" size={20} color={colors.textMuted} />
         </Pressable>
-      )
+      ))
     );
   }
 

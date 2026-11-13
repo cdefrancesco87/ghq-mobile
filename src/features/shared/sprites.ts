@@ -60,6 +60,11 @@ export function sealSpriteKey(family: ThemeFamily): string {
   return `sigillo-${family}`;
 }
 
+/** The crown of the Main Quest (lotto 8; task T83): pixel in 4 themes, a line icon in Minimal. */
+export function crownSpriteKey(family: ThemeFamily): string {
+  return family === 'minimal' ? 'corona-minimal' : `corona-main-quest-${family}`;
+}
+
 const OBJECT_FILES = {
   potion: 'pozione',
   shield: 'scudo',

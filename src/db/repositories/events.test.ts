@@ -154,9 +154,9 @@ describe('appendEvent', () => {
 });
 
 describe('EVENT_TYPES', () => {
-  it('lists the 31 event types of the data model plus hero.created, the provisional boss ones, companion.renamed and the 3 of the general pause', () => {
-    expect(EVENT_TYPES).toHaveLength(38);
-    expect(new Set(EVENT_TYPES).size).toBe(38);
+  it('lists the 31 event types of the data model plus hero.created, the provisional boss ones, companion.renamed, the 3 of the general pause and the 2 of the Main Quest and the chains', () => {
+    expect(EVENT_TYPES).toHaveLength(40);
+    expect(new Set(EVENT_TYPES).size).toBe(40);
     expect(EVENT_TYPES).toEqual(
       expect.arrayContaining([
         'mission.deleted',
@@ -166,6 +166,8 @@ describe('EVENT_TYPES', () => {
         'boss.deadline_missed',
         'boss.updated',
         'boss.deleted',
+        'boss.main_changed',
+        'boss.unlocked',
         'companion.stage_up',
         'companion.renamed',
         'hero.created',

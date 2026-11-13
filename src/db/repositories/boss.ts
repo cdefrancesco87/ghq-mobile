@@ -13,7 +13,8 @@ import {
   victoryReward,
   victoryShield,
 } from '../../rules/boss';
-import { BOSS, BOSS_EDIT } from '../../rules/config';
+import { canBeMainQuest, canChainAfter } from '../../rules/chain';
+import { BOSS, BOSS_CHAIN, BOSS_EDIT } from '../../rules/config';
 import { isGameDay } from '../../rules/gameDay';
 import { isPausedDay } from '../../rules/pause';
 import {
@@ -47,6 +48,11 @@ export interface NewBoss {
   readonly steps: readonly string[];
   /** Recurring missions linked to the boss: every completion deals damage. */
   readonly missionIds?: readonly string[];
+  /**
+   * The boss this one follows in a chain of goals (task T83): the new boss is locked until that
+   * one is defeated, and does not count among the active ones meanwhile.
+   */
+  readonly chainPrevId?: string | null;
 }
 
 export interface StepResult {
@@ -165,7 +171,7 @@ export function markStepDone(tx: Db, stepId: string, clock: ActionClock): StepRe
     }
     const change = changeHero(tx, { xp: reward.xp, coins: reward.coins + shield.coins }, clock.now);
     tx.update(boss)
-      .set({ status: 'defeated', defeatedAt: clock.now, updatedAt: clock.now })
+      .set({ status: 'defeated', defeatedAt: clock.now, isMain: false, updatedAt: clock.now })
       .where(eq(boss.id, target.id))
       .run();
     appendEvent(tx, {
@@ -181,12 +187,57 @@ export function markStepDone(tx: Db, stepId: string, clock: ActionClock): StepRe
       },
     });
     recordLevelUp(tx, change, clock);
+    unlockNext(tx, target, clock, true);
   }
   return { defeated: hit.defeated, eventId: event.id, dealt: target.hp - hit.hp };
 }
 
 function todayOf(tx: Db, clock: ActionClock): GameDay {
   return gameDayOf(clock.now, clock.tzOffset, getSetting(tx, 'day_change'));
+}
+
+/** The boss that follows this one in its chain and waits for it, if any (task T83). */
+function lockedNext(tx: Db, bossId: string): Boss | undefined {
+  return tx
+    .select()
+    .from(boss)
+    .where(and(eq(boss.chainPrevId, bossId), eq(boss.status, 'locked')))
+    .get();
+}
+
+/**
+ * The boss before leaves the field: its victory unlocks the next boss of the chain, and so do the
+ * archive and the deletion (BOSS_CHAIN.unlockWhenPreviousLeaves), since nothing else could. The
+ * unlocked boss takes the place just freed, drops a deadline already passed and, after a victory,
+ * becomes the Main Quest if the one before was (BOSS_CHAIN, provisional).
+ */
+function unlockNext(tx: Db, previous: Boss, clock: ActionClock, victory: boolean): void {
+  const next = lockedNext(tx, previous.id);
+  if (next === undefined || (!victory && !BOSS_CHAIN.unlockWhenPreviousLeaves)) {
+    return;
+  }
+  const today = todayOf(tx, clock);
+  const dropDeadline =
+    BOSS_CHAIN.dropPastDeadlineOnUnlock && next.deadlineDay !== null && next.deadlineDay < today;
+  const main = victory && previous.isMain && BOSS_CHAIN.mainQuestPassesToNext;
+  tx.update(boss)
+    .set({
+      status: 'active',
+      ...(dropDeadline ? { deadlineDay: null, deadlineWarned: false } : {}),
+      ...(main ? { isMain: true } : {}),
+      updatedAt: clock.now,
+    })
+    .where(eq(boss.id, next.id))
+    .run();
+  appendEvent(tx, {
+    ...eventBase(clock, next.id),
+    type: 'boss.unlocked',
+    payload: {
+      previousId: previous.id,
+      victory,
+      ...(dropDeadline ? { deadlineDropped: true } : {}),
+    },
+  });
 }
 
 function activeCount(tx: Db): number {
@@ -256,8 +307,17 @@ export function createBoss(db: Db, input: NewBoss, clock: ActionClock): Boss {
   }
   const hpMax = bossHpMax(titles.length);
   const missionIds = [...new Set(input.missionIds ?? [])];
+  const chainPrevId = input.chainPrevId ?? null;
   return db.transaction((tx) => {
-    if (!canCreateBoss(activeCount(tx))) {
+    if (chainPrevId !== null) {
+      const previous = tx.select().from(boss).where(eq(boss.id, chainPrevId)).get();
+      const hasNext =
+        tx.select({ id: boss.id }).from(boss).where(eq(boss.chainPrevId, chainPrevId)).get() !==
+        undefined;
+      if (previous === undefined || !canChainAfter({ ...previous, hasNext })) {
+        throw new RangeError(`The boss ${chainPrevId} cannot have a next boss`);
+      }
+    } else if (!canCreateBoss(activeCount(tx))) {
       throw new RangeError(`There are already ${BOSS.maxActive} active bosses`);
     }
     const deadlineDay = input.deadlineDay ?? null;
@@ -285,6 +345,8 @@ export function createBoss(db: Db, input: NewBoss, clock: ActionClock): Boss {
         hpMax,
         hp: hpMax,
         deadlineDay,
+        status: chainPrevId === null ? 'active' : 'locked',
+        chainPrevId,
         createdAt: clock.now,
         updatedAt: clock.now,
       })
@@ -304,7 +366,13 @@ export function createBoss(db: Db, input: NewBoss, clock: ActionClock): Boss {
     appendEvent(tx, {
       ...eventBase(clock, created.id),
       type: 'boss.created',
-      payload: { kind: 'normal', steps: titles.length, hpMax, missionIds },
+      payload: {
+        kind: 'normal',
+        steps: titles.length,
+        hpMax,
+        missionIds,
+        ...(chainPrevId === null ? {} : { chainPrevId }),
+      },
     });
     return created;
   });
@@ -369,10 +437,11 @@ export function archiveBoss(db: Db, bossId: string, clock: ActionClock): void {
       throw new RangeError(`There is no active boss ${bossId}`);
     }
     tx.update(boss)
-      .set({ status: 'archived', updatedAt: clock.now })
+      .set({ status: 'archived', isMain: false, updatedAt: clock.now })
       .where(eq(boss.id, bossId))
       .run();
     appendEvent(tx, { ...eventBase(clock, bossId), type: 'boss.archived' });
+    unlockNext(tx, target, clock, false);
   });
 }
 
@@ -392,9 +461,10 @@ export interface BossEdit {
   readonly deadlineDay?: GameDay | null;
 }
 
+/** A boss still to fight: active, or locked in a chain (task T83), which can be changed too. */
 function activeBoss(tx: Db, bossId: string): Boss {
   const target = tx.select().from(boss).where(eq(boss.id, bossId)).get();
-  if (target === undefined || target.status !== 'active') {
+  if (target === undefined || (target.status !== 'active' && target.status !== 'locked')) {
     throw new RangeError(`There is no active boss ${bossId}`);
   }
   return target;
@@ -567,13 +637,49 @@ export function setBossDeadline(
  */
 export function deleteBoss(db: Db, bossId: string, clock: ActionClock): void {
   db.transaction((tx) => {
-    activeBoss(tx, bossId);
+    const target = activeBoss(tx, bossId);
     linkMissions(tx, bossId, [], clock.now);
     tx.update(boss)
-      .set({ status: 'deleted', updatedAt: clock.now })
+      .set({ status: 'deleted', isMain: false, chainPrevId: null, updatedAt: clock.now })
       .where(eq(boss.id, bossId))
       .run();
     appendEvent(tx, { ...eventBase(clock, bossId), type: 'boss.deleted' });
+    if (target.status === 'locked') {
+      // A locked boss leaves its chain: the next one waits for the boss before it (task T83).
+      const next = lockedNext(tx, bossId);
+      if (next !== undefined) {
+        tx.update(boss)
+          .set({ chainPrevId: target.chainPrevId, updatedAt: clock.now })
+          .where(eq(boss.id, next.id))
+          .run();
+      }
+      return;
+    }
+    unlockNext(tx, target, clock, false);
+  });
+}
+
+/**
+ * «Fissa come Main Quest» and its opposite (design-sezioni.md 5.8): one active normal boss at a
+ * time, shown at the top of Today with a crown. Pinning a boss takes the crown from the other one.
+ */
+export function setMainQuest(db: Db, bossId: string, main: boolean, clock: ActionClock): void {
+  db.transaction((tx) => {
+    const target = tx.select().from(boss).where(eq(boss.id, bossId)).get();
+    if (target === undefined || !canBeMainQuest(target)) {
+      throw new RangeError(`The boss ${bossId} cannot be the Main Quest`);
+    }
+    if (target.isMain === main) {
+      return;
+    }
+    if (main) {
+      tx.update(boss)
+        .set({ isMain: false, updatedAt: clock.now })
+        .where(eq(boss.isMain, true))
+        .run();
+    }
+    tx.update(boss).set({ isMain: main, updatedAt: clock.now }).where(eq(boss.id, bossId)).run();
+    appendEvent(tx, { ...eventBase(clock, bossId), type: 'boss.main_changed', payload: { main } });
   });
 }
 

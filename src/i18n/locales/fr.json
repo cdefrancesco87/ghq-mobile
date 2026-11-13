@@ -881,6 +881,23 @@
       "stepsKept_other": "Tes {{count}} étapes restent.",
       "newDeadline": "Fixer une nouvelle échéance",
       "archive": "Archiver l'objectif"
+    },
+    "main": {
+      "title": "Main Quest",
+      "crown": "Main Quest",
+      "pin": "Pin as Main Quest",
+      "unpin": "Unpin Main Quest",
+      "pinnedToast": "«{{name}}» is the Main Quest",
+      "unpinnedToast": "Main Quest unpinned"
+    },
+    "chain": {
+      "add": "Add the next in the chain",
+      "locked": "Locked",
+      "lockedAfter": "Unlocks when you defeat «{{name}}»",
+      "lockedSummary": "locked, unlocks when you defeat {{name}}",
+      "prev": "Comes after «{{name}}»",
+      "next": "Then «{{name}}»",
+      "openHint": "Opens the card"
     }
   },
   "skipReasons": {
@@ -1144,7 +1161,8 @@
       "editTitle": "Modifier l'objectif",
       "editPreview": "Vie {{hp}} sur {{max}} · Récompense {{xp}} {{xpTerm}} et {{coins}} {{coinsTerm}}",
       "stepDoneLabel": "Étape {{position}} sur {{total}}, faite",
-      "stepLeftMissing": "Il faut au moins une étape à faire pour le coup final"
+      "stepLeftMissing": "Il faut au moins une étape à faire pour le coup final",
+      "after": "After «{{name}}»: unlocks at its victory"
     }
   },
   "companion": {

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { archiveBoss, deleteBoss, setBossDeadline } from '@/db/repositories/boss';
+import { archiveBoss, deleteBoss, setBossDeadline, setMainQuest } from '@/db/repositories/boss';
 import type { BossView } from '@/db/repositories/bossView';
 import { DueDaySheet } from '@/features/editor/DueDaySheet';
 import { ActionSheet } from '@/features/shared/ActionSheet';
@@ -27,6 +27,7 @@ import { useEssential } from '@/features/shared/useGameMode';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { useMissionActions } from '@/features/today/useMissionActions';
+import { canBeMainQuest } from '@/rules/chain';
 import { BOSS } from '@/rules/config';
 import { diffDays } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
@@ -34,6 +35,7 @@ import { runAction } from '@/stores/app';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useBossTexts } from './bossTexts';
+import { MainQuestCrown } from './MainQuestCrown';
 import { useBossStep } from './useBossStep';
 import { useShake } from './useShake';
 
@@ -77,6 +79,9 @@ function InfoChip({
  * Archivia and Elimina with a dialog. A defeated or archived boss is only read: a defeated one is
  * the detail of its trophy (5.7), with the dates, the days taken and the rewards. In the Essential
  * mode it is a goal divided in steps (5.10): no arena, health, damage or rewards, a bar of the steps.
+ * Main Quest and chains (5.8, task T83): «Fissa come Main Quest» puts a crown beside the name,
+ * «Aggiungi il prossimo della catena» opens the creation of the next boss, the bosses before and
+ * after are links, and a locked boss shows its padlock, keeps Modifica, Nuova scadenza, Elimina.
  */
 export function BossScreen({ view }: BossScreenProps) {
   const { t } = useTranslation();
@@ -97,6 +102,8 @@ export function BossScreen({ view }: BossScreenProps) {
   const { boss } = view;
   const name = nameOf(boss);
   const active = boss.status === 'active';
+  // A locked boss of a chain (task T83) can be changed or deleted, not fought yet.
+  const locked = boss.status === 'locked';
   const hit = step.hitOf(boss.id);
   const shaking = useShake(hit);
   const hitLabel =
@@ -132,7 +139,7 @@ export function BossScreen({ view }: BossScreenProps) {
   const near = daysLeft !== null && daysLeft <= BOSS.deadlineWarningDays;
   // A defeated or archived boss has no deadline any more.
   const deadline =
-    daysLeft === null || !active
+    daysLeft === null || !(active || locked)
       ? null
       : daysLeft < 0
         ? t('bosses.card.overdue')
@@ -172,6 +179,20 @@ export function BossScreen({ view }: BossScreenProps) {
     router.back();
   };
 
+  const pinMain = (main: boolean) => {
+    try {
+      runAction((db, clock) => setMainQuest(db, boss.id, main, clock));
+    } catch {
+      toast.show({ message: t('today.missions.errors.failed') });
+      return;
+    }
+    toast.show({
+      message: main ? t('bosses.main.pinnedToast', { name }) : t('bosses.main.unpinnedToast'),
+    });
+  };
+
+  const openBoss = (id: string) => router.push({ pathname: '/boss/[id]', params: { id } });
+
   const moveDeadline = (day: GameDay | null) => {
     setDeadlineOpen(false);
     if (day === boss.deadlineDay) {
@@ -194,7 +215,7 @@ export function BossScreen({ view }: BossScreenProps) {
         compact
         onBack={() => router.back()}
         actions={
-          active ? (
+          active || locked ? (
             <Pressable
               testID="boss-more"
               accessibilityRole="button"
@@ -242,9 +263,47 @@ export function BossScreen({ view }: BossScreenProps) {
         )}
 
         <View style={styles.block}>
-          <ThemedText testID="boss-name" variant="screenTitle" accessibilityRole="header">
-            {name}
-          </ThemedText>
+          <View style={styles.nameRow}>
+            <ThemedText
+              testID="boss-name"
+              variant="screenTitle"
+              accessibilityRole="header"
+              style={styles.flex}
+            >
+              {name}
+            </ThemedText>
+            {boss.isMain ? <MainQuestCrown testID="boss-crown" /> : null}
+          </View>
+          {locked && view.chainPrev !== null ? (
+            <View testID="boss-locked" accessible style={styles.lockedRow}>
+              <Icon name="lucchetto" size={20} color={colors.textMuted} />
+              <ThemedText color={colors.textMuted} style={styles.flex}>
+                {`${t('bosses.chain.locked')} · ${t('bosses.chain.lockedAfter', {
+                  name: view.chainPrev.name,
+                })}`}
+              </ThemedText>
+            </View>
+          ) : null}
+          {[
+            { key: 'prev', other: view.chainPrev },
+            { key: 'next', other: view.chainNext },
+          ].map(({ key, other }) =>
+            other === null ? null : (
+              <Pressable
+                key={key}
+                testID={`boss-chain-${key}`}
+                accessibilityRole="button"
+                accessibilityHint={t('bosses.chain.openHint')}
+                onPress={() => openBoss(other.id)}
+                style={styles.chainRow}
+              >
+                <Icon name="avanti" size={16} color={colors.textMuted} />
+                <ThemedText variant="label" color={colors.primary} style={styles.flex}>
+                  {t(`bosses.chain.${key}`, { name: other.name })}
+                </ThemedText>
+              </Pressable>
+            ),
+          )}
           {(family === 'arcade' || family === 'cyberpunk') && !essential ? (
             // The steps as the stages of the boss, or its nodes (5.9; mockup B3b).
             <ThemedText variant="label" color={family === 'arcade' ? colors.primary : undefined}>
@@ -483,6 +542,27 @@ export function BossScreen({ view }: BossScreenProps) {
         visible={menu}
         onClose={() => setMenu(false)}
         items={[
+          ...(canBeMainQuest(boss)
+            ? [
+                {
+                  key: 'main',
+                  label: t(boss.isMain ? 'bosses.main.unpin' : 'bosses.main.pin'),
+                  icon: <Icon name="trofeo" size={20} color={colors.text} />,
+                  onPress: () => pinMain(!boss.isMain),
+                },
+              ]
+            : []),
+          ...(view.canChain
+            ? [
+                {
+                  key: 'chain',
+                  label: t('bosses.chain.add'),
+                  icon: <Icon name="aggiungi" size={20} color={colors.text} />,
+                  onPress: () =>
+                    router.push({ pathname: '/goal-editor', params: { after: boss.id } }),
+                },
+              ]
+            : []),
           ...(boss.kind === 'starter'
             ? []
             : [
@@ -500,12 +580,17 @@ export function BossScreen({ view }: BossScreenProps) {
             icon: <Icon name="calendario" size={20} color={colors.text} />,
             onPress: () => setQueued('deadline'),
           },
-          {
-            key: 'archive',
-            label: t('bosses.sheet.archive'),
-            icon: <Icon name="archivio" size={20} color={colors.text} />,
-            onPress: () => setQueued('archive'),
-          },
+          // A locked boss is not archived: it is deleted, or waits its turn.
+          ...(locked
+            ? []
+            : [
+                {
+                  key: 'archive',
+                  label: t('bosses.sheet.archive'),
+                  icon: <Icon name="archivio" size={20} color={colors.text} />,
+                  onPress: () => setQueued('archive'),
+                },
+              ]),
           {
             key: 'delete',
             label: t('bosses.sheet.delete'),
@@ -547,6 +632,9 @@ export function BossScreen({ view }: BossScreenProps) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   trophy: { gap: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  lockedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  chainRow: { minHeight: MIN_TOUCH, flexDirection: 'row', alignItems: 'center', gap: 8 },
   content: { gap: 16, paddingBottom: 48 },
   more: { width: MIN_TOUCH, height: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' },
   arena: { height: ARENA_HEIGHT, alignItems: 'center', justifyContent: 'center' },

@@ -68,6 +68,8 @@ interface Step {
 export interface BossEditorProps {
   /** The active boss to change («Modifica», design-sezioni.md 5.3); a new boss when missing. */
   readonly bossId?: string;
+  /** A new boss that follows this one in a chain (task T83): locked until its victory. */
+  readonly after?: string;
 }
 
 function stepsOf(edit: BossEditView | null): Step[] {
@@ -92,7 +94,7 @@ function stepsOf(edit: BossEditView | null): Step[] {
  * steps are renamed and moved but not taken away, a step to do must stay, and difficulty and stat
  * stay those of the creation, since they fix the reward and the points of a fight already started.
  */
-export function BossEditor({ bossId }: BossEditorProps = {}) {
+export function BossEditor({ bossId, after }: BossEditorProps = {}) {
   const { t } = useTranslation();
   const { colors, family, typography } = useTheme();
   const router = useRouter();
@@ -103,6 +105,10 @@ export function BossEditor({ bossId }: BossEditorProps = {}) {
   // Read once: the screen keeps its own copy while the user changes it.
   const [edit] = useState(() => (bossId === undefined ? null : getBossEdit(db, bossId)));
   const editing = edit !== null;
+  // The boss the new one follows, read once like `edit`.
+  const [previous] = useState(() =>
+    after === undefined || bossId !== undefined ? null : getBossEdit(db, after),
+  );
   const [name, setName] = useState(edit?.boss.name ?? '');
   const [steps, setSteps] = useState<readonly Step[]>(() => stepsOf(edit));
   const [newStep, setNewStep] = useState('');
@@ -259,6 +265,7 @@ export function BossEditor({ bossId }: BossEditorProps = {}) {
               deadlineDay: deadline,
               steps: titles,
               missionIds,
+              chainPrevId: previous?.boss.id ?? null,
             },
             actionClock,
           ),
@@ -313,6 +320,14 @@ export function BossEditor({ bossId }: BossEditorProps = {}) {
         </ThemedText>
         <View style={styles.close} />
       </View>
+      {previous === null ? null : (
+        <View style={[styles.after, { backgroundColor: colors.surfaceHigh }]}>
+          <Icon name="lucchetto" size={16} color={colors.textMuted} />
+          <ThemedText testID="goal-editor-after" variant="caption" style={styles.flex}>
+            {t('goals.editor.after', { name: nameOf(previous.boss) })}
+          </ThemedText>
+        </View>
+      )}
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.nameRow}>
           {/* Every theme has a boss for each difficulty: the preview changes with it (5.2). */}
@@ -650,6 +665,7 @@ export function BossEditor({ bossId }: BossEditorProps = {}) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  after: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

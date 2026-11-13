@@ -214,6 +214,22 @@ export const BOSS_EDIT = {
   minStepsLeft: 1,
 } as const;
 
+/**
+ * Main Quest and chains of goals (task T83, design-sezioni.md 5.8). PROVISIONAL choices, not in
+ * the documents: a locked boss of a chain does not count among the active ones; when the boss
+ * before it leaves the field without a victory (archived, deleted) the next one is unlocked all the
+ * same, since nothing could ever unlock it; a deadline already passed at the unlock is dropped, so
+ * a boss nobody could fight never steals; the Main Quest passes to the next boss of its chain.
+ */
+export const BOSS_CHAIN = {
+  /** Archiving or deleting the boss before unlocks the next one (otherwise it stays locked). */
+  unlockWhenPreviousLeaves: true,
+  /** At the unlock a deadline before the day of the unlock is removed. */
+  dropPastDeadlineOnUnlock: true,
+  /** The victory of the Main Quest makes the next boss of its chain the Main Quest. */
+  mainQuestPassesToNext: true,
+} as const;
+
 /** Victory of the quest of the first launch (CLAUDE.md, choice 12): not the formula of the bosses. */
 export const STARTER_QUEST_REWARD = {
   /** The XP missing to reach this level. */

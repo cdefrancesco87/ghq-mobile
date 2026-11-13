@@ -36,6 +36,13 @@
       "when": 1794582091733,
       "tag": "0004_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794587770867,
+      "tag": "0005_boss_main_quest_and_chains",
+      "breakpoints": true
     }
   ]
 }

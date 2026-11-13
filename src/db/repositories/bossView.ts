@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 
 import { protectedHp } from '../../rules/boss';
+import { canChainAfter } from '../../rules/chain';
 import { DIFFICULTY_VALUES } from '../../rules/config';
 import type { GameDay } from '../../rules/types';
 import { boss, bossSteps, events, missions } from '../schema';
@@ -39,6 +40,18 @@ export interface BossView extends BossProgress {
   readonly defeatedDay: GameDay | null;
   /** The trophy of a defeated boss (design-sezioni.md 5.7): dates, days taken and rewards. */
   readonly trophy: TrophyInfo | null;
+  /** The boss this one follows in its chain (task T83), if it is still there (not deleted). */
+  readonly chainPrev: ChainNeighbour | null;
+  /** The boss that follows this one in its chain, if any. */
+  readonly chainNext: ChainNeighbour | null;
+  /** «Aggiungi il prossimo della catena» is offered: a normal boss to fight with no next one. */
+  readonly canChain: boolean;
+}
+
+export interface ChainNeighbour {
+  readonly id: string;
+  readonly name: string;
+  readonly kind: 'normal' | 'starter';
 }
 
 /**
@@ -128,9 +141,21 @@ export function getBossView(
     .where(and(eq(missions.bossId, bossId), ne(missions.status, 'archived'), notDeleted(missions)))
     .orderBy(asc(missions.sortOrder), asc(missions.createdAt))
     .all();
+  const neighbour = (row: typeof target | undefined): ChainNeighbour | null =>
+    row === undefined || row.status === 'deleted'
+      ? null
+      : { id: row.id, name: row.name, kind: row.kind };
+  const chainPrev =
+    target.chainPrevId === null
+      ? undefined
+      : db.select().from(boss).where(eq(boss.id, target.chainPrevId)).get();
+  const chainNext = db.select().from(boss).where(eq(boss.chainPrevId, bossId)).get();
   return {
     day: gameDayOf(clock.now, clock.tzOffset, dayChange),
     boss: target,
+    chainPrev: neighbour(chainPrev),
+    chainNext: neighbour(chainNext),
+    canChain: canChainAfter({ ...target, hasNext: chainNext !== undefined }),
     steps,
     stepsDone: rows.length - stepsLeft,
     stepsTotal: rows.length,

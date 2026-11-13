@@ -91,6 +91,10 @@ export const PIXEL_SPRITES = {
   "compagno-evoluzione-2-cyberpunk": { source: require('../../../../assets/sprites/compagno-evoluzione-2-cyberpunk.png'), grid: 32 },
   "compagno-evoluzione-2-fantasy": { source: require('../../../../assets/sprites/compagno-evoluzione-2-fantasy.png'), grid: 32 },
   "compagno-evoluzione-2-lovecraft": { source: require('../../../../assets/sprites/compagno-evoluzione-2-lovecraft.png'), grid: 32 },
+  "corona-main-quest-arcade": { source: require('../../../../assets/sprites/corona-main-quest-arcade.png'), grid: 16 },
+  "corona-main-quest-cyberpunk": { source: require('../../../../assets/sprites/corona-main-quest-cyberpunk.png'), grid: 16 },
+  "corona-main-quest-fantasy": { source: require('../../../../assets/sprites/corona-main-quest-fantasy.png'), grid: 16 },
+  "corona-main-quest-lovecraft": { source: require('../../../../assets/sprites/corona-main-quest-lovecraft.png'), grid: 16 },
 } as const satisfies Readonly<
   Record<string, { readonly source: ImageSourcePropType; readonly grid: number }>
 >;

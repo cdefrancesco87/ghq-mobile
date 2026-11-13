@@ -881,6 +881,23 @@
       "stepsKept_other": "Your {{count}} steps stay.",
       "newDeadline": "Set a new deadline",
       "archive": "Archive the goal"
+    },
+    "main": {
+      "title": "Main Quest",
+      "crown": "Main Quest",
+      "pin": "Pin as Main Quest",
+      "unpin": "Unpin Main Quest",
+      "pinnedToast": "«{{name}}» is the Main Quest",
+      "unpinnedToast": "Main Quest unpinned"
+    },
+    "chain": {
+      "add": "Add the next in the chain",
+      "locked": "Locked",
+      "lockedAfter": "Unlocks when you defeat «{{name}}»",
+      "lockedSummary": "locked, unlocks when you defeat {{name}}",
+      "prev": "Comes after «{{name}}»",
+      "next": "Then «{{name}}»",
+      "openHint": "Opens the card"
     }
   },
   "skipReasons": {
@@ -1144,7 +1161,8 @@
       "editTitle": "Edit goal",
       "editPreview": "Health {{hp}} of {{max}} · Reward {{xp}} {{xpTerm}} and {{coins}} {{coinsTerm}}",
       "stepDoneLabel": "Step {{position}} of {{total}}, done",
-      "stepLeftMissing": "At least one step to do is needed for the final blow"
+      "stepLeftMissing": "At least one step to do is needed for the final blow",
+      "after": "After «{{name}}»: unlocks at its victory"
     }
   },
   "companion": {

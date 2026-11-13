@@ -16,10 +16,13 @@ import { diffDays } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useBossTexts } from './bossTexts';
+import { MainQuestCrown } from './MainQuestCrown';
 import { useShake } from './useShake';
 
 /** 16×16 at 3× in the compact card (design-sezioni.md 2.4), 32×32 at 3× in Obiettivi (5.1). */
 const SPRITE_SIZE = { compact: 48, large: 96 } as const;
+/** The crown beside the name: 16×16 at 2×, as high as two lines of the label at most. */
+const CROWN_ICON = 32;
 
 /** The last hit on the boss: `key` changes at every hit, so the same damage shakes again. */
 export interface BossHit {
@@ -40,6 +43,13 @@ export interface BossCardProps {
   readonly hit: BossHit | null;
   /** The general pause holds the deadline: «Scadenza ferma» instead of the days (design 2.8). */
   readonly held?: boolean;
+  /** The Main Quest: a crown beside the name (design-sezioni.md 5.8; task T83). */
+  readonly crowned?: boolean;
+  /**
+   * A boss of a chain still locked (5.8): the name of the boss whose victory unlocks it. The card
+   * has a padlock and that sentence instead of the next step.
+   */
+  readonly lockedAfter?: string | null;
   readonly testID: string;
 }
 
@@ -60,6 +70,8 @@ export function BossCard({
   onOpen,
   hit,
   held = false,
+  crowned = false,
+  lockedAfter = null,
   testID,
 }: BossCardProps) {
   const { t } = useTranslation();
@@ -92,8 +104,11 @@ export function BossCard({
     total: item.stepsTotal,
     context: large && !essential ? family : undefined,
   });
+  const locked = lockedAfter !== null;
   const summary = [
     name,
+    crowned ? t('bosses.main.crown') : null,
+    locked ? t('bosses.chain.lockedSummary', { name: lockedAfter }) : null,
     boss.kind === 'starter' || essential
       ? null
       : t('bosses.card.difficulty', { difficulty: t(`shared.difficulty.${boss.difficulty}`) }),
@@ -142,6 +157,20 @@ export function BossCard({
             >
               {name}
             </ThemedText>
+            {crowned ? (
+              <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <MainQuestCrown testID={`${testID}-crown`} size={CROWN_ICON} />
+              </View>
+            ) : null}
+            {locked ? (
+              <View
+                testID={`${testID}-locked`}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                <Icon name="lucchetto" size={20} color={colors.textMuted} />
+              </View>
+            ) : null}
             {deadline === null ? null : (
               <View testID={`${testID}-deadline`} style={styles.deadline}>
                 <Icon
@@ -200,7 +229,14 @@ export function BossCard({
           </ThemedText>
         </View>
       </Pressable>
-      {item.nextStep === null ? null : (
+      {locked ? (
+        <>
+          <View style={[styles.separator, { backgroundColor: colors.border }]} />
+          <ThemedText testID={`${testID}-locked-note`} variant="caption" color={colors.textMuted}>
+            {t('bosses.chain.lockedAfter', { name: lockedAfter })}
+          </ThemedText>
+        </>
+      ) : item.nextStep === null ? null : (
         <>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
           <View style={styles.next}>

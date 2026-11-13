@@ -12,7 +12,8 @@ import { gameDayOf, getDeviceId, getSetting } from './settings';
 /**
  * The event types of the data model (modello-dati.md, 4.2), plus `hero.created`: the creation of
  * the profile, which brings the starting hit points into the log so that the log always adds up
- * to the hero. `boss.updated` and `boss.deleted` are provisional (CLAUDE.md, choice 21). The
+ * to the hero. `boss.updated` and `boss.deleted` are provisional (CLAUDE.md, choice 21);
+ * `boss.main_changed` and `boss.unlocked` belong to the Main Quest and the chains (task T83). The
  * `pause.*` events belong to the general pause (choice 23).
  */
 export const EVENT_TYPES = [
@@ -42,6 +43,8 @@ export const EVENT_TYPES = [
   'boss.archived',
   'boss.updated',
   'boss.deleted',
+  'boss.main_changed',
+  'boss.unlocked',
   'hero.created',
   'hero.level_up',
   'hero.exhausted',

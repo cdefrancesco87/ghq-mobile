@@ -30,6 +30,7 @@ import { MorningTale, useMorningTale } from './MorningTale';
 import { PauseBanner } from './PauseBanner';
 import { TodayHeader } from './TodayHeader';
 import { TodayBosses } from './TodayBosses';
+import { TodayMainQuest } from './TodayMainQuest';
 import { TodayMissions } from './TodayMissions';
 import { useMissionActions } from './useMissionActions';
 import { useMissionMenu } from './useMissionMenu';
@@ -199,6 +200,8 @@ export function TodayScreen({
         {tale.bubble === null ? null : (
           <MorningTale view={view} bubble={tale.bubble} onClose={tale.close} />
         )}
+        {/* The Main Quest is above the plan (5.8), also on a day without missions. */}
+        <TodayMainQuest view={view} actions={actions} />
         {/* The plan comes before the boss (2.1); the bosses stay also on a day without missions. */}
         {working ? (
           <DayPlan view={view} tzOffset={tzOffset} now={timerNow} actions={actions} menu={menu} />
