@@ -4,6 +4,7 @@ import {
   bossPreview,
   canCreateBoss,
   deadlineSteal,
+  protectedHp,
   shouldWarnDeadline,
   starterQuestReward,
   stepStatPoints,
@@ -173,5 +174,26 @@ describe('starterQuestReward', () => {
   it('gives no XP to a hero already at level 2 or above', () => {
     expect(starterQuestReward({ level: 2, xpInLevel: 10 })).toEqual({ xp: 0, coins: 50 });
     expect(starterQuestReward({ level: 7, xpInLevel: 0 })).toEqual({ xp: 0, coins: 50 });
+  });
+});
+
+describe('protectedHp', () => {
+  it('is 10 hit points per step left, the part that only the last step can take', () => {
+    expect(protectedHp({ hp: 100, stepsLeft: 5 })).toBe(50);
+    expect(protectedHp({ hp: 160, stepsLeft: 8 })).toBe(80);
+    expect(protectedHp({ hp: 12, stepsLeft: 1 })).toBe(10);
+  });
+
+  it('is never more than the hit points left', () => {
+    expect(protectedHp({ hp: 30, stepsLeft: 5 })).toBe(30);
+  });
+
+  it('is nothing for a defeated boss', () => {
+    expect(protectedHp({ hp: 0, stepsLeft: 0 })).toBe(0);
+  });
+
+  it('accepts only non-negative integers', () => {
+    expect(() => protectedHp({ hp: -1, stepsLeft: 2 })).toThrow(RangeError);
+    expect(() => protectedHp({ hp: 40, stepsLeft: 1.5 })).toThrow(RangeError);
   });
 });

@@ -9,7 +9,7 @@ import { THEMES, THEME_KEYS, type ThemeKey } from '@/theme/themes';
 import { pixelFontSize } from '@/theme/textScale';
 import { renderThemed } from '../../../test/render';
 import { ActionSheet } from './ActionSheet';
-import { Bar, barRatio, filledSegments } from './Bar';
+import { Bar, barRatio, filledSegments, protectedSegments } from './Bar';
 import { Button, buttonColors } from './Button';
 import { Card } from './Card';
 import { Chip } from './Chip';
@@ -133,6 +133,35 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
       expect(styleOf('xp-fill')).toMatchObject({ width: '50%', backgroundColor: colors.xp });
       expect(styleOf('xp-track').height).toBe(8);
     }
+  });
+
+  it('Bar draws the protected part striped at the end of the fill', async () => {
+    await renderThemed(
+      <Bar kind="boss" label="Vita" value={100} max={160} protectedValue={50} testID="boss" />,
+      { theme },
+    );
+
+    if (theme === 'arcade') {
+      // 10 segments: 6 full (100 of 160), the last 3 of them striped (50 of 160).
+      await fireEvent(screen.getByTestId('boss-track'), 'layout', {
+        nativeEvent: { layout: { width: 98, height: 12, x: 0, y: 0 } },
+      });
+      expect(screen.getAllByTestId('boss-full')).toHaveLength(3);
+      expect(screen.getAllByTestId('boss-protected')).toHaveLength(3);
+      expect(screen.getAllByTestId('boss-empty')).toHaveLength(4);
+    } else {
+      expect(styleOf('boss-fill').width).toBe('62.5%');
+      expect(styleOf('boss-fill').backgroundColor).toBeUndefined();
+      expect(styleOf('boss-protected').flex).toBeCloseTo(50 / 160);
+    }
+    expect(screen.getByText('100/160')).toBeOnTheScreen();
+  });
+
+  it('Bar has no stripes without a protected part', async () => {
+    await renderThemed(<Bar kind="boss" label="Vita" value={100} max={160} testID="boss" />, {
+      theme,
+    });
+    expect(screen.queryByTestId('boss-protected')).toBeNull();
   });
 
   it('Difficulty shows the notches and the word, read also by the screen reader', async () => {
@@ -648,6 +677,14 @@ describe('measures of the bars', () => {
     expect(filledSegments(0.5, 20)).toBe(10);
     expect(filledSegments(0.99, 20)).toBe(19);
     expect(filledSegments(1, 20)).toBe(20);
+  });
+
+  it('protectedSegments stripes at least one full segment and never more than the full ones', () => {
+    expect(protectedSegments(0, 10, 20)).toBe(0);
+    expect(protectedSegments(0.01, 10, 20)).toBe(1);
+    expect(protectedSegments(0.25, 10, 20)).toBe(5);
+    expect(protectedSegments(0.75, 10, 20)).toBe(10);
+    expect(protectedSegments(0.25, 0, 20)).toBe(0);
   });
 
   it('gives each theme the bar of misure-componenti.md', () => {

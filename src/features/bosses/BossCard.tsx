@@ -1,12 +1,6 @@
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import { Pressable, StyleSheet, View, type GestureResponderEvent } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import type { BossProgress } from '@/db/repositories/boss';
 import { Bar } from '@/features/shared/Bar';
@@ -16,21 +10,21 @@ import { CompletionControl } from '@/features/shared/CompletionControl';
 import { Icon } from '@/features/shared/Icon';
 import { ProgressRing, ringStroke } from '@/features/shared/ProgressRing';
 import { ThemedText } from '@/features/shared/ThemedText';
-import { useReduceMotion } from '@/features/shared/useReduceMotion';
 import { BOSS } from '@/rules/config';
 import { diffDays } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useBossTexts } from './bossTexts';
+import { useShake } from './useShake';
 
 /** 16×16 at 3× in the compact card (design-sezioni.md 2.4), 32×32 at 3× in Obiettivi (5.1). */
 const SPRITE_SIZE = { compact: 48, large: 96 } as const;
-const SHAKE = 4;
-const SHAKE_STEP_MS = 50;
 
 /** The last hit on the boss: `key` changes at every hit, so the same damage shakes again. */
 export interface BossHit {
   readonly dealt: number;
+  /** Hit points left right after the hit, for the sentence said aloud (5.11). */
+  readonly hp: number;
   readonly key: number;
 }
 
@@ -40,6 +34,8 @@ export interface BossCardProps {
   readonly variant?: 'compact' | 'large';
   readonly day: GameDay;
   readonly onCompleteStep: (event: GestureResponderEvent) => void;
+  /** A touch on the card opens the card of the boss (design-sezioni.md 5.3). */
+  readonly onOpen: () => void;
   readonly hit: BossHit | null;
   readonly testID: string;
 }
@@ -49,39 +45,24 @@ export interface BossCardProps {
  * deadline, the bar with its number, the steps done and the next step with its control. A hit
  * shakes the sprite (not with «Riduci movimento») and shows the damage. The large card of
  * Obiettivi has the sprite at 96, in Minimal a large ring with the share of the hit points taken
- * (5.9), the steps in the words of the theme and one sentence for the screen reader (5.11).
+ * (5.9), the steps in the words of the theme and one sentence for the screen reader (5.11). A
+ * touch on the card, outside the control of the step, opens the card of the boss.
  */
 export function BossCard({
   item,
   variant = 'compact',
   day,
   onCompleteStep,
+  onOpen,
   hit,
   testID,
 }: BossCardProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
-  const reduceMotion = useReduceMotion();
   const { nameOf, stepTitleOf } = useBossTexts();
   const { boss } = item;
   const name = nameOf(boss);
-  const shake = useSharedValue(0);
-  const shaking = useAnimatedStyle(() => ({ transform: [{ translateX: shake.get() }] }));
-
-  useEffect(() => {
-    if (hit === null || reduceMotion) {
-      return;
-    }
-    const step = { duration: SHAKE_STEP_MS };
-    shake.set(
-      withSequence(
-        withTiming(SHAKE, step),
-        withTiming(-SHAKE, step),
-        withTiming(SHAKE, step),
-        withTiming(0, step),
-      ),
-    );
-  }, [hit, reduceMotion, shake]);
+  const shaking = useShake(hit);
 
   const daysLeft = boss.deadlineDay === null ? null : diffDays(day, boss.deadlineDay);
   const near = daysLeft !== null && daysLeft <= BOSS.deadlineWarningDays;
@@ -116,11 +97,14 @@ export function BossCard({
 
   return (
     <Card testID={testID}>
-      <View
+      <Pressable
+        testID={`${testID}-open`}
         style={styles.top}
-        // The large card is read in one sentence (5.11); the step keeps its own control.
-        accessible={large}
-        accessibilityLabel={large ? summary : undefined}
+        onPress={onOpen}
+        // The card is read in one sentence (5.11); the step keeps its own control.
+        accessibilityRole="button"
+        accessibilityLabel={summary}
+        accessibilityHint={t('bosses.card.openHint')}
       >
         <Animated.View style={shaking}>
           {large && family === 'minimal' ? (
@@ -193,7 +177,7 @@ export function BossCard({
             {steps}
           </ThemedText>
         </View>
-      </View>
+      </Pressable>
       {item.nextStep === null ? null : (
         <>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />

@@ -61,6 +61,7 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
         day={view.day}
         hit={step.hitOf(item.boss.id)}
         onCompleteStep={() => step.completeStep(item)}
+        onOpen={() => router.push({ pathname: '/boss/[id]', params: { id: item.boss.id } })}
       />
     </View>
   ));

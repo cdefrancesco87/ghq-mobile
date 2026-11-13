@@ -548,7 +548,9 @@
         "baby": "C'est maintenant un bébé",
         "adult": "C'est maintenant un adulte"
       },
-      "badge": "Badge débloqué"
+      "badge": "Badge débloqué",
+      "seeTrophy": "Voir le trophée",
+      "rewardLabel": "Plus {{xp}} {{xpTerm}}, plus {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -689,7 +691,8 @@
       "difficulty": "difficulté {{difficulty}}",
       "hpSummary": "vie {{hp}} sur {{max}}",
       "percent": "{{percent}} %",
-      "stepsSummary": "étapes {{done}} sur {{total}}"
+      "stepsSummary": "étapes {{done}} sur {{total}}",
+      "openHint": "Ouvre la fiche"
     },
     "today": {
       "empty": "Transforme un objectif en boss",
@@ -698,6 +701,28 @@
       "empty_lovecraft": "Transforme un objectif en horreur",
       "empty_minimal": "Découpe un grand objectif en étapes",
       "stepToast": "Étape faite · −{{damage}}"
+    },
+    "sheet": {
+      "protectedNote": "Le coup final demande la dernière étape.",
+      "steps": "Étapes",
+      "steps_arcade": "Stages",
+      "steps_cyberpunk": "Nœuds",
+      "stepsCount": "{{done}} sur {{total}}",
+      "stepsChip": "Étapes {{done}}/{{total}}",
+      "next": "Suivante",
+      "doneOn": "{{day}} {{month}}",
+      "stepLabel": "Terminer l'étape {{step}}",
+      "todoLabel": "{{step}}, à faire",
+      "doneLabel": "{{step}}, faite le {{day}} {{month}}",
+      "missionDetail": "{{damage}} · {{dealt}} infligés",
+      "missionLabel": "{{name}}, {{damage}} par réalisation, {{dealt}} infligés au total. Ouvrir le détail",
+      "hitLabel": "{{damage}} dégâts, vie {{hp}} sur {{max}}",
+      "archive": "Archiver",
+      "archiveTitle": "Archiver « {{name}} » ?",
+      "archiveMessage": "L'objectif quitte la liste et libère une place. Les étapes faites restent, mais il ne pourra pas être repris.",
+      "archivedToast": "Objectif archivé",
+      "archived": "Archivé",
+      "defeatedOn": "Vaincu le {{day}} {{month}}"
     }
   },
   "skipReasons": {

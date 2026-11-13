@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Modal, StyleSheet } from 'react-native';
 import Animated, {
@@ -10,10 +11,10 @@ import Animated, {
 import type { EventRow } from '@/db/repositories/events';
 import { useTheme } from '@/theme/ThemeProvider';
 import { MomentScreen } from './MomentScreen';
-import { addMoments, momentsFromEvents, type Moment } from './moments';
+import { addMoments, momentsFromEvents, waitsForTouch, type Moment } from './moments';
 import { useReduceMotion } from './useReduceMotion';
 
-/** A moment lasts at most 2.5 seconds (design-sezioni.md A7). */
+/** A moment lasts at most 2.5 seconds (design-sezioni.md A7); a victory waits for its buttons. */
 export const MOMENT_MAX_MS = 2500;
 
 /** The storyboard C2a: the action ends on the screen, then at 300 ms the screen dims in 200 ms. */
@@ -33,7 +34,7 @@ export function MomentQueueProvider({ children }: { readonly children: ReactNode
   const reduceMotion = useReduceMotion();
   const [queue, setQueue] = useState<readonly Moment[]>([]);
   const current = queue[0];
-  const currentId = current?.id;
+  const currentId = current !== undefined && !waitsForTouch(current) ? current.id : undefined;
 
   const api = useMemo<MomentQueueApi>(
     () => ({
@@ -48,6 +49,12 @@ export function MomentQueueProvider({ children }: { readonly children: ReactNode
   );
 
   const next = () => setQueue((waiting) => waiting.slice(1));
+
+  // Until the Hall of trophies (T65), the trophy is the card of the defeated boss.
+  const seeTrophy = (bossId: string) => {
+    next();
+    router.navigate({ pathname: '/boss/[id]', params: { id: bossId } });
+  };
 
   useEffect(() => {
     if (currentId === undefined) {
@@ -74,6 +81,7 @@ export function MomentQueueProvider({ children }: { readonly children: ReactNode
               moment={current}
               reduceMotion={reduceMotion}
               onSkip={next}
+              onSeeTrophy={seeTrophy}
             />
           </MomentBackground>
         </Modal>

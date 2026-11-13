@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -37,6 +37,10 @@ const LEVEL_FONT_SIZE = 96;
 const SPRITE_SIZE = 160;
 const EDGE = 16;
 
+/** XP and coins of a victory count up from 0 while the reward appears (design-sezioni.md 5.5). */
+const COUNT_MS = 800;
+const COUNT_STEPS = 20;
+
 const CONFETTI_DELAY_MS = 1000;
 const CONFETTI_MS = 800;
 const CONFETTI_STAGGER_MS = 40;
@@ -47,6 +51,37 @@ const CONFETTI = [0.1, 0.22, 0.34, 0.46, 0.58, 0.7, 0.82, 0.94] as const;
 interface MomentTexts {
   readonly title: string;
   readonly detail?: string;
+  /** What the screen reader says after the title, when it differs from the detail. */
+  readonly spokenDetail?: string;
+}
+
+/**
+ * A number that counts up from 0 to its value in `COUNT_MS`, once the detail is there. Without
+ * `run` it is the value at once (Riduci movimento, A7).
+ */
+function useCountUp(value: number, run: boolean): number {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    if (!run) {
+      return undefined;
+    }
+    let count = 0;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = setTimeout(() => {
+      timer = setInterval(() => {
+        count += 1;
+        setStep(count);
+        if (count >= COUNT_STEPS) {
+          clearInterval(timer);
+        }
+      }, COUNT_MS / COUNT_STEPS);
+    }, DETAIL_DELAY_MS);
+    return () => {
+      clearTimeout(start);
+      clearInterval(timer);
+    };
+  }, [run]);
+  return run ? Math.round((value * step) / COUNT_STEPS) : value;
 }
 
 function useMomentTexts(moment: Moment): MomentTexts {
@@ -66,16 +101,19 @@ function useMomentTexts(moment: Moment): MomentTexts {
                 title: t(`titles.${family}.${TITLE_KEYS[family][moment.titleIndex]}`),
               }),
       };
-    case 'boss_defeated':
+    case 'boss_defeated': {
+      const values = {
+        xp: moment.xp,
+        xpTerm: t('lexicon.xp_pl', { context: family }),
+        coins: moment.coins,
+        coinsTerm: t('lexicon.coins_pl', { context: family }),
+      };
       return {
         title: t('lexicon.victory', { context: family }),
-        detail: t('shared.moments.reward', {
-          xp: moment.xp,
-          xpTerm: t('lexicon.xp_pl', { context: family }),
-          coins: moment.coins,
-          coinsTerm: t('lexicon.coins_pl', { context: family }),
-        }),
+        detail: t('shared.moments.reward', values),
+        spokenDetail: t('shared.moments.rewardLabel', values),
       };
+    }
     case 'companion_stage':
       return {
         title: t('shared.moments.companionGrown', {
@@ -172,15 +210,27 @@ export interface MomentScreenProps {
   readonly reduceMotion: boolean;
   /** Goes to the next moment of the queue. */
   readonly onSkip: () => void;
+  /** «Vedi il trofeo» of a victory: closes the moment and opens the defeated boss. */
+  readonly onSeeTrophy?: (bossId: string) => void;
 }
 
-/** A full-screen moment: a touch anywhere moves on (design-sezioni.md A7, mockup D35). */
-export function MomentScreen({ moment, reduceMotion, onSkip }: MomentScreenProps) {
+/**
+ * A full-screen moment: a touch anywhere moves on (design-sezioni.md A7, mockup D35). A victory
+ * counts its XP and coins up and offers «Vedi il trofeo» and «Continua» (5.5, mockup D23).
+ */
+export function MomentScreen({ moment, reduceMotion, onSkip, onSeeTrophy }: MomentScreenProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { top, bottom } = useSafeAreaInsets();
-  const { title, detail } = useMomentTexts(moment);
-  const label = detail === undefined ? title : `${title}. ${detail}`;
+  const victory = moment.kind === 'boss_defeated' ? moment : null;
+  const xp = useCountUp(victory?.xp ?? 0, victory !== null && !reduceMotion);
+  const coins = useCountUp(victory?.coins ?? 0, victory !== null && !reduceMotion);
+  const { title, detail: finalDetail, spokenDetail } = useMomentTexts(moment);
+  // The reward on screen counts up; the screen reader hears the final values at once.
+  const { detail } = useMomentTexts(victory === null ? moment : { ...victory, xp, coins });
+  const spoken = spokenDetail ?? finalDetail;
+  const label = spoken === undefined ? title : `${title}. ${spoken}`;
+  const trophyBossId = victory?.bossId ?? null;
   const emblemOpacity = useSharedValue(0);
   const emblemScale = useSharedValue(reduceMotion ? 1 : 0.6);
   const detailOpacity = useSharedValue(0);
@@ -264,12 +314,33 @@ export function MomentScreen({ moment, reduceMotion, onSkip }: MomentScreenProps
           )}
         </Animated.View>
       </View>
-      <Button
-        testID="moment-continue"
-        label={t('shared.moments.continue')}
-        onPress={onSkip}
-        style={[styles.continue, { bottom: bottom + EDGE }]}
-      />
+      {trophyBossId === null || onSeeTrophy === undefined ? (
+        <Button
+          testID="moment-continue"
+          label={t('shared.moments.continue')}
+          onPress={onSkip}
+          style={[styles.continue, { bottom: bottom + EDGE }]}
+        />
+      ) : (
+        <View style={[styles.continue, styles.actions, { bottom: bottom + EDGE }]}>
+          <Button
+            testID="moment-trophy"
+            label={t('shared.moments.seeTrophy')}
+            onPress={() => onSeeTrophy(trophyBossId)}
+          />
+          <Pressable
+            testID="moment-continue"
+            onPress={onSkip}
+            accessibilityRole="button"
+            accessibilityLabel={t('shared.moments.continue')}
+            style={styles.link}
+          >
+            <ThemedText variant="label" color={colors.primary}>
+              {t('shared.moments.continue')}
+            </ThemedText>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -310,4 +381,6 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   continue: { position: 'absolute', left: EDGE, right: EDGE },
+  actions: { gap: 8 },
+  link: { minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' },
 });

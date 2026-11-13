@@ -16,6 +16,8 @@ export type Moment =
   | {
       readonly kind: 'boss_defeated';
       readonly id: string;
+      /** For «Vedi il trofeo» (design-sezioni.md 5.5). */
+      readonly bossId: string | null;
       readonly xp: number;
       readonly coins: number;
     }
@@ -43,7 +45,13 @@ function momentOf(event: EventRow): Moment | null {
       };
     }
     case 'boss.defeated':
-      return { kind: 'boss_defeated', id, xp: event.dXp, coins: event.dCoins };
+      return {
+        kind: 'boss_defeated',
+        id,
+        bossId: event.bossId,
+        xp: event.dXp,
+        coins: event.dCoins,
+      };
     case 'companion.stage_up':
       return { kind: 'companion_stage', id, stage: (payload as { to: CompanionStage }).to };
     case 'badge.unlocked':
@@ -51,6 +59,14 @@ function momentOf(event: EventRow): Moment | null {
     default:
       return null;
   }
+}
+
+/**
+ * Whether the moment waits for a touch instead of going away after 2.5 seconds: the victory has
+ * «Vedi il trofeo» and «Continua» (design-sezioni.md 5.5), which must stay in reach.
+ */
+export function waitsForTouch(moment: Moment): boolean {
+  return moment.kind === 'boss_defeated';
 }
 
 /** The moments of the events returned by an action; the other events bring none. */

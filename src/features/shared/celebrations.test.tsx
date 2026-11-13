@@ -320,7 +320,28 @@ describe('MomentQueue', () => {
   it('writes the victory with the rewards in the lexicon of the theme', async () => {
     await renderQueue([VICTORY], 'fantasy');
     expect(screen.getByText('Vittoria!')).toBeTruthy();
+    // XP and coins count up from 0 once the reward appears; the screen reader hears them at once.
+    expect(screen.getByText('+0 Esperienza · +0 Oro')).toBeTruthy();
+    expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
+      'Vittoria!. Più 120 Esperienza, più 24 Oro',
+    );
+    await act(async () => jest.advanceTimersByTime(MOMENT_MAX_MS));
     expect(screen.getByText('+120 Esperienza · +24 Oro')).toBeTruthy();
+  });
+
+  it('counts nothing up with «Riduci movimento»', async () => {
+    setReduceMotion('on');
+    await renderQueue([VICTORY], 'fantasy');
+    expect(screen.getByText('+120 Esperienza · +24 Oro')).toBeTruthy();
+  });
+
+  it('keeps the victory until a touch, with «Vedi il trofeo» and «Continua»', async () => {
+    await renderQueue([event('boss.defeated', 'won', { dXp: 120, dCoins: 24, bossId: 'b1' })]);
+    await act(async () => jest.advanceTimersByTime(MOMENT_MAX_MS * 4));
+    expect(screen.getByTestId('moment-boss_defeated')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Vedi il trofeo' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Continua' }));
+    expect(screen.queryByTestId('moment-boss_defeated')).toBeNull();
   });
 
   it('writes the companion that has grown', async () => {

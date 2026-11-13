@@ -548,7 +548,9 @@
         "baby": "Jetzt ist es ein Jungtier",
         "adult": "Jetzt ist es ausgewachsen"
       },
-      "badge": "Abzeichen freigeschaltet"
+      "badge": "Abzeichen freigeschaltet",
+      "seeTrophy": "Trophäe ansehen",
+      "rewardLabel": "Plus {{xp}} {{xpTerm}}, plus {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -689,7 +691,8 @@
       "difficulty": "Schwierigkeit {{difficulty}}",
       "hpSummary": "Leben {{hp}} von {{max}}",
       "percent": "{{percent}} %",
-      "stepsSummary": "Schritte {{done}} von {{total}}"
+      "stepsSummary": "Schritte {{done}} von {{total}}",
+      "openHint": "Öffnet die Karte"
     },
     "today": {
       "empty": "Mach aus einem Ziel einen Boss",
@@ -698,6 +701,28 @@
       "empty_lovecraft": "Mach aus einem Ziel ein Grauen",
       "empty_minimal": "Teile ein großes Ziel in Schritte",
       "stepToast": "Schritt erledigt · −{{damage}}"
+    },
+    "sheet": {
+      "protectedNote": "Für den letzten Schlag braucht es den letzten Schritt.",
+      "steps": "Schritte",
+      "steps_arcade": "Stages",
+      "steps_cyberpunk": "Knoten",
+      "stepsCount": "{{done}} von {{total}}",
+      "stepsChip": "Schritte {{done}}/{{total}}",
+      "next": "Nächster",
+      "doneOn": "{{day}}. {{month}}",
+      "stepLabel": "Schritt {{step}} erledigen",
+      "todoLabel": "{{step}}, offen",
+      "doneLabel": "{{step}}, erledigt am {{day}}. {{month}}",
+      "missionDetail": "{{damage}} · {{dealt}} verursacht",
+      "missionLabel": "{{name}}, {{damage}} pro Erledigung, insgesamt {{dealt}} verursacht. Details öffnen",
+      "hitLabel": "{{damage}} Schaden, Leben {{hp}} von {{max}}",
+      "archive": "Archivieren",
+      "archiveTitle": "„{{name}}“ archivieren?",
+      "archiveMessage": "Das Ziel verlässt die Liste und gibt einen Platz frei. Erledigte Schritte bleiben, aber es kann nicht fortgesetzt werden.",
+      "archivedToast": "Ziel archiviert",
+      "archived": "Archiviert",
+      "defeatedOn": "Besiegt am {{day}}. {{month}}"
     }
   },
   "skipReasons": {

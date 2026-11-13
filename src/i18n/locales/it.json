@@ -548,7 +548,9 @@
         "baby": "Ora è un cucciolo",
         "adult": "Ora è un adulto"
       },
-      "badge": "Badge sbloccato"
+      "badge": "Badge sbloccato",
+      "seeTrophy": "Vedi il trofeo",
+      "rewardLabel": "Più {{xp}} {{xpTerm}}, più {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -689,7 +691,8 @@
       "difficulty": "difficoltà {{difficulty}}",
       "hpSummary": "vita {{hp}} su {{max}}",
       "percent": "{{percent}}%",
-      "stepsSummary": "passi {{done}} di {{total}}"
+      "stepsSummary": "passi {{done}} di {{total}}",
+      "openHint": "Apre la scheda"
     },
     "today": {
       "empty": "Trasforma un obiettivo in un boss",
@@ -698,6 +701,28 @@
       "empty_lovecraft": "Trasforma un obiettivo in un orrore",
       "empty_minimal": "Dividi un grande obiettivo in passi",
       "stepToast": "Passo fatto · −{{damage}}"
+    },
+    "sheet": {
+      "protectedNote": "Serve l'ultimo passo per il colpo finale.",
+      "steps": "Passi",
+      "steps_arcade": "Stage",
+      "steps_cyberpunk": "Nodi",
+      "stepsCount": "{{done}} di {{total}}",
+      "stepsChip": "Passi {{done}}/{{total}}",
+      "next": "Prossimo",
+      "doneOn": "{{day}} {{month}}",
+      "stepLabel": "Completa il passo {{step}}",
+      "todoLabel": "{{step}}, da fare",
+      "doneLabel": "{{step}}, fatto il {{day}} {{month}}",
+      "missionDetail": "{{damage}} · {{dealt}} inflitti",
+      "missionLabel": "{{name}}, {{damage}} a ogni completamento, {{dealt}} inflitti in totale. Apri il dettaglio",
+      "hitLabel": "{{damage}} danni, vita {{hp}} su {{max}}",
+      "archive": "Archivia",
+      "archiveTitle": "Archiviare «{{name}}»?",
+      "archiveMessage": "L'obiettivo lascia l'elenco e libera un posto. I passi fatti restano, ma non si potrà riprendere.",
+      "archivedToast": "Obiettivo archiviato",
+      "archived": "Archiviato",
+      "defeatedOn": "Sconfitto il {{day}} {{month}}"
     }
   },
   "skipReasons": {

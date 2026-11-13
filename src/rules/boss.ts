@@ -68,6 +68,16 @@ export function applyBossDamage({ hp, stepsLeft }: BossHealth, damage: number): 
   return { hp: Math.min(hp, Math.max(hp - damage, floor)), defeated: false };
 }
 
+/**
+ * The hit points that only the last step can take (design-sezioni.md 5.3): 10 per step left, at
+ * most the hit points left. The card of the boss draws them as a striped part of the bar.
+ */
+export function protectedHp({ hp, stepsLeft }: BossHealth): number {
+  assertNonNegativeInteger(hp, 'Boss hit points');
+  assertNonNegativeInteger(stepsLeft, 'Steps left');
+  return Math.min(hp, BOSS.minHpPerRemainingStep * stepsLeft);
+}
+
 /** Reward of a victory: steps × 10 XP × boss difficulty (1, 1.5, 2), and a fifth of it in coins. */
 export function victoryReward(steps: number, difficulty: Difficulty): VictoryReward {
   assertSteps(steps);

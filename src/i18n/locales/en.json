@@ -548,7 +548,9 @@
         "baby": "Now it's a baby",
         "adult": "Now it's an adult"
       },
-      "badge": "Badge unlocked"
+      "badge": "Badge unlocked",
+      "seeTrophy": "See the trophy",
+      "rewardLabel": "Plus {{xp}} {{xpTerm}}, plus {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -689,7 +691,8 @@
       "difficulty": "difficulty {{difficulty}}",
       "hpSummary": "health {{hp}} of {{max}}",
       "percent": "{{percent}}%",
-      "stepsSummary": "steps {{done}} of {{total}}"
+      "stepsSummary": "steps {{done}} of {{total}}",
+      "openHint": "Opens the card"
     },
     "today": {
       "empty": "Turn a goal into a boss",
@@ -698,6 +701,28 @@
       "empty_lovecraft": "Turn a goal into a horror",
       "empty_minimal": "Split a big goal into steps",
       "stepToast": "Step done · −{{damage}}"
+    },
+    "sheet": {
+      "protectedNote": "The final blow needs the last step.",
+      "steps": "Steps",
+      "steps_arcade": "Stages",
+      "steps_cyberpunk": "Nodes",
+      "stepsCount": "{{done}} of {{total}}",
+      "stepsChip": "Steps {{done}}/{{total}}",
+      "next": "Next",
+      "doneOn": "{{month}} {{day}}",
+      "stepLabel": "Complete the step {{step}}",
+      "todoLabel": "{{step}}, to do",
+      "doneLabel": "{{step}}, done on {{month}} {{day}}",
+      "missionDetail": "{{damage}} · {{dealt}} dealt",
+      "missionLabel": "{{name}}, {{damage}} per completion, {{dealt}} dealt in total. Open the details",
+      "hitLabel": "{{damage}} damage, health {{hp}} of {{max}}",
+      "archive": "Archive",
+      "archiveTitle": "Archive “{{name}}”?",
+      "archiveMessage": "The goal leaves the list and frees a place. The steps done stay, but it cannot be resumed.",
+      "archivedToast": "Goal archived",
+      "archived": "Archived",
+      "defeatedOn": "Defeated on {{month}} {{day}}"
     }
   },
   "skipReasons": {

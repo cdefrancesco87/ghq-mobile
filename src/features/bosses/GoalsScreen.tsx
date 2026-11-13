@@ -28,7 +28,7 @@ export interface GoalsScreenProps {
  * Obiettivi (design-sezioni.md 5.1, 5.9, 5.11; mockups B3a, D22): the name of the theme with
  * «2 di 3 attivi», «Nuovo» and «Altro» with the archived goals; the large cards of the active
  * bosses with the next step; the free places up to 3 as dashed cards, or the note of the limit.
- * The Hall of trophies comes with T65, the card of a boss with T48.
+ * A touch on a card opens the card of the boss. The Hall of trophies comes with T65.
  */
 export function GoalsScreen({ view }: GoalsScreenProps) {
   const { t } = useTranslation();
@@ -85,6 +85,7 @@ export function GoalsScreen({ view }: GoalsScreenProps) {
             day={view.day}
             hit={step.hitOf(item.boss.id)}
             onCompleteStep={() => step.completeStep(item)}
+            onOpen={() => router.push({ pathname: '/boss/[id]', params: { id: item.boss.id } })}
           />
         ))}
         {Array.from({ length: free }, (_, index) => (

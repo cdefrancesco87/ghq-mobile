@@ -26,10 +26,11 @@ export interface MissionActions {
   readonly addToPlan: (item: TodayMission) => void;
   readonly removeFromPlan: (item: TodayMission) => void;
   /**
-   * Completes the next step of a boss from Today (design-sezioni.md 2.4) and gives the hit points
-   * it took, or null when nothing changed. The step that wins has no «Annulla» (choice 25).
+   * Completes a step of a boss, the next one unless another is given (design-sezioni.md 2.4, 5.3),
+   * and gives the hit points it took, or null when nothing changed. The step that wins has no
+   * «Annulla» (choice 25).
    */
-  readonly completeStep: (item: TodayBoss) => number | null;
+  readonly completeStep: (item: TodayBoss, stepId?: string) => number | null;
 }
 
 /** The actions of the rows and the boss cards of Today, with celebration, moments and notices. */
@@ -131,14 +132,13 @@ export function useMissionActions(): MissionActions {
     }
   };
 
-  const completeStep = (item: TodayBoss): number | null => {
-    const step = item.nextStep;
-    if (step === null) {
+  const completeStep = (item: TodayBoss, stepId = item.nextStep?.id): number | null => {
+    if (stepId === undefined) {
       return null;
     }
     let result;
     try {
-      result = runAction((db, clock) => completeBossStep(db, step.id, clock));
+      result = runAction((db, clock) => completeBossStep(db, stepId, clock));
     } catch {
       tell(t('today.missions.errors.failed'));
       return null;

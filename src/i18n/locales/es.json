@@ -548,7 +548,9 @@
         "baby": "Ahora es una cría",
         "adult": "Ahora es adulto"
       },
-      "badge": "Insignia desbloqueada"
+      "badge": "Insignia desbloqueada",
+      "seeTrophy": "Ver el trofeo",
+      "rewardLabel": "Más {{xp}} {{xpTerm}}, más {{coins}} {{coinsTerm}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -689,7 +691,8 @@
       "difficulty": "dificultad {{difficulty}}",
       "hpSummary": "vida {{hp}} de {{max}}",
       "percent": "{{percent}} %",
-      "stepsSummary": "pasos {{done}} de {{total}}"
+      "stepsSummary": "pasos {{done}} de {{total}}",
+      "openHint": "Abre la ficha"
     },
     "today": {
       "empty": "Convierte un objetivo en un boss",
@@ -698,6 +701,28 @@
       "empty_lovecraft": "Convierte un objetivo en un horror",
       "empty_minimal": "Divide un gran objetivo en pasos",
       "stepToast": "Paso hecho · −{{damage}}"
+    },
+    "sheet": {
+      "protectedNote": "El golpe final necesita el último paso.",
+      "steps": "Pasos",
+      "steps_arcade": "Stages",
+      "steps_cyberpunk": "Nodos",
+      "stepsCount": "{{done}} de {{total}}",
+      "stepsChip": "Pasos {{done}}/{{total}}",
+      "next": "Siguiente",
+      "doneOn": "{{day}} de {{month}}",
+      "stepLabel": "Completar el paso {{step}}",
+      "todoLabel": "{{step}}, por hacer",
+      "doneLabel": "{{step}}, hecho el {{day}} de {{month}}",
+      "missionDetail": "{{damage}} · {{dealt}} infligidos",
+      "missionLabel": "{{name}}, {{damage}} por completado, {{dealt}} infligidos en total. Abrir el detalle",
+      "hitLabel": "{{damage}} de daño, vida {{hp}} de {{max}}",
+      "archive": "Archivar",
+      "archiveTitle": "¿Archivar «{{name}}»?",
+      "archiveMessage": "El objetivo sale de la lista y libera un hueco. Los pasos hechos se quedan, pero no se podrá retomar.",
+      "archivedToast": "Objetivo archivado",
+      "archived": "Archivado",
+      "defeatedOn": "Derrotado el {{day}} de {{month}}"
     }
   },
   "skipReasons": {

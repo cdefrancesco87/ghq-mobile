@@ -39,7 +39,10 @@ export interface ScreenHeaderProps {
   readonly scrollY?: SharedValue<number>;
   /** Always the compact bar, for the screens opened from another one. */
   readonly compact?: boolean;
-  /** Buttons beside the large title, like «Nuovo» and «Altro» in Obiettivi. */
+  /**
+   * Buttons beside the large title, like «Nuovo» and «Altro» in Obiettivi; at the right end of the
+   * compact bar, like «Altro» on the card of a boss.
+   */
   readonly actions?: ReactNode;
   readonly testID?: string;
 }
@@ -134,6 +137,9 @@ export function ScreenHeader({
             {title}
           </ThemedText>
         </Animated.View>
+        {compact && actions !== undefined ? (
+          <View style={[styles.actions, styles.trailing]}>{actions}</View>
+        ) : null}
       </View>
     </Animated.View>
   );
@@ -168,5 +174,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 1,
   },
+  trailing: { position: 'absolute', right: 4, top: 4, zIndex: 1 },
   compactTitle: { paddingHorizontal: 56, alignItems: 'center' },
 });
