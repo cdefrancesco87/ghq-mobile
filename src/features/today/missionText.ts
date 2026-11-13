@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { GestureResponderEvent } from 'react-native';
 
 import type { TodayMission } from '@/db/repositories/todayView';
+import { formatAmount, formatNumber } from '@/features/shared/amount';
 import { describeFrequency } from '@/features/shared/describeFrequency';
 import { formatClock } from '@/features/shared/formatClock';
 import { categoryIcon, ICON_NAMES, type IconName } from '@/features/shared/icons';
@@ -35,10 +36,23 @@ export function originOf(event: GestureResponderEvent | undefined) {
 export function useMissionTexts(day: GameDay, tzOffset: number) {
   const { t, i18n } = useTranslation();
 
+  /** «1,2 di 2 L» for a quantity goal (design-sezioni.md 2.5); null for the other missions. */
+  const progressOf = (item: TodayMission): string | null => {
+    const { goalType, goalTarget, goalUnit } = item.mission;
+    if (goalType !== 'quantity' || goalTarget === null || goalUnit === null) {
+      return null;
+    }
+    return t('today.missions.progressAmount', {
+      value: formatNumber(item.value ?? 0, i18n.language),
+      target: formatAmount(goalTarget, goalUnit, i18n.language),
+    });
+  };
+
   const detailOf = (item: TodayMission): string => {
     const { frequency, dueDay } = item.mission;
+    const progress = progressOf(item);
     // An overdue task says so in its warning: its due day would repeat it.
-    const detail = item.overdue ? '' : describeFrequency(frequency, t, dueDay);
+    const detail = progress ?? (item.overdue ? '' : describeFrequency(frequency, t, dueDay));
     if (item.time === null) {
       return detail;
     }

@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { Stack } from 'expo-router';
-import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { Dimensions } from 'react-native';
 
@@ -16,6 +16,7 @@ import {
   bossSteps,
   dayPlan,
   daySummaries,
+  events,
   hero,
   missionDays,
   missionReminders,
@@ -925,5 +926,85 @@ describe('Today: skip today and full day', () => {
     expect(db.select().from(dayPlan).all()).toEqual([]);
     expect(screen.getByTestId('today-plan-add')).toBeOnTheScreen();
     expect(screen.getByTestId('today-done')).toHaveTextContent(/saltata · riposo/);
+  });
+});
+
+describe('Today: measurable missions', () => {
+  const row = (id: string) => `today-mission-${id}`;
+  const heroRow = (db: Db) => db.select().from(hero).get();
+  const dayOf = (db: Db, id: string) =>
+    db
+      .select()
+      .from(missionDays)
+      .where(and(eq(missionDays.missionId, id), eq(missionDays.gameDay, '2026-11-06')))
+      .get();
+
+  async function tap(id: string, times = 1) {
+    for (let count = 0; count < times; count += 1) {
+      await fireEvent.press(screen.getByTestId(`${row(id)}-control`));
+    }
+  }
+
+  it('adds the increment with a touch and shows the progress with the decimals of the language', async () => {
+    const db = newGame(['drink_water', 'journal']);
+    const water = missionId(db, 'drink_water');
+    await openToday(db);
+
+    expect(screen.getByTestId(row(water))).toHaveTextContent(/0 di 2 L/);
+    await tap(water, 5);
+
+    expect(dayOf(db, water)).toMatchObject({ status: 'partial', value: 1.25 });
+    expect(screen.getByTestId(row(water))).toHaveTextContent(/1,25 di 2 L/);
+    // A partial value gives nothing yet.
+    expect(heroRow(db)).toMatchObject({ xpTotal: 0, coins: 0 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('gives the rewards once when the target is reached, and nothing more beyond it', async () => {
+    const db = newGame(['drink_water', 'journal']);
+    const water = missionId(db, 'drink_water');
+    await openToday(db);
+
+    await tap(water, 8);
+    expect(dayOf(db, water)).toMatchObject({ status: 'done', value: 2 });
+    const gained = heroRow(db)!;
+    expect(gained.xpTotal).toBeGreaterThan(0);
+    expect(db.select().from(events).where(eq(events.type, 'mission.completed')).all()).toHaveLength(
+      1,
+    );
+
+    // Done, the row is among the done ones: «Inserisci valore» from the menu is gone.
+    await fireEvent(screen.getByTestId(`${row(water)}-body`), 'longPress');
+    expect(screen.queryByTestId('today-mission-menu-value')).toBeNull();
+    expectHeroMatchesLog(db);
+  });
+
+  it('adds a value typed by hand from a long press on the control', async () => {
+    const db = newGame(['drink_water', 'journal']);
+    const water = missionId(db, 'drink_water');
+    await openToday(db);
+
+    await fireEvent(screen.getByTestId(`${row(water)}-control`), 'longPress');
+    await screen.findByTestId('today-value-input');
+    expect(screen.getByTestId('today-value-today')).toHaveTextContent('Oggi: 0 di 2 L');
+    expect(screen.getByTestId('today-value-add')).toBeDisabled();
+    await fireEvent.changeText(screen.getByTestId('today-value-input'), '1,5');
+    await fireEvent.press(screen.getByTestId('today-value-add'));
+    expect(dayOf(db, water)).toMatchObject({ status: 'partial', value: 1.5 });
+
+    // From the menu of the row too; going past the target completes it once.
+    await fireEvent(screen.getByTestId(`${row(water)}-body`), 'longPress');
+    await fireEvent.press(screen.getByTestId('today-mission-menu-value'));
+    // The sheet opens again once the menu has slid away.
+    await waitFor(() =>
+      expect(screen.getByTestId('today-value-today')).toHaveTextContent('Oggi: 1,5 di 2 L'),
+    );
+    await fireEvent.changeText(screen.getByTestId('today-value-input'), '3');
+    await fireEvent.press(screen.getByTestId('today-value-add'));
+    expect(dayOf(db, water)).toMatchObject({ status: 'done', value: 4.5 });
+    expect(db.select().from(events).where(eq(events.type, 'mission.completed')).all()).toHaveLength(
+      1,
+    );
+    expectHeroMatchesLog(db);
   });
 });

@@ -674,7 +674,21 @@
     "discardTitle": "Abandonner les modifications ?",
     "discardMessage": "Les modifications de «{{name}}» ne seront pas enregistrées.",
     "keepEditing": "Continuer",
-    "discard": "Abandonner"
+    "discard": "Abandonner",
+    "goal": {
+      "title": "Objectif mesurable",
+      "yesNo": "Oui/Non",
+      "quantity": "Quantité",
+      "target": "Valeur",
+      "targetPlaceholder": "Ex. 2",
+      "unit": "Unité",
+      "customUnit": "Autre…",
+      "customUnitPlaceholder": "Ex. tasses",
+      "increment": "Incrément par appui",
+      "summary": "Chaque appui ajoute {{increment}} jusqu’à {{target}}. Proposé automatiquement : modifie-le si tu veux.",
+      "missing": "Saisis la valeur, l’unité et l’incrément.",
+      "done": "OK"
+    }
   },
   "bosses": {
     "card": {
@@ -795,7 +809,8 @@
         "addToPlan": "Ajouter aux priorités",
         "removeFromPlan": "Retirer des priorités",
         "edit": "Modifier",
-        "progress": "Évolution"
+        "progress": "Évolution",
+        "enterValue": "Saisir une valeur"
       },
       "errors": {
         "dayChanged": "La journée a changé : cette validation ne peut plus être annulée.",
@@ -804,7 +819,8 @@
         "bossNotActive": "Ce boss est déjà vaincu : une victoire ne s'annule pas.",
         "planFull": "Il y a déjà 3 priorités : retires-en une pour en ajouter une autre.",
         "failed": "Un problème est survenu. Réessaie."
-      }
+      },
+      "progressAmount": "{{value}} sur {{target}}"
     },
     "skip": {
       "title": "Passer « {{name}} »",
@@ -829,6 +845,13 @@
     "fullDay": {
       "rewards": "+{{coins}} {{coinsTerm}} · +{{hp}} {{hpTerm}}",
       "label": "{{title}}, plus {{coins}} {{coinsTerm}} et {{hp}} {{hpTerm}}"
+    },
+    "value": {
+      "title": "Saisir une valeur",
+      "today": "Aujourd’hui : {{value}} sur {{target}}",
+      "amount": "Quantité à ajouter ({{unit}})",
+      "add": "Ajouter",
+      "invalid": "Saisis un nombre supérieur à zéro."
     }
   },
   "habits": {
@@ -1099,7 +1122,10 @@
       "liter": "L",
       "page": "pages",
       "step": "pas",
-      "minute": "min"
+      "minute": "min",
+      "milliliter": "ml",
+      "km": "km",
+      "time": "fois"
     },
     "goal": "Objectif : {{target}}.",
     "average": "Moyenne : {{value}} par jour · objectif {{target}}",

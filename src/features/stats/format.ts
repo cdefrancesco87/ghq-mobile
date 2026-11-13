@@ -1,9 +1,6 @@
 import type { GameDay } from '@/rules/types';
 
-/** «1,25»: a value of a measurable mission, at most two decimals. */
-export function formatNumber(value: number, language: string): string {
-  return new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(value);
-}
+export { formatNumber } from '@/features/shared/amount';
 
 /** A game day in words, e.g. `{ weekday: 'long', day: 'numeric', month: 'long' }`. */
 export function formatDay(

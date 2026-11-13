@@ -674,7 +674,21 @@
     "discardTitle": "Änderungen verwerfen?",
     "discardMessage": "Die Änderungen an «{{name}}» werden nicht gespeichert.",
     "keepEditing": "Weiter bearbeiten",
-    "discard": "Verwerfen"
+    "discard": "Verwerfen",
+    "goal": {
+      "title": "Messbares Ziel",
+      "yesNo": "Ja/Nein",
+      "quantity": "Menge",
+      "target": "Wert",
+      "targetPlaceholder": "z. B. 2",
+      "unit": "Einheit",
+      "customUnit": "Andere…",
+      "customUnitPlaceholder": "z. B. Tassen",
+      "increment": "Schritt pro Tippen",
+      "summary": "Jedes Tippen fügt {{increment}} hinzu, bis {{target}}. Automatisch vorgeschlagen: ändere es, wenn du willst.",
+      "missing": "Gib Wert, Einheit und Schritt ein.",
+      "done": "Fertig"
+    }
   },
   "bosses": {
     "card": {
@@ -795,7 +809,8 @@
         "addToPlan": "Zu den Prioritäten hinzufügen",
         "removeFromPlan": "Aus den Prioritäten entfernen",
         "edit": "Bearbeiten",
-        "progress": "Verlauf"
+        "progress": "Verlauf",
+        "enterValue": "Wert eingeben"
       },
       "errors": {
         "dayChanged": "Der Tag hat gewechselt: Die Erledigung kann nicht mehr rückgängig gemacht werden.",
@@ -804,7 +819,8 @@
         "bossNotActive": "Dieser Boss ist schon besiegt: Ein Sieg lässt sich nicht rückgängig machen.",
         "planFull": "Es gibt schon 3 Prioritäten: Entferne eine, um eine andere hinzuzufügen.",
         "failed": "Etwas ist schiefgelaufen. Versuch es noch einmal."
-      }
+      },
+      "progressAmount": "{{value}} von {{target}}"
     },
     "skip": {
       "title": "„{{name}}“ überspringen",
@@ -829,6 +845,13 @@
     "fullDay": {
       "rewards": "+{{coins}} {{coinsTerm}} · +{{hp}} {{hpTerm}}",
       "label": "{{title}}, plus {{coins}} {{coinsTerm}} und {{hp}} {{hpTerm}}"
+    },
+    "value": {
+      "title": "Wert eingeben",
+      "today": "Heute: {{value}} von {{target}}",
+      "amount": "Wie viel hinzufügen ({{unit}})",
+      "add": "Hinzufügen",
+      "invalid": "Gib eine Zahl größer als null ein."
     }
   },
   "habits": {
@@ -1099,7 +1122,10 @@
       "liter": "l",
       "page": "Seiten",
       "step": "Schritte",
-      "minute": "Min."
+      "minute": "Min.",
+      "milliliter": "ml",
+      "km": "km",
+      "time": "Mal"
     },
     "goal": "Ziel: {{target}}.",
     "average": "Durchschnitt: {{value}} pro Tag · Ziel {{target}}",

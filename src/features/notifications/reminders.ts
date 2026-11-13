@@ -1,11 +1,12 @@
 import { and, eq } from 'drizzle-orm';
 
-import { completeMission } from '../../db/repositories/completion';
+import { completeMission, progressMission } from '../../db/repositories/completion';
 import { notDeleted } from '../../db/repositories/events';
 import { gameDayOf, getSetting } from '../../db/repositories/settings';
 import { missions, scheduledReminders } from '../../db/schema';
 import type { Db } from '../../db/types';
 import type { GameDay } from '../../rules/types';
+import { incrementLabel } from '../shared/amount';
 
 // The logic of the actions on a reminder (stack-tecnologico.md, point 5; modello-dati.md 3.9 and
 // 4.4). It depends on no screen, no React state and no Expo module: the notifications of the
@@ -26,6 +27,19 @@ export interface ReminderRequest {
   readonly fireAt: number;
   /** How many times the reminder was snoozed: at the maximum there is no Snooze button. */
   readonly snoozeCount: number;
+  /**
+   * The increment of a measurable mission: its Complete button becomes «+250 ml» (design 11.3).
+   * Null for a yes/no mission.
+   */
+  readonly increment: ReminderIncrement | null;
+  /** The label of Complete: «+250 ml» for a measurable mission, null for the default one. */
+  readonly completeLabel: string | null;
+}
+
+/** One tap of a measurable mission: an amount and the key of its unit (`liter`) or its text. */
+export interface ReminderIncrement {
+  readonly amount: number;
+  readonly unit: string;
 }
 
 /** The notifications of the operating system, as the logic needs them. */
@@ -49,6 +63,8 @@ export interface ReminderActionInput {
 
 export type ReminderOutcome =
   | { readonly outcome: 'completed' | 'already_done' | 'already_recorded' }
+  /** A measurable mission moved on without reaching its target. */
+  | { readonly outcome: 'progressed' }
   | { readonly outcome: 'snoozed'; osId: string; fireAt: number; snoozeCount: number }
   /** The reminder was snoozed three times already. */
   | { readonly outcome: 'snooze_limit' }
@@ -67,16 +83,29 @@ export interface ScheduleReminderInput {
   readonly gameDay?: GameDay;
 }
 
-function missionName(db: Db, missionId: string): string {
+function missionOf(db: Db, missionId: string) {
   const row = db
-    .select({ name: missions.name })
+    .select({
+      name: missions.name,
+      goalType: missions.goalType,
+      goalUnit: missions.goalUnit,
+      goalStep: missions.goalStep,
+    })
     .from(missions)
     .where(and(eq(missions.id, missionId), notDeleted(missions)))
     .get();
   if (row === undefined) {
     throw new RangeError(`No mission ${missionId}`);
   }
-  return row.name;
+  return row;
+}
+
+/** The increment of a quantity goal; a duration goal uses its timer (T79), not the button. */
+function incrementOf(mission: ReturnType<typeof missionOf>): ReminderIncrement | null {
+  if (mission.goalType !== 'quantity' || mission.goalStep === null || mission.goalUnit === null) {
+    return null;
+  }
+  return { amount: mission.goalStep, unit: mission.goalUnit };
 }
 
 function remember(
@@ -102,13 +131,19 @@ export async function scheduleReminder(
   input: ScheduleReminderInput,
   replacing: string | null = null,
 ): Promise<string> {
-  const title = missionName(db, input.missionId);
+  const mission = missionOf(db, input.missionId);
+  const increment = incrementOf(mission);
   const snoozeCount = input.snoozeCount ?? 0;
   const osId = await scheduler.schedule({
     missionId: input.missionId,
-    title,
+    title: mission.name,
     fireAt: input.fireAt,
     snoozeCount,
+    increment,
+    completeLabel:
+      increment === null
+        ? null
+        : incrementLabel(increment.amount, increment.unit, getSetting(db, 'language')),
   });
   try {
     remember(
@@ -137,19 +172,28 @@ async function complete(
   input: ReminderActionInput,
 ): Promise<ReminderOutcome> {
   try {
-    const result = completeMission(db, {
+    const completion = {
       missionId: input.missionId,
       source: 'notification',
       idemKey: `notif:${input.notificationId}`,
       now: input.now,
       tzOffset: input.tzOffset,
-    });
+    } as const;
+    // A measurable mission adds its increment, like a tap in Today (US-NOT-01).
+    const result =
+      incrementOf(missionOf(db, input.missionId)) === null
+        ? completeMission(db, completion)
+        : progressMission(db, completion);
     if (result.status === 'completed') {
       // The reminders left for the day, and the notification that was just tapped.
       const ids = new Set([...result.cancelledNotificationIds, input.notificationId]);
       await scheduler.cancel([...ids]);
+    } else if (result.status === 'progressed') {
+      // The other reminders of the day stay: the target is not reached yet.
+      await scheduler.cancel([input.notificationId]);
+      db.delete(scheduledReminders).where(eq(scheduledReminders.osId, input.notificationId)).run();
     }
-    return { outcome: result.status === 'progressed' ? 'completed' : result.status };
+    return { outcome: result.status };
   } catch (error) {
     return { outcome: 'failed', message: error instanceof Error ? error.message : String(error) };
   }

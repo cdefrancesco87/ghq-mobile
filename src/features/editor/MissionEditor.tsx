@@ -32,6 +32,7 @@ import { Card } from '@/features/shared/Card';
 import { ConfirmDialog } from '@/features/shared/ConfirmDialog';
 import { describeFrequency } from '@/features/shared/describeFrequency';
 import { Difficulty } from '@/features/shared/Difficulty';
+import { formatAmount } from '@/features/shared/amount';
 import { formatClock } from '@/features/shared/formatClock';
 import { Icon } from '@/features/shared/Icon';
 import { statIcon } from '@/features/shared/icons';
@@ -49,9 +50,18 @@ import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { BossSheet } from './BossSheet';
 import { ChoiceButton } from './ChoiceButton';
-import { draftOf, hasAdvancedValues, missionInput, newDraft, sameDraft, type Draft } from './draft';
+import {
+  draftOf,
+  goalOf,
+  hasAdvancedValues,
+  missionInput,
+  newDraft,
+  sameDraft,
+  type Draft,
+} from './draft';
 import { DueDaySheet } from './DueDaySheet';
 import { FrequencySheet } from './FrequencySheet';
+import { GoalSheet } from './GoalField';
 import { OptionRow } from './OptionRow';
 import { RemindersSheet } from './RemindersSheet';
 
@@ -65,7 +75,7 @@ const STAT_SIZE = 52;
 const HALF_SHEET = { sheetAllowedDetents: [0.5, 1] };
 const FULL_SHEET = { sheetAllowedDetents: [1] };
 
-type OptionSheet = 'frequency' | 'due' | 'reminders' | 'boss';
+type OptionSheet = 'frequency' | 'due' | 'reminders' | 'boss' | 'goal';
 type Dialog = 'discard' | 'delete';
 
 /** Base values, without the streak multiplier: the preview never promises XP that can change (4.10). */
@@ -295,6 +305,13 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
   ].join(' · ');
 
   const linked = bosses.find((item) => item.id === draft.bossId);
+  const goal = goalOf(draft.goal);
+  const goalText =
+    goal === null || goal.type === 'none'
+      ? t('editor.goal.yesNo')
+      : goal.type === 'quantity'
+        ? formatAmount(goal.target, goal.unit, i18n.language)
+        : formatAmount(goal.target, 'minute', i18n.language);
   const options = (
     <Card testID="editor-options">
       {habit ? (
@@ -327,6 +344,13 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
           onPress={() => setSheet('reminders')}
         />
       ) : null}
+      <OptionRow
+        testID="editor-option-goal"
+        icon="statistiche"
+        label={t('editor.goal.title')}
+        value={goalText}
+        onPress={() => setSheet('goal')}
+      />
       <OptionRow
         testID="editor-option-boss"
         icon="boss"
@@ -550,6 +574,15 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
         onClose={() => setSheet(null)}
         onDone={(reminders) => {
           update({ reminders });
+          setSheet(null);
+        }}
+      />
+      <GoalSheet
+        visible={sheet === 'goal'}
+        value={draft.goal}
+        onClose={() => setSheet(null)}
+        onDone={(chosen) => {
+          update({ goal: chosen });
           setSheet(null);
         }}
       />

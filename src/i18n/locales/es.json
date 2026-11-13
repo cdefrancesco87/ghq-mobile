@@ -674,7 +674,21 @@
     "discardTitle": "¿Descartar los cambios?",
     "discardMessage": "Los cambios en «{{name}}» no se guardarán.",
     "keepEditing": "Seguir editando",
-    "discard": "Descartar"
+    "discard": "Descartar",
+    "goal": {
+      "title": "Objetivo medible",
+      "yesNo": "Sí/No",
+      "quantity": "Cantidad",
+      "target": "Valor",
+      "targetPlaceholder": "P. ej. 2",
+      "unit": "Unidad",
+      "customUnit": "Otra…",
+      "customUnitPlaceholder": "P. ej. tazas",
+      "increment": "Incremento por toque",
+      "summary": "Cada toque añade {{increment}} hasta {{target}}. Propuesto automáticamente: cámbialo si quieres.",
+      "missing": "Escribe el valor, la unidad y el incremento.",
+      "done": "Hecho"
+    }
   },
   "bosses": {
     "card": {
@@ -795,7 +809,8 @@
         "addToPlan": "Añadir a prioridades",
         "removeFromPlan": "Quitar de prioridades",
         "edit": "Editar",
-        "progress": "Evolución"
+        "progress": "Evolución",
+        "enterValue": "Introducir valor"
       },
       "errors": {
         "dayChanged": "El día ha cambiado: este completado ya no se puede deshacer.",
@@ -804,7 +819,8 @@
         "bossNotActive": "Este boss ya está vencido: una victoria no se deshace.",
         "planFull": "Ya hay 3 prioridades: quita una para añadir otra.",
         "failed": "Algo salió mal. Inténtalo de nuevo."
-      }
+      },
+      "progressAmount": "{{value}} de {{target}}"
     },
     "skip": {
       "title": "Saltar «{{name}}»",
@@ -829,6 +845,13 @@
     "fullDay": {
       "rewards": "+{{coins}} {{coinsTerm}} · +{{hp}} {{hpTerm}}",
       "label": "{{title}}, más {{coins}} {{coinsTerm}} y {{hp}} {{hpTerm}}"
+    },
+    "value": {
+      "title": "Introducir valor",
+      "today": "Hoy: {{value}} de {{target}}",
+      "amount": "Cuánto añadir ({{unit}})",
+      "add": "Añadir",
+      "invalid": "Escribe un número mayor que cero."
     }
   },
   "habits": {
@@ -1099,7 +1122,10 @@
       "liter": "L",
       "page": "páginas",
       "step": "pasos",
-      "minute": "min"
+      "minute": "min",
+      "milliliter": "ml",
+      "km": "km",
+      "time": "veces"
     },
     "goal": "Objetivo: {{target}}.",
     "average": "Media: {{value}} al día · objetivo {{target}}",

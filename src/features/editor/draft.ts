@@ -1,5 +1,7 @@
-import type { Mission, NewMission } from '@/db/repositories/missions';
+import type { Mission, MissionGoal, NewMission } from '@/db/repositories/missions';
+import { MEASURABLE } from '@/rules/config';
 import type { Frequency } from '@/rules/frequency';
+import { parseAmount } from '@/rules/measurable';
 import type { Difficulty, GameDay, StatKey } from '@/rules/types';
 
 // What the editor is changing, kept apart from the database row so that «Scartare le modifiche?»
@@ -17,6 +19,52 @@ export interface Draft {
   /** `HH:MM`, habits only. */
   readonly reminders: readonly string[];
   readonly bossId: string | null;
+  readonly goal: GoalDraft;
+}
+
+/** «Obiettivo misurabile» as typed (design-sezioni.md 4.7): the numbers are read when saving. */
+export interface GoalDraft {
+  readonly type: MissionGoal['type'];
+  readonly target: string;
+  /** A unit key (`liter`) or a custom unit. */
+  readonly unit: string;
+  readonly increment: string;
+}
+
+export const NO_GOAL: GoalDraft = {
+  type: 'none',
+  target: '',
+  unit: MEASURABLE.units[0],
+  increment: '',
+};
+
+function goalDraftOf(mission: Mission): GoalDraft {
+  if (mission.goalType === 'none') {
+    return NO_GOAL;
+  }
+  return {
+    type: mission.goalType,
+    target: mission.goalTarget === null ? '' : String(mission.goalTarget),
+    unit: mission.goalUnit ?? NO_GOAL.unit,
+    increment: mission.goalStep === null ? '' : String(mission.goalStep),
+  };
+}
+
+/** The goal to save, or null while a number or the unit is missing or wrong. */
+export function goalOf(goal: GoalDraft): MissionGoal | null {
+  if (goal.type === 'none') {
+    return { type: 'none' };
+  }
+  const target = parseAmount(goal.target);
+  const increment = parseAmount(goal.increment);
+  if (target === null || increment === null) {
+    return null;
+  }
+  if (goal.type === 'duration') {
+    return { type: 'duration', target, increment };
+  }
+  const unit = goal.unit.trim();
+  return unit === '' ? null : { type: 'quantity', target, unit, increment };
 }
 
 const DAILY: Frequency = { type: 'daily' };
@@ -32,6 +80,7 @@ export function newDraft(bossId: string | null): Draft {
     dueDay: null,
     reminders: [],
     bossId,
+    goal: NO_GOAL,
   };
 }
 
@@ -46,6 +95,7 @@ export function draftOf(mission: Mission, reminders: readonly string[]): Draft {
     dueDay: mission.dueDay,
     reminders,
     bossId: mission.bossId,
+    goal: goalDraftOf(mission),
   };
 }
 
@@ -61,11 +111,15 @@ export function hasAdvancedValues(draft: Draft): boolean {
     draft.frequency.type !== 'daily' ||
     draft.dueDay !== null ||
     draft.reminders.length > 0 ||
-    draft.bossId !== null
+    draft.bossId !== null ||
+    draft.goal.type !== 'none'
   );
 }
 
-/** The fields of `createMission` and `updateMission`: each kind keeps only its own fields. */
+/**
+ * The fields of `createMission` and `updateMission`: each kind keeps only its own fields. Call it
+ * only when `goalOf(draft.goal)` is not null.
+ */
 export function missionInput(draft: Draft): NewMission & { readonly kind: Mission['kind'] } {
   const habit = draft.kind === 'habit';
   return {
@@ -77,5 +131,6 @@ export function missionInput(draft: Draft): NewMission & { readonly kind: Missio
     dueDay: habit ? null : draft.dueDay,
     reminders: habit ? draft.reminders : [],
     bossId: draft.bossId,
+    goal: goalOf(draft.goal) ?? { type: 'none' },
   };
 }

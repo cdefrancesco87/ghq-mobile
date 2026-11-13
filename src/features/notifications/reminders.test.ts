@@ -132,6 +132,52 @@ describe('the Complete action', () => {
     expectHeroMatchesLog(db);
   });
 
+  it('adds the increment of a measurable mission and keeps its other reminders', async () => {
+    const db = newGame(['drink_water']);
+    const scheduler = new FakeScheduler();
+    const water = missionId(db, 'drink_water');
+    const first = await remind(db, scheduler, water);
+    const later = await remind(db, scheduler, water, NOW + 3_600_000);
+    expect(scheduler.scheduled[0].increment).toEqual({ amount: 0.25, unit: 'liter' });
+    // The test game is in Italian.
+    expect(scheduler.scheduled[0].completeLabel).toBe('+0,25 L');
+    await expect(act(db, scheduler, water, ACTION_COMPLETE, first)).resolves.toEqual({
+      outcome: 'progressed',
+    });
+    const event = db
+      .select()
+      .from(events)
+      .where(eq(events.idemKey, `notif:${first}`))
+      .get();
+    expect(event).toMatchObject({ type: 'mission.progressed', source: 'notification' });
+    // Only the tapped notification goes away: the mission is not done yet.
+    expect(scheduler.cancelled).toEqual([first]);
+    expect(reminders(db).map((row) => row.osId)).toEqual([later]);
+    expectHeroMatchesLog(db);
+  });
+
+  it('completes a measurable mission when the increment reaches the target', async () => {
+    const db = newGame(['drink_water']);
+    const scheduler = new FakeScheduler();
+    const water = missionId(db, 'drink_water');
+    const outcomes = [];
+    for (let tap = 0; tap < 8; tap += 1) {
+      outcomes.push((await act(db, scheduler, water, ACTION_COMPLETE, `n${tap}`)).outcome);
+    }
+    expect(outcomes).toEqual([...Array(7).fill('progressed'), 'completed']);
+    expect(db.select().from(events).where(eq(events.type, 'mission.completed')).all()).toHaveLength(
+      1,
+    );
+    expectHeroMatchesLog(db);
+  });
+
+  it('schedules a yes/no mission without an increment', async () => {
+    const { db, scheduler, journal } = setUp();
+    await remind(db, scheduler, journal);
+    expect(scheduler.scheduled[0].increment).toBeNull();
+    expect(scheduler.scheduled[0].completeLabel).toBeNull();
+  });
+
   it('reports a mission that cannot be completed instead of throwing', async () => {
     const { db, scheduler } = setUp();
     const result = await act(db, scheduler, 'missing', ACTION_COMPLETE, 'abc');

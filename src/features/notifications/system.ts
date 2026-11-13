@@ -21,6 +21,15 @@ export const CATEGORY_REMINDER_LAST = 'reminder_last';
 const COMPLETE_LABEL = 'Completa';
 const SNOOZE_LABEL = 'Posticipa';
 
+/**
+ * The category of a reminder. A measurable mission has its own, whose Complete button is the
+ * increment, e.g. «+250 ml» (design-sezioni.md 11.3): the buttons belong to the category.
+ */
+export function reminderCategory(request: ReminderRequest): string {
+  const base = request.snoozeCount >= MAX_SNOOZES ? CATEGORY_REMINDER_LAST : CATEGORY_REMINDER;
+  return request.completeLabel === null ? base : `${base}:${request.completeLabel}`;
+}
+
 /** The notification of a reminder, as expo-notifications wants it. */
 export function reminderRequestInput(
   request: ReminderRequest,
@@ -30,8 +39,7 @@ export function reminderRequestInput(
       title: request.title,
       body: 'Tocca Completa per segnarla fatta.',
       data: { missionId: request.missionId },
-      categoryIdentifier:
-        request.snoozeCount >= MAX_SNOOZES ? CATEGORY_REMINDER_LAST : CATEGORY_REMINDER,
+      categoryIdentifier: reminderCategory(request),
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -43,7 +51,10 @@ export function reminderRequestInput(
 
 /** `ReminderScheduler` on top of expo-notifications. */
 export const systemScheduler: ReminderScheduler = {
-  schedule: (request) => Notifications.scheduleNotificationAsync(reminderRequestInput(request)),
+  schedule: async (request) => {
+    await ensureCategory(request);
+    return Notifications.scheduleNotificationAsync(reminderRequestInput(request));
+  },
   cancel: async (osIds) => {
     for (const osId of osIds) {
       await Notifications.cancelScheduledNotificationAsync(osId);
@@ -67,9 +78,20 @@ export async function setUpNotifications(): Promise<void> {
     name: 'Promemoria',
     importance: AndroidImportance.HIGH,
   });
+  await Notifications.setNotificationCategoryAsync(
+    CATEGORY_REMINDER,
+    actions(COMPLETE_LABEL, true),
+  );
+  await Notifications.setNotificationCategoryAsync(
+    CATEGORY_REMINDER_LAST,
+    actions(COMPLETE_LABEL, false),
+  );
+}
+
+function actions(completeLabel: string, withSnooze: boolean): Notifications.NotificationAction[] {
   const complete: Notifications.NotificationAction = {
     identifier: ACTION_COMPLETE,
-    buttonTitle: COMPLETE_LABEL,
+    buttonTitle: completeLabel,
     options: { opensAppToForeground: false },
   };
   const snooze: Notifications.NotificationAction = {
@@ -77,8 +99,23 @@ export async function setUpNotifications(): Promise<void> {
     buttonTitle: SNOOZE_LABEL,
     options: { opensAppToForeground: false },
   };
-  await Notifications.setNotificationCategoryAsync(CATEGORY_REMINDER, [complete, snooze]);
-  await Notifications.setNotificationCategoryAsync(CATEGORY_REMINDER_LAST, [complete]);
+  return withSnooze ? [complete, snooze] : [complete];
+}
+
+// The categories of the increments already set up while the app runs.
+const incrementCategories = new Set<string>();
+
+/** Sets up the category of a measurable mission the first time one of its reminders is scheduled. */
+async function ensureCategory(request: ReminderRequest): Promise<void> {
+  const category = reminderCategory(request);
+  if (request.completeLabel === null || incrementCategories.has(category)) {
+    return;
+  }
+  await Notifications.setNotificationCategoryAsync(
+    category,
+    actions(request.completeLabel, request.snoozeCount < MAX_SNOOZES),
+  );
+  incrementCategories.add(category);
 }
 
 /** `undetermined`: never asked yet, so the app can still ask (design-sezioni.md 4.8). */

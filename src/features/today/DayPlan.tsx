@@ -111,6 +111,9 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
                       xp={item.xp}
                       progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
                       onComplete={(event) => actions.complete(item, originOf(event))}
+                      onControlLongPress={
+                        mission.goalType === 'quantity' ? () => menu.openValue(item) : undefined
+                      }
                     />
                   </SkipSwipe>
                 )}

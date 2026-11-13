@@ -12,6 +12,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { PlanPicker } from './PlanPicker';
 import { SkipSheet } from './SkipSheet';
 import type { MissionActions } from './useMissionActions';
+import { ValueSheet } from './ValueSheet';
 
 export interface MissionMenu {
   /** The long-press menu of a row of Today. */
@@ -22,6 +23,8 @@ export interface MissionMenu {
   readonly openPicker: () => void;
   /** The sheet «Salta oggi» with the reasons (design-sezioni.md 2.5), e.g. from the swipe. */
   readonly openSkip: (item: TodayMission) => void;
+  /** «Inserisci valore» of a measurable mission (design-sezioni.md 2.5). */
+  readonly openValue: (item: TodayMission) => void;
   readonly openDetail: (item: TodayMission) => void;
   /** The menu and the picker, to put once in the screen. */
   readonly sheets: ReactNode;
@@ -35,10 +38,11 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
   const [menuFor, setMenuFor] = useState<TodayMission | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [skipFor, setSkipFor] = useState<TodayMission | null>(null);
+  const [valueFor, setValueFor] = useState<TodayMission | null>(null);
   // The sheets asked from the menu wait for the menu to slide away: on iOS a modal shown while
   // another one is still closing may never appear.
   const [queued, setQueued] = useState<
-    { sheet: 'picker' } | { sheet: 'skip'; item: TodayMission } | null
+    { sheet: 'picker' } | { sheet: 'skip' | 'value'; item: TodayMission } | null
   >(null);
 
   useEffect(() => {
@@ -49,6 +53,8 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
       setQueued(null);
       if (queued.sheet === 'picker') {
         setPickerOpen(true);
+      } else if (queued.sheet === 'value') {
+        setValueFor(queued.item);
       } else {
         setSkipFor(queued.item);
       }
@@ -61,6 +67,14 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
 
   const itemsFor = (item: TodayMission): ActionSheetItem[] => {
     const items: ActionSheetItem[] = [];
+    if (item.state === 'todo' && item.mission.goalType === 'quantity') {
+      items.push({
+        key: 'value',
+        label: t('today.missions.menu.enterValue'),
+        icon: <Icon name="aggiungi" size={20} color={colors.text} />,
+        onPress: () => setQueued({ sheet: 'value', item }),
+      });
+    }
     const eventId = item.completionEventId;
     if (eventId !== null) {
       items.push({
@@ -127,7 +141,12 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
     itemsFor(item).map(({ key, label, onPress }) => ({
       name: key,
       label,
-      onAction: key === 'skip' ? () => setSkipFor(item) : onPress,
+      onAction:
+        key === 'skip'
+          ? () => setSkipFor(item)
+          : key === 'value'
+            ? () => setValueFor(item)
+            : onPress,
     }));
 
   const sheets = (
@@ -156,6 +175,14 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
           actions.skip(item, reason);
         }}
       />
+      <ValueSheet
+        item={valueFor}
+        onClose={() => setValueFor(null)}
+        onAdd={(item, amount) => {
+          setValueFor(null);
+          actions.complete(item, { x: 0, y: 0 }, amount);
+        }}
+      />
     </>
   );
 
@@ -164,6 +191,7 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
     rowActions,
     openPicker: () => setPickerOpen(true),
     openSkip: setSkipFor,
+    openValue: setValueFor,
     openDetail,
     sheets,
   };

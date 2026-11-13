@@ -674,7 +674,21 @@
     "discardTitle": "Discard the changes?",
     "discardMessage": "The changes to «{{name}}» will not be saved.",
     "keepEditing": "Keep editing",
-    "discard": "Discard"
+    "discard": "Discard",
+    "goal": {
+      "title": "Measurable goal",
+      "yesNo": "Yes/No",
+      "quantity": "Quantity",
+      "target": "Value",
+      "targetPlaceholder": "E.g. 2",
+      "unit": "Unit",
+      "customUnit": "Other…",
+      "customUnitPlaceholder": "E.g. cups",
+      "increment": "Increment per tap",
+      "summary": "Each tap adds {{increment}} up to {{target}}. Suggested automatically: change it if you like.",
+      "missing": "Enter the value, unit and increment.",
+      "done": "Done"
+    }
   },
   "bosses": {
     "card": {
@@ -795,7 +809,8 @@
         "addToPlan": "Add to priorities",
         "removeFromPlan": "Remove from priorities",
         "edit": "Edit",
-        "progress": "Progress"
+        "progress": "Progress",
+        "enterValue": "Enter value"
       },
       "errors": {
         "dayChanged": "The day has changed: this completion can no longer be undone.",
@@ -804,7 +819,8 @@
         "bossNotActive": "This boss is already defeated: a victory cannot be undone.",
         "planFull": "There are already 3 priorities: remove one to add another.",
         "failed": "Something went wrong. Try again."
-      }
+      },
+      "progressAmount": "{{value}} of {{target}}"
     },
     "skip": {
       "title": "Skip “{{name}}”",
@@ -829,6 +845,13 @@
     "fullDay": {
       "rewards": "+{{coins}} {{coinsTerm}} · +{{hp}} {{hpTerm}}",
       "label": "{{title}}, plus {{coins}} {{coinsTerm}} and {{hp}} {{hpTerm}}"
+    },
+    "value": {
+      "title": "Enter value",
+      "today": "Today: {{value}} of {{target}}",
+      "amount": "How much to add ({{unit}})",
+      "add": "Add",
+      "invalid": "Enter a number greater than zero."
     }
   },
   "habits": {
@@ -1099,7 +1122,10 @@
       "liter": "L",
       "page": "pages",
       "step": "steps",
-      "minute": "min"
+      "minute": "min",
+      "milliliter": "ml",
+      "km": "km",
+      "time": "times"
     },
     "goal": "Goal: {{target}}.",
     "average": "Average: {{value}} a day · goal {{target}}",

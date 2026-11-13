@@ -82,6 +82,20 @@ export const FULL_DAY = {
 } as const;
 
 /** «Salta oggi» and «Giornata completa» in Today (T59, provisional choices). */
+/**
+ * Measurable missions (design-sezioni.md 4.7). PROVISIONAL (dev run, T60): the proposed increment
+ * is about an eighth of the target, rounded to a handy number; «Inserisci valore» adds the typed
+ * amount to the value of the day.
+ */
+export const MEASURABLE = {
+  incrementShareOfTarget: 1 / 8,
+  handySteps: [1, 2, 2.5, 5],
+  /** Unit chips of the editor, in order; any other text is a custom unit. */
+  units: ['liter', 'milliliter', 'page', 'step', 'km', 'time'],
+  /** Units counted in whole numbers: the proposed increment is at least 1. */
+  wholeUnits: ['milliliter', 'page', 'step', 'time'],
+} as const;
+
 export const SKIP_TODAY = {
   /**
    * A skip that leaves every other mission of the day, or every other priority, done gives the

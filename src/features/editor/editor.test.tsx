@@ -220,7 +220,7 @@ describe('Mission editor: other options and editing', () => {
     await fireEvent.changeText(screen.getByTestId('editor-name'), text);
   }
 
-  async function openOption(option: 'frequency' | 'due' | 'reminders' | 'boss') {
+  async function openOption(option: 'frequency' | 'due' | 'reminders' | 'boss' | 'goal') {
     if (screen.queryByTestId('editor-options') === null) {
       await fireEvent.press(screen.getByTestId('editor-more'));
     }
@@ -259,6 +259,70 @@ describe('Mission editor: other options and editing', () => {
     await openOption('frequency');
     expect(screen.getByRole('checkbox', { name: 'mer', checked: true })).toBeOnTheScreen();
     expect(screen.getByRole('checkbox', { name: 'mar', checked: false })).toBeOnTheScreen();
+  });
+
+  it('saves a quantity goal with the proposed increment and reads it again', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await name('Acqua');
+    await openOption('goal');
+    await fireEvent.press(screen.getByTestId('editor-goal-type-quantity'));
+    expect(screen.getByTestId('editor-goal-done')).toBeDisabled();
+    await fireEvent.changeText(screen.getByTestId('editor-goal-target'), '2');
+    // About an eighth of the target, rounded to a handy number (T60 proposal).
+    expect(screen.getByTestId('editor-goal-increment')).toHaveProp('value', '0.25');
+    await fireEvent.press(screen.getByTestId('editor-goal-unit-milliliter'));
+    await fireEvent.changeText(screen.getByTestId('editor-goal-target'), '2000');
+    expect(screen.getByTestId('editor-goal-increment')).toHaveProp('value', '250');
+    await fireEvent.changeText(screen.getByTestId('editor-goal-increment'), '200');
+    await fireEvent.changeText(screen.getByTestId('editor-goal-target'), '1500');
+    // A changed increment is the user's: no new proposal.
+    expect(screen.getByTestId('editor-goal-increment')).toHaveProp('value', '200');
+    expect(screen.getByTestId('editor-goal-summary')).toHaveTextContent(
+      'Ogni tocco aggiunge 200 ml fino a 1500 ml.',
+      { exact: false },
+    );
+    await fireEvent.press(screen.getByTestId('editor-goal-done'));
+    expect(screen.getByTestId('editor-option-goal-value')).toHaveTextContent('1500 ml');
+    await fireEvent.press(screen.getByTestId('editor-save'));
+
+    const water = created(db, 'Acqua')!;
+    expect(water).toMatchObject({
+      goalType: 'quantity',
+      goalTarget: 1500,
+      goalUnit: 'milliliter',
+      goalStep: 200,
+    });
+
+    await openToEdit(db, water.id);
+    expect(screen.getByTestId('editor-option-goal-value')).toHaveTextContent('1500 ml');
+    await openOption('goal');
+    expect(screen.getByTestId('editor-goal-target')).toHaveProp('value', '1500');
+    expect(screen.getByTestId('editor-goal-increment')).toHaveProp('value', '200');
+  });
+
+  it('saves a custom unit and goes back to yes/no', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await name('Tè');
+    await openOption('goal');
+    await fireEvent.press(screen.getByTestId('editor-goal-type-quantity'));
+    await fireEvent.changeText(screen.getByTestId('editor-goal-target'), '3,5');
+    await fireEvent.press(screen.getByTestId('editor-goal-unit-custom'));
+    expect(screen.getByTestId('editor-goal-done')).toBeDisabled();
+    await fireEvent.changeText(screen.getByTestId('editor-goal-unit-text'), 'tazze');
+    await fireEvent.press(screen.getByTestId('editor-goal-done'));
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    const tea = created(db, 'Tè')!;
+    expect(tea).toMatchObject({ goalType: 'quantity', goalTarget: 3.5, goalUnit: 'tazze' });
+
+    await openToEdit(db, tea.id);
+    await openOption('goal');
+    expect(screen.getByTestId('editor-goal-unit-text')).toHaveProp('value', 'tazze');
+    await fireEvent.press(screen.getByTestId('editor-goal-type-none'));
+    await fireEvent.press(screen.getByTestId('editor-goal-done'));
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Tè')).toMatchObject({ goalType: 'none', goalTarget: null });
   });
 
   it('starts the circles of the week from the first day of the settings', async () => {

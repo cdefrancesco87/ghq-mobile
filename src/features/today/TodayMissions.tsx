@@ -94,6 +94,9 @@ export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsPr
                       xp={item.xp}
                       progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
                       onComplete={(event) => actions.complete(item, originOf(event))}
+                      onControlLongPress={
+                        mission.goalType === 'quantity' ? () => menu.openValue(item) : undefined
+                      }
                       onPress={() => menu.openDetail(item)}
                       onLongPress={() => menu.open(item)}
                       actions={menu.rowActions(item)}

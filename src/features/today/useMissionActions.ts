@@ -21,8 +21,11 @@ import { runAction } from '@/stores/app';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export interface MissionActions {
-  /** A touch on the control (US-OGGI-03): a measurable mission adds its increment. */
-  readonly complete: (item: TodayMission, origin: Point) => void;
+  /**
+   * A touch on the control (US-OGGI-03): a measurable mission adds its increment, or `amount`
+   * when given («Inserisci valore»).
+   */
+  readonly complete: (item: TodayMission, origin: Point, amount?: number) => void;
   /** Undoes a completion of today (US-OGGI-04); a refusal is told in words. */
   readonly undo: (eventId: string) => void;
   /** «Salta oggi» (US-OGGI-06), with «Annulla» for 5 seconds (design-sezioni.md A7). */
@@ -88,7 +91,7 @@ export function useMissionActions(): MissionActions {
     toast.show({ message: t('today.skip.toast'), onUndo: () => undoSkip(eventId) });
   };
 
-  const complete = (item: TodayMission, origin: Point) => {
+  const complete = (item: TodayMission, origin: Point, amount?: number) => {
     const { mission } = item;
     let result;
     try {
@@ -102,7 +105,7 @@ export function useMissionActions(): MissionActions {
         } as const;
         return mission.goalType === 'none'
           ? completeMission(db, input)
-          : progressMission(db, input);
+          : progressMission(db, amount === undefined ? input : { ...input, amount });
       });
     } catch {
       tell(t('today.missions.errors.failed'));

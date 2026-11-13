@@ -58,6 +58,8 @@ interface ToComplete {
   readonly onComplete: (event: GestureResponderEvent) => void;
   /** Progress of a measurable mission, from 0 to 1. */
   readonly progress?: number;
+  /** A long press on the control; the menu of the row when missing («Inserisci valore», 2.5). */
+  readonly onControlLongPress?: () => void;
 }
 
 export type MissionRowProps = CommonProps &
@@ -219,7 +221,7 @@ export function MissionRow(props: MissionRowProps) {
           testID={`${testID}-control`}
           accessibilityLabel={controlLabel(props.xp, props.progress)}
           onPress={props.onComplete}
-          onLongPress={onLongPress}
+          onLongPress={props.onControlLongPress ?? onLongPress}
           progress={props.progress}
           showPercentage={!large}
           {...actionProps}

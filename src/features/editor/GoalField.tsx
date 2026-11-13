@@ -1,0 +1,219 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, TextInput, View } from 'react-native';
+
+import { formatAmount, unitName } from '@/features/shared/amount';
+import { Button } from '@/features/shared/Button';
+import { Chip } from '@/features/shared/Chip';
+import { SegmentedControl } from '@/features/shared/SegmentedControl';
+import { Sheet } from '@/features/shared/Sheet';
+import { ThemedText } from '@/features/shared/ThemedText';
+import { MEASURABLE } from '@/rules/config';
+import { parseAmount, suggestIncrement } from '@/rules/measurable';
+import { textStyleOf } from '@/theme/fonts';
+import { SHAPES } from '@/theme/shapes';
+import { useTheme } from '@/theme/ThemeProvider';
+import { goalOf, NO_GOAL, type GoalDraft } from './draft';
+
+const UNIT_KEYS: readonly string[] = MEASURABLE.units;
+const WHOLE_UNITS: readonly string[] = MEASURABLE.wholeUnits;
+
+/** The increment proposed for a target, as text; empty while the target is not a number. */
+function proposed(target: string, unit: string): string {
+  const value = parseAmount(target);
+  const step = value === null ? null : suggestIncrement(value, WHOLE_UNITS.includes(unit));
+  return step === null ? '' : String(step);
+}
+
+export interface GoalFieldProps {
+  readonly value: GoalDraft;
+  readonly onChange: (goal: GoalDraft) => void;
+}
+
+/**
+ * «Obiettivo misurabile» (design-sezioni.md 4.7, mockup D15): Sì/No or Quantità, with the value,
+ * the unit from the chips or typed, and the increment of one tap, proposed from the target until
+ * the user changes it. Durata comes with the timer (T79): a duration goal is not shown here.
+ */
+export function GoalField({ value, onChange }: GoalFieldProps) {
+  const { t, i18n } = useTranslation();
+  const { colors, family, typography } = useTheme();
+  // A saved increment is the user's: it is not proposed again when the target changes.
+  const [incrementTouched, setIncrementTouched] = useState(value.increment !== '');
+  const [custom, setCustom] = useState(value.type !== 'none' && !UNIT_KEYS.includes(value.unit));
+  const shape = SHAPES[family].control;
+  const radius = shape.kind === 'rounded' ? shape.radius : 0;
+  const input = [
+    textStyleOf(typography.body),
+    styles.input,
+    { color: colors.text, borderColor: colors.textMuted, borderRadius: radius },
+  ];
+
+  if (value.type === 'duration') {
+    return null;
+  }
+
+  const change = (changes: Partial<GoalDraft>) => {
+    const next = { ...value, ...changes };
+    onChange(incrementTouched ? next : { ...next, increment: proposed(next.target, next.unit) });
+  };
+
+  const target = parseAmount(value.target);
+  const increment = parseAmount(value.increment);
+  const quantity = value.type === 'quantity';
+  const unitMissing = quantity && value.unit.trim() === '';
+
+  return (
+    <View testID="editor-goal" style={styles.field}>
+      <SegmentedControl
+        testID="editor-goal-type"
+        accessibilityLabel={t('editor.goal.title')}
+        value={value.type}
+        onChange={(type) => {
+          if (type === 'none') {
+            setIncrementTouched(false);
+            setCustom(false);
+            onChange(NO_GOAL);
+          } else {
+            change({ type });
+          }
+        }}
+        options={[
+          { value: 'none', label: t('editor.goal.yesNo') },
+          { value: 'quantity', label: t('editor.goal.quantity') },
+        ]}
+      />
+      {quantity ? (
+        <>
+          <ThemedText variant="label" color={colors.textMuted}>
+            {t('editor.goal.target')}
+          </ThemedText>
+          <TextInput
+            testID="editor-goal-target"
+            value={value.target}
+            onChangeText={(text) => change({ target: text })}
+            keyboardType="decimal-pad"
+            placeholder={t('editor.goal.targetPlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            accessibilityLabel={t('editor.goal.target')}
+            style={input}
+          />
+          <ThemedText variant="label" color={colors.textMuted}>
+            {t('editor.goal.unit')}
+          </ThemedText>
+          <View style={styles.chips} accessibilityRole="radiogroup">
+            {UNIT_KEYS.map((key) => (
+              <Chip
+                key={key}
+                testID={`editor-goal-unit-${key}`}
+                label={unitName(key, i18n.language)}
+                selected={!custom && value.unit === key}
+                onPress={() => {
+                  setCustom(false);
+                  change({ unit: key });
+                }}
+              />
+            ))}
+            <Chip
+              testID="editor-goal-unit-custom"
+              label={t('editor.goal.customUnit')}
+              selected={custom}
+              onPress={() => {
+                setCustom(true);
+                change({ unit: '' });
+              }}
+            />
+          </View>
+          {custom ? (
+            <TextInput
+              testID="editor-goal-unit-text"
+              value={value.unit}
+              onChangeText={(text) => change({ unit: text })}
+              placeholder={t('editor.goal.customUnitPlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              accessibilityLabel={t('editor.goal.customUnit')}
+              maxLength={12}
+              style={input}
+            />
+          ) : null}
+          <ThemedText variant="label" color={colors.textMuted}>
+            {t('editor.goal.increment')}
+          </ThemedText>
+          <TextInput
+            testID="editor-goal-increment"
+            value={value.increment}
+            onChangeText={(text) => {
+              setIncrementTouched(true);
+              onChange({ ...value, increment: text });
+            }}
+            keyboardType="decimal-pad"
+            accessibilityLabel={t('editor.goal.increment')}
+            style={input}
+          />
+          {target !== null && increment !== null && !unitMissing ? (
+            <ThemedText testID="editor-goal-summary" variant="caption" color={colors.textMuted}>
+              {t('editor.goal.summary', {
+                increment: formatAmount(increment, value.unit, i18n.language),
+                target: formatAmount(target, value.unit, i18n.language),
+              })}
+            </ThemedText>
+          ) : (
+            <ThemedText testID="editor-goal-missing" variant="caption" color={colors.dangerText}>
+              {t('editor.goal.missing')}
+            </ThemedText>
+          )}
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+export interface GoalSheetProps {
+  readonly visible: boolean;
+  readonly value: GoalDraft;
+  readonly onDone: (goal: GoalDraft) => void;
+  readonly onClose: () => void;
+}
+
+/** The sheet «Obiettivo misurabile» of the editor (mockup D15A), with «Fatto». */
+export function GoalSheet({ visible, value, onDone, onClose }: GoalSheetProps) {
+  const { t } = useTranslation();
+  const [draft, setDraft] = useState(value);
+  const [opening, setOpening] = useState(0);
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) {
+      // Every opening starts from the goal of the editor, with the proposals of a new field.
+      setDraft(value);
+      setOpening((count) => count + 1);
+    }
+  }
+  const valid = goalOf(draft) !== null;
+  return (
+    <Sheet
+      testID="editor-goal-sheet"
+      visible={visible}
+      onClose={onClose}
+      title={t('editor.goal.title')}
+    >
+      <View style={styles.sheet}>
+        <GoalField key={opening} value={draft} onChange={setDraft} />
+        <Button
+          testID="editor-goal-done"
+          label={t('editor.goal.done')}
+          disabled={!valid}
+          disabledReason={t('editor.goal.missing')}
+          onPress={() => onDone(draft)}
+        />
+      </View>
+    </Sheet>
+  );
+}
+
+const styles = StyleSheet.create({
+  sheet: { gap: 16, paddingBottom: 16 },
+  field: { gap: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  input: { minHeight: 48, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 8 },
+});
