@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -19,9 +20,18 @@ import Animated, {
 import type { EventRow } from '@/db/repositories/events';
 import { onBadgesUnlocked } from '@/stores/app';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useBadgeTexts } from './badgeTexts';
 import { HatchMoment } from './HatchMoment';
 import { MomentScreen } from './MomentScreen';
-import { addMoments, momentsFromEvents, waitsForTouch, type Moment } from './moments';
+import {
+  addMoments,
+  isNoticeInEssential,
+  momentsFromEvents,
+  waitsForTouch,
+  type Moment,
+} from './moments';
+import { useOptionalUndoToast } from './UndoToast';
+import { useEssential } from './useGameMode';
 import { useReduceMotion } from './useReduceMotion';
 
 /** A moment lasts at most 2.5 seconds (design-sezioni.md A7); a victory waits for its buttons. */
@@ -64,7 +74,29 @@ export function MomentQueueProvider({ children }: { readonly children: ReactNode
   // Not state: nothing on screen changes until they are shown.
   const later = useRef<Moment[]>([]);
   const current = queue[0];
-  const currentId = current !== undefined && !waitsForTouch(current) ? current.id : undefined;
+  // In the Essential mode level, victory and badge are only a notice (design-sezioni.md A9).
+  const essential = useEssential();
+  const toast = useOptionalUndoToast();
+  const noticeText = useNoticeText(
+    current !== undefined && essential && isNoticeInEssential(current) ? current : undefined,
+  );
+  const noticeId = noticeText === null ? undefined : current?.id;
+  const currentId =
+    current !== undefined && noticeId === undefined && !waitsForTouch(current)
+      ? current.id
+      : undefined;
+
+  useEffect(() => {
+    if (noticeId === undefined || noticeText === null) {
+      return undefined;
+    }
+    // Right after the render: the notice takes the place of the moment, then the queue moves on.
+    const timer = setTimeout(() => {
+      toast?.show({ message: noticeText });
+      setQueue((waiting) => (waiting[0]?.id === noticeId ? waiting.slice(1) : waiting));
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [noticeId, noticeText, toast]);
 
   const api = useMemo<MomentQueueApi>(
     () => ({
@@ -107,7 +139,7 @@ export function MomentQueueProvider({ children }: { readonly children: ReactNode
   return (
     <MomentQueueContext value={api}>
       {children}
-      {current === undefined ? null : (
+      {current === undefined || noticeId !== undefined ? null : (
         <Modal
           transparent
           statusBarTranslucent
@@ -141,6 +173,30 @@ export function useMomentQueue(): MomentQueueApi {
     throw new Error('useMomentQueue must be used inside a MomentQueueProvider');
   }
   return api;
+}
+
+/** The words of the notice that takes the place of a moment in the Essential mode. */
+function useNoticeText(moment: Moment | undefined): string | null {
+  const { t } = useTranslation();
+  const { family } = useTheme();
+  const badgeTexts = useBadgeTexts();
+  switch (moment?.kind) {
+    case 'level_up':
+      return t('shared.moments.levelUp', {
+        term: t('lexicon.level', { context: family }),
+        level: moment.level,
+      });
+    case 'boss_defeated':
+      return t(moment.starter ? 'essential.notices.firstSteps' : 'essential.notices.goal');
+    case 'badge': {
+      const badge = badgeTexts.find(moment.badgeKey);
+      return badge === undefined
+        ? t('shared.moments.badge')
+        : t('essential.notices.badge', { name: badgeTexts.nameOf(badge) });
+    }
+    default:
+      return null;
+  }
 }
 
 function MomentBackground({

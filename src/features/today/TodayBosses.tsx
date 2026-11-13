@@ -9,6 +9,7 @@ import { useBossStep } from '@/features/bosses/useBossStep';
 import { Icon } from '@/features/shared/Icon';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { StarterQuestCard } from './StarterQuestCard';
 import type { MissionActions } from './useMissionActions';
@@ -27,6 +28,7 @@ export interface TodayBossesProps {
  * scroll with dots when there is more than one, from the nearest deadline (the order of
  * `getTodayView`). The quest of the first launch has its own card above them (design 1.7). Without
  * bosses, a row that leads to Obiettivi, which takes the place of the quest once it is won (1.8).
+ * In the Essential mode the bosses are not on Today (2.10) and the quest is the list «Primi passi».
  */
 export function TodayBosses({ view, actions }: TodayBossesProps) {
   const { t } = useTranslation();
@@ -37,8 +39,16 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
   const [width, setWidth] = useState(screenSize.width - 2 * SCREEN_MARGIN);
   const [page, setPage] = useState(0);
   const step = useBossStep(actions.completeStep, view);
+  const essential = useEssential();
   const bosses = view.bosses.filter((item) => item.boss.kind !== 'starter');
-  const quest = view.starterQuest === null ? null : <StarterQuestCard quest={view.starterQuest} />;
+  const quest =
+    view.starterQuest === null ? null : (
+      <StarterQuestCard quest={view.starterQuest} essential={essential} />
+    );
+
+  if (essential) {
+    return quest;
+  }
   const current = Math.min(page, Math.max(bosses.length - 1, 0));
 
   if (bosses.length === 0) {

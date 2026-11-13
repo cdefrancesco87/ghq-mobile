@@ -663,11 +663,13 @@
     "linkedBoss_cyberpunk": "Linked firewall",
     "linkedBoss_lovecraft": "Linked horror",
     "linkedBoss_minimal": "Linked big goal",
+    "linkedBoss_essential": "Linked goal",
     "noBoss": "No active boss · Create a goal",
     "noBoss_fantasy": "No active nemesis · Create a goal",
     "noBoss_cyberpunk": "No active firewall · Create a goal",
     "noBoss_lovecraft": "No active horror · Create a goal",
     "noBoss_minimal": "No active big goal · Create a goal",
+    "noBoss_essential": "No active goal · Create a goal",
     "bossHp": "Health {{hp}}/{{max}}",
     "none": "None",
     "done": "Done",
@@ -1403,7 +1405,8 @@
       "day": "Day",
       "notifications": "Notifications",
       "data": "Data",
-      "about": "About"
+      "about": "About",
+      "game": "Game"
     },
     "rowLabel": "{{label}}, {{value}}",
     "from": "From {{date}}",
@@ -1460,7 +1463,32 @@
     "licensesOther": "Other components: React Native, Expo and the open source libraries of the project, each under its own license (MIT, Apache 2.0, BSD).",
     "useTheme": "Use this theme",
     "themeInUse": "Theme in use",
-    "themeApplied": "Same data, new look"
+    "themeApplied": "Same data, new look",
+    "gameMode": "Game level",
+    "gameModes": {
+      "full": "Full",
+      "essential": "Essential"
+    },
+    "gameModeCaption": {
+      "full": "Health, bosses, shop and coins",
+      "essential": "Only missions, streaks and statistics · Back to Full whenever you like"
+    },
+    "gameModeSheet": {
+      "title": {
+        "full": "Back to Full?",
+        "essential": "Switch to Essential?"
+      },
+      "subtitle": "What changes",
+      "body": {
+        "full": "Health, coins, bosses, the shop and the character sheet come back, with the values they had.",
+        "essential": "Health, coins, bosses, the shop and the character sheet disappear; level and experience stay, in small. Missions, streaks, statistics and the companion stay."
+      },
+      "noDataLost": "You lose no data: you can switch whenever you like.",
+      "confirm": {
+        "full": "Back to Full",
+        "essential": "Switch to Essential"
+      }
+    }
   },
   "backup": {
     "title": "Backup and restore",
@@ -1548,5 +1576,20 @@
       "statLevelMax_one": "Bring a stat to level {{count}}",
       "statLevelMax_other": "Bring a stat to level {{count}}"
     }
+  },
+  "essential": {
+    "firstSteps": "First steps",
+    "stepToast": "Step done",
+    "notices": {
+      "firstSteps": "First steps done",
+      "goal": "Goal reached",
+      "badge": "Badge unlocked: {{name}}"
+    },
+    "goals": "Goals",
+    "goal": "Goal",
+    "stepsLabel": "Steps of {{name}}",
+    "goalWarning_one": "{{count}} day left until the deadline of {{name}}",
+    "goalWarning_other": "{{count}} days left until the deadline of {{name}}",
+    "goalPreview": "Reward {{xp}} {{xpTerm}}"
   }
 }

@@ -10,6 +10,7 @@ import { CompletionControl } from '@/features/shared/CompletionControl';
 import { Icon } from '@/features/shared/Icon';
 import { ProgressRing, ringStroke } from '@/features/shared/ProgressRing';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { BOSS } from '@/rules/config';
 import { diffDays } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
@@ -46,7 +47,8 @@ export interface BossCardProps {
  * shakes the sprite (not with «Riduci movimento») and shows the damage. The large card of
  * Obiettivi has the sprite at 96, in Minimal a large ring with the share of the hit points taken
  * (5.9), the steps in the words of the theme and one sentence for the screen reader (5.11). A
- * touch on the card, outside the control of the step, opens the card of the boss.
+ * touch on the card, outside the control of the step, opens the card of the boss. In the Essential
+ * mode it is a goal divided in steps (5.10): no sprite, health or damage, a bar of the steps done.
  */
 export function BossCard({
   item,
@@ -63,6 +65,7 @@ export function BossCard({
   const { boss } = item;
   const name = nameOf(boss);
   const shaking = useShake(hit);
+  const essential = useEssential();
 
   const daysLeft = boss.deadlineDay === null ? null : diffDays(day, boss.deadlineDay);
   const near = daysLeft !== null && daysLeft <= BOSS.deadlineWarningDays;
@@ -82,14 +85,14 @@ export function BossCard({
   const steps = t('bosses.card.steps', {
     done: item.stepsDone,
     total: item.stepsTotal,
-    context: large ? family : undefined,
+    context: large && !essential ? family : undefined,
   });
   const summary = [
     name,
-    boss.kind === 'starter'
+    boss.kind === 'starter' || essential
       ? null
       : t('bosses.card.difficulty', { difficulty: t(`shared.difficulty.${boss.difficulty}`) }),
-    t('bosses.card.hpSummary', { hp: boss.hp, max: boss.hpMax }),
+    essential ? null : t('bosses.card.hpSummary', { hp: boss.hp, max: boss.hpMax }),
     t('bosses.card.stepsSummary', { done: item.stepsDone, total: item.stepsTotal }),
     deadline,
   ]
@@ -107,21 +110,23 @@ export function BossCard({
         accessibilityLabel={summary}
         accessibilityHint={t('bosses.card.openHint')}
       >
-        <Animated.View style={shaking}>
-          {large && family === 'minimal' ? (
-            <View testID={`${testID}-ring`} style={[styles.ring, { width: size, height: size }]}>
-              <ProgressRing progress={taken} size={size} strokeWidth={ringStroke(family)} />
-              <View style={styles.ringCenter}>
-                <Icon name="boss" size={24} color={colors.primary} />
-                <ThemedText variant="numbers">
-                  {t('bosses.card.percent', { percent: Math.round(taken * 100) })}
-                </ThemedText>
+        {essential ? null : (
+          <Animated.View style={shaking}>
+            {large && family === 'minimal' ? (
+              <View testID={`${testID}-ring`} style={[styles.ring, { width: size, height: size }]}>
+                <ProgressRing progress={taken} size={size} strokeWidth={ringStroke(family)} />
+                <View style={styles.ringCenter}>
+                  <Icon name="boss" size={24} color={colors.primary} />
+                  <ThemedText variant="numbers">
+                    {t('bosses.card.percent', { percent: Math.round(taken * 100) })}
+                  </ThemedText>
+                </View>
               </View>
-            </View>
-          ) : (
-            <BossSprite kind={kind} size={size} testID={`${testID}-sprite`} />
-          )}
-        </Animated.View>
+            ) : (
+              <BossSprite kind={kind} size={size} testID={`${testID}-sprite`} />
+            )}
+          </Animated.View>
+        )}
         <View style={styles.flex}>
           <View style={styles.titleRow}>
             <ThemedText
@@ -147,16 +152,27 @@ export function BossCard({
           </View>
           <View style={styles.barRow}>
             <View style={styles.flex}>
-              <Bar
-                kind="boss"
-                label={t('bosses.card.hpLabel', { name })}
-                value={boss.hp}
-                max={boss.hpMax}
-                showLabel={false}
-                testID={`${testID}-hp`}
-              />
+              {essential ? (
+                <Bar
+                  kind="xp"
+                  label={t('essential.stepsLabel', { name })}
+                  value={item.stepsDone}
+                  max={item.stepsTotal}
+                  showLabel={false}
+                  testID={`${testID}-progress`}
+                />
+              ) : (
+                <Bar
+                  kind="boss"
+                  label={t('bosses.card.hpLabel', { name })}
+                  value={boss.hp}
+                  max={boss.hpMax}
+                  showLabel={false}
+                  testID={`${testID}-hp`}
+                />
+              )}
             </View>
-            {hit === null ? null : (
+            {hit === null || essential ? null : (
               <ThemedText
                 key={hit.key}
                 testID={`${testID}-damage`}
@@ -173,7 +189,7 @@ export function BossCard({
             testID={`${testID}-steps`}
             variant={large ? 'label' : 'caption'}
             // Arcade shows the steps as the stages of the boss, in the main colour (mockup B3a).
-            color={large && family === 'arcade' ? colors.primary : colors.textMuted}
+            color={large && family === 'arcade' && !essential ? colors.primary : colors.textMuted}
           >
             {steps}
           </ThemedText>

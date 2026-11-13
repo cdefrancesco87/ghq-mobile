@@ -69,6 +69,29 @@ describe('closePendingDays', () => {
     expectHeroMatchesLog(db);
   });
 
+  it('takes no hit points in the Essential mode, and the full mode finds the same hero', () => {
+    const db = newGame(['journal']);
+    const before = db.select().from(hero).get();
+    setSetting(db, 'game_mode', 'essential', at(6, 9));
+    closePendingDays(db, clockAt(9, 10));
+    expect(
+      db
+        .select()
+        .from(daySummaries)
+        .orderBy(asc(daySummaries.gameDay))
+        .all()
+        .map((row) => [row.gameDay, row.missedXp, row.hpLost]),
+    ).toEqual([
+      ['2026-11-06', 10, 0],
+      ['2026-11-07', 10, 0],
+      ['2026-11-08', 10, 0],
+    ]);
+    setSetting(db, 'game_mode', 'full', at(9, 11));
+    expect(db.select().from(hero).get()?.hp).toBe(before?.hp);
+    expect(db.select().from(hero).get()?.coins).toBe(before?.coins);
+    expectHeroMatchesLog(db);
+  });
+
   it('changes nothing when it runs again', () => {
     const db = newGame(['journal']);
     complete(db, missionId(db, 'journal'), 6);

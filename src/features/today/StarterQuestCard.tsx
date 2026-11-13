@@ -16,6 +16,8 @@ const SPRITE_SIZE = 64;
 
 export interface StarterQuestCardProps {
   readonly quest: StarterQuestView;
+  /** The Essential mode: the list «Primi passi», without boss and reward (1.9; mockup D37B). */
+  readonly essential?: boolean;
 }
 
 /**
@@ -24,11 +26,11 @@ export interface StarterQuestCardProps {
  * steps and the reward. The steps are done by playing, not by touching them; the card opens the
  * sheet of the quest.
  */
-export function StarterQuestCard({ quest }: StarterQuestCardProps) {
+export function StarterQuestCard({ quest, essential = false }: StarterQuestCardProps) {
   const { t, i18n } = useTranslation();
   const { colors, family } = useTheme();
   const router = useRouter();
-  const name = t('starter_quest.name', { context: family });
+  const name = essential ? t('essential.firstSteps') : t('starter_quest.name', { context: family });
   const done = quest.steps.filter((step) => step.done).length;
   const total = quest.steps.length;
   const reward = t('today.starter.reward', {
@@ -48,7 +50,7 @@ export function StarterQuestCard({ quest }: StarterQuestCardProps) {
         onPress={() => router.push({ pathname: '/boss/[id]', params: { id: quest.bossId } })}
         style={styles.head}
       >
-        {family === 'minimal' ? null : <BossSprite kind="quest" size={SPRITE_SIZE} />}
+        {family === 'minimal' || essential ? null : <BossSprite kind="quest" size={SPRITE_SIZE} />}
         <ThemedText
           testID="today-starter-name"
           variant="sectionTitle"
@@ -93,9 +95,11 @@ export function StarterQuestCard({ quest }: StarterQuestCardProps) {
           );
         })}
       </View>
-      <ThemedText testID="today-starter-reward" variant="caption" color={colors.textMuted}>
-        {reward}
-      </ThemedText>
+      {essential ? null : (
+        <ThemedText testID="today-starter-reward" variant="caption" color={colors.textMuted}>
+          {reward}
+        </ThemedText>
+      )}
     </Card>
   );
 }

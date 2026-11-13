@@ -663,11 +663,13 @@
     "linkedBoss_cyberpunk": "Cortafuegos vinculado",
     "linkedBoss_lovecraft": "Horror vinculado",
     "linkedBoss_minimal": "Gran objetivo vinculado",
+    "linkedBoss_essential": "Objetivo vinculado",
     "noBoss": "Ningún boss activo · Crea un objetivo",
     "noBoss_fantasy": "Ninguna némesis activa · Crea un objetivo",
     "noBoss_cyberpunk": "Ningún cortafuegos activo · Crea un objetivo",
     "noBoss_lovecraft": "Ningún horror activo · Crea un objetivo",
     "noBoss_minimal": "Ningún gran objetivo activo · Crea un objetivo",
+    "noBoss_essential": "Ningún objetivo activo · Crea un objetivo",
     "bossHp": "Vida {{hp}}/{{max}}",
     "none": "Ninguno",
     "done": "Hecho",
@@ -1403,7 +1405,8 @@
       "day": "Jornada",
       "notifications": "Notificaciones",
       "data": "Datos",
-      "about": "Información"
+      "about": "Información",
+      "game": "Juego"
     },
     "rowLabel": "{{label}}, {{value}}",
     "from": "Desde el {{date}}",
@@ -1460,7 +1463,32 @@
     "licensesOther": "Otros componentes: React Native, Expo y las bibliotecas de código abierto del proyecto, cada una con su licencia (MIT, Apache 2.0, BSD).",
     "useTheme": "Usar este tema",
     "themeInUse": "Tema en uso",
-    "themeApplied": "Mismos datos, nuevo traje"
+    "themeApplied": "Mismos datos, nuevo traje",
+    "gameMode": "Nivel de juego",
+    "gameModes": {
+      "full": "Completo",
+      "essential": "Esencial"
+    },
+    "gameModeCaption": {
+      "full": "Vida, jefes, tienda y monedas",
+      "essential": "Solo misiones, rachas y estadísticas · Vuelve a Completo cuando quieras"
+    },
+    "gameModeSheet": {
+      "title": {
+        "full": "¿Volver a Completo?",
+        "essential": "¿Pasar a Esencial?"
+      },
+      "subtitle": "Qué cambia",
+      "body": {
+        "full": "Vuelven la vida, las monedas, los jefes, la tienda y la ficha del personaje, con sus valores.",
+        "essential": "Desaparecen la vida, las monedas, los jefes, la tienda y la ficha del personaje; nivel y experiencia quedan en pequeño. Quedan misiones, rachas, estadísticas y compañero."
+      },
+      "noDataLost": "No pierdes ningún dato: puedes cambiar cuando quieras.",
+      "confirm": {
+        "full": "Volver a Completo",
+        "essential": "Pasar a Esencial"
+      }
+    }
   },
   "backup": {
     "title": "Copia y restauración",
@@ -1548,5 +1576,20 @@
       "statLevelMax_one": "Lleva una estadística al nivel {{count}}",
       "statLevelMax_other": "Lleva una estadística al nivel {{count}}"
     }
+  },
+  "essential": {
+    "firstSteps": "Primeros pasos",
+    "stepToast": "Paso completado",
+    "notices": {
+      "firstSteps": "Primeros pasos completados",
+      "goal": "Objetivo alcanzado",
+      "badge": "Insignia desbloqueada: {{name}}"
+    },
+    "goals": "Objetivos",
+    "goal": "Objetivo",
+    "stepsLabel": "Pasos de {{name}}",
+    "goalWarning_one": "Falta {{count}} día para el plazo de {{name}}",
+    "goalWarning_other": "Faltan {{count}} días para el plazo de {{name}}",
+    "goalPreview": "Recompensa {{xp}} {{xpTerm}}"
   }
 }

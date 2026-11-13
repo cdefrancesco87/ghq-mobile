@@ -38,6 +38,17 @@ export type QuestLogType =
 
 const ALL_TYPES: readonly QuestLogType[] = [...Object.values(KIND_TYPES).flat(), ...OTHER_TYPES];
 
+/**
+ * Left out in the Essential mode (design-sezioni.md 8.11): the entries of health, bosses, coins
+ * and shop. Levels, badges and the bonus of the Plan (experience) stay.
+ */
+const ESSENTIAL_HIDDEN: readonly QuestLogType[] = [
+  ...KIND_TYPES.bosses,
+  ...KIND_TYPES.items,
+  'bonus.full_day',
+  'day.closed',
+];
+
 /** The events «Annulla» works on (undo.ts), on the day they happened. */
 const UNDOABLE_TYPES: readonly QuestLogType[] = [
   'mission.completed',
@@ -54,6 +65,8 @@ export interface QuestLogQuery {
   readonly to?: GameDay | null;
   /** How many entries at most; QUEST_LOG.pageSize when missing. */
   readonly limit?: number;
+  /** The Essential mode: without the entries of ESSENTIAL_HIDDEN. */
+  readonly essential?: boolean;
 }
 
 export interface QuestLogEntry {
@@ -110,7 +123,9 @@ const numberOr = (value: unknown): number | null => (typeof value === 'number' ?
 /** The Registro, with the filters of the chips and of «Filtra». */
 export function getQuestLog(db: Db, clock: ActionClock, query: QuestLogQuery): QuestLogView {
   const today = gameDayOf(clock.now, clock.tzOffset, getSetting(db, 'day_change'));
-  const types = query.filter === 'all' ? ALL_TYPES : KIND_TYPES[query.filter];
+  const types = (query.filter === 'all' ? ALL_TYPES : KIND_TYPES[query.filter]).filter(
+    (type) => query.essential !== true || !ESSENTIAL_HIDDEN.includes(type),
+  );
   const conditions: SQL[] = [
     inArray(events.type, [...types]),
     isNull(missions.deletedAt),

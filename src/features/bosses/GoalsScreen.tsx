@@ -11,6 +11,7 @@ import { ScreenHeader } from '@/features/shared/ScreenHeader';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useUndoToast } from '@/features/shared/UndoToast';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useMissionActions } from '@/features/today/useMissionActions';
 import { BOSS } from '@/rules/config';
 import { SHAPES } from '@/theme/shapes';
@@ -32,7 +33,8 @@ export interface GoalsScreenProps {
  * «2 di 3 attivi», «Nuovo» and «Altro» with the archived goals; the large cards of the active
  * bosses with the next step; the free places up to 3 as dashed cards, or the note of the limit.
  * A touch on a card opens the card of the boss. Under the bosses, once there is one, the preview of
- * the Hall of trophies with the last 3 and «Vedi tutti».
+ * the Hall of trophies with the last 3 and «Vedi tutti». In the Essential mode a list of goals
+ * divided in steps, without the Hall of trophies (5.10, 9.9).
  */
 export function GoalsScreen({ view }: GoalsScreenProps) {
   const { t } = useTranslation();
@@ -42,6 +44,7 @@ export function GoalsScreen({ view }: GoalsScreenProps) {
   const actions = useMissionActions();
   const step = useBossStep(actions.completeStep, view);
   const [menu, setMenu] = useState(false);
+  const essential = useEssential();
   const { active, archived, trophies } = view;
   const free = Math.max(BOSS.maxActive - active.length, 0);
   const shape = SHAPES[family].card;
@@ -57,7 +60,7 @@ export function GoalsScreen({ view }: GoalsScreenProps) {
     <View testID="goals-screen" style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader
         testID="goals-header"
-        title={t('lexicon.boss_pl', { context: family })}
+        title={essential ? t('essential.goals') : t('lexicon.boss_pl', { context: family })}
         caption={t('goals.active', { count: active.length, max: BOSS.maxActive })}
         actions={
           <>
@@ -117,7 +120,7 @@ export function GoalsScreen({ view }: GoalsScreenProps) {
             </ThemedText>
           </View>
         ) : null}
-        {trophies.length === 0 ? null : (
+        {trophies.length === 0 || essential ? null : (
           <View testID="goals-trophies" style={styles.trophies}>
             <View style={styles.trophiesHeader}>
               <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.flex}>

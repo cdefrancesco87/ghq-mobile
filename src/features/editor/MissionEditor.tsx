@@ -38,6 +38,7 @@ import { Icon } from '@/features/shared/Icon';
 import { statIcon } from '@/features/shared/icons';
 import { SegmentedControl } from '@/features/shared/SegmentedControl';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useLargeText } from '@/features/shared/useLargeText';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { completionDeltas } from '@/rules/completion';
@@ -189,6 +190,8 @@ export function MissionEditor({
   const rewards = baseRewards(draft.difficulty, draft.statPrimary);
   const xpTerm = t('lexicon.xp_pl', { context: family });
   const coinsTerm = t('lexicon.coins_pl', { context: family });
+  // Essential (4.14): «Obiettivo collegato», and the preview without coins.
+  const essential = useEssential();
   const statName = (key: StatKey) => t(`stats.${key}`, { context: family });
   const habit = draft.kind === 'habit';
   const full = large || editing || expanded;
@@ -308,7 +311,7 @@ export function MissionEditor({
 
   const reward = [
     t('editor.rewardXp', { xp: rewards.xp, term: xpTerm }),
-    t('editor.rewardCoins', { coins: rewards.coins, term: coinsTerm }),
+    ...(essential ? [] : [t('editor.rewardCoins', { coins: rewards.coins, term: coinsTerm })]),
     ...(draft.statPrimary === null
       ? []
       : [
@@ -369,7 +372,7 @@ export function MissionEditor({
       <OptionRow
         testID="editor-option-boss"
         icon="boss"
-        label={t('editor.linkedBoss', { context: family })}
+        label={t('editor.linkedBoss', { context: essential ? 'essential' : family })}
         value={linked === undefined ? t('editor.none') : nameOf(linked)}
         onPress={() => setSheet('boss')}
       />

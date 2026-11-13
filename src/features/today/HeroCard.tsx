@@ -17,6 +17,7 @@ import { Chip } from '@/features/shared/Chip';
 import { CompanionSprite } from '@/features/shared/CompanionSprite';
 import { Icon } from '@/features/shared/Icon';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useLargeText } from '@/features/shared/useLargeText';
 import { useReduceMotion } from '@/features/shared/useReduceMotion';
 import { termInSentence } from '@/i18n/lexicon';
@@ -32,6 +33,9 @@ const PULSE_MS = 250;
 /** The companion is smaller in Minimal, where the game stays in the background (design 2.2). */
 const COMPANION_SIZE = 64;
 const COMPANION_SIZE_MINIMAL = 40;
+/** The one row of the Essential mode (lacune-design-schermate.md L33): 52 high. */
+const ESSENTIAL_ROW_HEIGHT = 52;
+const COMPANION_SIZE_ESSENTIAL = 40;
 
 export interface HeroCardProps {
   readonly view: TodayView;
@@ -41,7 +45,8 @@ export interface HeroCardProps {
  * The hero at the top of Today (design-sezioni.md 2.2): companion, level, health and experience
  * bars, streak and coins. The screen reader reads them in this order (2.11), so the streak chip
  * comes after the bars in the tree and is only drawn at the top right. With very large text the
- * card goes on more rows: bars one under the other, streak beside the coins (A11.1).
+ * card goes on more rows: bars one under the other, streak beside the coins (A11.1). In the
+ * Essential mode the card is one row (2.10, L33): companion, name, streak and the level in small.
  */
 export function HeroCard({ view }: HeroCardProps) {
   const { t, i18n } = useTranslation();
@@ -51,6 +56,7 @@ export function HeroCard({ view }: HeroCardProps) {
   const [streakWidth, setStreakWidth] = useState(0);
   const { hero, xpToNext, companion, notices, starterQuest } = view;
   const reduceMotion = useReduceMotion();
+  const essential = useEssential();
   // Only the last step of the quest is left: opening the statistics.
   const statsNext =
     starterQuest !== null &&
@@ -86,23 +92,50 @@ export function HeroCard({ view }: HeroCardProps) {
     </Animated.View>
   );
 
+  const companionButton = (size: number) => (
+    <Pressable
+      testID="today-hero-companion"
+      accessibilityRole="button"
+      accessibilityLabel={t('today.hero.companionLabel', { name: companionName })}
+      onPress={() => router.push('/companion')}
+    >
+      <CompanionSprite
+        stage={companion.stage}
+        mood={companion.mood}
+        name={companionName}
+        size={size}
+      />
+    </Pressable>
+  );
+  const level = t('today.hero.level', {
+    term: t('lexicon.level', { context: family }),
+    level: hero.level,
+  });
+
+  if (essential) {
+    return (
+      <Card testID="today-hero">
+        <View testID="today-hero-essential" style={styles.essential}>
+          {companionButton(COMPANION_SIZE_ESSENTIAL)}
+          <View style={styles.identity}>
+            <ThemedText variant="label" testID="today-hero-name" numberOfLines={1}>
+              {hero.name}
+            </ThemedText>
+            <ThemedText variant="caption" color={colors.textMuted} testID="today-hero-level">
+              {level}
+            </ThemedText>
+          </View>
+          {streak}
+        </View>
+      </Card>
+    );
+  }
+
   return (
     <Card testID="today-hero">
       <View>
         <View style={styles.top}>
-          <Pressable
-            testID="today-hero-companion"
-            accessibilityRole="button"
-            accessibilityLabel={t('today.hero.companionLabel', { name: companionName })}
-            onPress={() => router.push('/companion')}
-          >
-            <CompanionSprite
-              stage={companion.stage}
-              mood={companion.mood}
-              name={companionName}
-              size={family === 'minimal' ? COMPANION_SIZE_MINIMAL : COMPANION_SIZE}
-            />
-          </Pressable>
+          {companionButton(family === 'minimal' ? COMPANION_SIZE_MINIMAL : COMPANION_SIZE)}
           <View style={styles.identity}>
             {family === 'minimal' ? null : (
               <ThemedText variant="label" testID="today-hero-name">
@@ -115,10 +148,7 @@ export function HeroCard({ view }: HeroCardProps) {
               </ThemedText>
             )}
             <ThemedText variant="label" testID="today-hero-level">
-              {t('today.hero.level', {
-                term: t('lexicon.level', { context: family }),
-                level: hero.level,
-              })}
+              {level}
             </ThemedText>
             <ThemedText variant="caption" color={colors.textMuted}>
               {t('today.hero.toNext', {
@@ -187,6 +217,12 @@ export function HeroCard({ view }: HeroCardProps) {
 
 const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  essential: {
+    minHeight: ESSENTIAL_ROW_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   identity: { flex: 1, gap: 2 },
   bars: { flexDirection: 'row', gap: 16, marginTop: 16 },
   barsStacked: { flexDirection: 'column', gap: 12 },

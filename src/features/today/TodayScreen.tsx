@@ -18,6 +18,7 @@ import { EmptyState } from '@/features/shared/EmptyState';
 import { Icon } from '@/features/shared/Icon';
 import { useMomentQueue } from '@/features/shared/MomentQueue';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { hitSlopFor } from '@/features/shared/touch';
 import { companionName } from '@/rules/companion';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -61,6 +62,7 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const hint = view.companion.stage === 'egg' && !hintClosed;
   const resumed = view.notices.resumedMissions;
   const actions = useMissionActions();
+  const essential = useEssential();
   // The victory of the quest of the first launch, won in Statistiche, shows back here (1.8).
   const { showWaiting } = useMomentQueue();
   useFocusEffect(showWaiting);
@@ -204,7 +206,8 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
         )}
       </ScrollView>
       {menu.sheets}
-      {sticky ? <HeroStickyBar hero={view.hero} xpToNext={view.xpToNext} /> : null}
+      {/* The thin bar holds health and experience: none in the Essential mode (2.10). */}
+      {sticky && !essential ? <HeroStickyBar hero={view.hero} xpToNext={view.xpToNext} /> : null}
     </View>
   );
 }

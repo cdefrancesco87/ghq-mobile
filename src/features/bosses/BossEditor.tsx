@@ -24,6 +24,7 @@ import { ChoiceButton } from '@/features/editor/ChoiceButton';
 import { DueDaySheet } from '@/features/editor/DueDaySheet';
 import { OptionRow } from '@/features/editor/OptionRow';
 import { BossSprite } from '@/features/shared/BossSprite';
+import { useEssential } from '@/features/shared/useGameMode';
 import { Button } from '@/features/shared/Button';
 import { Card } from '@/features/shared/Card';
 import { ConfirmDialog } from '@/features/shared/ConfirmDialog';
@@ -155,6 +156,8 @@ export function BossEditor({ bossId }: BossEditorProps = {}) {
   ];
   const xpTerm = t('lexicon.xp_pl', { context: family });
   const coinsTerm = t('lexicon.coins_pl', { context: family });
+  // Essential (5.10): a goal without sprite, health and coins; the experience stays.
+  const essential = useEssential();
   const statName = (key: StatKey) => t(`stats.${key}`, { context: family });
   const missing =
     trimmed === ''
@@ -272,14 +275,16 @@ export function BossEditor({ bossId }: BossEditorProps = {}) {
   const reward =
     preview === null
       ? null
-      : t(editedHp === null ? 'goals.editor.preview' : 'goals.editor.editPreview', {
-          hp: editedHp ?? preview.hp,
-          max: preview.hp,
-          xp: preview.xp,
-          xpTerm,
-          coins: preview.coins,
-          coinsTerm,
-        });
+      : essential
+        ? t('essential.goalPreview', { xp: preview.xp, xpTerm })
+        : t(editedHp === null ? 'goals.editor.preview' : 'goals.editor.editPreview', {
+            hp: editedHp ?? preview.hp,
+            max: preview.hp,
+            xp: preview.xp,
+            xpTerm,
+            coins: preview.coins,
+            coinsTerm,
+          });
 
   if (bossId !== undefined && edit === null) {
     // The boss is no longer active: there is nothing to change.
@@ -311,7 +316,9 @@ export function BossEditor({ bossId }: BossEditorProps = {}) {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.nameRow}>
           {/* Every theme has a boss for each difficulty: the preview changes with it (5.2). */}
-          <BossSprite kind={difficulty} size={PREVIEW_SIZE} testID="goal-editor-sprite" />
+          {essential ? null : (
+            <BossSprite kind={difficulty} size={PREVIEW_SIZE} testID="goal-editor-sprite" />
+          )}
           <TextInput
             testID="goal-editor-name"
             value={name}

@@ -663,11 +663,13 @@
     "linkedBoss_cyberpunk": "Pare-feu lié",
     "linkedBoss_lovecraft": "Horreur liée",
     "linkedBoss_minimal": "Grand objectif lié",
+    "linkedBoss_essential": "Objectif lié",
     "noBoss": "Aucun boss actif · Créer un objectif",
     "noBoss_fantasy": "Aucune némésis active · Créer un objectif",
     "noBoss_cyberpunk": "Aucun pare-feu actif · Créer un objectif",
     "noBoss_lovecraft": "Aucune horreur active · Créer un objectif",
     "noBoss_minimal": "Aucun grand objectif actif · Créer un objectif",
+    "noBoss_essential": "Aucun objectif actif · Crée un objectif",
     "bossHp": "Vie {{hp}}/{{max}}",
     "none": "Aucun",
     "done": "Terminé",
@@ -1403,7 +1405,8 @@
       "day": "Journée",
       "notifications": "Notifications",
       "data": "Données",
-      "about": "Informations"
+      "about": "Informations",
+      "game": "Jeu"
     },
     "rowLabel": "{{label}}, {{value}}",
     "from": "À partir du {{date}}",
@@ -1460,7 +1463,32 @@
     "licensesOther": "Autres composants : React Native, Expo et les bibliothèques open source du projet, chacune sous sa licence (MIT, Apache 2.0, BSD).",
     "useTheme": "Utiliser ce thème",
     "themeInUse": "Thème actuel",
-    "themeApplied": "Mêmes données, nouvelle tenue"
+    "themeApplied": "Mêmes données, nouvelle tenue",
+    "gameMode": "Niveau de jeu",
+    "gameModes": {
+      "full": "Complet",
+      "essential": "Essentiel"
+    },
+    "gameModeCaption": {
+      "full": "Vie, boss, boutique et pièces",
+      "essential": "Seulement missions, séries et statistiques · Retour à Complet quand tu veux"
+    },
+    "gameModeSheet": {
+      "title": {
+        "full": "Revenir à Complet ?",
+        "essential": "Passer à Essentiel ?"
+      },
+      "subtitle": "Ce qui change",
+      "body": {
+        "full": "La vie, les pièces, les boss, la boutique et la fiche du personnage reviennent, avec leurs valeurs.",
+        "essential": "La vie, les pièces, les boss, la boutique et la fiche du personnage disparaissent ; niveau et expérience restent en petit. Missions, séries, statistiques et compagnon restent."
+      },
+      "noDataLost": "Tu ne perds aucune donnée : tu peux changer quand tu veux.",
+      "confirm": {
+        "full": "Revenir à Complet",
+        "essential": "Passer à Essentiel"
+      }
+    }
   },
   "backup": {
     "title": "Sauvegarde et restauration",
@@ -1548,5 +1576,20 @@
       "statLevelMax_one": "Amène une statistique au niveau {{count}}",
       "statLevelMax_other": "Amène une statistique au niveau {{count}}"
     }
+  },
+  "essential": {
+    "firstSteps": "Premiers pas",
+    "stepToast": "Étape terminée",
+    "notices": {
+      "firstSteps": "Premiers pas terminés",
+      "goal": "Objectif atteint",
+      "badge": "Badge débloqué : {{name}}"
+    },
+    "goals": "Objectifs",
+    "goal": "Objectif",
+    "stepsLabel": "Étapes de {{name}}",
+    "goalWarning_one": "Plus que {{count}} jour avant l'échéance de {{name}}",
+    "goalWarning_other": "Plus que {{count}} jours avant l'échéance de {{name}}",
+    "goalPreview": "Récompense {{xp}} {{xpTerm}}"
   }
 }

@@ -28,13 +28,14 @@ import { SHAPES } from '@/theme/shapes';
 import { MAX_TEXT_SCALE } from '@/theme/textScale';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ChoiceSheet } from './ChoiceSheet';
+import { GameModeSheet } from './GameModeSheet';
 import { DAY_CHANGE_TIMES, dayAndMonth, quietTimes, restDaysText, weekdayName } from './format';
 import { RestDaysSheet } from './RestDaysSheet';
 import { SettingsRow } from './SettingsRow';
 import { TimeSheet } from './TimeSheet';
 import { useNotificationPermission, useSettingsView } from './useSettingsView';
 
-const GROUPS = ['appearance', 'day', 'notifications', 'data', 'about'] as const;
+const GROUPS = ['appearance', 'game', 'day', 'notifications', 'data', 'about'] as const;
 type Group = (typeof GROUPS)[number];
 type OpenSheet =
   | 'language'
@@ -44,6 +45,7 @@ type OpenSheet =
   | 'eveningTime'
   | 'privacy'
   | 'licenses'
+  | 'gameMode'
   | null;
 
 const FIELD_HEIGHT = 48;
@@ -68,7 +70,8 @@ interface RowSpec {
  * the row says so («Dal 7 novembre»). Every change that touches the reminders goes through
  * `runAction`, which schedules them again. The row Backup says where and when the last backup was
  * made and opens «Backup e ripristino», which also holds «Elimina tutti i dati» (mockups D38, D39);
- * the search finds it there too. Gioco and Accessibilità come with their tasks (T71, T72).
+ * the search finds it there too. Gioco holds «Livello di gioco», Completo or Essenziale, changed
+ * through a sheet that says what goes away (10.4, 10.11; mockup D37A). Accessibilità comes with T72.
  */
 export function SettingsScreen() {
   const { t, i18n } = useTranslation();
@@ -160,6 +163,23 @@ export function SettingsScreen() {
           label={t('settings.textSize')}
           value={t('settings.textSizeValue')}
           onPress={() => void Linking.openSettings()}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'gameMode',
+      group: 'game',
+      label: t('settings.gameMode'),
+      keywords: [t('settings.gameModes.full'), t('settings.gameModes.essential')],
+      render: (last) => (
+        <SettingsRow
+          testID="settings-game-mode"
+          icon="play"
+          label={t('settings.gameMode')}
+          value={t(`settings.gameModes.${settings.game_mode}`)}
+          caption={t(`settings.gameModeCaption.${settings.game_mode}`)}
+          onPress={() => setSheet('gameMode')}
           last={last}
         />
       ),
@@ -525,6 +545,15 @@ export function SettingsScreen() {
           runAction((db, clock) =>
             setSetting(db, 'evening_summary', { ...evening, time }, clock.now),
           );
+          close();
+        }}
+        onClose={close}
+      />
+      <GameModeSheet
+        visible={sheet === 'gameMode'}
+        current={settings.game_mode}
+        onConfirm={(mode) => {
+          runAction((db, clock) => setSetting(db, 'game_mode', mode, clock.now));
           close();
         }}
         onClose={close}

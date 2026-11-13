@@ -22,6 +22,7 @@ import type { IconName } from '@/features/shared/icons';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useUndoToast } from '@/features/shared/UndoToast';
+import { useEssential } from '@/features/shared/useGameMode';
 import { termInSentence } from '@/i18n/lexicon';
 import { QUEST_LOG } from '@/rules/config';
 import { addDays } from '@/rules/gameDay';
@@ -65,14 +66,21 @@ const kindKey = (type: QuestLogType) => type.replace('.', '_');
  * with the icon of the type, the text in the lexicon of the theme and what they gave on the right.
  * A completion, a skip or a step of today is undone from the menu of its entry, with a
  * confirmation (the rules of T40). «+ Completamento dimenticato» completes afterwards a mission of
- * the last 7 days (US-STAT-03), shown only when there is one.
+ * the last 7 days (US-STAT-03), shown only when there is one. In the Essential mode (8.11) no
+ * entries of health, bosses, coins and shop, and no chips Boss and Oggetti: only the experience.
  */
 export function QuestLog() {
   const { t, i18n } = useTranslation();
   const { colors, family } = useTheme();
   const badgeTexts = useBadgeTexts();
   const toast = useUndoToast();
-  const [filter, setFilter] = useState<QuestLogFilter>('all');
+  const essential = useEssential();
+  const [chosenFilter, setFilter] = useState<QuestLogFilter>('all');
+  const filters = QUEST_LOG_FILTERS.filter(
+    (key) => !essential || (key !== 'bosses' && key !== 'items'),
+  );
+  // A chip hidden by the Essential mode falls back to Tutto.
+  const filter = filters.includes(chosenFilter) ? chosenFilter : 'all';
   const [range, setRange] = useState<QuestLogRange>(NO_RANGE);
   const [limit, setLimit] = useState<number>(QUEST_LOG.pageSize);
   const [filterVisible, setFilterVisible] = useState(false);
@@ -83,7 +91,7 @@ export function QuestLog() {
   const [backfillVisible, setBackfillVisible] = useState(false);
   // A new key at every opening: the choice of the previous one is forgotten.
   const [backfillKey, setBackfillKey] = useState(0);
-  const view = useQuestLog({ filter, ...range, limit });
+  const view = useQuestLog({ filter, ...range, limit, essential });
   const backfill = useBackfillCandidates();
 
   // The dialog opens once the menu has slid away: two modals at once do not open on iOS.
@@ -169,13 +177,13 @@ export function QuestLog() {
       entry.xp === 0
         ? null
         : t('questLog.amount', { value: signed(entry.xp), term: lexicon('xp_pl') }),
-      entry.coins === 0
+      entry.coins === 0 || essential
         ? null
         : t('questLog.amount', { value: signed(entry.coins), term: inSentence('coins_pl') }),
-      entry.hp === 0
+      entry.hp === 0 || essential
         ? null
         : t('questLog.amount', { value: signed(entry.hp), term: inSentence('hp') }),
-      entry.damage === null ? null : t('questLog.damage', { count: entry.damage }),
+      entry.damage === null || essential ? null : t('questLog.damage', { count: entry.damage }),
     ]
       .filter((part): part is string => part !== null)
       .join(' · ');
@@ -212,7 +220,7 @@ export function QuestLog() {
         accessibilityLabel={t('questLog.filtersLabel')}
         contentContainerStyle={styles.chips}
       >
-        {QUEST_LOG_FILTERS.map((key) => (
+        {filters.map((key) => (
           <Chip
             key={key}
             testID={`stats-log-chip-${key}`}

@@ -13,6 +13,7 @@ import { Icon } from '@/features/shared/Icon';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useLargeText } from '@/features/shared/useLargeText';
 import { termInSentence } from '@/i18n/lexicon';
 import { companionName } from '@/rules/companion';
@@ -63,6 +64,8 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
   const { colors, family, typography } = useTheme();
   const router = useRouter();
   const largeText = useLargeText();
+  // Essential (9.9): no character sheet, Shop or Hall of trophies; level and experience in small.
+  const essential = useEssential();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [stat, setStat] = useState<StatKey | null>(null);
@@ -104,7 +107,7 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
       value: view.bossesDefeated,
       label: t('profile.bossesDefeated', { context: family }),
     },
-  ];
+  ].filter((item) => !essential || item.key !== 'bosses');
   const rows = SHEET_ORDER.map((key) => stats.find((row) => row.stat === key)).filter(
     (row) => row !== undefined,
   );
@@ -189,10 +192,10 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
               <ThemedText testID="profile-title" variant="caption" color={colors.textMuted}>
                 {t(`titles.${family}.${TITLE_KEYS[family][titleIndex(hero.level)]}`)}
               </ThemedText>
-              <ThemedText testID="profile-level" variant="screenTitle">
+              <ThemedText testID="profile-level" variant={essential ? 'label' : 'screenTitle'}>
                 {t('today.hero.level', { term: term('level'), level: hero.level })}
               </ThemedText>
-              {view.xpToNext === null ? null : (
+              {view.xpToNext === null || essential ? null : (
                 <Bar
                   kind="xp"
                   label={term('xp')}
@@ -240,19 +243,23 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
           </View>
         </Card>
 
-        <ThemedText variant="caption" color={colors.textMuted} accessibilityRole="header">
-          {t('profile.sheet')}
-        </ThemedText>
-        <View testID="profile-sheet" style={styles.grid}>
-          {rows.map((row) => (
-            <StatTile
-              key={row.stat}
-              row={row}
-              fullWidth={largeText}
-              onPress={() => openStat(row.stat)}
-            />
-          ))}
-        </View>
+        {essential ? null : (
+          <>
+            <ThemedText variant="caption" color={colors.textMuted} accessibilityRole="header">
+              {t('profile.sheet')}
+            </ThemedText>
+            <View testID="profile-sheet" style={styles.grid}>
+              {rows.map((row) => (
+                <StatTile
+                  key={row.stat}
+                  row={row}
+                  fullWidth={largeText}
+                  onPress={() => openStat(row.stat)}
+                />
+              ))}
+            </View>
+          </>
+        )}
 
         <View style={styles.sectionRow}>
           <ThemedText
@@ -313,24 +320,28 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
             }
             onPress={() => router.push('/companion')}
           />
-          <LinkRow
-            testID="profile-link-shop"
-            icon={<Icon name="negozio" size={20} color={colors.text} />}
-            label={t('profile.links.shop', {
-              shop: t('shop.title', { context: family }),
-              inventory: termInSentence(t('shop.inventory', { context: family }), i18n.language),
-            })}
-            value={String(hero.coins)}
-            valueLabel={`${hero.coins} ${inSentence(hero.coins === 1 ? 'coins' : 'coins_pl')}`}
-            onPress={() => router.push('/shop')}
-          />
-          <LinkRow
-            testID="profile-link-trophies"
-            icon={<Icon name="trofeo" size={20} color={colors.text} />}
-            label={hallLabel}
-            value={String(view.bossesDefeated)}
-            onPress={() => router.push('/trophies')}
-          />
+          {essential ? null : (
+            <LinkRow
+              testID="profile-link-shop"
+              icon={<Icon name="negozio" size={20} color={colors.text} />}
+              label={t('profile.links.shop', {
+                shop: t('shop.title', { context: family }),
+                inventory: termInSentence(t('shop.inventory', { context: family }), i18n.language),
+              })}
+              value={String(hero.coins)}
+              valueLabel={`${hero.coins} ${inSentence(hero.coins === 1 ? 'coins' : 'coins_pl')}`}
+              onPress={() => router.push('/shop')}
+            />
+          )}
+          {essential ? null : (
+            <LinkRow
+              testID="profile-link-trophies"
+              icon={<Icon name="trofeo" size={20} color={colors.text} />}
+              label={hallLabel}
+              value={String(view.bossesDefeated)}
+              onPress={() => router.push('/trophies')}
+            />
+          )}
           <LinkRow
             testID="profile-link-settings"
             icon={<Icon name="impostazioni" size={20} color={colors.text} />}

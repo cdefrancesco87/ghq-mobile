@@ -12,6 +12,7 @@ import type { CompanionStage } from '@/rules/companion';
 import { Card } from '@/features/shared/Card';
 import { CompanionSprite } from '@/features/shared/CompanionSprite';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useReduceMotion } from '@/features/shared/useReduceMotion';
 import { termInSentence } from '@/i18n/lexicon';
 import { FULL_DAY, SKIP_TODAY } from '@/rules/config';
@@ -29,12 +30,14 @@ export interface FullDayCardProps {
 /**
  * «Giornata completa» (design-sezioni.md 2.7, mockup D10A): in place of the counter once every
  * mission of the day is done, with the happy companion, the name of the theme and the bonus. It
- * stays until the day change and goes if an undo opens the day again.
+ * stays until the day change and goes if an undo opens the day again. In the Essential mode
+ * without coins and health (2.10).
  */
 export function FullDayCard({ companionStage }: FullDayCardProps) {
   const { t, i18n } = useTranslation();
   const { colors, family } = useTheme();
   const reduceMotion = useReduceMotion();
+  const essential = useEssential();
   const appear = useSharedValue(0);
   const scale = useSharedValue(reduceMotion ? 1 : 0.9);
 
@@ -74,21 +77,23 @@ export function FullDayCard({ companionStage }: FullDayCardProps) {
       <Card testID="today-full-day">
         <View
           accessible
-          accessibilityLabel={t('today.fullDay.label', { title, ...values })}
+          accessibilityLabel={essential ? title : t('today.fullDay.label', { title, ...values })}
           style={styles.content}
         >
           <CompanionSprite stage={companionStage} mood="happy" size={COMPANION_SIZE} />
           <ThemedText variant="screenTitle" style={styles.centred}>
             {title}
           </ThemedText>
-          <ThemedText
-            testID="today-full-day-rewards"
-            variant="numbers"
-            color={colors.textMuted}
-            style={styles.centred}
-          >
-            {t('today.fullDay.rewards', values)}
-          </ThemedText>
+          {essential ? null : (
+            <ThemedText
+              testID="today-full-day-rewards"
+              variant="numbers"
+              color={colors.textMuted}
+              style={styles.centred}
+            >
+              {t('today.fullDay.rewards', values)}
+            </ThemedText>
+          )}
         </View>
       </Card>
     </Animated.View>

@@ -663,11 +663,13 @@
     "linkedBoss_cyberpunk": "Verbundene Firewall",
     "linkedBoss_lovecraft": "Verbundenes Grauen",
     "linkedBoss_minimal": "Verbundenes großes Ziel",
+    "linkedBoss_essential": "Verknüpftes Ziel",
     "noBoss": "Kein aktiver Boss · Ziel erstellen",
     "noBoss_fantasy": "Keine aktive Nemesis · Ziel erstellen",
     "noBoss_cyberpunk": "Keine aktive Firewall · Ziel erstellen",
     "noBoss_lovecraft": "Kein aktives Grauen · Ziel erstellen",
     "noBoss_minimal": "Kein aktives großes Ziel · Ziel erstellen",
+    "noBoss_essential": "Kein aktives Ziel · Ziel erstellen",
     "bossHp": "Leben {{hp}}/{{max}}",
     "none": "Keiner",
     "done": "Fertig",
@@ -1403,7 +1405,8 @@
       "day": "Tag",
       "notifications": "Mitteilungen",
       "data": "Daten",
-      "about": "Info"
+      "about": "Info",
+      "game": "Spiel"
     },
     "rowLabel": "{{label}}, {{value}}",
     "from": "Ab {{date}}",
@@ -1460,7 +1463,32 @@
     "licensesOther": "Weitere Komponenten: React Native, Expo und die Open-Source-Bibliotheken des Projekts, jeweils mit eigener Lizenz (MIT, Apache 2.0, BSD).",
     "useTheme": "Dieses Thema verwenden",
     "themeInUse": "Aktuelles Thema",
-    "themeApplied": "Gleiche Daten, neues Gewand"
+    "themeApplied": "Gleiche Daten, neues Gewand",
+    "gameMode": "Spielstufe",
+    "gameModes": {
+      "full": "Vollständig",
+      "essential": "Essenziell"
+    },
+    "gameModeCaption": {
+      "full": "Leben, Bosse, Laden und Münzen",
+      "essential": "Nur Missionen, Serien und Statistiken · Jederzeit zurück zu Vollständig"
+    },
+    "gameModeSheet": {
+      "title": {
+        "full": "Zurück zu Vollständig?",
+        "essential": "Zu Essenziell wechseln?"
+      },
+      "subtitle": "Was sich ändert",
+      "body": {
+        "full": "Leben, Münzen, Bosse, Laden und Charakterbogen kommen zurück, mit den bisherigen Werten.",
+        "essential": "Leben, Münzen, Bosse, Laden und Charakterbogen verschwinden; Stufe und Erfahrung bleiben klein sichtbar. Missionen, Serien, Statistiken und Begleiter bleiben."
+      },
+      "noDataLost": "Du verlierst keine Daten: Du kannst jederzeit wechseln.",
+      "confirm": {
+        "full": "Zurück zu Vollständig",
+        "essential": "Zu Essenziell wechseln"
+      }
+    }
   },
   "backup": {
     "title": "Backup und Wiederherstellung",
@@ -1548,5 +1576,20 @@
       "statLevelMax_one": "Bring einen Wert auf Level {{count}}",
       "statLevelMax_other": "Bring einen Wert auf Level {{count}}"
     }
+  },
+  "essential": {
+    "firstSteps": "Erste Schritte",
+    "stepToast": "Schritt erledigt",
+    "notices": {
+      "firstSteps": "Erste Schritte erledigt",
+      "goal": "Ziel erreicht",
+      "badge": "Abzeichen freigeschaltet: {{name}}"
+    },
+    "goals": "Ziele",
+    "goal": "Ziel",
+    "stepsLabel": "Schritte von {{name}}",
+    "goalWarning_one": "Noch {{count}} Tag bis zur Frist von {{name}}",
+    "goalWarning_other": "Noch {{count}} Tage bis zur Frist von {{name}}",
+    "goalPreview": "Belohnung {{xp}} {{xpTerm}}"
   }
 }

@@ -15,6 +15,7 @@ import { BossSprite } from '@/features/shared/BossSprite';
 import { Button } from '@/features/shared/Button';
 import { Sheet, SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { termInSentence } from '@/i18n/lexicon';
 import type { GameDay } from '@/rules/types';
@@ -112,6 +113,8 @@ export function MissedDeadlineSheet() {
   };
 
   const name = content === null ? '' : nameOf(content.boss);
+  // In the Essential mode nothing is stolen: only the expired deadline and the new one (5.10).
+  const essential = useEssential();
   const coins = content?.coins ?? 0;
   const coinsTerm = termInSentence(
     t(coins === 1 ? 'lexicon.coins' : 'lexicon.coins_pl', { context: family }),
@@ -127,27 +130,33 @@ export function MissedDeadlineSheet() {
       >
         {content === null ? null : (
           <View style={styles.content}>
-            <BossSprite
-              kind={content.boss.kind === 'starter' ? 'quest' : content.boss.difficulty}
-              size={SPRITE_SIZE}
-            />
+            {essential ? null : (
+              <BossSprite
+                kind={content.boss.kind === 'starter' ? 'quest' : content.boss.difficulty}
+                size={SPRITE_SIZE}
+              />
+            )}
             <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.center}>
               {t('bosses.missed.title')}
             </ThemedText>
             <ThemedText color={colors.textMuted} style={styles.center}>
               {t('bosses.missed.expired', { name })}
             </ThemedText>
-            <ThemedText testID="missed-deadline-taunt" style={styles.center}>
-              {t('bosses.missed.taunt', { context: family, coins })}
-            </ThemedText>
-            <ThemedText
-              testID="missed-deadline-coins"
-              variant="numbers"
-              color={colors.dangerText}
-              style={styles.center}
-            >
-              {t('bosses.missed.coins', { coins, coinsTerm })}
-            </ThemedText>
+            {essential ? null : (
+              <>
+                <ThemedText testID="missed-deadline-taunt" style={styles.center}>
+                  {t('bosses.missed.taunt', { context: family, coins })}
+                </ThemedText>
+                <ThemedText
+                  testID="missed-deadline-coins"
+                  variant="numbers"
+                  color={colors.dangerText}
+                  style={styles.center}
+                >
+                  {t('bosses.missed.coins', { coins, coinsTerm })}
+                </ThemedText>
+              </>
+            )}
             <ThemedText testID="missed-deadline-steps" style={styles.center}>
               {t('bosses.missed.stepsKept', { count: content.stepsDone })}
             </ThemedText>

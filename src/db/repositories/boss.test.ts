@@ -16,6 +16,7 @@ import {
   type NewBoss,
 } from '@/db/repositories/boss';
 import { completeMission } from '@/db/repositories/completion';
+import { setSetting } from '@/db/repositories/settings';
 import { getBossView } from '@/db/repositories/bossView';
 import { getGoalsView } from '@/db/repositories/goalsView';
 import { appendEvent, type EventType } from '@/db/repositories/events';
@@ -308,6 +309,25 @@ describe('checkBossDeadlines', () => {
         .all()
         .map((row) => row.kind),
     ).toContain('boss.deadline_missed');
+    expectHeroMatchesLog(db);
+  });
+
+  it('steals nothing in the Essential mode, but the missed deadline is still written', () => {
+    const db = newGame(['journal']);
+    giveCoins(db, 1234);
+    setSetting(db, 'game_mode', 'essential', NOW.now);
+    const thesis = createBoss(db, THESIS, NOW);
+    expect(checkBossDeadlines(db, clockAt(13, 10)).robbed).toEqual([
+      { bossId: thesis.id, coins: 0 },
+    ]);
+    expect(db.select().from(hero).get()?.coins).toBe(1234);
+    expect(eventsOf(db, 'boss.deadline_missed')).toEqual([
+      expect.objectContaining({ bossId: thesis.id, dCoins: 0 }),
+    ]);
+    expect(pendingMissedDeadlines(db)).toEqual([
+      expect.objectContaining({ coins: 0, boss: expect.objectContaining({ id: thesis.id }) }),
+    ]);
+    expect(checkBossDeadlines(db, clockAt(14, 10)).robbed).toEqual([]);
     expectHeroMatchesLog(db);
   });
 

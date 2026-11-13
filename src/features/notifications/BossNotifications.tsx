@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { Boss } from '@/db/repositories/boss';
 import type { Db } from '@/db/types';
 import { useBossTexts } from '@/features/bosses/bossTexts';
+import { useEssential } from '@/features/shared/useGameMode';
 import { BOSS } from '@/rules/config';
 import { onActionDone, useAppStore } from '@/stores/app';
 
@@ -53,17 +54,22 @@ function openBoss(response: Notifications.NotificationResponse): void {
 /**
  * The deadline warnings of the bosses in the notifications of the system (design-sezioni.md
  * 11.6): aligned at the start and after every action, in the language and lexicon of the app; a
- * touch on one opens the card of its boss. It draws nothing.
+ * touch on one opens the card of its boss. It draws nothing. The texts follow the game mode.
  */
 export function BossNotifications() {
   const { t } = useTranslation();
   const { nameOf } = useBossTexts();
+  // In the Essential mode the warning speaks of a goal, not of a boss (11.8).
+  const essential = useEssential();
   const db = useAppStore((state) => state.db);
   const textOf = (target: Boss): BossWarningText => {
     const name = nameOf(target);
     return {
       title: name,
-      body: t('bosses.warning.body', { name, count: BOSS.deadlineWarningDays }),
+      body: t(essential ? 'essential.goalWarning' : 'bosses.warning.body', {
+        name,
+        count: BOSS.deadlineWarningDays,
+      }),
     };
   };
   // The texts follow the language and the theme of the last render.

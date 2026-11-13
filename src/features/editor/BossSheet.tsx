@@ -10,6 +10,7 @@ import { Icon } from '@/features/shared/Icon';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
+import { useEssential } from '@/features/shared/useGameMode';
 import { getSession } from '@/stores/session';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -32,6 +33,9 @@ export function BossSheet({ visible, value, onChoose, onCreateGoal, onClose }: B
   const { t } = useTranslation();
   const { colors, family } = useTheme();
   const { nameOf } = useBossTexts();
+  // Essential (4.14): the goals by name, without sprite and health.
+  const essential = useEssential();
+  const context = essential ? 'essential' : family;
   const bosses = useMemo(() => (visible ? listActiveBosses(getSession().db) : []), [visible]);
 
   const row = (key: string, selected: boolean, onPress: () => void, content: ReactNode) => (
@@ -52,7 +56,7 @@ export function BossSheet({ visible, value, onChoose, onCreateGoal, onClose }: B
       testID="editor-boss"
       visible={visible}
       onClose={onClose}
-      title={t('editor.linkedBoss', { context: family })}
+      title={t('editor.linkedBoss', { context })}
     >
       <View style={styles.content}>
         {bosses.length === 0 ? (
@@ -62,7 +66,7 @@ export function BossSheet({ visible, value, onChoose, onCreateGoal, onClose }: B
             onPress={onCreateGoal}
             style={styles.row}
           >
-            <ThemedText style={styles.flex}>{t('editor.noBoss', { context: family })}</ThemedText>
+            <ThemedText style={styles.flex}>{t('editor.noBoss', { context })}</ThemedText>
             <Icon name="avanti" size={20} color={colors.textMuted} />
           </Pressable>
         ) : (
@@ -74,15 +78,19 @@ export function BossSheet({ visible, value, onChoose, onCreateGoal, onClose }: B
                   item.id === value,
                   () => onChoose(item.id),
                   <>
-                    <BossSprite
-                      kind={item.kind === 'starter' ? 'quest' : item.difficulty}
-                      size={SPRITE_SIZE}
-                    />
+                    {essential ? null : (
+                      <BossSprite
+                        kind={item.kind === 'starter' ? 'quest' : item.difficulty}
+                        size={SPRITE_SIZE}
+                      />
+                    )}
                     <View style={styles.flex}>
                       <ThemedText>{nameOf(item)}</ThemedText>
-                      <ThemedText variant="caption" color={colors.textMuted}>
-                        {t('editor.bossHp', { hp: item.hp, max: item.hpMax })}
-                      </ThemedText>
+                      {essential ? null : (
+                        <ThemedText variant="caption" color={colors.textMuted}>
+                          {t('editor.bossHp', { hp: item.hp, max: item.hpMax })}
+                        </ThemedText>
+                      )}
                     </View>
                   </>,
                 )}

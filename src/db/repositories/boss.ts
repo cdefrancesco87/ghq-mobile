@@ -571,7 +571,7 @@ function notify(tx: Db, kind: string, bossId: string, now: number): void {
 /**
  * The deadlines of the active bosses (analisi-funzionale.md, section 5): the warning from 3 days
  * before, once, and, when the deadline has passed, the theft of 10% of the coins (at most 500),
- * once for each deadline. The boss stays active and its steps stay.
+ * once for each deadline (nothing in the Essential mode). The boss stays active and its steps stay.
  */
 export function checkBossDeadlines(db: Db, clock: ActionClock): DeadlineCheck {
   return db.transaction((tx) => {
@@ -595,7 +595,10 @@ export function checkBossDeadlines(db: Db, clock: ActionClock): DeadlineCheck {
       if (today <= target.deadlineDay || alreadyStolen) {
         continue;
       }
-      const coins = deadlineSteal(loadHero(tx).coins);
+      // In the Essential mode the penalties are off: the deadline is missed, nothing is stolen
+      // (design-sezioni.md 5.10), and the sheet still offers a new deadline.
+      const coins =
+        getSetting(tx, 'game_mode') === 'essential' ? 0 : deadlineSteal(loadHero(tx).coins);
       const change = changeHero(tx, { coins: -coins }, clock.now);
       appendEvent(tx, {
         ...eventBase(clock, target.id),
@@ -658,7 +661,7 @@ export function pendingMissedDeadlines(db: Db): MissedDeadline[] {
     const item = robbed.find((row) => row.boss.id === event.bossId);
     return item === undefined || item.boss.deadlineDay !== event.payload.deadlineDay
       ? []
-      : [{ ...item, seq: event.seq, coins: -event.dCoins }];
+      : [{ ...item, seq: event.seq, coins: Math.abs(event.dCoins) }];
   });
 }
 

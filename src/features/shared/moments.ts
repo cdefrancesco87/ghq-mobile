@@ -90,6 +90,15 @@ export function waitsForTouch(moment: Moment): boolean {
   return moment.kind === 'boss_defeated' || moment.kind === 'hatch';
 }
 
+/**
+ * Whether the moment is only a notice in the Essential mode, where level and experience stay
+ * without full-screen moments and bosses and coins are hidden (design-sezioni.md A9, 1.9): level,
+ * victory and badge. The companion keeps its moments, as it stays in that mode.
+ */
+export function isNoticeInEssential(moment: Moment): boolean {
+  return moment.kind === 'level_up' || moment.kind === 'boss_defeated' || moment.kind === 'badge';
+}
+
 /** The moments of the events returned by an action; the other events bring none. */
 export function momentsFromEvents(events: readonly EventRow[]): Moment[] {
   return events.map(momentOf).filter((moment) => moment !== null);

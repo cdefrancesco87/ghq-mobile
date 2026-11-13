@@ -23,6 +23,7 @@ import { ProgressRing, ringStroke } from '@/features/shared/ProgressRing';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
 import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { useMissionActions } from '@/features/today/useMissionActions';
@@ -74,7 +75,8 @@ function InfoChip({
  * wins: choice 25); the linked missions with their damage and the damage they dealt. «Altro» has
  * Modifica (not for the quest of the first launch, whose steps are fixed texts), Nuova scadenza,
  * Archivia and Elimina with a dialog. A defeated or archived boss is only read: a defeated one is
- * the detail of its trophy (5.7), with the dates, the days taken and the rewards.
+ * the detail of its trophy (5.7), with the dates, the days taken and the rewards. In the Essential
+ * mode it is a goal divided in steps (5.10): no arena, health, damage or rewards, a bar of the steps.
  */
 export function BossScreen({ view }: BossScreenProps) {
   const { t } = useTranslation();
@@ -84,6 +86,7 @@ export function BossScreen({ view }: BossScreenProps) {
   const actions = useMissionActions();
   const step = useBossStep(actions.completeStep, view);
   const { nameOf, stepTitleOf } = useBossTexts();
+  const essential = useEssential();
   const [menu, setMenu] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -187,7 +190,7 @@ export function BossScreen({ view }: BossScreenProps) {
     <View testID="boss-screen" style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader
         testID="boss-header"
-        title={t('lexicon.boss', { context: family })}
+        title={essential ? t('essential.goal') : t('lexicon.boss', { context: family })}
         compact
         onBack={() => router.back()}
         actions={
@@ -205,42 +208,44 @@ export function BossScreen({ view }: BossScreenProps) {
         }
       />
       <ScrollView testID="boss-scroll" contentContainerStyle={styles.content}>
-        <View
-          testID="boss-arena"
-          style={[styles.arena, { backgroundColor: colors.surfaceHigh }]}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          <Animated.View style={shaking}>
-            {family === 'minimal' ? (
-              <View testID="boss-ring" style={styles.ring}>
-                <ProgressRing
-                  progress={taken}
-                  size={ARENA_RING_SIZE}
-                  strokeWidth={ringStroke(family)}
-                />
-                <View style={styles.ringCenter}>
-                  <Icon name="boss" size={24} color={colors.primary} />
-                  <ThemedText variant="numbers">
-                    {t('bosses.card.percent', { percent: Math.round(taken * 100) })}
-                  </ThemedText>
+        {essential ? null : (
+          <View
+            testID="boss-arena"
+            style={[styles.arena, { backgroundColor: colors.surfaceHigh }]}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Animated.View style={shaking}>
+              {family === 'minimal' ? (
+                <View testID="boss-ring" style={styles.ring}>
+                  <ProgressRing
+                    progress={taken}
+                    size={ARENA_RING_SIZE}
+                    strokeWidth={ringStroke(family)}
+                  />
+                  <View style={styles.ringCenter}>
+                    <Icon name="boss" size={24} color={colors.primary} />
+                    <ThemedText variant="numbers">
+                      {t('bosses.card.percent', { percent: Math.round(taken * 100) })}
+                    </ThemedText>
+                  </View>
                 </View>
-              </View>
-            ) : (
-              <BossSprite
-                kind={boss.kind === 'starter' ? 'quest' : boss.difficulty}
-                size={ARENA_SPRITE_SIZE}
-                testID="boss-sprite"
-              />
-            )}
-          </Animated.View>
-        </View>
+              ) : (
+                <BossSprite
+                  kind={boss.kind === 'starter' ? 'quest' : boss.difficulty}
+                  size={ARENA_SPRITE_SIZE}
+                  testID="boss-sprite"
+                />
+              )}
+            </Animated.View>
+          </View>
+        )}
 
         <View style={styles.block}>
           <ThemedText testID="boss-name" variant="screenTitle" accessibilityRole="header">
             {name}
           </ThemedText>
-          {family === 'arcade' || family === 'cyberpunk' ? (
+          {(family === 'arcade' || family === 'cyberpunk') && !essential ? (
             // The steps as the stages of the boss, or its nodes (5.9; mockup B3b).
             <ThemedText variant="label" color={family === 'arcade' ? colors.primary : undefined}>
               {t('bosses.card.steps', {
@@ -266,29 +271,42 @@ export function BossScreen({ view }: BossScreenProps) {
                   endMonth: dayOf(view.trophy.defeatedDay).month,
                 })} · ${t('bosses.sheet.trophyDays', { count: view.trophy.daysTaken })}`}
               </ThemedText>
-              <ThemedText testID="boss-trophy-rewards" variant="label">
-                {t('bosses.sheet.trophyRewards', {
-                  xp: view.trophy.xp,
-                  coins: view.trophy.coins,
-                  xpTerm: t('lexicon.xp_pl', { context: family }),
-                  coinsTerm: t('lexicon.coins_pl', { context: family }),
-                })}
-              </ThemedText>
+              {essential ? null : (
+                <ThemedText testID="boss-trophy-rewards" variant="label">
+                  {t('bosses.sheet.trophyRewards', {
+                    xp: view.trophy.xp,
+                    coins: view.trophy.coins,
+                    xpTerm: t('lexicon.xp_pl', { context: family }),
+                    coinsTerm: t('lexicon.coins_pl', { context: family }),
+                  })}
+                </ThemedText>
+              )}
             </View>
           )}
           <View style={styles.barRow}>
             <View style={styles.flex}>
-              <Bar
-                kind="boss"
-                label={t('bosses.card.hpLabel', { name })}
-                value={boss.hp}
-                max={boss.hpMax}
-                protectedValue={view.protectedHp}
-                showLabel={false}
-                testID="boss-hp"
-              />
+              {essential ? (
+                <Bar
+                  kind="xp"
+                  label={t('essential.stepsLabel', { name })}
+                  value={view.stepsDone}
+                  max={view.stepsTotal}
+                  showLabel={false}
+                  testID="boss-progress"
+                />
+              ) : (
+                <Bar
+                  kind="boss"
+                  label={t('bosses.card.hpLabel', { name })}
+                  value={boss.hp}
+                  max={boss.hpMax}
+                  protectedValue={view.protectedHp}
+                  showLabel={false}
+                  testID="boss-hp"
+                />
+              )}
             </View>
-            {hit === null ? null : (
+            {hit === null || essential ? null : (
               <ThemedText
                 key={hit.key}
                 testID="boss-damage"
@@ -301,7 +319,7 @@ export function BossScreen({ view }: BossScreenProps) {
               </ThemedText>
             )}
           </View>
-          {view.protectedHp > 0 ? (
+          {view.protectedHp > 0 && !essential ? (
             // The striped part is also written, not only drawn (5.11).
             <ThemedText testID="boss-protected-note" variant="caption" color={colors.textMuted}>
               {t('bosses.sheet.protectedNote')}
@@ -324,7 +342,7 @@ export function BossScreen({ view }: BossScreenProps) {
                 </ThemedText>
               </InfoChip>
             )}
-            {boss.kind === 'starter' ? null : (
+            {boss.kind === 'starter' || essential ? null : (
               <InfoChip
                 testID="boss-chip-difficulty"
                 label={t('bosses.card.difficulty', {
@@ -339,7 +357,7 @@ export function BossScreen({ view }: BossScreenProps) {
 
         <View style={styles.sectionTitle}>
           <ThemedText variant="sectionTitle" accessibilityRole="header">
-            {t('bosses.sheet.steps', { context: family })}
+            {t('bosses.sheet.steps', { context: essential ? undefined : family })}
           </ThemedText>
           <ThemedText variant="caption" color={colors.textMuted}>
             {t('bosses.sheet.stepsCount', { done: view.stepsDone, total: view.stepsTotal })}
@@ -413,7 +431,9 @@ export function BossScreen({ view }: BossScreenProps) {
             <Card testID="boss-missions" style={styles.inset}>
               {view.missions.map((item, index) => {
                 const damage = t('goals.editor.damage', { count: item.damage });
-                const detail = t('bosses.sheet.missionDetail', { damage, dealt: item.dealt });
+                const detail = essential
+                  ? null
+                  : t('bosses.sheet.missionDetail', { damage, dealt: item.dealt });
                 return (
                   <Fragment key={item.mission.id}>
                     {index === 0 ? null : (
@@ -422,11 +442,15 @@ export function BossScreen({ view }: BossScreenProps) {
                     <Pressable
                       testID={`boss-mission-${item.mission.id}`}
                       accessibilityRole="button"
-                      accessibilityLabel={t('bosses.sheet.missionLabel', {
-                        name: item.mission.name,
-                        damage,
-                        dealt: item.dealt,
-                      })}
+                      accessibilityLabel={
+                        essential
+                          ? item.mission.name
+                          : t('bosses.sheet.missionLabel', {
+                              name: item.mission.name,
+                              damage,
+                              dealt: item.dealt,
+                            })
+                      }
                       onPress={() =>
                         router.push({ pathname: '/stats', params: { missionId: item.mission.id } })
                       }
@@ -439,9 +463,11 @@ export function BossScreen({ view }: BossScreenProps) {
                       />
                       <View style={styles.flex}>
                         <ThemedText numberOfLines={2}>{item.mission.name}</ThemedText>
-                        <ThemedText variant="caption" color={colors.textMuted}>
-                          {detail}
-                        </ThemedText>
+                        {detail === null ? null : (
+                          <ThemedText variant="caption" color={colors.textMuted}>
+                            {detail}
+                          </ThemedText>
+                        )}
                       </View>
                       <Icon name="avanti" size={20} color={colors.textMuted} />
                     </Pressable>

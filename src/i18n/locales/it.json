@@ -663,11 +663,13 @@
     "linkedBoss_cyberpunk": "Firewall collegato",
     "linkedBoss_lovecraft": "Orrore collegato",
     "linkedBoss_minimal": "Grande obiettivo collegato",
+    "linkedBoss_essential": "Obiettivo collegato",
     "noBoss": "Nessun boss attivo · Crea un obiettivo",
     "noBoss_fantasy": "Nessuna nemesi attiva · Crea un obiettivo",
     "noBoss_cyberpunk": "Nessun firewall attivo · Crea un obiettivo",
     "noBoss_lovecraft": "Nessun orrore attivo · Crea un obiettivo",
     "noBoss_minimal": "Nessun grande obiettivo attivo · Crea un obiettivo",
+    "noBoss_essential": "Nessun obiettivo attivo · Crea un obiettivo",
     "bossHp": "Vita {{hp}}/{{max}}",
     "none": "Nessuno",
     "done": "Fatto",
@@ -1403,7 +1405,8 @@
       "day": "Giornata",
       "notifications": "Notifiche",
       "data": "Dati",
-      "about": "Informazioni"
+      "about": "Informazioni",
+      "game": "Gioco"
     },
     "rowLabel": "{{label}}, {{value}}",
     "from": "Dal {{date}}",
@@ -1460,7 +1463,32 @@
     "licensesOther": "Altri componenti: React Native, Expo e le librerie open source del progetto, ognuna con la sua licenza (MIT, Apache 2.0, BSD).",
     "useTheme": "Usa questo tema",
     "themeInUse": "Tema in uso",
-    "themeApplied": "Stessi dati, nuova veste"
+    "themeApplied": "Stessi dati, nuova veste",
+    "gameMode": "Livello di gioco",
+    "gameModes": {
+      "full": "Completo",
+      "essential": "Essenziale"
+    },
+    "gameModeCaption": {
+      "full": "Vita, boss, negozio e monete",
+      "essential": "Solo missioni, serie e statistiche · Torna a Completo quando vuoi"
+    },
+    "gameModeSheet": {
+      "title": {
+        "full": "Tornare a Completo?",
+        "essential": "Passare a Essenziale?"
+      },
+      "subtitle": "Cosa cambia",
+      "body": {
+        "full": "Tornano vita, monete, boss, negozio e scheda del personaggio, con i valori di prima.",
+        "essential": "Spariscono vita, monete, boss, negozio e scheda del personaggio; livello ed esperienza restano in piccolo. Restano missioni, serie, statistiche e compagno."
+      },
+      "noDataLost": "Non perdi nessun dato: puoi cambiare quando vuoi.",
+      "confirm": {
+        "full": "Torna a Completo",
+        "essential": "Passa a Essenziale"
+      }
+    }
   },
   "backup": {
     "title": "Backup e ripristino",
@@ -1548,5 +1576,20 @@
       "statLevelMax_one": "Porta una statistica al livello {{count}}",
       "statLevelMax_other": "Porta una statistica al livello {{count}}"
     }
+  },
+  "essential": {
+    "firstSteps": "Primi passi",
+    "stepToast": "Passo completato",
+    "notices": {
+      "firstSteps": "Primi passi completati",
+      "goal": "Obiettivo raggiunto",
+      "badge": "Badge sbloccato: {{name}}"
+    },
+    "goals": "Obiettivi",
+    "goal": "Obiettivo",
+    "stepsLabel": "Passi di {{name}}",
+    "goalWarning_one": "Manca {{count}} giorno alla scadenza di {{name}}",
+    "goalWarning_other": "Mancano {{count}} giorni alla scadenza di {{name}}",
+    "goalPreview": "Ricompensa {{xp}} {{xpTerm}}"
   }
 }

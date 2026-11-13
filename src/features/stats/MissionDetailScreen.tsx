@@ -21,6 +21,7 @@ import { Icon } from '@/features/shared/Icon';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
 import { SegmentedControl } from '@/features/shared/SegmentedControl';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useLargeText } from '@/features/shared/useLargeText';
 import { missionIcon } from '@/features/today/missionText';
 import { termInSentence } from '@/i18n/lexicon';
@@ -363,6 +364,8 @@ function History({ mission, entries, today }: HistoryProps) {
   const { t, i18n } = useTranslation();
   const { colors, family } = useTheme();
   const amount = useAmount(mission);
+  // Essential (3.10): the history without experience and coins.
+  const essential = useEssential();
   const dayWords = (day: GameDay) => {
     if (day === today) {
       return t('missionDetail.today');
@@ -374,10 +377,10 @@ function History({ mission, entries, today }: HistoryProps) {
   };
   const gains = (entry: HistoryEntry) =>
     [
-      entry.xp > 0
+      entry.xp > 0 && !essential
         ? t('missionDetail.xp', { xp: entry.xp, xpTerm: t('lexicon.xp_pl', { context: family }) })
         : null,
-      entry.coins > 0
+      entry.coins > 0 && !essential
         ? t('missionDetail.coins', {
             coins: entry.coins,
             coinsTerm: termInSentence(t('lexicon.coins_pl', { context: family }), i18n.language),

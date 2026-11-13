@@ -75,6 +75,11 @@ export function useUndoToast(): UndoToastApi {
   return api;
 }
 
+/** The notice when there is one: the providers that sit above it in some trees use this. */
+export function useOptionalUndoToast(): UndoToastApi | null {
+  return useContext(UndoToastContext);
+}
+
 function UndoToast({ message, onUndo }: UndoToastRequest) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();

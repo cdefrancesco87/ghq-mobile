@@ -11,6 +11,7 @@ import { renderThemed } from '../../../test/render';
 import { CELEBRATION_MS, CelebrationProvider, useCelebration } from './Celebration';
 import { MOMENT_MAX_MS, MomentQueueProvider, useMomentQueue } from './MomentQueue';
 import { addMoments, momentsFromEvents, waitsForTouch, type Moment } from './moments';
+import { UndoToastProvider } from './UndoToast';
 import { useReduceMotion } from './useReduceMotion';
 
 jest.mock('expo-haptics', () => ({
@@ -275,6 +276,36 @@ describe('MomentQueue', () => {
       </MomentQueueProvider>,
       { theme },
     );
+
+  it('turns level, victory and badge into a notice in the Essential mode', async () => {
+    const { settings } = useSettingsStore.getState();
+    useSettingsStore.setState({ settings: { ...settings, game_mode: 'essential' } });
+    await renderThemed(
+      <UndoToastProvider>
+        <MomentQueueProvider>
+          <Feed events={ALL} />
+        </MomentQueueProvider>
+      </UndoToastProvider>,
+    );
+    expect(screen.queryByTestId('moment-level_up')).toBeNull();
+    await act(async () => {
+      jest.advanceTimersByTime(0);
+    });
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent('Livello 5!');
+    await act(async () => {
+      jest.advanceTimersByTime(0);
+    });
+    expect(screen.queryByTestId('moment-boss_defeated')).toBeNull();
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent('Obiettivo raggiunto');
+    // The companion keeps its moment.
+    expect(screen.getByTestId('moment-companion_stage')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('moment-backdrop'));
+    await act(async () => {
+      jest.advanceTimersByTime(0);
+    });
+    expect(screen.queryByTestId('moment-badge')).toBeNull();
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(/^Badge sbloccato: /);
+  });
 
   it('shows the moments from the most important, one at a time', async () => {
     await renderQueue(ALL);

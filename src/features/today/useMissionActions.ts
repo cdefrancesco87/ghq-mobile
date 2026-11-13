@@ -14,6 +14,7 @@ import type { TodayBoss, TodayMission } from '@/db/repositories/todayView';
 import { undoEvent, UndoRefusedError } from '@/db/repositories/undo';
 import { type Point, useCelebration } from '@/features/shared/Celebration';
 import { useMomentQueue } from '@/features/shared/MomentQueue';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { systemScheduler } from '@/features/notifications/system';
 import { DAY_PLAN } from '@/rules/config';
@@ -49,6 +50,8 @@ export function useMissionActions(): MissionActions {
   const { celebrate } = useCelebration();
   const { enqueue } = useMomentQueue();
   const toast = useUndoToast();
+  // The Essential mode hides the coins: the completion says only the experience (2.10).
+  const essential = useEssential();
 
   const tell = (message: string) => toast.show({ message });
 
@@ -119,20 +122,21 @@ export function useMissionActions(): MissionActions {
     if (completion === null) {
       return;
     }
+    const coins = essential ? 0 : completion.coins;
     const values = {
       name: mission.name,
       xp: completion.xp,
       xpTerm: t('lexicon.xp_pl', { context: family }),
-      coins: completion.coins,
+      coins,
       coinsTerm: t('lexicon.coins_pl', { context: family }),
     };
     const label = t(
-      completion.coins > 0 ? 'today.missions.completedCoins' : 'today.missions.completed',
+      coins > 0 ? 'today.missions.completedCoins' : 'today.missions.completed',
       values,
     );
     celebrate({
       xp: completion.xp,
-      coins: completion.coins,
+      coins,
       origin,
       label: result.bonuses.includes('bonus.plan')
         ? t('today.plan.completedLabel', { label, xp: DAY_PLAN.bonusXp, xpTerm: values.xpTerm })
@@ -177,7 +181,9 @@ export function useMissionActions(): MissionActions {
     if (!result.defeated) {
       const { eventId } = result;
       toast.show({
-        message: t('bosses.today.stepToast', { damage: result.dealt }),
+        message: essential
+          ? t('essential.stepToast')
+          : t('bosses.today.stepToast', { damage: result.dealt }),
         onUndo: () => undo(eventId),
       });
     }

@@ -176,6 +176,28 @@ describe('getQuestLog', () => {
     expect(db.select().from(hero).get()!.hp).toBeLessThan(100);
   });
 
+  it('leaves out health, bosses, coins and the shop in the Essential mode', () => {
+    const db = newGame(DAILY);
+    closePendingDays(db, clockAt(7, 9));
+    complete(db, 'journal', 7, 10);
+    giveCoins(db, 100);
+    buyItem(db, 'potion', clockAt(7, 11));
+    const clock = clockAt(7, 12);
+    const full = types(getQuestLog(db, clock, { filter: 'all' }));
+    expect(full).toEqual(
+      expect.arrayContaining(['day.closed', 'item.bought', 'boss.step_done', 'mission.completed']),
+    );
+    const essential = types(getQuestLog(db, clock, { filter: 'all', essential: true }));
+    expect(essential).toContain('mission.completed');
+    expect(essential).not.toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/^(day\.closed|item\.|boss\.|bonus\.full_day|shield\.)/),
+      ]),
+    );
+    expect(types(getQuestLog(db, clock, { filter: 'bosses', essential: true }))).toEqual([]);
+    expect(types(getQuestLog(db, clock, { filter: 'items', essential: true }))).toEqual([]);
+  });
+
   it('pages the entries', () => {
     const db = newGame(DAILY);
     complete(db, 'journal', 6, 10);

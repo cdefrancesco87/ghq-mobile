@@ -6,6 +6,7 @@ import { Bar } from '@/features/shared/Bar';
 import { useBadgeTexts } from '@/features/shared/badgeTexts';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { termInSentence } from '@/i18n/lexicon';
 import { useTheme } from '@/theme/ThemeProvider';
 import { BadgeMedal } from './BadgeMedal';
@@ -35,6 +36,8 @@ function Content({ item }: { readonly item: BadgeItem }) {
   const { colors, family } = useTheme();
   const { nameOf, conditionOf } = useBadgeTexts();
   const dateOf = useBadgeDate();
+  // In the Essential mode the coins are hidden: the badge stays without its bonus (9.9).
+  const essential = useEssential();
   const name = nameOf(item.badge);
   const unlocked = item.unlockedAt !== null;
   const coins = {
@@ -55,14 +58,16 @@ function Content({ item }: { readonly item: BadgeItem }) {
           <ThemedText testID="badge-sheet-date" variant="label" color={colors.doneText}>
             {t('badges.unlockedOn', { date: dateOf(item) })}
           </ThemedText>
-          <ThemedText
-            testID="badge-sheet-coins"
-            variant="label"
-            color={colors.coinsText}
-            accessibilityLabel={t('badges.coinsLabel', coins)}
-          >
-            {t('badges.coins', coins)}
-          </ThemedText>
+          {essential ? null : (
+            <ThemedText
+              testID="badge-sheet-coins"
+              variant="label"
+              color={colors.coinsText}
+              accessibilityLabel={t('badges.coinsLabel', coins)}
+            >
+              {t('badges.coins', coins)}
+            </ThemedText>
+          )}
         </>
       ) : (
         <View style={styles.progress}>
