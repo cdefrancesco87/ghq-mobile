@@ -1,0 +1,10 @@
+# Completes «Maestro quest» from its control in Today and skips the moments that follow.
+appId: ch.ghq.mobile
+---
+- tapOn:
+    id: 'today-mission-.*-control'
+    childOf:
+      id: 'today-mission-[0-9a-f-]{36}'
+      containsDescendants:
+        - text: Maestro quest
+- runFlow: dismiss-moments.yaml

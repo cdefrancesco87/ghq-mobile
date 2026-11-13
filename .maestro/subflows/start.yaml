@@ -1,0 +1,18 @@
+# Starts the development build from scratch (no data) and connects it to Metro: the flows need
+# a development build because the potion flow moves the clock with `ghq://dev/clock`.
+# METRO_URL is the address of `npm start`, URL-encoded; the default is the Android emulator.
+appId: ch.ghq.mobile
+---
+- launchApp:
+    clearState: true
+- openLink: "exp+ghq-mobile://expo-development-client/?url=${METRO_URL || 'http%3A%2F%2F10.0.2.2%3A8081'}"
+- extendedWaitUntil:
+    visible:
+      id: onboarding-step
+    timeout: 120000
+# The first time, the development build explains its menu over the app.
+- runFlow:
+    when:
+      visible: 'This is the developer menu.*'
+    commands:
+      - tapOn: 'Continue'

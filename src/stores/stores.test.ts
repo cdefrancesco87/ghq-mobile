@@ -9,6 +9,7 @@ import type { Db } from '@/db/types';
 import { createTestDb } from '../../test/db';
 import { FRIDAY, at, clockAt, missionId, newGame } from '../../test/game';
 import {
+  advanceClock,
   onActionDone,
   restoreAllData,
   runAction,
@@ -407,5 +408,42 @@ describe('restoreAllData', () => {
 
     expect(outcome).toBe('error');
     expect(useAppStore.getState()).toMatchObject({ status: 'error', db: null, error: failure });
+  });
+});
+
+describe('advanceClock', () => {
+  it('moves the clock forward and closes the day left behind, as a start would', async () => {
+    const db = newGame(['drink_water']);
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(FRIDAY, 10) });
+
+    advanceClock(1);
+
+    expect(getSession().clock().now).toBe(at(FRIDAY + 1, 10));
+    // Friday closed with its mission missed: the 10 points of the daily limit.
+    expect(db.select().from(daySummaries).all()).toHaveLength(1);
+    expect(useHeroStore.getState().hero?.hp).toBe(40);
+  });
+
+  it('adds up the moves and ends with the session', async () => {
+    const db = newGame(['drink_water']);
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(FRIDAY, 10) });
+
+    advanceClock(1);
+    advanceClock(2);
+    expect(getSession().clock().now).toBe(at(FRIDAY + 3, 10));
+    expect(db.select().from(daySummaries).all()).toHaveLength(3);
+
+    useAppStore.getState().reset();
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(FRIDAY, 10) });
+    expect(getSession().clock().now).toBe(at(FRIDAY, 10));
+  });
+
+  it.each([0, -2, 1.5, Number.NaN, 32])('moves the clock by one day for %p days', async (days) => {
+    const db = newGame(['drink_water']);
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(FRIDAY, 10) });
+
+    advanceClock(days);
+
+    expect(getSession().clock().now).toBe(at(FRIDAY + 1, 10));
   });
 });

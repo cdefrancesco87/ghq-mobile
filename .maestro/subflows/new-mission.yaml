@@ -1,0 +1,15 @@
+# Creates the yes/no mission «Maestro quest» with its name only, from the [+] of the tab bar.
+# The missions of the first launch are all measurable: a touch adds a part, it does not complete.
+appId: ch.ghq.mobile
+---
+- tapOn:
+    id: tab-new
+- assertVisible:
+    id: editor
+- tapOn:
+    id: editor-name
+- inputText: Maestro quest
+- tapOn:
+    id: editor-save
+- assertVisible:
+    id: today-screen

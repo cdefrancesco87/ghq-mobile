@@ -1,0 +1,13 @@
+# Primo avvio: from the first opening to Today, without an account.
+appId: ch.ghq.mobile
+name: First launch
+---
+- runFlow: subflows/start.yaml
+- assertVisible:
+    id: onboarding-language-en
+- runFlow: subflows/onboarding.yaml
+- assertVisible:
+    id: today-hero-name
+    text: Maestro
+- assertVisible:
+    id: today-missions

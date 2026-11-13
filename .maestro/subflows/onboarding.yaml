@@ -1,0 +1,28 @@
+# The first launch in English with the default choices: name «Maestro», Minimal theme, the
+# recommended missions and no notifications. It ends on Today.
+appId: ch.ghq.mobile
+---
+- tapOn:
+    id: onboarding-language-en
+- tapOn:
+    id: onboarding-continue
+- tapOn:
+    id: onboarding-name
+- inputText: Maestro
+- hideKeyboard
+- tapOn:
+    id: onboarding-continue
+- assertVisible:
+    id: theme-carousel
+- tapOn:
+    id: onboarding-continue
+- assertVisible:
+    id: onboarding-categories
+- tapOn:
+    id: onboarding-continue
+- tapOn:
+    id: onboarding-not-now
+- extendedWaitUntil:
+    visible:
+      id: today-screen
+    timeout: 10000

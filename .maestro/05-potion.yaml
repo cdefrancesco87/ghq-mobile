@@ -1,0 +1,55 @@
+# Buys a potion and drinks it. A potion needs 50 coins and missing health (minor choice 18):
+# the clock moves one day forward so the first day closes with its missions missed, then the
+# quest of the first launch is won for its 50 coins (minor choice 12).
+appId: ch.ghq.mobile
+name: Buy and use a potion
+---
+- runFlow: subflows/start.yaml
+- runFlow: subflows/onboarding.yaml
+- openLink: ghq://dev/clock?days=1
+- extendedWaitUntil:
+    visible:
+      id: today-screen
+    timeout: 10000
+# The first completion of the game also does the second step of the quest.
+- runFlow: subflows/new-mission.yaml
+- runFlow: subflows/complete-mission.yaml
+- tapOn:
+    id: tab-goals
+- tapOn:
+    id: 'goals-boss-.*-open'
+    index: 0
+- assertVisible:
+    id: boss-screen
+- tapOn:
+    id: boss-step-2-control
+- extendedWaitUntil:
+    visible:
+      id: moment-boss_defeated
+    timeout: 5000
+- tapOn:
+    id: moment-continue
+- runFlow: subflows/dismiss-moments.yaml
+- tapOn:
+    id: boss-header-back
+- tapOn:
+    id: tab-profile
+- scrollUntilVisible:
+    element:
+      id: profile-link-shop
+    direction: DOWN
+- tapOn:
+    id: profile-link-shop
+- tapOn:
+    id: shop-item-potion
+- tapOn:
+    id: shop-buy-confirm
+- waitForAnimationToEnd
+- tapOn:
+    id: shop-tabs-inventory
+- assertVisible:
+    id: shop-inventory-potion
+- tapOn:
+    id: shop-inventory-use-potion
+- assertNotVisible:
+    id: shop-inventory-potion

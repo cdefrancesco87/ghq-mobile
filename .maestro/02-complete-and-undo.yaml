@@ -1,0 +1,19 @@
+# Completes a new yes/no mission from Today, then takes it back from the menu of the row.
+appId: ch.ghq.mobile
+name: Complete and undo from Today
+---
+- runFlow: subflows/start.yaml
+- runFlow: subflows/onboarding.yaml
+- runFlow: subflows/new-mission.yaml
+# The first completion also hatches the egg of the companion.
+- runFlow: subflows/complete-mission.yaml
+- assertVisible:
+    id: today-done
+- longPressOn:
+    id: 'today-mission-.*-body'
+    childOf:
+      id: today-done
+- tapOn:
+    id: today-mission-menu-undo
+- assertNotVisible:
+    id: today-done

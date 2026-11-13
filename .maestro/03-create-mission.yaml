@@ -1,0 +1,11 @@
+# Creates a mission with its name only, from the [+] of the tab bar.
+appId: ch.ghq.mobile
+name: Create a mission with its name only
+---
+- runFlow: subflows/start.yaml
+- runFlow: subflows/onboarding.yaml
+- runFlow: subflows/new-mission.yaml
+- assertVisible:
+    id: 'today-mission-[0-9a-f-]{36}'
+    containsDescendants:
+      - text: Maestro quest

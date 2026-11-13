@@ -1,0 +1,30 @@
+# Changes the theme to Lovecraft and the language to German from the Settings.
+appId: ch.ghq.mobile
+name: Change theme and language
+---
+- runFlow: subflows/start.yaml
+- runFlow: subflows/onboarding.yaml
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: profile-settings
+- tapOn:
+    id: settings-theme
+- assertVisible:
+    id: settings-theme-screen
+# Minimal is the last card of the carousel: Lovecraft is the one before it.
+- tapOn:
+    id: theme-card-lovecraft
+- tapOn:
+    id: settings-theme-use
+- assertVisible:
+    id: settings-theme-use
+    enabled: false
+- tapOn:
+    id: settings-theme-header-back
+- tapOn:
+    id: settings-language
+- tapOn:
+    id: settings-language-sheet-de
+# The title of the Settings in German with the lexicon of Lovecraft.
+- assertVisible: Der Pakt

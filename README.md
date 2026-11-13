@@ -85,6 +85,20 @@ npx jest <file>      # un solo file di test
 
 La CI di GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) lancia `npm run check` a ogni push e pull request.
 
+### Flussi completi con Maestro
+
+La cartella [`.maestro/`](.maestro/) contiene i flussi end-to-end: primo avvio, completa e annulla da Oggi, crea una missione col solo nome, crea un boss e sconfiggilo, compra e usa una pozione, cambia tema e lingua, elimina tutti i dati. Ogni flusso parte da un'app senza dati e fa il primo avvio in inglese. Non girano in CI: Jest controlla solo che i file YAML si leggano e che ogni `testID` citato esista nel codice.
+
+Servono [Maestro](https://docs.maestro.dev/getting-started/installing-maestro) (Java 17 o più recente), un emulatore Android acceso (o un telefono collegato con `adb`) con installata la _development build_, e il server di sviluppo avviato:
+
+```bash
+npm start            # in un terminale: Metro
+npm run e2e          # in un altro: tutti i flussi (maestro test .maestro/)
+maestro test .maestro/05-potion.yaml   # un solo flusso
+```
+
+I flussi aprono la build di sviluppo collegata a Metro su `http://10.0.2.2:8081`, l'indirizzo del computer visto dall'emulatore. Con un telefono vero passa l'indirizzo del computer, codificato per URL: `maestro test -e METRO_URL=http%3A%2F%2F192.168.1.10%3A8081 .maestro/`. Il flusso della pozione sposta l'orologio dell'app avanti di un giorno con il collegamento `ghq://dev/clock?days=1`, che esiste solo nelle build di sviluppo.
+
 ### Stato del progetto
 
 In sviluppo, in fase iniziale. Il lavoro è diviso in task piccoli in [`docs/backlog-task.md`](docs/backlog-task.md), con un diario di ogni passo.
@@ -164,6 +178,20 @@ npx jest <file>      # a single test file
 ```
 
 The GitHub Actions CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm run check` on every push and pull request.
+
+### End-to-end flows with Maestro
+
+The [`.maestro/`](.maestro/) folder holds the end-to-end flows: first launch, complete and undo from Today, create a quest with its name only, create a boss and defeat it, buy and use a potion, change theme and language, delete all data. Every flow starts from an app with no data and goes through the first launch in English. They do not run in CI: Jest only checks that the YAML files parse and that every `testID` they cite exists in the code.
+
+You need [Maestro](https://docs.maestro.dev/getting-started/installing-maestro) (Java 17 or newer), a running Android emulator (or a phone connected with `adb`) with the _development build_ installed, and the dev server running:
+
+```bash
+npm start            # in one terminal: Metro
+npm run e2e          # in another: every flow (maestro test .maestro/)
+maestro test .maestro/05-potion.yaml   # a single flow
+```
+
+The flows open the development build connected to Metro at `http://10.0.2.2:8081`, the computer's address as seen from the emulator. On a real phone, pass the computer's address, URL-encoded: `maestro test -e METRO_URL=http%3A%2F%2F192.168.1.10%3A8081 .maestro/`. The potion flow moves the app clock one day forward with the `ghq://dev/clock?days=1` link, which exists only in development builds.
 
 ### Project status
 

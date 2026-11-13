@@ -1,0 +1,35 @@
+# Deletes all the data from «Backup e ripristino» and goes back to the first launch.
+appId: ch.ghq.mobile
+name: Delete all data
+---
+- runFlow: subflows/start.yaml
+- runFlow: subflows/onboarding.yaml
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: profile-settings
+- scrollUntilVisible:
+    element:
+      id: settings-backup
+    direction: DOWN
+- tapOn:
+    id: settings-backup
+- assertVisible:
+    id: backup-screen
+- scrollUntilVisible:
+    element:
+      id: settings-wipe
+    direction: DOWN
+- tapOn:
+    id: settings-wipe
+- tapOn:
+    id: settings-wipe-continue
+- tapOn:
+    id: settings-wipe-input
+- inputText: DELETE
+- tapOn:
+    id: settings-wipe-confirm
+- extendedWaitUntil:
+    visible:
+      id: onboarding-language-en
+    timeout: 10000

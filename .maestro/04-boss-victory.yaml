@@ -1,0 +1,45 @@
+# Turns a goal into a boss with two steps and defeats it from its card.
+appId: ch.ghq.mobile
+name: Create a boss and defeat it
+---
+- runFlow: subflows/start.yaml
+- runFlow: subflows/onboarding.yaml
+- tapOn:
+    id: tab-goals
+- tapOn:
+    id: goals-new
+- assertVisible:
+    id: goal-editor
+- tapOn:
+    id: goal-editor-name
+- inputText: Maestro boss
+# Enter adds the step and keeps the field open for the next one.
+- tapOn:
+    id: goal-editor-new-step
+- inputText: First step
+- pressKey: Enter
+- inputText: Second step
+- pressKey: Enter
+- assertVisible:
+    id: goal-editor-step-1
+- tapOn:
+    id: goal-editor-save
+- assertVisible:
+    id: goals-screen
+- tapOn: Maestro boss
+- assertVisible:
+    id: boss-screen
+- tapOn:
+    id: boss-step-0-control
+- tapOn:
+    id: boss-step-1-control
+- extendedWaitUntil:
+    visible:
+      id: moment-boss_defeated
+    timeout: 5000
+# The victory waits for a touch; a level up may follow it.
+- tapOn:
+    id: moment-continue
+- runFlow: subflows/dismiss-moments.yaml
+- assertVisible:
+    id: boss-step-1-done

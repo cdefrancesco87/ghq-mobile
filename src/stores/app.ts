@@ -8,7 +8,7 @@ import { hasProfile } from '../db/repositories/onboarding';
 import type { Db } from '../db/types';
 import { useHeroStore } from './hero';
 import { useHighlightStore } from './highlight';
-import { closeSession, getSession, openSession, systemClock } from './session';
+import { closeSession, getSession, openSession, shiftClock, systemClock } from './session';
 import { useSettingsStore } from './settings';
 import { useThemeStore } from './theme';
 
@@ -184,6 +184,25 @@ export async function restoreAllData(options: RestoreOptions): Promise<RestoreOu
     failed(error);
     return 'error';
   }
+}
+
+const MS_PER_DAY = 86_400_000;
+/** The longest move of `advanceClock`, in days. */
+const MAX_CLOCK_DAYS = 31;
+
+/**
+ * Developer tool for the Maestro flows (`app/dev/clock.tsx`): moves the clock of the session
+ * forward by whole days (1 to 31; any other value moves it by 1) and closes the days left behind,
+ * as the next start would do, so a flow can reach a state that needs a day change (a missed day
+ * that costs health).
+ */
+export function advanceClock(days: number): void {
+  const whole = Number.isInteger(days) && days >= 1 && days <= MAX_CLOCK_DAYS ? days : 1;
+  shiftClock(whole * MS_PER_DAY);
+  runAction((db, clock) => {
+    closePendingDays(db, clock);
+    archiveCompletedSingles(db, clock);
+  });
 }
 
 type ActionListener = (db: Db) => void;

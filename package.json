@@ -71,7 +71,8 @@
     "jest-expo": "~58.0.14",
     "prettier": "^3.9.10",
     "test-renderer": "^1.3.1",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "yaml": "^2.9.1"
   },
   "scripts": {
     "start": "expo start",
@@ -82,7 +83,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "jest --coverage",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "e2e": "maestro test .maestro/"
   },
   "private": true
 }

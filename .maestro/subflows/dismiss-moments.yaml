@@ -1,0 +1,14 @@
+# Skips the full-screen moments (level up, hatching, victory) that an action may queue.
+appId: ch.ghq.mobile
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+- repeat:
+    while:
+      visible:
+        id: moment-skip
+    commands:
+      - tapOn:
+          id: moment-skip
+      - waitForAnimationToEnd:
+          timeout: 3000
