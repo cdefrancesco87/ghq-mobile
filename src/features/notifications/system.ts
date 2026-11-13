@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance } from 'expo-notifications';
 
+import { BOSS_WARNING_PREFIX, type BossWarningScheduler } from './bossWarnings';
 import {
   ACTION_COMPLETE,
   ACTION_SNOOZE,
@@ -13,6 +14,8 @@ import {
 // the actions is in `reminders.ts`; this file only talks to expo-notifications.
 
 export const REMINDER_CHANNEL = 'reminders';
+/** Android channel of the deadline warnings of the bosses (design-sezioni.md 11.1). */
+export const BOSS_CHANNEL = 'boss';
 export const CATEGORY_REMINDER = 'reminder';
 /** After the last snooze the notification has the Complete button only. */
 export const CATEGORY_REMINDER_LAST = 'reminder_last';
@@ -63,6 +66,34 @@ export const systemScheduler: ReminderScheduler = {
   },
 };
 
+/** `BossWarningScheduler` on top of expo-notifications: the warning keeps its own identifier. */
+export const systemBossWarnings: BossWarningScheduler = {
+  scheduled: async () =>
+    (await Notifications.getAllScheduledNotificationsAsync())
+      .filter((request) => request.identifier.startsWith(BOSS_WARNING_PREFIX))
+      .map((request) => ({
+        id: request.identifier,
+        title: request.content.title ?? '',
+        body: request.content.body ?? '',
+      })),
+  schedule: async (request) => {
+    await Notifications.scheduleNotificationAsync({
+      identifier: request.id,
+      content: { title: request.title, body: request.body, data: { bossId: request.bossId } },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: request.fireAt,
+        channelId: BOSS_CHANNEL,
+      },
+    });
+  },
+  cancel: async (ids) => {
+    for (const id of ids) {
+      await Notifications.cancelScheduledNotificationAsync(id);
+    }
+  },
+};
+
 /** Cancels every scheduled notification of the app and clears those shown («Elimina tutti i dati»). */
 export async function cancelAllNotifications(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
@@ -77,6 +108,11 @@ export async function setUpNotifications(): Promise<void> {
   await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL, {
     name: 'Promemoria',
     importance: AndroidImportance.HIGH,
+  });
+  // Prototype name, like the one of the reminders: the translated names come later.
+  await Notifications.setNotificationChannelAsync(BOSS_CHANNEL, {
+    name: 'Boss',
+    importance: AndroidImportance.DEFAULT,
   });
   await Notifications.setNotificationCategoryAsync(
     CATEGORY_REMINDER,

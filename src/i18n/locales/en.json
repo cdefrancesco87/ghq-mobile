@@ -731,7 +731,9 @@
       "hpSummary": "health {{hp}} of {{max}}",
       "percent": "{{percent}}%",
       "stepsSummary": "steps {{done}} of {{total}}",
-      "openHint": "Opens the card"
+      "openHint": "Opens the card",
+      "daysLeft_one": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left"
     },
     "today": {
       "empty": "Turn a goal into a boss",
@@ -768,7 +770,41 @@
       "delete": "Delete",
       "deleteTitle": "Delete “{{name}}”?",
       "deleteMessage": "The goal leaves every list and the linked missions no longer hit it. What you already earned stays. This cannot be undone.",
-      "deletedToast": "Goal deleted"
+      "deletedToast": "Goal deleted",
+      "trophyTitle": "Trophy",
+      "trophySpan": "From {{startMonth}} {{startDay}} to {{endMonth}} {{endDay}}",
+      "trophyDays_one": "{{count}} day taken",
+      "trophyDays_other": "{{count}} days taken",
+      "trophyRewards": "Rewards: +{{xp}} {{xpTerm}} and +{{coins}} {{coinsTerm}}"
+    },
+    "warning": {
+      "body_one": "{{count}} day left to defeat {{name}}",
+      "body_other": "{{count}} days left to defeat {{name}}"
+    },
+    "trophies": {
+      "seeAll": "See all",
+      "empty": "Your first trophy awaits",
+      "detail_one": "{{month}} {{day}} · {{count}} day",
+      "detail_other": "{{month}} {{day}} · {{count}} days",
+      "label_one": "{{name}}, defeated on {{month}} {{day}} in {{count}} day",
+      "label_other": "{{name}}, defeated on {{month}} {{day}} in {{count}} days",
+      "openHint": "Opens the trophy"
+    },
+    "missed": {
+      "title": "Deadline missed",
+      "expired": "“{{name}}” has expired.",
+      "coins": "−{{coins}} {{coinsTerm}}",
+      "taunt": "Deadline passed: {{coins}} coins lost",
+      "taunt_arcade": "TIME OVER! Thanks for the tokens",
+      "taunt_fantasy": "The Nemesis laughs and takes {{coins}} gold from you",
+      "taunt_cyberpunk": "Intrusion expired. {{coins}} credits transferred",
+      "taunt_lovecraft": "The Horror feeds on your hesitation: {{coins}} relics lost",
+      "taunt_minimal": "Deadline passed: {{coins}} coins lost",
+      "stepsKept_zero": "No step is lost.",
+      "stepsKept_one": "Your step stays.",
+      "stepsKept_other": "Your {{count}} steps stay.",
+      "newDeadline": "Set a new deadline",
+      "archive": "Archive the goal"
     }
   },
   "skipReasons": {
@@ -1259,7 +1295,6 @@
     "links": {
       "stats": "Statistics",
       "shop": "{{shop}} and {{inventory}}",
-      "trophiesSoon": "{{hall}} is coming soon.",
       "rowLabel": "{{label}}, {{value}}"
     }
   },

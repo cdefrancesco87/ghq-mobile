@@ -9,6 +9,8 @@ import {
   createBoss,
   deleteBoss,
   listActiveBosses,
+  markMissedDeadlineSeen,
+  pendingMissedDeadlines,
   setBossDeadline,
   updateBoss,
   type NewBoss,
@@ -320,6 +322,41 @@ describe('checkBossDeadlines', () => {
     ]);
     expect(db.select().from(hero).get()?.coins).toBe(7500);
     expectHeroMatchesLog(db);
+  });
+});
+
+describe('pendingMissedDeadlines', () => {
+  it('gives the theft until its sheet is seen, with the boss and its steps done', () => {
+    const db = newGame(['journal']);
+    giveCoins(db, 340);
+    const thesis = createBoss(db, THESIS, NOW);
+    completeBossStep(db, stepIds(db, thesis.id)[0], NOW);
+    expect(pendingMissedDeadlines(db)).toEqual([]);
+    checkBossDeadlines(db, clockAt(13, 10));
+    const [missed, ...others] = pendingMissedDeadlines(db);
+    expect(others).toEqual([]);
+    expect(missed).toMatchObject({ coins: 34, boss: { id: thesis.id }, stepsDone: 1 });
+    markMissedDeadlineSeen(db, missed.seq, at(13, 11));
+    expect(pendingMissedDeadlines(db)).toEqual([]);
+    // A later, smaller mark changes nothing.
+    markMissedDeadlineSeen(db, missed.seq - 1, at(13, 12));
+    expect(pendingMissedDeadlines(db)).toEqual([]);
+  });
+
+  it('drops the sheet of a boss with a new deadline, archived or deleted, and comes back at the next theft', () => {
+    const db = newGame(['journal']);
+    giveCoins(db, 1000);
+    const thesis = createBoss(db, THESIS, NOW);
+    const move = createBoss(db, { ...THESIS, name: 'Trasloco' }, NOW);
+    checkBossDeadlines(db, clockAt(13, 10));
+    expect(pendingMissedDeadlines(db).map((item) => item.boss.id)).toEqual([thesis.id, move.id]);
+    setBossDeadline(db, thesis.id, '2026-11-20', clockAt(13, 11));
+    archiveBoss(db, move.id, clockAt(13, 11));
+    expect(pendingMissedDeadlines(db)).toEqual([]);
+    checkBossDeadlines(db, clockAt(21, 10));
+    expect(pendingMissedDeadlines(db)).toEqual([
+      expect.objectContaining({ coins: 81, boss: expect.objectContaining({ id: thesis.id }) }),
+    ]);
   });
 });
 

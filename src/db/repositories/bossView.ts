@@ -9,6 +9,7 @@ import type { BossProgress } from './boss';
 import { notDeleted } from './events';
 import type { Mission } from './missions';
 import { gameDayOf, getSetting } from './settings';
+import { getTrophy, type TrophyInfo } from './trophies';
 
 // What the card of a boss shows (design-sezioni.md 5.3; mockup B3b). It only reads.
 
@@ -36,6 +37,8 @@ export interface BossView extends BossProgress {
   readonly missions: readonly LinkedMissionView[];
   /** The game day of the victory, null while the boss is not defeated. */
   readonly defeatedDay: GameDay | null;
+  /** The trophy of a defeated boss (design-sezioni.md 5.7): dates, days taken and rewards. */
+  readonly trophy: TrophyInfo | null;
 }
 
 /**
@@ -140,5 +143,6 @@ export function getBossView(
     })),
     defeatedDay:
       target.defeatedAt === null ? null : gameDayOf(target.defeatedAt, clock.tzOffset, dayChange),
+    trophy: getTrophy(db, bossId, clock),
   };
 }

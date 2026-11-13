@@ -128,7 +128,7 @@ describe('Scheda del boss', () => {
     expect(screen.getByLabelText('Vita di Tesi 40 su 60')).toBeOnTheScreen();
     expect(screen.getByTestId('boss-chip-steps')).toHaveTextContent('Passi 1/3');
     // 2 days to the deadline: the colour of danger with the icon (5.6).
-    expect(screen.getByTestId('boss-chip-deadline')).toHaveTextContent('2 giorni');
+    expect(screen.getByTestId('boss-chip-deadline')).toHaveTextContent('Mancano 2 giorni');
     expect(screen.getByLabelText('difficoltà Media')).toBeOnTheScreen();
     expect(screen.getByTestId('boss-step-0')).toHaveTextContent('Indice6 novembre');
     expect(screen.getByLabelText('Indice, fatto il 6 novembre')).toBeOnTheScreen();

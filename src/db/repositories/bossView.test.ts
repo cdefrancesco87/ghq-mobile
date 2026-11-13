@@ -46,6 +46,7 @@ describe('getBossView', () => {
       stepsTotal: 4,
       nextStep: { id: stepIds(db, marathon.id)[2], title: 'Corri 15 km' },
       defeatedDay: null,
+      trophy: null,
     });
     expect(view?.steps.map(({ title, doneDay }) => ({ title, doneDay }))).toEqual([
       { title: 'Iscriviti alla gara', doneDay: '2026-11-06' },
@@ -126,6 +127,7 @@ describe('getBossView', () => {
       nextStep: null,
       protectedHp: 0,
       defeatedDay: '2026-11-06',
+      trophy: { startDay: '2026-11-06', defeatedDay: '2026-11-06', daysTaken: 1 },
     });
   });
 

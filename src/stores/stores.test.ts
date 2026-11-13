@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm';
 
+import { createBoss } from '@/db/repositories/boss';
 import { completeMission } from '@/db/repositories/completion';
 import { createProfile } from '@/db/repositories/onboarding';
 import { recordBackupDone, setAutoBackup } from '@/db/repositories/backup';
 import { getDeviceId, getSetting, setSetting } from '@/db/repositories/settings';
-import { daySummaries, heroStats, missionDays } from '@/db/schema';
+import { boss, daySummaries, events, heroStats, missionDays } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { createTestDb } from '../../test/db';
 import { FRIDAY, at, clockAt, missionId, newGame } from '../../test/game';
@@ -72,6 +73,21 @@ describe('startApp', () => {
 
     expect(db.select().from(daySummaries).all()).toHaveLength(3);
     expect(useHeroStore.getState().hero?.hp).toBe(20);
+  });
+
+  it('checks the deadlines of the bosses: a passed one steals once', async () => {
+    const db = newGame(['drink_water']);
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'easy', deadlineDay: '2026-11-08', steps: ['Uno', 'Due'] },
+      clockAt(FRIDAY, 10),
+    );
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(9, 10) });
+
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.status).toBe('active');
+    expect(
+      db.select().from(events).where(eq(events.type, 'boss.deadline_missed')).all(),
+    ).toHaveLength(1);
   });
 
   it('shows the error and stays out of the app when the database does not open', async () => {

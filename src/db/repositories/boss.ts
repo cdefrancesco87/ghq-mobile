@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNull } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 
 import {
@@ -26,7 +26,7 @@ import type { Db } from '../types';
 import { appendEvent, notDeleted } from './events';
 import { changeHero, loadHero, recordLevelUp, type ActionClock } from './hero';
 import { withMoments, type WithMoments } from './moments';
-import { gameDayOf, getSetting } from './settings';
+import { gameDayOf, getSetting, setSetting } from './settings';
 
 // The bosses (analisi-funzionale.md, section 5; modello-dati.md, 3.8): creation, steps, damage
 // from the completions, victory, archive and deadlines.
@@ -608,5 +608,65 @@ export function checkBossDeadlines(db: Db, clock: ActionClock): DeadlineCheck {
       robbed.push({ bossId: target.id, coins });
     }
     return { warned, robbed };
+  });
+}
+
+export interface MissedDeadline extends BossProgress {
+  /** The `seq` of the theft in the log: the sheet is marked seen up to it. */
+  readonly seq: number;
+  /** Coins stolen by the boss. */
+  readonly coins: number;
+}
+
+/**
+ * The sheets of the missed deadlines still to show (design-sezioni.md 5.6; US-BOSS-03), from the
+ * oldest theft: one for every theft after the last sheet seen, while the boss is still active and
+ * its deadline is the one missed (a new deadline, the archive or the deletion close the matter).
+ */
+export function pendingMissedDeadlines(db: Db): MissedDeadline[] {
+  const thefts = db
+    .select()
+    .from(events)
+    .where(
+      and(
+        eq(events.type, 'boss.deadline_missed'),
+        gt(events.seq, getSetting(db, 'missed_deadline_seen')),
+      ),
+    )
+    .orderBy(asc(events.seq))
+    .all();
+  if (thefts.length === 0) {
+    return [];
+  }
+  const robbed = withSteps(
+    db,
+    db
+      .select()
+      .from(boss)
+      .where(
+        and(
+          eq(boss.status, 'active'),
+          inArray(
+            boss.id,
+            thefts.map((event) => event.bossId ?? ''),
+          ),
+        ),
+      )
+      .all(),
+  );
+  return thefts.flatMap((event) => {
+    const item = robbed.find((row) => row.boss.id === event.bossId);
+    return item === undefined || item.boss.deadlineDay !== event.payload.deadlineDay
+      ? []
+      : [{ ...item, seq: event.seq, coins: -event.dCoins }];
+  });
+}
+
+/** The sheet of a missed deadline was shown: it does not open again, nor do the older ones. */
+export function markMissedDeadlineSeen(db: Db, seq: number, now: number): void {
+  db.transaction((tx) => {
+    if (seq > getSetting(tx, 'missed_deadline_seen')) {
+      setSetting(tx, 'missed_deadline_seen', seq, now);
+    }
   });
 }

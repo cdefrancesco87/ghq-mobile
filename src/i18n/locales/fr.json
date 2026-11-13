@@ -731,7 +731,9 @@
       "hpSummary": "vie {{hp}} sur {{max}}",
       "percent": "{{percent}} %",
       "stepsSummary": "étapes {{done}} sur {{total}}",
-      "openHint": "Ouvre la fiche"
+      "openHint": "Ouvre la fiche",
+      "daysLeft_one": "Plus que {{count}} jour",
+      "daysLeft_other": "Plus que {{count}} jours"
     },
     "today": {
       "empty": "Transforme un objectif en boss",
@@ -768,7 +770,41 @@
       "delete": "Supprimer",
       "deleteTitle": "Supprimer « {{name}} » ?",
       "deleteMessage": "L'objectif disparaît de toutes les listes et les missions liées ne le frappent plus. Ce que tu as déjà gagné reste. C'est définitif.",
-      "deletedToast": "Objectif supprimé"
+      "deletedToast": "Objectif supprimé",
+      "trophyTitle": "Trophée",
+      "trophySpan": "Du {{startDay}} {{startMonth}} au {{endDay}} {{endMonth}}",
+      "trophyDays_one": "{{count}} jour nécessaire",
+      "trophyDays_other": "{{count}} jours nécessaires",
+      "trophyRewards": "Récompenses : +{{xp}} {{xpTerm}} et +{{coins}} {{coinsTerm}}"
+    },
+    "warning": {
+      "body_one": "Plus que {{count}} jour pour vaincre {{name}}",
+      "body_other": "Plus que {{count}} jours pour vaincre {{name}}"
+    },
+    "trophies": {
+      "seeAll": "Tout voir",
+      "empty": "Ton premier trophée t'attend",
+      "detail_one": "{{day}} {{month}} · {{count}} jour",
+      "detail_other": "{{day}} {{month}} · {{count}} jours",
+      "label_one": "{{name}}, vaincu le {{day}} {{month}} en {{count}} jour",
+      "label_other": "{{name}}, vaincu le {{day}} {{month}} en {{count}} jours",
+      "openHint": "Ouvre le trophée"
+    },
+    "missed": {
+      "title": "Échéance manquée",
+      "expired": "« {{name}} » a expiré.",
+      "coins": "−{{coins}} {{coinsTerm}}",
+      "taunt": "Échéance passée : {{coins}} pièces perdues",
+      "taunt_arcade": "TIME OVER ! Merci pour les jetons",
+      "taunt_fantasy": "La Némésis rit et te prend {{coins}} or",
+      "taunt_cyberpunk": "Intrusion expirée. {{coins}} crédits transférés",
+      "taunt_lovecraft": "L'Horreur se nourrit de ton hésitation : {{coins}} reliques perdues",
+      "taunt_minimal": "Échéance passée : {{coins}} pièces perdues",
+      "stepsKept_zero": "Aucune étape n'est perdue.",
+      "stepsKept_one": "Ton étape reste.",
+      "stepsKept_other": "Tes {{count}} étapes restent.",
+      "newDeadline": "Fixer une nouvelle échéance",
+      "archive": "Archiver l'objectif"
     }
   },
   "skipReasons": {
@@ -1259,7 +1295,6 @@
     "links": {
       "stats": "Statistiques",
       "shop": "{{shop}} et {{inventory}}",
-      "trophiesSoon": "{{hall}} arrive bientôt.",
       "rowLabel": "{{label}}, {{value}}"
     }
   },

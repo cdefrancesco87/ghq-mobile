@@ -98,6 +98,11 @@ export const settingSchemas = {
       .nullable()
       .default(null),
   }),
+  /**
+   * The `seq` of the last `boss.deadline_missed` event whose sheet was shown (design-sezioni.md
+   * 5.6): the sheet of a missed deadline opens once, at the first opening after the theft.
+   */
+  missed_deadline_seen: z.number().int().nonnegative(),
   /** Created once at the first start (getDeviceId); it identifies the device in the event log. */
   device_id: z.string().min(1),
   /** The choices of a first launch in progress: it resumes from here, then it is removed. */
@@ -144,6 +149,7 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   colorblind: false,
   backup: { auto: false, lastBackupAt: null, lastError: null },
   reminders_enabled: true,
+  missed_deadline_seen: 0,
 };
 
 function readValid<K extends SettingKey>(db: Db, key: K): SettingValue<K> | undefined {

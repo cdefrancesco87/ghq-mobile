@@ -78,7 +78,7 @@ export function MomentQueueProvider({ children }: { readonly children: ReactNode
 
   const next = () => setQueue((waiting) => waiting.slice(1));
 
-  // Until the Hall of trophies (T65), the trophy is the card of the defeated boss.
+  // The detail of a trophy is the card of the defeated boss (design-sezioni.md 5.7).
   const seeTrophy = (bossId: string) => {
     next();
     router.navigate({ pathname: '/boss/[id]', params: { id: bossId } });

@@ -3,7 +3,9 @@ import {
   bossHpMax,
   bossPreview,
   canCreateBoss,
+  daysTaken,
   deadlineSteal,
+  deadlineWarningAt,
   editedBossHp,
   protectedHp,
   shouldWarnDeadline,
@@ -219,5 +221,26 @@ describe('editedBossHp', () => {
   it('refuses values that are not non-negative integers', () => {
     expect(() => editedBossHp({ hp: -1, stepsLeft: 2 }, 2, 40)).toThrow(RangeError);
     expect(() => editedBossHp({ hp: 40, stepsLeft: 2 }, 1.5, 40)).toThrow(RangeError);
+  });
+});
+
+describe('deadlineWarningAt', () => {
+  it('is 09:00 local time 3 days before the deadline', () => {
+    // UTC+1: 09:00 local is 08:00 UTC.
+    expect(new Date(deadlineWarningAt('2026-11-12', 60)).toISOString()).toBe(
+      '2026-11-09T08:00:00.000Z',
+    );
+    // UTC-5 across the end of a month.
+    expect(new Date(deadlineWarningAt('2026-12-02', -300)).toISOString()).toBe(
+      '2026-11-29T14:00:00.000Z',
+    );
+  });
+});
+
+describe('daysTaken', () => {
+  it('counts the days from the creation to the victory, at least 1', () => {
+    expect(daysTaken('2026-08-01', '2026-08-15')).toBe(14);
+    expect(daysTaken('2026-08-01', '2026-08-02')).toBe(1);
+    expect(daysTaken('2026-08-01', '2026-08-01')).toBe(1);
   });
 });

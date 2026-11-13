@@ -156,6 +156,11 @@ export const BOSS = {
   deadlineStealMax: 500,
   /** Warning this many days before the deadline. */
   deadlineWarningDays: 3,
+  /**
+   * Local time of the system notification of the warning, on the first day of the warning
+   * (PROVISIONAL: design-sezioni.md 11.6 gives no time; after any day change, which ends by 06:00).
+   */
+  deadlineWarningTime: '09:00',
   /** Highest number of active bosses at the same time. */
   maxActive: 3,
   /** A boss has from minSteps to maxSteps steps. */

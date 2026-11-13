@@ -16,9 +16,12 @@ import { BOSS } from '@/rules/config';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { BossCard } from './BossCard';
+import { TrophyGrid } from './TrophyHallScreen';
 import { useBossStep } from './useBossStep';
 
 const SLOT_HEIGHT = 88;
+/** The preview of the Hall of trophies under the bosses (design-sezioni.md 5.1 ★). */
+const TROPHY_PREVIEW = 3;
 
 export interface GoalsScreenProps {
   readonly view: GoalsView;
@@ -28,7 +31,8 @@ export interface GoalsScreenProps {
  * Obiettivi (design-sezioni.md 5.1, 5.9, 5.11; mockups B3a, D22): the name of the theme with
  * «2 di 3 attivi», «Nuovo» and «Altro» with the archived goals; the large cards of the active
  * bosses with the next step; the free places up to 3 as dashed cards, or the note of the limit.
- * A touch on a card opens the card of the boss. The Hall of trophies comes with T65.
+ * A touch on a card opens the card of the boss. Under the bosses, once there is one, the preview of
+ * the Hall of trophies with the last 3 and «Vedi tutti».
  */
 export function GoalsScreen({ view }: GoalsScreenProps) {
   const { t } = useTranslation();
@@ -38,7 +42,7 @@ export function GoalsScreen({ view }: GoalsScreenProps) {
   const actions = useMissionActions();
   const step = useBossStep(actions.completeStep, view);
   const [menu, setMenu] = useState(false);
-  const { active, archived } = view;
+  const { active, archived, trophies } = view;
   const free = Math.max(BOSS.maxActive - active.length, 0);
   const shape = SHAPES[family].card;
   const radius = shape.kind === 'rounded' ? shape.radius : 0;
@@ -113,6 +117,26 @@ export function GoalsScreen({ view }: GoalsScreenProps) {
             </ThemedText>
           </View>
         ) : null}
+        {trophies.length === 0 ? null : (
+          <View testID="goals-trophies" style={styles.trophies}>
+            <View style={styles.trophiesHeader}>
+              <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.flex}>
+                {t('lexicon.trophyHall', { context: family })}
+              </ThemedText>
+              <Pressable
+                testID="goals-trophies-all"
+                accessibilityRole="button"
+                onPress={() => router.push('/trophies')}
+                style={styles.seeAll}
+              >
+                <ThemedText variant="label" color={colors.primary}>
+                  {t('bosses.trophies.seeAll')}
+                </ThemedText>
+              </Pressable>
+            </View>
+            <TrophyGrid testID="goals-trophy" trophies={trophies.slice(0, TROPHY_PREVIEW)} />
+          </View>
+        )}
       </ScrollView>
       <ActionSheet
         testID="goals-menu"
@@ -146,4 +170,8 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   center: { textAlign: 'center' },
+  flex: { flex: 1 },
+  trophies: { gap: 8, paddingTop: 8 },
+  trophiesHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  seeAll: { minHeight: MIN_TOUCH, justifyContent: 'center', paddingHorizontal: 8 },
 });

@@ -731,7 +731,9 @@
       "hpSummary": "Leben {{hp}} von {{max}}",
       "percent": "{{percent}} %",
       "stepsSummary": "Schritte {{done}} von {{total}}",
-      "openHint": "Öffnet die Karte"
+      "openHint": "Öffnet die Karte",
+      "daysLeft_one": "Noch {{count}} Tag",
+      "daysLeft_other": "Noch {{count}} Tage"
     },
     "today": {
       "empty": "Mach aus einem Ziel einen Boss",
@@ -768,7 +770,41 @@
       "delete": "Löschen",
       "deleteTitle": "„{{name}}“ löschen?",
       "deleteMessage": "Das Ziel verschwindet aus allen Listen und die verknüpften Missionen treffen es nicht mehr. Was du schon verdient hast, bleibt. Das lässt sich nicht rückgängig machen.",
-      "deletedToast": "Ziel gelöscht"
+      "deletedToast": "Ziel gelöscht",
+      "trophyTitle": "Trophäe",
+      "trophySpan": "Vom {{startDay}}. {{startMonth}} bis {{endDay}}. {{endMonth}}",
+      "trophyDays_one": "{{count}} Tag gebraucht",
+      "trophyDays_other": "{{count}} Tage gebraucht",
+      "trophyRewards": "Belohnungen: +{{xp}} {{xpTerm}} und +{{coins}} {{coinsTerm}}"
+    },
+    "warning": {
+      "body_one": "Noch {{count}} Tag, um {{name}} zu besiegen",
+      "body_other": "Noch {{count}} Tage, um {{name}} zu besiegen"
+    },
+    "trophies": {
+      "seeAll": "Alle ansehen",
+      "empty": "Deine erste Trophäe wartet",
+      "detail_one": "{{day}}. {{month}} · {{count}} Tag",
+      "detail_other": "{{day}}. {{month}} · {{count}} Tage",
+      "label_one": "{{name}}, besiegt am {{day}}. {{month}} in {{count}} Tag",
+      "label_other": "{{name}}, besiegt am {{day}}. {{month}} in {{count}} Tagen",
+      "openHint": "Öffnet die Trophäe"
+    },
+    "missed": {
+      "title": "Frist verpasst",
+      "expired": "„{{name}}“ ist abgelaufen.",
+      "coins": "−{{coins}} {{coinsTerm}}",
+      "taunt": "Frist vorbei: {{coins}} Münzen verloren",
+      "taunt_arcade": "TIME OVER! Danke für die Jetons",
+      "taunt_fantasy": "Die Nemesis lacht und nimmt dir {{coins}} Gold",
+      "taunt_cyberpunk": "Einbruch abgelaufen. {{coins}} Credits übertragen",
+      "taunt_lovecraft": "Das Grauen nährt sich von deinem Zögern: {{coins}} Reliquien verloren",
+      "taunt_minimal": "Frist vorbei: {{coins}} Münzen verloren",
+      "stepsKept_zero": "Kein Schritt geht verloren.",
+      "stepsKept_one": "Dein Schritt bleibt.",
+      "stepsKept_other": "Deine {{count}} Schritte bleiben.",
+      "newDeadline": "Neue Frist setzen",
+      "archive": "Ziel archivieren"
     }
   },
   "skipReasons": {
@@ -1259,7 +1295,6 @@
     "links": {
       "stats": "Statistiken",
       "shop": "{{shop}} und {{inventory}}",
-      "trophiesSoon": "{{hall}} kommt bald.",
       "rowLabel": "{{label}}, {{value}}"
     }
   },

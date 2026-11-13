@@ -73,8 +73,8 @@ function InfoChip({
  * next one in evidence, each completed with a touch, a notice and «Annulla» (not the step that
  * wins: choice 25); the linked missions with their damage and the damage they dealt. «Altro» has
  * Modifica (not for the quest of the first launch, whose steps are fixed texts), Nuova scadenza,
- * Archivia and Elimina with a dialog. A defeated or archived boss is only read: it is also the
- * trophy until the Hall of trophies (T65).
+ * Archivia and Elimina with a dialog. A defeated or archived boss is only read: a defeated one is
+ * the detail of its trophy (5.7), with the dates, the days taken and the rewards.
  */
 export function BossScreen({ view }: BossScreenProps) {
   const { t } = useTranslation();
@@ -135,7 +135,8 @@ export function BossScreen({ view }: BossScreenProps) {
         ? t('bosses.card.overdue')
         : daysLeft === 0
           ? t('bosses.card.dueToday')
-          : t('bosses.card.days', { count: daysLeft });
+          : // From 3 days before, «Mancano 3 giorni» in the colour of danger (5.6).
+            t(near ? 'bosses.card.daysLeft' : 'bosses.card.days', { count: daysLeft });
   const taken = boss.hpMax === 0 ? 0 : 1 - boss.hp / boss.hpMax;
   const status =
     view.defeatedDay !== null
@@ -253,6 +254,27 @@ export function BossScreen({ view }: BossScreenProps) {
             <ThemedText testID="boss-status" color={colors.textMuted}>
               {status}
             </ThemedText>
+          )}
+          {view.trophy === null ? null : (
+            // The trophy (5.7): dates of start and end, days taken, rewards received.
+            <View testID="boss-trophy" accessible style={styles.trophy}>
+              <ThemedText testID="boss-trophy-span" color={colors.textMuted}>
+                {`${t('bosses.sheet.trophySpan', {
+                  startDay: dayOf(view.trophy.startDay).day,
+                  startMonth: dayOf(view.trophy.startDay).month,
+                  endDay: dayOf(view.trophy.defeatedDay).day,
+                  endMonth: dayOf(view.trophy.defeatedDay).month,
+                })} · ${t('bosses.sheet.trophyDays', { count: view.trophy.daysTaken })}`}
+              </ThemedText>
+              <ThemedText testID="boss-trophy-rewards" variant="label">
+                {t('bosses.sheet.trophyRewards', {
+                  xp: view.trophy.xp,
+                  coins: view.trophy.coins,
+                  xpTerm: t('lexicon.xp_pl', { context: family }),
+                  coinsTerm: t('lexicon.coins_pl', { context: family }),
+                })}
+              </ThemedText>
+            </View>
           )}
           <View style={styles.barRow}>
             <View style={styles.flex}>
@@ -498,6 +520,7 @@ export function BossScreen({ view }: BossScreenProps) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  trophy: { gap: 4 },
   content: { gap: 16, paddingBottom: 48 },
   more: { width: MIN_TOUCH, height: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' },
   arena: { height: ARENA_HEIGHT, alignItems: 'center', justifyContent: 'center' },

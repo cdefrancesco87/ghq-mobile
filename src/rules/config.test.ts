@@ -167,6 +167,8 @@ describe('game configuration', () => {
       deadlineStealShare: 0.1,
       deadlineStealMax: 500,
       deadlineWarningDays: 3,
+      // Provisional: design-sezioni.md 11.6 gives no time for the system notification.
+      deadlineWarningTime: '09:00',
       // analisi-funzionale.md, section 5: «massimo 3 in contemporanea», «passi ordinati (da 2 a 20)».
       maxActive: 3,
       minSteps: 2,

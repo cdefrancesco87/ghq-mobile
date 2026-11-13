@@ -25,6 +25,7 @@ import Index from '../../../app/index';
 import SettingsRoute from '../../../app/settings/index';
 import ShopRoute from '../../../app/shop';
 import StatsRoute from '../../../app/stats';
+import TrophiesRoute from '../../../app/trophies';
 import { at, FRIDAY, clockAt, missionId, newGame, TZ } from '../../../test/game';
 
 const ROUTES: Record<string, ComponentType> = {
@@ -33,6 +34,7 @@ const ROUTES: Record<string, ComponentType> = {
   'settings/index': SettingsRoute,
   shop: ShopRoute,
   stats: StatsRoute,
+  trophies: TrophiesRoute,
   '(tabs)/_layout': TabsLayoutRoute,
   '(tabs)/today': Today,
   '(tabs)/habits': Habits,
@@ -231,10 +233,12 @@ describe('Profile', () => {
     },
   );
 
-  it('says that the Hall of trophies is coming', async () => {
+  it('opens the Hall of trophies, named in the lexicon of the theme', async () => {
     await open(newGame(['meditation']));
     await fireEvent.press(screen.getByTestId('profile-link-trophies'));
-    expect(await screen.findByText('Traguardi arriverà presto.')).toBeOnTheScreen();
+    expect(await screen.findByTestId('trophies-screen')).toBeOnTheScreen();
+    expect(screen.getByText('Traguardi')).toBeOnTheScreen();
+    expect(screen.getByText('Il primo trofeo ti aspetta')).toBeOnTheScreen();
   });
 
   it('puts the character sheet on one column with very large text', async () => {

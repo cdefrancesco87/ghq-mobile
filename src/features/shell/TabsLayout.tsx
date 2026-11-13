@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { useTranslation } from 'react-i18next';
 
+import { MissedDeadlineSheet } from '@/features/bosses/MissedDeadlineSheet';
 import { Icon } from '@/features/shared/Icon';
 import type { IconName } from '@/features/shared/icons';
 import { useAppStore } from '@/stores/app';
@@ -30,28 +31,32 @@ export function TabsLayout() {
     return <Redirect href="/onboarding" />;
   }
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-      }}
-    >
-      {TABS.map(({ name, icon }) => (
-        <Tabs.Screen
-          key={name}
-          name={name}
-          options={{
-            title: t(`nav.${name}`),
-            tabBarButtonTestID: `tab-${name}`,
-            tabBarAccessibilityLabel: t(`nav.${name}`),
-            tabBarLabel: ({ color, children }) => <NavLabel color={color}>{children}</NavLabel>,
-            tabBarIcon: ({ color }) => <Icon name={icon} color={color} />,
-            ...(name === 'new' ? { tabBarButton: NewTabButton } : {}),
-          }}
-        />
-      ))}
-    </Tabs>
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textMuted,
+          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+        }}
+      >
+        {TABS.map(({ name, icon }) => (
+          <Tabs.Screen
+            key={name}
+            name={name}
+            options={{
+              title: t(`nav.${name}`),
+              tabBarButtonTestID: `tab-${name}`,
+              tabBarAccessibilityLabel: t(`nav.${name}`),
+              tabBarLabel: ({ color, children }) => <NavLabel color={color}>{children}</NavLabel>,
+              tabBarIcon: ({ color }) => <Icon name={icon} color={color} />,
+              ...(name === 'new' ? { tabBarButton: NewTabButton } : {}),
+            }}
+          />
+        ))}
+      </Tabs>
+      {/* The sheet of a missed deadline opens over the first screen after the theft (5.6). */}
+      <MissedDeadlineSheet />
+    </>
   );
 }

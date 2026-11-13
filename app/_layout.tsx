@@ -8,6 +8,7 @@ import { Text } from 'react-native';
 // even in the background.
 import { useAutoBackupTask } from '@/features/backup/backgroundBackup';
 import '@/features/notifications/backgroundTask';
+import { BossNotifications } from '@/features/notifications/BossNotifications';
 import { useReminderActions } from '@/features/notifications/useReminderActions';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { useBootstrap } from '@/features/shell/useBootstrap';
@@ -40,6 +41,7 @@ export default function RootLayout() {
   }
   return (
     <AppProviders i18n={bootstrap.i18n}>
+      <BossNotifications />
       <Stack screenOptions={{ headerShown: false }}>
         {/* The first launch arrives on Today with a fade (design-sezioni.md 1.7). */}
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />

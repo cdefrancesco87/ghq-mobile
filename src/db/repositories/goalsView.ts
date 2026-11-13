@@ -8,6 +8,7 @@ import { listActiveBosses, withSteps, type Boss, type BossProgress } from './bos
 import { notDeleted } from './events';
 import type { Mission } from './missions';
 import { gameDayOf, getSetting } from './settings';
+import { listTrophies, type Trophy } from './trophies';
 
 // What Obiettivi and the creation of a boss show (design-sezioni.md 5.1, 5.2). It only reads.
 
@@ -22,6 +23,8 @@ export interface GoalsView {
   readonly active: readonly BossProgress[];
   /** The archived bosses, from the most recent (gap L16: a list to read, nothing to resume). */
   readonly archived: readonly ArchivedGoal[];
+  /** The defeated bosses, from the most recent victory (design-sezioni.md 5.7). */
+  readonly trophies: readonly Trophy[];
 }
 
 export interface LinkableMission {
@@ -71,6 +74,7 @@ export function getGoalsView(db: Db, clock: { now: number; tzOffset: number }): 
     active: withSteps(db, listActiveBosses(db)),
     // Same day: the order of the last change stays (the sort is stable).
     archived: archived.sort((a, b) => b.archivedDay.localeCompare(a.archivedDay)),
+    trophies: listTrophies(db, clock),
   };
 }
 

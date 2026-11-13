@@ -77,6 +77,8 @@ describe('getGoalsView', () => {
     const view = getGoalsView(db, clockAt(FRIDAY, 12));
     expect(view.active.map((item) => item.boss.id)).not.toContain(quick.id);
     expect(view.archived).toEqual([]);
+    // It is a trophy instead.
+    expect(view.trophies.map((item) => item.boss.id)).toEqual([quick.id]);
   });
 });
 

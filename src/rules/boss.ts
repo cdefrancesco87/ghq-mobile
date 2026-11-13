@@ -1,6 +1,6 @@
 import { roundXp } from './completion';
 import { BOSS, BOSS_EDIT, STARTER_QUEST_REWARD, STATS } from './config';
-import { diffDays } from './gameDay';
+import { addDays, diffDays } from './gameDay';
 import { xpToNext } from './level';
 import {
   DIFFICULTIES,
@@ -142,6 +142,24 @@ export function shouldWarnDeadline(
   }
   const daysLeft = diffDays(today, deadline);
   return daysLeft >= 0 && daysLeft <= BOSS.deadlineWarningDays;
+}
+
+const MS_PER_MINUTE = 60_000;
+
+/**
+ * UTC instant of the system notification of the deadline warning (design-sezioni.md 11.6): the
+ * local `BOSS.deadlineWarningTime` of the first day of the warning, 3 days before the deadline.
+ * The time comes after any day change, so the calendar day is the game day.
+ */
+export function deadlineWarningAt(deadline: GameDay, tzOffset: number): number {
+  const [year, month, day] = addDays(deadline, -BOSS.deadlineWarningDays).split('-').map(Number);
+  const [hours, minutes] = BOSS.deadlineWarningTime.split(':').map(Number);
+  return Date.UTC(year, month - 1, day, hours, minutes) - tzOffset * MS_PER_MINUTE;
+}
+
+/** «Giorni impiegati» of a trophy (design-sezioni.md 5.7): from the creation to the victory, at least 1. */
+export function daysTaken(start: GameDay, end: GameDay): number {
+  return Math.max(1, diffDays(start, end));
 }
 
 /** A new boss can start while fewer than 3 are active. */

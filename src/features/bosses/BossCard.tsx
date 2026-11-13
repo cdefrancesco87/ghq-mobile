@@ -73,7 +73,8 @@ export function BossCard({
         ? t('bosses.card.overdue')
         : daysLeft === 0
           ? t('bosses.card.dueToday')
-          : t('bosses.card.days', { count: daysLeft });
+          : // From 3 days before, «Mancano 3 giorni» in the colour of danger (5.6).
+            t(near ? 'bosses.card.daysLeft' : 'bosses.card.days', { count: daysLeft });
   const large = variant === 'large';
   const size = SPRITE_SIZE[variant];
   const kind = boss.kind === 'starter' ? 'quest' : boss.difficulty;

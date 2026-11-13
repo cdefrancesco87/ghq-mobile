@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { getPhoneSettings, keepPhoneSettings } from '../db/repositories/backup';
+import { checkBossDeadlines } from '../db/repositories/boss';
 import { closePendingDays } from '../db/repositories/closing';
 import type { ActionClock } from '../db/repositories/hero';
 import { archiveCompletedSingles } from '../db/repositories/missions';
@@ -13,9 +14,8 @@ import { useSettingsStore } from './settings';
 import { useThemeStore } from './theme';
 
 // The start of the app (stack-tecnologico.md, point 2; modello-dati.md, sections 7 and 8): open
-// the database and apply the migrations, close the days that are pending, archive the single
-// tasks done a week ago, load settings, theme
-// and hero. After that every action of a screen goes through `runAction`, which refreshes the
+// the database and apply the migrations, close the days that are pending, check the deadlines of
+// the bosses, archive the single tasks done a week ago, load settings, theme and hero. After that every action of a screen goes through `runAction`, which refreshes the
 // stores once the repository has written.
 
 export type AppStatus = 'loading' | 'ready' | 'error';
@@ -70,6 +70,8 @@ export async function startApp(options: StartOptions): Promise<void> {
 function startOn(db: Db, clock: () => ActionClock): void {
   const now = clock();
   closePendingDays(db, now);
+  // The deadline warnings and the thefts of the bosses (US-BOSS-03), after the days are closed.
+  checkBossDeadlines(db, now);
   archiveCompletedSingles(db, now);
   loadStores(db);
   openSession({ db, clock });
@@ -201,6 +203,7 @@ export function advanceClock(days: number): void {
   shiftClock(whole * MS_PER_DAY);
   runAction((db, clock) => {
     closePendingDays(db, clock);
+    checkBossDeadlines(db, clock);
     archiveCompletedSingles(db, clock);
   });
 }

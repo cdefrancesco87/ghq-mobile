@@ -660,7 +660,7 @@ describe('Today: bosses', () => {
     expect(screen.getByTestId('today-bosses-scroll')).toBeOnTheScreen();
     expect(treeOrder([card(later.id), card(sooner.id)])).toEqual([card(sooner.id), card(later.id)]);
     expect(screen.getByTestId('today-bosses-dot-1', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByTestId(`${card(sooner.id)}-deadline`)).toHaveTextContent('2 giorni');
+    expect(screen.getByTestId(`${card(sooner.id)}-deadline`)).toHaveTextContent('Mancano 2 giorni');
     // The quest of the first launch has its own card above the bosses (design 1.7).
     expect(screen.queryByTestId(card(quest.id))).toBeNull();
     expect(treeOrder(['today-starter', 'today-bosses'])).toEqual(['today-starter', 'today-bosses']);

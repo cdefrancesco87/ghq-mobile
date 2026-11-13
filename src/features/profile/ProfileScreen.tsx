@@ -14,7 +14,6 @@ import { ScreenHeader } from '@/features/shared/ScreenHeader';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useLargeText } from '@/features/shared/useLargeText';
-import { useUndoToast } from '@/features/shared/UndoToast';
 import { termInSentence } from '@/i18n/lexicon';
 import { companionName } from '@/rules/companion';
 import { PROFILE } from '@/rules/config';
@@ -61,7 +60,6 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
   const { t, i18n } = useTranslation();
   const { colors, family, typography } = useTheme();
   const router = useRouter();
-  const toast = useUndoToast();
   const largeText = useLargeText();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -296,9 +294,7 @@ export function ProfileScreen({ view }: ProfileScreenProps) {
             icon={<Icon name="trofeo" size={20} color={colors.text} />}
             label={hallLabel}
             value={String(view.bossesDefeated)}
-            onPress={() =>
-              toast.show({ message: t('profile.links.trophiesSoon', { hall: hallLabel }) })
-            }
+            onPress={() => router.push('/trophies')}
           />
           <LinkRow
             testID="profile-link-settings"

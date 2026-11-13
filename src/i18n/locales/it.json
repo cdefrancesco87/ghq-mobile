@@ -731,7 +731,9 @@
       "hpSummary": "vita {{hp}} su {{max}}",
       "percent": "{{percent}}%",
       "stepsSummary": "passi {{done}} di {{total}}",
-      "openHint": "Apre la scheda"
+      "openHint": "Apre la scheda",
+      "daysLeft_one": "Manca {{count}} giorno",
+      "daysLeft_other": "Mancano {{count}} giorni"
     },
     "today": {
       "empty": "Trasforma un obiettivo in un boss",
@@ -768,7 +770,41 @@
       "delete": "Elimina",
       "deleteTitle": "Eliminare «{{name}}»?",
       "deleteMessage": "L'obiettivo sparisce da tutti gli elenchi e le missioni collegate non lo colpiscono più. Quello che hai già guadagnato resta. Non si può annullare.",
-      "deletedToast": "Obiettivo eliminato"
+      "deletedToast": "Obiettivo eliminato",
+      "trophyTitle": "Trofeo",
+      "trophySpan": "Dal {{startDay}} {{startMonth}} al {{endDay}} {{endMonth}}",
+      "trophyDays_one": "{{count}} giorno impiegato",
+      "trophyDays_other": "{{count}} giorni impiegati",
+      "trophyRewards": "Ricompense: +{{xp}} {{xpTerm}} e +{{coins}} {{coinsTerm}}"
+    },
+    "warning": {
+      "body_one": "Manca {{count}} giorno per sconfiggere {{name}}",
+      "body_other": "Mancano {{count}} giorni per sconfiggere {{name}}"
+    },
+    "trophies": {
+      "seeAll": "Vedi tutti",
+      "empty": "Il primo trofeo ti aspetta",
+      "detail_one": "{{day}} {{month}} · {{count}} giorno",
+      "detail_other": "{{day}} {{month}} · {{count}} giorni",
+      "label_one": "{{name}}, sconfitto il {{day}} {{month}} in {{count}} giorno",
+      "label_other": "{{name}}, sconfitto il {{day}} {{month}} in {{count}} giorni",
+      "openHint": "Apre il trofeo"
+    },
+    "missed": {
+      "title": "Scadenza mancata",
+      "expired": "«{{name}}» è scaduto.",
+      "coins": "−{{coins}} {{coinsTerm}}",
+      "taunt": "Scadenza passata: {{coins}} monete perse",
+      "taunt_arcade": "TIME OVER! Grazie per i gettoni",
+      "taunt_fantasy": "La Nemesi ride e ti sottrae {{coins}} oro",
+      "taunt_cyberpunk": "Intrusione scaduta. {{coins}} crediti trasferiti",
+      "taunt_lovecraft": "L'Orrore si nutre della tua esitazione: {{coins}} reliquie perdute",
+      "taunt_minimal": "Scadenza passata: {{coins}} monete perse",
+      "stepsKept_zero": "Nessun passo va perso.",
+      "stepsKept_one": "Il tuo passo resta.",
+      "stepsKept_other": "I tuoi {{count}} passi restano.",
+      "newDeadline": "Fissa una nuova scadenza",
+      "archive": "Archivia l'obiettivo"
     }
   },
   "skipReasons": {
@@ -1259,7 +1295,6 @@
     "links": {
       "stats": "Statistiche",
       "shop": "{{shop}} e {{inventory}}",
-      "trophiesSoon": "{{hall}} arriverà presto.",
       "rowLabel": "{{label}}, {{value}}"
     }
   },
