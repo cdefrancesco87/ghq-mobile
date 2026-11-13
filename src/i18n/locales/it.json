@@ -508,7 +508,8 @@
         "10": "ottobre",
         "11": "novembre",
         "12": "dicembre"
-      }
+      },
+      "monthlyLast": "Ogni mese l'ultimo giorno"
     },
     "missionRow": {
       "todoLabel": "{{name}}, {{difficulty}}, {{xp}} {{xpTerm}}, da fare. Tocca due volte per completare",
@@ -743,6 +744,43 @@
       "clear": "Cancella la ricerca",
       "noResults": "Nessun modello trovato",
       "templateLabel": "{{name}}, {{frequency}}, difficoltà {{difficulty}}, {{stat}}"
+    },
+    "monthly": "Mensile",
+    "yearly": "Annuale",
+    "lastDayOfMonth": "Ultimo giorno del mese",
+    "monthDay": "Giorno {{day}}",
+    "shortMonths": "Nei mesi più corti vale l'ultimo giorno.",
+    "yearDay": "Giorno",
+    "yearMonth": "Mese",
+    "statSecondary": "Statistica secondaria",
+    "statSecondaryNote": "Riceve il {{percent}}% dei punti della principale.",
+    "statSecondaryNeedsPrimary": "Scegli prima la statistica principale.",
+    "noSecondary": "Nessuna",
+    "category": "Categoria e icona",
+    "categoryTitle": "Categoria",
+    "icon": "Icona",
+    "noCategory": "Nessuna",
+    "notes": "Note",
+    "noNotes": "Nessuna nota",
+    "notesPlaceholder": "Scrivi qui le tue note…",
+    "notesCount": "{{count}} di {{max}} caratteri",
+    "icons": {
+      "missioni": "Missione",
+      "salute": "Salute",
+      "mente": "Mente",
+      "lavoro-studio": "Lavoro e studio",
+      "casa": "Casa",
+      "spada": "Spada",
+      "cuore": "Cuore",
+      "sole": "Sole",
+      "nota": "Nota",
+      "timer": "Timer",
+      "calendario": "Calendario",
+      "trofeo": "Trofeo",
+      "regalo": "Regalo",
+      "mappa": "Mappa",
+      "riposo": "Riposo",
+      "compagno": "Zampa"
     }
   },
   "bosses": {

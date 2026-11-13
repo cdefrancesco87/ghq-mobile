@@ -24,6 +24,7 @@ describe('describeFrequency', () => {
     ['every 1 day', { type: 'every_n_days', n: 1, from: day('2026-11-08') }, 'Ogni giorno'],
     ['every n days', { type: 'every_n_days', n: 3, from: day('2026-11-08') }, 'Ogni 3 giorni'],
     ['monthly', { type: 'monthly', day: 15 }, 'Ogni mese il giorno 15'],
+    ['monthly on the last day', { type: 'monthly', day: 31 }, "Ogni mese l'ultimo giorno"],
     ['yearly', { type: 'yearly', month: 3, day: 21 }, 'Ogni anno il 21 marzo'],
   ];
 

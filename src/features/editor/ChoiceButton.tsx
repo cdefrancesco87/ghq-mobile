@@ -16,6 +16,8 @@ export interface ChoiceButtonProps {
   /** The content, drawn in `onPrimary` when chosen: it receives the colour to use. */
   readonly children: (color: string) => ReactNode;
   readonly style?: StyleProp<ViewStyle>;
+  /** Shown and read, but not chosen: the main stat in the row of the secondary one (4.4). */
+  readonly disabled?: boolean;
 }
 
 /** One option of a group of the editor (difficulty, stat): outlined, filled when chosen. */
@@ -26,28 +28,31 @@ export function ChoiceButton({
   accessibilityLabel,
   children,
   style,
+  disabled = false,
 }: ChoiceButtonProps) {
   const { colors, family } = useTheme();
   return (
     <Pressable
       testID={testID}
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="radio"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ checked: selected }}
+      accessibilityState={{ checked: selected, disabled }}
       style={[styles.button, style]}
     >
       {({ pressed }) => {
-        const main = selected ? colors.primary : colors.textMuted;
+        // Disabled as the buttons: `track` with `textMuted` (Button.tsx).
+        const main = selected ? colors.primary : disabled ? colors.track : colors.textMuted;
         const stroke = pressed ? pressedColour(main) : main;
         return (
           <>
             <Frame
               shape={SHAPES[family].chip}
-              fill={selected ? stroke : 'transparent'}
+              fill={selected || disabled ? stroke : 'transparent'}
               stroke={stroke}
             />
-            {children(selected ? colors.onPrimary : colors.text)}
+            {children(selected ? colors.onPrimary : disabled ? colors.textMuted : colors.text)}
           </>
         );
       }}

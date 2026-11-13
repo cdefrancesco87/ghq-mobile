@@ -3,7 +3,7 @@ import { uuidv7 } from 'uuidv7';
 import { z } from 'zod';
 
 import { TEMPLATE_CATEGORIES } from '../../content/templates';
-import { HABITS_LIST, MISSION_ORDER } from '../../rules/config';
+import { HABITS_LIST, MISSION_FIELDS, MISSION_ORDER } from '../../rules/config';
 import { frequencySchema, isDueToday, type Frequency } from '../../rules/frequency';
 import { addDays, isGameDay, weekStartOf, weekday } from '../../rules/gameDay';
 import { HEALTH_METRICS, healthUnit } from '../../rules/health';
@@ -236,7 +236,11 @@ function validated(kind: Mission['kind'], fields: MissionFields): MissionFields 
       throw new RangeError('A mission linked to the health data needs a goal in its unit');
     }
   }
-  return { ...fields, name, frequency, goal };
+  const notes = fields.notes?.trim() || null;
+  if (notes !== null && notes.length > MISSION_FIELDS.notesMax) {
+    throw new RangeError(`The notes are longer than ${MISSION_FIELDS.notesMax} characters`);
+  }
+  return { ...fields, name, frequency, goal, notes };
 }
 
 function columnsOf(fields: MissionFields) {

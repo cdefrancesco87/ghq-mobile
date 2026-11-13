@@ -14,6 +14,8 @@ export interface Draft {
   readonly kind: Mission['kind'];
   readonly difficulty: Difficulty;
   readonly statPrimary: StatKey | null;
+  /** Gets a share of the points of the main stat (design-sezioni.md 4.4); never the main one. */
+  readonly statSecondary: StatKey | null;
   /** Habits only. */
   readonly frequency: Frequency;
   /** Tasks only; null is a task without a due day. */
@@ -22,8 +24,14 @@ export interface Draft {
   readonly reminders: readonly string[];
   readonly bossId: string | null;
   readonly goal: GoalDraft;
-  /** The template chosen in «Usa un modello» (4.11): it gives the category of a new mission. */
+  /** The template chosen in «Usa un modello» (4.11): it gives `template_key` to a new mission. */
   readonly template: string | null;
+  /** «Categoria» (4.9): a key of `TEMPLATE_CATEGORIES`, or null for «Nessuna». */
+  readonly category: string | null;
+  /** The chosen icon; null follows the icon of the category (4.9). */
+  readonly iconKey: string | null;
+  /** «Note» as typed; blank is none. */
+  readonly notes: string;
 }
 
 /** «Obiettivo misurabile» as typed (design-sezioni.md 4.7): the numbers are read when saving. */
@@ -87,12 +95,16 @@ export function newDraft(bossId: string | null): Draft {
     kind: 'habit',
     difficulty: 'medium',
     statPrimary: null,
+    statSecondary: null,
     frequency: DAILY,
     dueDay: null,
     reminders: [],
     bossId,
     goal: NO_GOAL,
     template: null,
+    category: null,
+    iconKey: null,
+    notes: '',
   };
 }
 
@@ -117,10 +129,11 @@ export function draftFromTemplate(draft: Draft, template: MissionTemplate, name:
     name,
     kind: 'habit',
     difficulty: template.difficulty,
-    statPrimary: template.stat,
+    ...withPrimary(draft, template.stat),
     frequency: template.frequency,
     goal,
     template: template.key,
+    category: template.category,
   };
 }
 
@@ -131,20 +144,39 @@ export function draftOf(mission: Mission, reminders: readonly string[]): Draft {
     kind: mission.kind,
     difficulty: mission.difficulty,
     statPrimary: mission.statPrimary,
+    statSecondary: mission.statSecondary,
     frequency: mission.frequency ?? DAILY,
     dueDay: mission.dueDay,
     reminders,
     bossId: mission.bossId,
     goal: goalDraftOf(mission),
-    // A saved mission keeps its template and category: only a new one takes them.
+    // A saved mission keeps its template: only a new one takes it.
     template: null,
+    category: mission.categoryKey,
+    iconKey: mission.iconKey,
+    notes: mission.notes ?? '',
+  };
+}
+
+/** A new main stat: the secondary one, if it is the same, is cleared (they must differ). */
+export function withPrimary(
+  draft: Draft,
+  statPrimary: StatKey | null,
+): Pick<Draft, 'statPrimary' | 'statSecondary'> {
+  return {
+    statPrimary,
+    statSecondary:
+      statPrimary === null || draft.statSecondary === statPrimary ? null : draft.statSecondary,
   };
 }
 
 export function sameDraft(a: Draft, b: Draft): boolean {
-  return (
-    JSON.stringify({ ...a, name: a.name.trim() }) === JSON.stringify({ ...b, name: b.name.trim() })
-  );
+  const plain = (draft: Draft) => ({
+    ...draft,
+    name: draft.name.trim(),
+    notes: draft.notes.trim(),
+  });
+  return JSON.stringify(plain(a)) === JSON.stringify(plain(b));
 }
 
 /** The advanced fields differ from those of a new mission: «Altre opzioni» opens by itself (4.5). */
@@ -154,7 +186,11 @@ export function hasAdvancedValues(draft: Draft): boolean {
     draft.dueDay !== null ||
     draft.reminders.length > 0 ||
     draft.bossId !== null ||
-    draft.goal.type !== 'none'
+    draft.goal.type !== 'none' ||
+    draft.statSecondary !== null ||
+    draft.category !== null ||
+    draft.iconKey !== null ||
+    draft.notes.trim() !== ''
   );
 }
 
@@ -166,16 +202,15 @@ export function missionInput(draft: Draft): NewMission & { readonly kind: Missio
   const habit = draft.kind === 'habit';
   const template = MISSION_TEMPLATES.find((item) => item.key === draft.template);
   return {
-    ...(template === undefined
-      ? {}
-      : {
-          templateKey: template.key,
-          categoryKey: template.category,
-        }),
+    ...(template === undefined ? {} : { templateKey: template.key }),
     name: draft.name.trim(),
     kind: draft.kind,
     difficulty: draft.difficulty,
     statPrimary: draft.statPrimary,
+    statSecondary: draft.statPrimary === null ? null : draft.statSecondary,
+    categoryKey: draft.category,
+    iconKey: draft.iconKey,
+    notes: draft.notes.trim() === '' ? null : draft.notes.trim(),
     frequency: habit ? draft.frequency : null,
     dueDay: habit ? null : draft.dueDay,
     reminders: habit ? draft.reminders : [],

@@ -5,13 +5,13 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/features/shared/Button';
 import { Card } from '@/features/shared/Card';
-import { describeFrequency } from '@/features/shared/describeFrequency';
+import { Chip } from '@/features/shared/Chip';
 import { Icon } from '@/features/shared/Icon';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { FREQUENCY_EDITOR } from '@/rules/config';
-import type { Frequency } from '@/rules/frequency';
+import { daysInMonth, type Frequency } from '@/rules/frequency';
 import type { Weekday } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
 import { useSettingsStore } from '@/stores/settings';
@@ -21,6 +21,14 @@ import { dateOf, dayOf } from './DueDaySheet';
 
 const DAY_SIZE = 40;
 const ALL_DAYS: readonly Weekday[] = [1, 2, 3, 4, 5, 6, 7];
+const MONTH_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
+const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+/** «Ultimo giorno del mese» is day 31: a day after the last one of a month moves to the last. */
+const LAST_DAY_OF_MONTH = 31;
+/** From this day some months are shorter: the note says that the last day counts. */
+const SHORT_MONTH_FROM = 29;
+/** A year with 29 February, to offer it in «Annuale». */
+const LEAP_YEAR = 2000;
 
 /** The 7 days from the first day of the week of the settings (design-sezioni.md 4.6). */
 export function weekFrom(weekStart: Weekday): Weekday[] {
@@ -36,19 +44,11 @@ export interface FrequencySheetProps {
   readonly onClose: () => void;
 }
 
-/** The forms with their own control in the sheet. */
-const EDITABLE: readonly Frequency['type'][] = [
-  'daily',
-  'weekdays',
-  'times_per_week',
-  'every_n_days',
-];
-
 /**
  * «Frequenza» (design-sezioni.md 4.6, mockups D14): «Ogni giorno», «Giorni della settimana»,
- * «N volte a settimana» (1–6) and «Ogni N giorni» (2–30, with the first day); monthly and yearly
- * come with their task (choice ★ 5). A mission that already has one of those keeps it as a choice.
- * Each form remembers its values while the sheet is open, so trying another one loses nothing.
+ * «N volte a settimana» (1–6), «Ogni N giorni» (2–30, with the first day), «Mensile» (grid of the
+ * days 1–31 and «Ultimo giorno del mese») and «Annuale» (day and month). Each form remembers its
+ * values while the sheet is open, so trying another one loses nothing.
  */
 export function FrequencySheet({ visible, value, today, onDone, onClose }: FrequencySheetProps) {
   const { t, i18n } = useTranslation();
@@ -58,6 +58,8 @@ export function FrequencySheet({ visible, value, today, onDone, onClose }: Frequ
   const [days, setDays] = useState<Weekday[]>(() => initialDays(value));
   const [times, setTimes] = useState(() => initialTimes(value));
   const [everyN, setEveryN] = useState(() => initialEveryN(value, today));
+  const [monthDay, setMonthDay] = useState(() => initialMonthDay(value, today));
+  const [yearDay, setYearDay] = useState(() => initialYearDay(value, today));
   const [picking, setPicking] = useState(false);
   const [wasVisible, setWasVisible] = useState(visible);
   if (visible !== wasVisible) {
@@ -66,9 +68,10 @@ export function FrequencySheet({ visible, value, today, onDone, onClose }: Frequ
     setDays(initialDays(value));
     setTimes(initialTimes(value));
     setEveryN(initialEveryN(value, today));
+    setMonthDay(initialMonthDay(value, today));
+    setYearDay(initialYearDay(value, today));
     setPicking(false);
   }
-  const other = EDITABLE.includes(value.type) ? null : value;
 
   const option = (key: string, label: string, selected: boolean, onPress: () => void) => (
     <Pressable
@@ -100,6 +103,21 @@ export function FrequencySheet({ visible, value, today, onDone, onClose }: Frequ
     setEveryN(next);
     setDraft({ type: 'every_n_days', ...next });
   };
+
+  const chooseMonthDay = (day: number) => {
+    setMonthDay(day);
+    setDraft({ type: 'monthly', day });
+  };
+
+  const chooseYearDay = (changes: Partial<{ month: number; day: number }>) => {
+    const next = { ...yearDay, ...changes };
+    // 31 March becomes 30 April: the day must exist in the month (29 February does).
+    const day = Math.min(next.day, daysInMonth(LEAP_YEAR, next.month));
+    setYearDay({ month: next.month, day });
+    setDraft({ type: 'yearly', month: next.month, day });
+  };
+
+  const monthName = (month: number) => t(`shared.frequency.month.${month}`);
 
   const onPick = (_event: unknown, date: Date) => {
     chooseEveryN({ from: dayOf(date) });
@@ -223,14 +241,94 @@ export function FrequencySheet({ visible, value, today, onDone, onClose }: Frequ
                 </>,
               )
             : null}
-          {other === null ? null : (
-            <>
-              {separator}
-              {option('current', describeFrequency(other, t), draft === other, () =>
-                setDraft(other),
-              )}
-            </>
+          {separator}
+          {option('monthly', t('editor.monthly'), draft.type === 'monthly', () =>
+            chooseMonthDay(monthDay),
           )}
+          {draft.type === 'monthly'
+            ? control(
+                <>
+                  <View
+                    testID="editor-frequency-month-days"
+                    accessibilityRole="radiogroup"
+                    accessibilityLabel={t('editor.monthly')}
+                    style={styles.grid}
+                  >
+                    {MONTH_DAYS.map((day) => {
+                      const on = day === monthDay;
+                      return (
+                        <Pressable
+                          key={day}
+                          testID={`editor-frequency-month-day-${day}`}
+                          onPress={() => chooseMonthDay(day)}
+                          accessibilityRole="radio"
+                          accessibilityLabel={t('editor.monthDay', { day })}
+                          accessibilityState={{ checked: on }}
+                          hitSlop={2}
+                          style={[
+                            styles.day,
+                            on
+                              ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                              : { borderColor: colors.textMuted },
+                          ]}
+                        >
+                          <ThemedText variant="label" color={on ? colors.onPrimary : colors.text}>
+                            {day}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  {option(
+                    'month-last',
+                    t('editor.lastDayOfMonth'),
+                    monthDay === LAST_DAY_OF_MONTH,
+                    () => chooseMonthDay(LAST_DAY_OF_MONTH),
+                  )}
+                  {monthDay >= SHORT_MONTH_FROM ? (
+                    <ThemedText
+                      testID="editor-frequency-month-note"
+                      variant="caption"
+                      color={colors.textMuted}
+                    >
+                      {t('editor.shortMonths')}
+                    </ThemedText>
+                  ) : null}
+                </>,
+              )
+            : null}
+          {separator}
+          {option('yearly', t('editor.yearly'), draft.type === 'yearly', () => chooseYearDay({}))}
+          {draft.type === 'yearly'
+            ? control(
+                <>
+                  <Counter
+                    testID="editor-frequency-year-day"
+                    value={yearDay.day}
+                    min={1}
+                    max={daysInMonth(LEAP_YEAR, yearDay.month)}
+                    onChange={(day) => chooseYearDay({ day })}
+                    accessibilityLabel={t('editor.yearDay')}
+                    unit={monthName(yearDay.month)}
+                  />
+                  <View
+                    accessibilityRole="radiogroup"
+                    accessibilityLabel={t('editor.yearMonth')}
+                    style={styles.months}
+                  >
+                    {MONTHS.map((month) => (
+                      <Chip
+                        key={month}
+                        testID={`editor-frequency-year-month-${month}`}
+                        label={monthName(month)}
+                        selected={month === yearDay.month}
+                        onPress={() => chooseYearDay({ month })}
+                      />
+                    ))}
+                  </View>
+                </>,
+              )
+            : null}
         </Card>
         <Button
           testID="editor-frequency-done"
@@ -242,6 +340,18 @@ export function FrequencySheet({ visible, value, today, onDone, onClose }: Frequ
       </View>
     </Sheet>
   );
+}
+
+function initialMonthDay(value: Frequency, today: GameDay): number {
+  return value.type === 'monthly' ? value.day : Number(today.split('-')[2]);
+}
+
+function initialYearDay(value: Frequency, today: GameDay): { month: number; day: number } {
+  if (value.type === 'yearly') {
+    return { month: value.month, day: value.day };
+  }
+  const [, month, day] = today.split('-').map(Number);
+  return { month, day };
 }
 
 function initialDays(value: Frequency): Weekday[] {
@@ -267,6 +377,8 @@ const styles = StyleSheet.create({
   control: { paddingBottom: 8 },
   picker: { alignItems: 'center' },
   days: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingVertical: 8 },
+  months: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   day: {
     width: DAY_SIZE,
     height: DAY_SIZE,

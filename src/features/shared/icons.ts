@@ -27,6 +27,29 @@ export function categoryIcon(categoryKey: string | null): IconName {
   return (categoryKey === null ? undefined : CATEGORY_ICONS[categoryKey]) ?? 'missioni';
 }
 
+/**
+ * The icons that a mission can choose in the editor (design-sezioni.md 4.9): those of the
+ * categories, then a set of common use. PROVVISORIO (T78): the set is not listed in the documents.
+ */
+export const MISSION_ICONS = [
+  'missioni',
+  'salute',
+  'mente',
+  'lavoro-studio',
+  'casa',
+  'spada',
+  'cuore',
+  'sole',
+  'nota',
+  'timer',
+  'calendario',
+  'trofeo',
+  'regalo',
+  'mappa',
+  'riposo',
+  'compagno',
+] as const satisfies readonly IconName[];
+
 const STAT_ICONS: Readonly<Record<StatKey, IconName>> = {
   strength: 'forza',
   constitution: 'costituzione',

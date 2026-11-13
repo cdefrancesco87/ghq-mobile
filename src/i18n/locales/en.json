@@ -508,7 +508,8 @@
         "10": "October",
         "11": "November",
         "12": "December"
-      }
+      },
+      "monthlyLast": "Every month on the last day"
     },
     "missionRow": {
       "todoLabel": "{{name}}, {{difficulty}}, {{xp}} {{xpTerm}}, to do. Double tap to complete",
@@ -743,6 +744,43 @@
       "clear": "Clear the search",
       "noResults": "No template found",
       "templateLabel": "{{name}}, {{frequency}}, {{difficulty}} difficulty, {{stat}}"
+    },
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "lastDayOfMonth": "Last day of the month",
+    "monthDay": "Day {{day}}",
+    "shortMonths": "In shorter months the last day counts.",
+    "yearDay": "Day",
+    "yearMonth": "Month",
+    "statSecondary": "Secondary stat",
+    "statSecondaryNote": "Gets {{percent}}% of the points of the main one.",
+    "statSecondaryNeedsPrimary": "Choose the main stat first.",
+    "noSecondary": "None",
+    "category": "Category and icon",
+    "categoryTitle": "Category",
+    "icon": "Icon",
+    "noCategory": "None",
+    "notes": "Notes",
+    "noNotes": "No notes",
+    "notesPlaceholder": "Write your notes here…",
+    "notesCount": "{{count}} of {{max}} characters",
+    "icons": {
+      "missioni": "Mission",
+      "salute": "Health",
+      "mente": "Mind",
+      "lavoro-studio": "Work and study",
+      "casa": "Home",
+      "spada": "Sword",
+      "cuore": "Heart",
+      "sole": "Sun",
+      "nota": "Note",
+      "timer": "Timer",
+      "calendario": "Calendar",
+      "trofeo": "Trophy",
+      "regalo": "Gift",
+      "mappa": "Map",
+      "riposo": "Rest",
+      "compagno": "Paw"
     }
   },
   "bosses": {

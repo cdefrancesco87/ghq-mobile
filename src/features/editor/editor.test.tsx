@@ -718,6 +718,211 @@ describe('Mission editor: other frequencies and templates', () => {
   });
 });
 
+describe('Mission editor: advanced fields (T78)', () => {
+  async function openOptions() {
+    if (screen.queryByTestId('editor-options') === null) {
+      await fireEvent.press(screen.getByTestId('editor-more'));
+    }
+  }
+
+  async function openFrequency() {
+    await openOptions();
+    await fireEvent.press(screen.getByTestId('editor-option-frequency'));
+  }
+
+  it('saves «Mensile» with the grid of the days and reads it again', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Paga le bollette');
+    await openFrequency();
+    await fireEvent.press(screen.getByTestId('editor-frequency-monthly'));
+    // Starts from the day of today, 6 November.
+    expect(screen.getByRole('radio', { name: 'Giorno 6', checked: true })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('editor-frequency-month-day-15'));
+    expect(screen.getByRole('radio', { name: 'Giorno 15', checked: true })).toBeOnTheScreen();
+    expect(screen.queryByTestId('editor-frequency-month-note')).toBeNull();
+    await fireEvent.press(screen.getByTestId('editor-frequency-done'));
+    expect(screen.getByTestId('editor-option-frequency-value')).toHaveTextContent(
+      'Ogni mese il giorno 15',
+    );
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    const bills = created(db, 'Paga le bollette')!;
+    expect(bills.frequency).toEqual({ type: 'monthly', day: 15 });
+
+    await openToEdit(db, bills.id);
+    await openFrequency();
+    expect(screen.getByRole('radio', { name: 'Mensile', checked: true })).toBeOnTheScreen();
+    expect(screen.getByRole('radio', { name: 'Giorno 15', checked: true })).toBeOnTheScreen();
+  });
+
+  it('saves «Ultimo giorno del mese» as day 31, which falls on the last day of every month', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Rendiconto');
+    await openFrequency();
+    await fireEvent.press(screen.getByTestId('editor-frequency-monthly'));
+    await fireEvent.press(screen.getByTestId('editor-frequency-month-last'));
+    expect(
+      screen.getByRole('radio', { name: 'Ultimo giorno del mese', checked: true }),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId('editor-frequency-month-note')).toHaveTextContent(
+      "Nei mesi più corti vale l'ultimo giorno.",
+    );
+    await fireEvent.press(screen.getByTestId('editor-frequency-done'));
+    expect(screen.getByTestId('editor-option-frequency-value')).toHaveTextContent(
+      "Ogni mese l'ultimo giorno",
+    );
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Rendiconto')!.frequency).toEqual({ type: 'monthly', day: 31 });
+  });
+
+  it('saves «Annuale» with day and month, keeping the day inside the month', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Revisione auto');
+    await openFrequency();
+    await fireEvent.press(screen.getByTestId('editor-frequency-yearly'));
+    expect(screen.getByTestId('editor-frequency-year-day-value')).toHaveTextContent('6');
+    expect(screen.getByTestId('editor-frequency-year-month-11')).toBeSelected();
+    for (let i = 0; i < 25; i += 1) {
+      await fireEvent.press(screen.getByTestId('editor-frequency-year-day-more'));
+    }
+    // November has 30 days.
+    expect(screen.getByTestId('editor-frequency-year-day-value')).toHaveTextContent('30');
+    expect(screen.getByTestId('editor-frequency-year-day-more')).toBeDisabled();
+    // February keeps the 29th, which exists in leap years.
+    await fireEvent.press(screen.getByTestId('editor-frequency-year-month-2'));
+    expect(screen.getByTestId('editor-frequency-year-day-value')).toHaveTextContent('29');
+    await fireEvent.press(screen.getByTestId('editor-frequency-done'));
+    expect(screen.getByTestId('editor-option-frequency-value')).toHaveTextContent(
+      'Ogni anno il 29 febbraio',
+    );
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    const car = created(db, 'Revisione auto')!;
+    expect(car.frequency).toEqual({ type: 'yearly', month: 2, day: 29 });
+
+    await openToEdit(db, car.id);
+    await openFrequency();
+    expect(screen.getByTestId('editor-frequency-year-day-value')).toHaveTextContent('29');
+    expect(screen.getByTestId('editor-frequency-year-month-2')).toBeSelected();
+  });
+
+  it('saves the secondary stat with the main one disabled, and shows it in the preview', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Yoga');
+    await openOptions();
+    // Without a main stat the secondary one gets nothing: every stat is disabled.
+    await fireEvent.press(screen.getByTestId('editor-option-secondary'));
+    expect(screen.getByTestId('editor-secondary-wisdom')).toBeDisabled();
+    expect(screen.getByTestId('editor-secondary-note')).toHaveTextContent(
+      'Scegli prima la statistica principale.',
+    );
+    await fireEvent.press(screen.getByTestId('editor-secondary-none'));
+
+    await fireEvent.press(screen.getByTestId('editor-stat-strength'));
+    await fireEvent.press(screen.getByTestId('editor-option-secondary'));
+    expect(screen.getByTestId('editor-secondary-strength')).toBeDisabled();
+    expect(screen.getByTestId('editor-secondary-note')).toHaveTextContent(
+      'Riceve il 30% dei punti della principale.',
+    );
+    await fireEvent.press(screen.getByTestId('editor-secondary-wisdom'));
+    expect(screen.getByTestId('editor-option-secondary-value')).toHaveTextContent('Equilibrio');
+    // 30% of 20 points, rounded down (CLAUDE.md, choice 1).
+    expect(screen.getByTestId('editor-reward')).toHaveTextContent(
+      '+25 XP · +5 Monete · +20 Movimento · +6 Equilibrio',
+    );
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    const yoga = created(db, 'Yoga')!;
+    expect(yoga).toMatchObject({ statPrimary: 'strength', statSecondary: 'wisdom' });
+
+    await openToEdit(db, yoga.id);
+    expect(screen.getByTestId('editor-option-secondary-value')).toHaveTextContent('Equilibrio');
+    // The main stat cannot be the secondary one too: choosing it clears the secondary.
+    await fireEvent.press(screen.getByTestId('editor-stat-wisdom'));
+    expect(screen.getByTestId('editor-option-secondary-value')).toHaveTextContent('Nessuna');
+    expect(screen.getByTestId('editor-reward')).toHaveTextContent(
+      '+25 XP · +5 Monete · +20 Equilibrio',
+    );
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Yoga')).toMatchObject({ statPrimary: 'wisdom', statSecondary: null });
+  });
+
+  it('saves category and icon; the icon of the category is the default', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Stendi i panni');
+    await openOptions();
+    expect(screen.getByTestId('editor-option-category-value')).toHaveTextContent('Nessuna');
+    await fireEvent.press(screen.getByTestId('editor-option-category'));
+    expect(screen.getByTestId('editor-icon-missioni')).toBeChecked();
+    await fireEvent.press(screen.getByTestId('editor-category-home'));
+    expect(screen.getByTestId('editor-category-home')).toBeChecked();
+    expect(screen.getByTestId('editor-icon-casa')).toBeChecked();
+    await fireEvent.press(screen.getByTestId('editor-category-done'));
+    expect(screen.getByTestId('editor-option-category-value')).toHaveTextContent('Casa');
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    const laundry = created(db, 'Stendi i panni')!;
+    expect(laundry).toMatchObject({ categoryKey: 'home', iconKey: null });
+
+    await openToEdit(db, laundry.id);
+    await fireEvent.press(screen.getByTestId('editor-option-category'));
+    expect(screen.getByTestId('editor-icon-casa')).toBeChecked();
+    await fireEvent.press(screen.getByTestId('editor-icon-sole'));
+    expect(screen.getByTestId('editor-icon-sole')).toBeChecked();
+    await fireEvent.press(screen.getByTestId('editor-category-done'));
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Stendi i panni')).toMatchObject({ categoryKey: 'home', iconKey: 'sole' });
+
+    await openToEdit(db, laundry.id);
+    await fireEvent.press(screen.getByTestId('editor-option-category'));
+    expect(screen.getByTestId('editor-icon-sole')).toBeChecked();
+    // Choosing the icon of the category again follows the category; «Nessuna» clears it.
+    await fireEvent.press(screen.getByTestId('editor-icon-casa'));
+    await fireEvent.press(screen.getByTestId('editor-category-none'));
+    await fireEvent.press(screen.getByTestId('editor-category-done'));
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Stendi i panni')).toMatchObject({ categoryKey: null, iconKey: null });
+  });
+
+  it('saves notes on several lines and shows them in the detail of the mission', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Leggi');
+    await openOptions();
+    expect(screen.getByTestId('editor-option-notes-value')).toHaveTextContent('Nessuna nota');
+    await fireEvent.press(screen.getByTestId('editor-option-notes'));
+    await fireEvent.changeText(
+      screen.getByTestId('editor-notes-text'),
+      ' Dal comodino\nPrima di dormire ',
+    );
+    expect(screen.queryByTestId('editor-notes-count')).toBeNull();
+    await fireEvent.press(screen.getByTestId('editor-notes-done'));
+    expect(screen.getByTestId('editor-option-notes-value')).toHaveTextContent('Dal comodino');
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    const read = created(db, 'Leggi')!;
+    expect(read.notes).toBe('Dal comodino\nPrima di dormire');
+
+    await openToEdit(db, read.id);
+    // A saved mission with notes opens «Altre opzioni» by itself (4.5).
+    expect(screen.getByTestId('editor-option-notes-value')).toHaveTextContent('Dal comodino');
+    await fireEvent.press(screen.getByTestId('editor-option-notes'));
+    expect(screen.getByTestId('editor-notes-text')).toHaveProp(
+      'value',
+      'Dal comodino\nPrima di dormire',
+    );
+    await fireEvent.changeText(screen.getByTestId('editor-notes-text'), 'a'.repeat(450));
+    expect(screen.getByTestId('editor-notes-count')).toHaveTextContent('450 di 500 caratteri');
+
+    await act(async () => {
+      router.push(`/stats?missionId=${read.id}`);
+    });
+    expect(await screen.findByTestId('mission-detail-notes')).toHaveTextContent(
+      'Dal comodino Prima di dormire',
+    );
+  });
+});
+
 describe('Mission editor: health data', () => {
   let health: FakeHealthSource;
 

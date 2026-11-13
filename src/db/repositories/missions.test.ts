@@ -25,6 +25,7 @@ import {
   scheduledReminders,
 } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { MISSION_FIELDS } from '@/rules/config';
 import type { Frequency } from '@/rules/frequency';
 
 import { createTestDb } from '../../../test/db';
@@ -99,6 +100,50 @@ describe('createMission', () => {
       categoryKey: 'health',
       notes: 'Con la borraccia',
     });
+  });
+
+  it('reads back the advanced fields after an update: secondary stat, category, icon, notes', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Leggi', statPrimary: 'intelligence' }, CONTEXT);
+    updateMission(
+      db,
+      mission.id,
+      {
+        statSecondary: 'wisdom',
+        categoryKey: 'mind',
+        iconKey: 'nota',
+        notes: 'Prima riga\nSeconda riga',
+        frequency: { type: 'yearly', month: 2, day: 29 },
+      },
+      CONTEXT,
+    );
+    expect(getMission(db, mission.id)).toMatchObject({
+      statPrimary: 'intelligence',
+      statSecondary: 'wisdom',
+      categoryKey: 'mind',
+      iconKey: 'nota',
+      notes: 'Prima riga\nSeconda riga',
+      frequency: { type: 'yearly', month: 2, day: 29 },
+    });
+    updateMission(db, mission.id, { categoryKey: null, iconKey: null, notes: null }, CONTEXT);
+    expect(getMission(db, mission.id)).toMatchObject({
+      categoryKey: null,
+      iconKey: null,
+      notes: null,
+    });
+  });
+
+  it('trims the notes, saves blank notes as none and refuses notes that are too long', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Leggi', notes: '  Dal comodino \n' }, CONTEXT);
+    expect(mission.notes).toBe('Dal comodino');
+    expect(updateMission(db, mission.id, { notes: '   ' }, CONTEXT).notes).toBeNull();
+    expect(() =>
+      updateMission(db, mission.id, { notes: 'a'.repeat(MISSION_FIELDS.notesMax + 1) }, CONTEXT),
+    ).toThrow(RangeError);
+    expect(
+      updateMission(db, mission.id, { notes: 'a'.repeat(MISSION_FIELDS.notesMax) }, CONTEXT).notes,
+    ).toHaveLength(MISSION_FIELDS.notesMax);
   });
 
   it('saves a task with an optional due day and no frequency', () => {

@@ -7,6 +7,7 @@ import type { GameDay } from '@/rules/types';
 /** From this many days in a row, weekdays are written as a range: «Lun–ven». */
 const MIN_RANGE_DAYS = 3;
 const ALL_WEEKDAYS = 7;
+const LAST_DAY_OF_MONTH = 31;
 
 function capitalized(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -70,7 +71,10 @@ export function describeFrequency(
         ? t('shared.frequency.daily')
         : t('shared.frequency.everyNDays', { n: frequency.n });
     case 'monthly':
-      return t('shared.frequency.monthly', { day: frequency.day });
+      // Day 31 falls on the last day of every month: «Ultimo giorno del mese» (design 4.6).
+      return frequency.day === LAST_DAY_OF_MONTH
+        ? t('shared.frequency.monthlyLast')
+        : t('shared.frequency.monthly', { day: frequency.day });
     case 'yearly':
       return t('shared.frequency.yearly', {
         day: frequency.day,

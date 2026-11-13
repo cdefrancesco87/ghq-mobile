@@ -15,7 +15,7 @@ function isLeapYear(year: number): boolean {
 }
 
 /** Days in a month (1 = January … 12 = December). */
-function daysInMonth(year: number, month: number): number {
+export function daysInMonth(year: number, month: number): number {
   if (month === 2) {
     return isLeapYear(year) ? 29 : 28;
   }

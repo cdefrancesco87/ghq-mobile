@@ -50,6 +50,7 @@ import { textStyleOf } from '@/theme/fonts';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { BossSheet } from './BossSheet';
+import { CategorySheet, knownCategory, shownIcon } from './CategorySheet';
 import { ChoiceButton } from './ChoiceButton';
 import {
   draftFromTemplate,
@@ -59,13 +60,16 @@ import {
   missionInput,
   newDraft,
   sameDraft,
+  withPrimary,
   type Draft,
 } from './draft';
 import { DueDaySheet } from './DueDaySheet';
 import { FrequencySheet } from './FrequencySheet';
 import { GoalSheet } from './GoalField';
 import { OptionRow } from './OptionRow';
+import { NotesSheet } from './NotesSheet';
 import { RemindersSheet } from './RemindersSheet';
+import { SecondaryStatSheet } from './SecondaryStatSheet';
 import { TemplateLibrary } from './TemplateLibrary';
 
 /** Past this length the name shows how many characters it has (design-sezioni.md 4.2). */
@@ -78,17 +82,26 @@ const STAT_SIZE = 52;
 const HALF_SHEET = { sheetAllowedDetents: [0.5, 1] };
 const FULL_SHEET = { sheetAllowedDetents: [1] };
 
-type OptionSheet = 'frequency' | 'due' | 'reminders' | 'boss' | 'goal' | 'library';
+type OptionSheet =
+  | 'frequency'
+  | 'due'
+  | 'reminders'
+  | 'boss'
+  | 'goal'
+  | 'library'
+  | 'secondary'
+  | 'category'
+  | 'notes';
 type Dialog = 'discard' | 'delete';
 
 /** Base values, without the streak multiplier: the preview never promises XP that can change (4.10). */
-function baseRewards(difficulty: Level, stat: StatKey | null) {
+function baseRewards(difficulty: Level, stat: StatKey | null, secondary: StatKey | null = null) {
   return completionDeltas({
     difficulty,
     heroStreak: 0,
     exhausted: false,
     statPrimary: stat,
-    statSecondary: null,
+    statSecondary: stat === null ? null : secondary,
   });
 }
 
@@ -113,8 +126,8 @@ export interface MissionEditorProps {
 /**
  * The mission editor (design-sezioni.md 4.1–4.6, 4.8–4.10, 4.12, 4.15; mockups B5, D13–D16): name
  * with the keyboard open, type, difficulty and main stat, «Altre opzioni» with frequency or due day,
- * reminders and linked boss, then the bar with the preview of the rewards and Save. The name alone
- * and Enter save a daily medium habit (US-EDT-01). Editing opens at full height, with Archive,
+ * reminders, goal, secondary stat, linked boss, category and icon, notes, then the bar with the
+ * preview of the rewards and Save. The name alone and Enter save a daily medium habit (US-EDT-01). Editing opens at full height, with Archive,
  * Delete and «Vale dai prossimi completamenti»; closing with changes asks «Scartare le modifiche?».
  */
 export function MissionEditor({
@@ -187,7 +200,7 @@ export function MissionEditor({
     [db, draft.name, initial, missionId],
   );
   const bosses = useMemo(() => listActiveBosses(db), [db]);
-  const rewards = baseRewards(draft.difficulty, draft.statPrimary);
+  const rewards = baseRewards(draft.difficulty, draft.statPrimary, draft.statSecondary);
   const xpTerm = t('lexicon.xp_pl', { context: family });
   const coinsTerm = t('lexicon.coins_pl', { context: family });
   // Essential (4.14): «Obiettivo collegato», and the preview without coins.
@@ -320,6 +333,14 @@ export function MissionEditor({
             stat: statName(draft.statPrimary),
           }),
         ]),
+    ...(draft.statPrimary === null || draft.statSecondary === null
+      ? []
+      : [
+          t('editor.rewardStat', {
+            points: rewards.stats[draft.statSecondary] ?? 0,
+            stat: statName(draft.statSecondary),
+          }),
+        ]),
   ].join(' · ');
 
   const linked = bosses.find((item) => item.id === draft.bossId);
@@ -330,6 +351,7 @@ export function MissionEditor({
       : goal.type === 'quantity'
         ? formatAmount(goal.target, goal.unit, i18n.language)
         : formatAmount(goal.target, 'minute', i18n.language);
+  const notesText = draft.notes.trim().split('\n')[0];
   const options = (
     <Card testID="editor-options">
       {habit ? (
@@ -370,11 +392,38 @@ export function MissionEditor({
         onPress={() => setSheet('goal')}
       />
       <OptionRow
+        testID="editor-option-secondary"
+        icon={draft.statSecondary === null ? 'statistiche' : statIcon(draft.statSecondary)}
+        label={t('editor.statSecondary')}
+        value={
+          draft.statSecondary === null ? t('editor.noSecondary') : statName(draft.statSecondary)
+        }
+        onPress={() => setSheet('secondary')}
+      />
+      <OptionRow
         testID="editor-option-boss"
         icon="boss"
         label={t('editor.linkedBoss', { context: essential ? 'essential' : family })}
         value={linked === undefined ? t('editor.none') : nameOf(linked)}
         onPress={() => setSheet('boss')}
+      />
+      <OptionRow
+        testID="editor-option-category"
+        icon={shownIcon(draft)}
+        label={t('editor.category')}
+        value={
+          knownCategory(draft.category) === null
+            ? t('editor.noCategory')
+            : t(`templateCategories.${draft.category}`)
+        }
+        onPress={() => setSheet('category')}
+      />
+      <OptionRow
+        testID="editor-option-notes"
+        icon="nota"
+        label={t('editor.notes')}
+        value={notesText === '' ? t('editor.noNotes') : notesText}
+        onPress={() => setSheet('notes')}
       />
     </Card>
   );
@@ -502,7 +551,7 @@ export function MissionEditor({
                   key={key}
                   testID={`editor-stat-${key}`}
                   selected={key === draft.statPrimary}
-                  onPress={() => update({ statPrimary: key })}
+                  onPress={() => update(withPrimary(draft, key))}
                   accessibilityLabel={t('editor.statLabel', {
                     stat: statName(key),
                     position: index + 1,
@@ -618,6 +667,34 @@ export function MissionEditor({
         onClose={() => setSheet(null)}
         onDone={(chosen) => {
           update({ goal: chosen });
+          setSheet(null);
+        }}
+      />
+      <SecondaryStatSheet
+        visible={sheet === 'secondary'}
+        primary={draft.statPrimary}
+        value={draft.statSecondary}
+        onClose={() => setSheet(null)}
+        onChoose={(statSecondary) => {
+          update({ statSecondary });
+          setSheet(null);
+        }}
+      />
+      <CategorySheet
+        visible={sheet === 'category'}
+        value={{ category: draft.category, iconKey: draft.iconKey }}
+        onClose={() => setSheet(null)}
+        onDone={(choice) => {
+          update(choice);
+          setSheet(null);
+        }}
+      />
+      <NotesSheet
+        visible={sheet === 'notes'}
+        value={draft.notes}
+        onClose={() => setSheet(null)}
+        onDone={(notes) => {
+          update({ notes });
           setSheet(null);
         }}
       />

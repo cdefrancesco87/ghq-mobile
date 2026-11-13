@@ -102,6 +102,14 @@ export const FREQUENCY_EDITOR = {
   everyNDays: { min: 2, max: 30, initial: 2 },
 } as const;
 
+/**
+ * Fields of a mission (design-sezioni.md 4.9). PROVVISORIO (T78): the notes are cut at this many
+ * characters; the documents give no limit.
+ */
+export const MISSION_FIELDS = {
+  notesMax: 500,
+} as const;
+
 export const SKIP_TODAY = {
   /**
    * A skip that leaves every other mission of the day, or every other priority, done gives the
