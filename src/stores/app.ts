@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { getPhoneSettings, keepPhoneSettings } from '../db/repositories/backup';
 import { closePendingDays } from '../db/repositories/closing';
 import type { ActionClock } from '../db/repositories/hero';
 import { archiveCompletedSingles } from '../db/repositories/missions';
@@ -59,17 +60,25 @@ function loadStores(db: Db): void {
 export async function startApp(options: StartOptions): Promise<void> {
   const clock = options.clock ?? systemClock;
   try {
-    const db = await options.openDatabase();
-    const now = clock();
-    closePendingDays(db, now);
-    archiveCompletedSingles(db, now);
-    loadStores(db);
-    openSession({ db, clock });
-    useAppStore.setState({ status: 'ready', db, hasProfile: hasProfile(db), error: null });
+    startOn(await options.openDatabase(), clock);
   } catch (error) {
-    closeSession();
-    useAppStore.setState({ status: 'error', db: null, hasProfile: false, error });
+    failed(error);
   }
+}
+
+/** The work of the start on an open database: pending days, old single tasks, stores, session. */
+function startOn(db: Db, clock: () => ActionClock): void {
+  const now = clock();
+  closePendingDays(db, now);
+  archiveCompletedSingles(db, now);
+  loadStores(db);
+  openSession({ db, clock });
+  useAppStore.setState({ status: 'ready', db, hasProfile: hasProfile(db), error: null });
+}
+
+function failed(error: unknown): void {
+  closeSession();
+  useAppStore.setState({ status: 'error', db: null, hasProfile: false, error });
 }
 
 export interface WipeOptions {
@@ -106,6 +115,74 @@ export async function wipeAllData(options: WipeOptions): Promise<boolean> {
     closeSession();
     useAppStore.setState({ status: 'error', db: null, hasProfile: false, error });
     return false;
+  }
+}
+
+export interface RestoreOptions {
+  /** Cancels the notifications of the old data; a failure does not stop the restore. */
+  readonly cancelNotifications: () => Promise<void>;
+  /**
+   * Closes the database and puts the one of the backup in its place, keeping the old one aside:
+   * `replaceAppDatabase` in the app.
+   */
+  readonly replaceDatabase: () => void;
+  /** Brings back the old database: `putBackPreviousAppDatabase` in the app. */
+  readonly putBackPrevious: () => void;
+  /** Deletes the old database: `dropPreviousAppDatabase` in the app. */
+  readonly dropPrevious: () => void;
+  /** Opens the database and applies the migrations: `openAppDatabase` in the app. */
+  readonly openDatabase: () => Promise<Db>;
+  /** The clock of the session when missing. */
+  readonly clock?: () => ActionClock;
+}
+
+/**
+ * `restored`: the data of the backup are in place. `failed`: they did not open (or migrate), the
+ * data of the phone are back as they were. `error`: not even those opened, the app is in the
+ * `error` status.
+ */
+export type RestoreOutcome = 'restored' | 'failed' | 'error';
+
+/**
+ * Ripristina (US-IMP-03; design-sezioni.md 10.8): the database of a backup takes the place of the
+ * one of the phone, is migrated if it comes from an older app, and starts like the app does
+ * (pending days closed, stores loaded), so the next screen is Today with the restored data. The
+ * backup state and the device id stay those of this phone. If the restored data do not open, the
+ * old ones come back. It needs a started session; after that it never throws.
+ */
+export async function restoreAllData(options: RestoreOptions): Promise<RestoreOutcome> {
+  const session = getSession();
+  const clock = options.clock ?? session.clock;
+  const phone = getPhoneSettings(session.db);
+  await options.cancelNotifications().catch(() => undefined);
+  closeSession();
+  let db: Db;
+  try {
+    options.replaceDatabase();
+    db = await options.openDatabase();
+    keepPhoneSettings(db, phone, clock().now);
+  } catch {
+    try {
+      options.putBackPrevious();
+      startOn(await options.openDatabase(), clock);
+      return 'failed';
+    } catch (error) {
+      failed(error);
+      return 'error';
+    }
+  }
+  try {
+    options.dropPrevious();
+  } catch {
+    // The old file only takes space: the next restore or «Elimina tutti i dati» removes it.
+  }
+  try {
+    startOn(db, clock);
+    useHighlightStore.getState().clear();
+    return 'restored';
+  } catch (error) {
+    failed(error);
+    return 'error';
   }
 }
 

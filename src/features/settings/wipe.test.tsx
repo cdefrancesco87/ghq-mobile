@@ -3,8 +3,11 @@ import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testi
 import type { ComponentType } from 'react';
 import { Dimensions } from 'react-native';
 
+import { getSetting } from '@/db/repositories/settings';
 import { hero, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { BACKUP_DATA_FILE, BACKUP_SUMMARY_FILE } from '@/features/backup/backupFile';
+import type { MemoryCloudStore } from '@/features/backup/cloudStore';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
 import { startApp, useAppStore } from '@/stores/app';
@@ -21,11 +24,13 @@ import Profile from '../../../app/(tabs)/profile';
 import Today from '../../../app/(tabs)/today';
 import Index from '../../../app/index';
 import Onboarding from '../../../app/onboarding';
+import BackupRoute from '../../../app/settings/backup';
 import SettingsRoute from '../../../app/settings/index';
 import { FRIDAY, clockAt, newGame } from '../../../test/game';
 
-// «Elimina tutti i dati» (T56): the database file and the notifications of the phone are fakes.
-// The fake file system holds one database: deleting it and opening it again gives an empty one.
+// «Elimina tutti i dati» (T56), in the page Backup e ripristino since T57: the database file, the
+// cloud and the notifications of the phone are fakes. The fake file system holds one database:
+// deleting it and opening it again gives an empty one.
 
 const mockCancelAll = jest.fn();
 const mockDismissAll = jest.fn();
@@ -40,6 +45,8 @@ jest.mock('expo-notifications', () => ({
 
 const mockFiles: { db: Db | null; deleted: number } = { db: null, deleted: 0 };
 jest.mock('@/db/client', () => ({
+  appSchemaVersion: () => null,
+  serializeAppDatabase: (db: Db) => jest.requireActual('../../../test/db').serializeTestDb(db),
   deleteAppDatabase: () => {
     mockFiles.db = null;
     mockFiles.deleted += 1;
@@ -50,10 +57,19 @@ jest.mock('@/db/client', () => ({
   },
 }));
 
+const mockCloud: { store: MemoryCloudStore | null } = { store: null };
+jest.mock('@/features/backup/cloudStorage', () => ({
+  createAppCloudStore: () => mockCloud.store,
+}));
+jest.mock('@/features/backup/backgroundBackup', () => ({
+  syncAutoBackupTask: () => Promise.resolve(),
+}));
+
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
   onboarding: Onboarding,
   'settings/index': SettingsRoute,
+  'settings/backup': BackupRoute,
   '(tabs)/_layout': TabsLayoutRoute,
   '(tabs)/today': Today,
   '(tabs)/habits': Habits,
@@ -81,6 +97,8 @@ async function open(db: Db, url = '/settings') {
     await fireEvent.press(await screen.findByTestId('profile-settings'));
   }
   await screen.findByTestId('settings-screen');
+  await fireEvent.press(screen.getByTestId('settings-backup'));
+  await screen.findByTestId('backup-screen');
 }
 
 const press = (id: string) => fireEvent.press(screen.getByTestId(id));
@@ -105,6 +123,7 @@ beforeEach(async () => {
   mockDismissAll.mockReset().mockResolvedValue(undefined);
   mockFiles.db = null;
   mockFiles.deleted = 0;
+  mockCloud.store = jest.requireActual('@/features/backup/cloudStore').createMemoryCloudStore();
   useAppStore.getState().reset();
   useHeroStore.getState().reset();
   useSettingsStore.getState().reset();
@@ -112,10 +131,9 @@ beforeEach(async () => {
 });
 
 describe('Elimina tutti i dati', () => {
-  it('is the last row of Dati, in red', async () => {
+  it('is under «Zona delicata» in the page Backup e ripristino, in red', async () => {
     await open(newGame(['meditation']));
-    const group = screen.getByTestId('settings-group-data');
-    expect(group).toContainElement(screen.getByTestId('settings-wipe'));
+    expect(screen.getByText('ZONA DELICATA')).toBeOnTheScreen();
     expect(screen.getByTestId('settings-wipe')).toHaveProp(
       'accessibilityLabel',
       'Elimina tutti i dati',
@@ -136,7 +154,11 @@ describe('Elimina tutti i dati', () => {
     ).toBeOnTheScreen();
 
     await press('settings-wipe-backup');
-    expect(await screen.findByText('Il backup arriverà presto.')).toBeOnTheScreen();
+    await waitFor(() => expect(screen.getByTestId('backup-last-value')).toHaveTextContent(/^oggi/));
+    expect([...mockCloud.store!.files.keys()].sort()).toEqual(
+      [BACKUP_DATA_FILE, BACKUP_SUMMARY_FILE].sort(),
+    );
+    expect(getSetting(getSession().db, 'backup').lastBackupAt).not.toBeNull();
     expect(screen.queryByTestId('settings-wipe-input')).toBeNull();
     expect(mockFiles.deleted).toBe(0);
   });
@@ -202,6 +224,7 @@ describe('Elimina tutti i dati', () => {
 
     await waitFor(() => expect(screen).toHavePathname('/onboarding'));
     expect(screen.getByTestId('onboarding-continue')).toBeOnTheScreen();
+    expect(screen.queryByTestId('backup-screen')).toBeNull();
     expect(screen.queryByTestId('settings-screen')).toBeNull();
     expect(screen.queryByTestId('profile-settings')).toBeNull();
   });

@@ -1,24 +1,26 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { setDayChange, setSetting, setWeekRules } from '@/db/repositories/settings';
+import { cloudProviderOf } from '@/features/backup/cloudStore';
+import { backupWhen, CLOUD_NAMES } from '@/features/backup/format';
 import { Button } from '@/features/shared/Button';
 import { Card } from '@/features/shared/Card';
 import { formatClock } from '@/features/shared/formatClock';
 import { Frame } from '@/features/shared/Frame';
 import { Icon } from '@/features/shared/Icon';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
-import { Sheet, SHEET_DURATION_MS } from '@/features/shared/Sheet';
+import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
-import { useUndoToast } from '@/features/shared/UndoToast';
 import { LANGUAGE_NAMES, type Language } from '@/i18n';
 import type { Weekday } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
 import { runAction } from '@/stores/app';
+import { getSession } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { textStyleOf } from '@/theme/fonts';
 import { SHAPES } from '@/theme/shapes';
@@ -30,8 +32,6 @@ import { RestDaysSheet } from './RestDaysSheet';
 import { SettingsRow } from './SettingsRow';
 import { TimeSheet } from './TimeSheet';
 import { useNotificationPermission, useSettingsView } from './useSettingsView';
-import { wipeAppData } from './wipeAppData';
-import { WipeDataSheets } from './WipeDataSheets';
 
 const GROUPS = ['appearance', 'day', 'notifications', 'data', 'about'] as const;
 type Group = (typeof GROUPS)[number];
@@ -43,8 +43,6 @@ type OpenSheet =
   | 'eveningTime'
   | 'privacy'
   | 'licenses'
-  | 'wipe'
-  | 'wipeConfirm'
   | null;
 
 const FIELD_HEIGHT = 48;
@@ -63,6 +61,8 @@ interface RowSpec {
   readonly group: Group;
   /** The words the search looks in: the name of the row. */
   readonly label: string;
+  /** More words that find the row: what its page holds. */
+  readonly keywords?: readonly string[];
   readonly render: (last: boolean) => ReactElement;
 }
 
@@ -72,37 +72,19 @@ interface RowSpec {
  * with a search that filters the rows while typing. Theme and «Non disturbare» open their page;
  * language, day and times open a sheet. The changes of the group Giornata count from tomorrow and
  * the row says so («Dal 7 novembre»). Every change that touches the reminders goes through
- * `runAction`, which schedules them again. «Elimina tutti i dati», in red at the end of Dati,
- * asks twice (WipeDataSheets) and then starts the app again from the first launch. Gioco,
- * Accessibilità and the backup come with their tasks (T71, T72, T57).
+ * `runAction`, which schedules them again. The row Backup says where and when the last backup was
+ * made and opens «Backup e ripristino», which also holds «Elimina tutti i dati» (mockups D38, D39);
+ * the search finds it there too. Gioco and Accessibilità come with their tasks (T71, T72).
  */
 export function SettingsScreen() {
   const { t, i18n } = useTranslation();
   const { colors, family, typography } = useTheme();
   const router = useRouter();
-  const toast = useUndoToast();
   const { settings, theme, day } = useSettingsView();
   const { permission, ask } = useNotificationPermission();
   const [query, setQuery] = useState('');
   const [sheet, setSheet] = useState<OpenSheet>(null);
-  // The second confirmation waits for the first sheet to slide away: on iOS a modal shown while
-  // another one is still closing may never appear (as in Habits).
-  const [queued, setQueued] = useState<OpenSheet>(null);
-  const [wiping, setWiping] = useState(false);
-  // A second tap before the button turns off must not start a second wipe.
-  const wipeStarted = useRef(false);
   const language = i18n.language;
-
-  useEffect(() => {
-    if (queued === null || sheet !== null) {
-      return undefined;
-    }
-    const timer = setTimeout(() => {
-      setSheet(queued);
-      setQueued(null);
-    }, SHEET_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [queued, sheet]);
 
   const from = (fromDay: GameDay) => t('settings.from', { date: dayAndMonth(fromDay, language) });
   const close = () => setSheet(null);
@@ -134,18 +116,6 @@ export function SettingsScreen() {
     useSettingsStore.getState().update('language', next);
     void i18n.changeLanguage(next);
     close();
-  };
-  const wipe = async () => {
-    if (wipeStarted.current) {
-      return;
-    }
-    wipeStarted.current = true;
-    setWiping(true);
-    // On success the stores already read the new empty database: the app starts again from the
-    // first launch. On failure the root layout shows the error.
-    if (await wipeAppData()) {
-      router.replace('/onboarding');
-    }
   };
   const setReminders = (enabled: boolean) => {
     runAction((db, clock) => setSetting(db, 'reminders_enabled', enabled, clock.now));
@@ -359,28 +329,19 @@ export function SettingsScreen() {
       key: 'backup',
       group: 'data',
       label: t('settings.backup'),
+      keywords: [t('backup.title'), t('backup.restore'), t('settings.wipe')],
       render: (last) => (
         <SettingsRow
           testID="settings-backup"
           icon="backup"
           label={t('settings.backup')}
-          value={t('settings.backupNone')}
-          onPress={() => toast.show({ message: t('settings.backupSoon') })}
-          last={last}
-        />
-      ),
-    },
-    {
-      key: 'wipe',
-      group: 'data',
-      label: t('settings.wipe'),
-      render: (last) => (
-        <SettingsRow
-          testID="settings-wipe"
-          icon="avviso"
-          label={t('settings.wipe')}
-          danger
-          onPress={() => setSheet('wipe')}
+          value={
+            settings.backup.lastBackupAt === null
+              ? t('backup.none')
+              : backupWhen(settings.backup.lastBackupAt, getSession().clock(), language, t)
+          }
+          caption={CLOUD_NAMES[cloudProviderOf()]}
+          onPress={() => router.push('/settings/backup')}
           last={last}
         />
       ),
@@ -433,7 +394,7 @@ export function SettingsScreen() {
   const visible = rows.filter(
     (row) =>
       needle === '' ||
-      searchable(row.label).includes(needle) ||
+      [row.label, ...(row.keywords ?? [])].some((word) => searchable(word).includes(needle)) ||
       searchable(t(`settings.groups.${row.group}`)).includes(needle),
   );
 
@@ -573,20 +534,6 @@ export function SettingsScreen() {
           close();
         }}
         onClose={close}
-      />
-      <WipeDataSheets
-        step={sheet === 'wipe' ? 'warning' : sheet === 'wipeConfirm' ? 'confirm' : null}
-        busy={wiping}
-        onClose={close}
-        onBackup={() => {
-          close();
-          toast.show({ message: t('settings.backupSoon') });
-        }}
-        onContinue={() => {
-          close();
-          setQueued('wipeConfirm');
-        }}
-        onWipe={() => void wipe()}
       />
       <Sheet
         testID="settings-privacy-sheet"

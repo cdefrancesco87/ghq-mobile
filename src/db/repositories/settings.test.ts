@@ -32,7 +32,7 @@ describe('getSetting', () => {
     expect(getSetting(db, 'evening_summary')).toEqual({ enabled: true, time: '21:00' });
     expect(getSetting(db, 'reduce_motion')).toBe('system');
     expect(getSetting(db, 'colorblind')).toBe(false);
-    expect(getSetting(db, 'backup')).toEqual({ auto: false, lastBackupAt: null });
+    expect(getSetting(db, 'backup')).toEqual({ auto: false, lastBackupAt: null, lastError: null });
     expect(getSetting(db, 'reminders_enabled')).toBe(true);
   });
 

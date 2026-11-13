@@ -42,7 +42,9 @@
       "expo-dev-client",
       "expo-status-bar",
       "expo-web-browser",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "react-native-cloud-storage",
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -51,7 +53,8 @@
     "extra": {
       "eas": {
         "projectId": "96871bff-4edc-49b4-8fe2-050e6547b52f"
-      }
+      },
+      "googleWebClientId": "C17-PLACEHOLDER"
     }
   }
 }

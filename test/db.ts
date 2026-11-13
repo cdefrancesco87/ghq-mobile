@@ -65,3 +65,15 @@ export function totalsFromLog(db: Db): HeroTotals {
   }
   return { xp, coins, hp, stats };
 }
+
+/** The bytes of a test database, as `serialize` of expo-sqlite gives them in the app. */
+export function serializeTestDb(db: Db): Uint8Array {
+  return (db as unknown as { $client: Database.Database }).$client.serialize();
+}
+
+/** A test database opened on the bytes of a backup. */
+export function openTestDbFrom(bytes: Uint8Array): Db {
+  const sqlite = new Database(Buffer.from(bytes));
+  sqlite.pragma('foreign_keys = ON');
+  return drizzle(sqlite, { schema });
+}

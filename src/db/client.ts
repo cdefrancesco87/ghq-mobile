@@ -4,7 +4,13 @@ import { File } from 'expo-file-system';
 import { defaultDatabaseDirectory, openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
 
 import migrations from '../../drizzle/migrations';
-import { lastAppliedMigrationAt, migrateWithBackup, type DatabaseFiles } from './migrateWithBackup';
+import { lastAppliedMigrationAt, migrateWithBackup } from './migrateWithBackup';
+import {
+  dropPreviousDatabase,
+  putBackPreviousDatabase,
+  replaceDatabaseFile,
+  type RestoreFiles,
+} from './restore';
 import * as schema from './schema';
 import type { Db } from './types';
 import { deleteDatabaseFiles } from './wipe';
@@ -16,7 +22,7 @@ function fileUri(path: string): string {
 }
 
 /** The file operations of the app, with expo-file-system. */
-const appFiles: DatabaseFiles = {
+const appFiles: RestoreFiles = {
   exists: (path) => new File(fileUri(path)).exists,
   copy: (from, to) => new File(fileUri(from)).copySync(new File(fileUri(to)), { overwrite: true }),
   remove: (path) => {
@@ -24,6 +30,14 @@ const appFiles: DatabaseFiles = {
     if (file.exists) {
       file.delete();
     }
+  },
+  write: (path, bytes) => {
+    const file = new File(fileUri(path));
+    if (file.exists) {
+      file.delete();
+    }
+    file.create();
+    file.writeSync(bytes);
   },
 };
 
@@ -73,13 +87,52 @@ export function isAppDatabaseOpen(db: Db): boolean {
   return [...connections].some((opened) => opened.db === db);
 }
 
+function closeAll(): void {
+  for (const opened of [...connections]) {
+    close(opened);
+  }
+}
+
 /**
  * Closes every connection to the database and deletes its files («Elimina tutti i dati»). The
  * next `openAppDatabase` creates a new empty database with the migrations.
  */
 export function deleteAppDatabase(): void {
-  for (const opened of [...connections]) {
-    close(opened);
-  }
+  closeAll();
   deleteDatabaseFiles(databasePath(), appFiles);
+}
+
+/** When the newest migration of this app was generated: the version of its schema. */
+export function appSchemaVersion(): number | null {
+  const entries = migrations.journal.entries;
+  return entries.length === 0 ? null : Math.max(...entries.map((entry) => entry.when));
+}
+
+/** The bytes of the database, with what is still in the WAL, for the backup. */
+export function serializeAppDatabase(db: Db): Uint8Array {
+  const opened = [...connections].find((connection) => connection.db === db);
+  if (opened === undefined) {
+    throw new Error('The database is not open');
+  }
+  return opened.sqlite.serializeSync();
+}
+
+/**
+ * Closes every connection and puts the database of a backup in place of the one of the phone,
+ * which is kept aside: the next `openAppDatabase` opens and migrates the restored one.
+ */
+export function replaceAppDatabase(bytes: Uint8Array): void {
+  closeAll();
+  replaceDatabaseFile(databasePath(), bytes, appFiles);
+}
+
+/** Brings back the database of the phone when the restored one did not open. */
+export function putBackPreviousAppDatabase(): void {
+  closeAll();
+  putBackPreviousDatabase(databasePath(), appFiles);
+}
+
+/** Deletes the old database once the restored one is open. */
+export function dropPreviousAppDatabase(): void {
+  dropPreviousDatabase(databasePath(), appFiles);
 }

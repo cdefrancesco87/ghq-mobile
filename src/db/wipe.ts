@@ -4,9 +4,12 @@ import type { DatabaseFiles } from './migrateWithBackup';
 // only way to start again from zero is to delete the whole file. Like the migrations, the file
 // operations are behind `DatabaseFiles`, so the tests run them without expo-file-system.
 
-/** The files of a database in WAL mode, with the safety copy of a migration. */
+/**
+ * The files of a database in WAL mode, with the safety copy of a migration and the old database
+ * kept during a restore.
+ */
 export function databaseFilesOf(path: string): readonly string[] {
-  return [path, `${path}-wal`, `${path}-shm`, `${path}.backup`];
+  return [path, `${path}-wal`, `${path}-shm`, `${path}.backup`, `${path}.previous`];
 }
 
 /** Deletes every file of the database at `path`; the connections must be closed first. */

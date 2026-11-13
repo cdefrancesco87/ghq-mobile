@@ -2,12 +2,21 @@ import { eq } from 'drizzle-orm';
 
 import { completeMission } from '@/db/repositories/completion';
 import { createProfile } from '@/db/repositories/onboarding';
-import { setSetting } from '@/db/repositories/settings';
+import { recordBackupDone, setAutoBackup } from '@/db/repositories/backup';
+import { getDeviceId, getSetting, setSetting } from '@/db/repositories/settings';
 import { daySummaries, heroStats, missionDays } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { createTestDb } from '../../test/db';
 import { FRIDAY, at, clockAt, missionId, newGame } from '../../test/game';
-import { onActionDone, runAction, startApp, useAppStore, wipeAllData } from './app';
+import {
+  onActionDone,
+  restoreAllData,
+  runAction,
+  startApp,
+  useAppStore,
+  wipeAllData,
+  type RestoreOptions,
+} from './app';
 import { useHeroStore } from './hero';
 import { useHighlightStore } from './highlight';
 import { getSession } from './session';
@@ -287,5 +296,116 @@ describe('wipeAllData', () => {
     expect(done).toBe(false);
     expect(useAppStore.getState()).toMatchObject({ status: 'error', db: null, error: failure });
     expect(() => getSession()).toThrow(/not started/);
+  });
+});
+
+describe('restoreAllData', () => {
+  /** The phone: a hero «Claudio» in Cyberpunk with the automatic backup on. */
+  async function phone() {
+    const db = newGame(['drink_water']);
+    setSetting(db, 'theme', 'cyberpunk', at(FRIDAY, 9));
+    setAutoBackup(db, true, at(FRIDAY, 9));
+    recordBackupDone(db, at(FRIDAY, 9));
+    getDeviceId(db, at(FRIDAY, 9));
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(FRIDAY, 10) });
+    return db;
+  }
+
+  /** The data of the backup: a hero «Ada» in Arcade, made on Wednesday 4. */
+  function backup() {
+    const db = createTestDb();
+    createProfile(
+      db,
+      { name: 'Ada', language: 'it', theme: 'arcade', templateKeys: ['drink_water', 'run'] },
+      clockAt(4, 9),
+    );
+    return db;
+  }
+
+  function options(overrides: Partial<RestoreOptions>, steps: string[] = []): RestoreOptions {
+    return {
+      cancelNotifications: async () => void steps.push('cancel'),
+      replaceDatabase: () => void steps.push('replace'),
+      putBackPrevious: () => void steps.push('putBack'),
+      dropPrevious: () => void steps.push('drop'),
+      openDatabase: async () => {
+        steps.push('open');
+        return backup();
+      },
+      clock: clock(FRIDAY, 11),
+      ...overrides,
+    };
+  }
+
+  it('starts on the restored data, keeping the backup state and device id of the phone', async () => {
+    const old = await phone();
+    useHighlightStore.getState().highlight('mission-1');
+    const restored = backup();
+    const steps: string[] = [];
+
+    const outcome = await restoreAllData(
+      options({ openDatabase: async () => (steps.push('open'), restored) }, steps),
+    );
+
+    expect(outcome).toBe('restored');
+    expect(steps).toEqual(['cancel', 'replace', 'open', 'drop']);
+    expect(useAppStore.getState()).toMatchObject({
+      status: 'ready',
+      db: restored,
+      hasProfile: true,
+    });
+    expect(getSession().db).toBe(restored);
+    expect(useHeroStore.getState().hero).toMatchObject({ name: 'Ada' });
+    expect(useThemeStore.getState().theme).toBe('arcade');
+    expect(useHighlightStore.getState().missionId).toBeNull();
+    expect(getSetting(restored, 'backup')).toEqual(getSetting(old, 'backup'));
+    expect(getDeviceId(restored, at(FRIDAY, 12))).toBe(getDeviceId(old, at(FRIDAY, 12)));
+    // A backup of some days ago: the days since then are closed, as at a start.
+    expect(
+      restored
+        .select()
+        .from(daySummaries)
+        .all()
+        .map((row) => row.gameDay),
+    ).toEqual(expect.arrayContaining(['2026-11-04', '2026-11-05']));
+  });
+
+  it('brings back the data of the phone when the restored ones do not open', async () => {
+    const old = await phone();
+    const steps: string[] = [];
+    let opens = 0;
+
+    const outcome = await restoreAllData(
+      options(
+        {
+          openDatabase: async () => {
+            steps.push('open');
+            opens += 1;
+            if (opens === 1) {
+              throw new Error('migration failed');
+            }
+            return old;
+          },
+        },
+        steps,
+      ),
+    );
+
+    expect(outcome).toBe('failed');
+    expect(steps).toEqual(['cancel', 'replace', 'open', 'putBack', 'open']);
+    expect(useAppStore.getState()).toMatchObject({ status: 'ready', db: old });
+    expect(useHeroStore.getState().hero).toMatchObject({ name: 'Claudio' });
+  });
+
+  it('shows the error when not even the data of the phone open again', async () => {
+    await phone();
+    const failure = new Error('disk full');
+
+    const outcome = await restoreAllData(
+      options({ replaceDatabase: () => undefined, openDatabase: () => Promise.reject(failure) }),
+    );
+
+    expect(outcome).toBe('error');
+    expect(useAppStore.getState()).toMatchObject({ status: 'error', db: null, error: failure });
   });
 });

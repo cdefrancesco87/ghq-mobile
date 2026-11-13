@@ -28,6 +28,21 @@ const restDays = z
 export { LANGUAGES };
 
 /**
+ * Why a backup or a restore did not work (design 10.8): no iCloud or Google account, cloud full,
+ * no connection, no backup to restore, a backup of a newer app, a damaged file, anything else.
+ */
+export const BACKUP_ERRORS = [
+  'unavailable',
+  'no_space',
+  'offline',
+  'missing',
+  'newer',
+  'corrupt',
+  'unknown',
+] as const;
+export type BackupErrorCode = (typeof BACKUP_ERRORS)[number];
+
+/**
  * The themes of temi.json. `minimal` follows the light or dark mode of the phone («Automatico»);
  * the two Minimal variants fix one of them («Chiaro», «Scuro»).
  */
@@ -71,7 +86,18 @@ export const settingSchemas = {
   /** «Come il telefono», «Sì», «No». */
   reduce_motion: z.enum(['system', 'on', 'off']),
   colorblind: z.boolean(),
-  backup: z.strictObject({ auto: z.boolean(), lastBackupAt: z.number().int().nullable() }),
+  /**
+   * The backup in the cloud (design 10.8): the daily automatic backup, when the last one was made
+   * and why the last attempt failed, cleared by the next backup that works.
+   */
+  backup: z.strictObject({
+    auto: z.boolean(),
+    lastBackupAt: z.number().int().nullable(),
+    lastError: z
+      .strictObject({ at: z.number().int(), code: z.enum(BACKUP_ERRORS) })
+      .nullable()
+      .default(null),
+  }),
   /** Created once at the first start (getDeviceId); it identifies the device in the event log. */
   device_id: z.string().min(1),
   /** The choices of a first launch in progress: it resumes from here, then it is removed. */
@@ -116,7 +142,7 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   evening_summary: { enabled: true, time: '21:00' },
   reduce_motion: 'system',
   colorblind: false,
-  backup: { auto: false, lastBackupAt: null },
+  backup: { auto: false, lastBackupAt: null, lastError: null },
   reminders_enabled: true,
 };
 

@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 
-import { isAppDatabaseOpen, openAppDatabase } from '../../db/client';
+import { databaseForTask } from '../../db/backgroundDatabase';
 import type { Db } from '../../db/types';
 import { handleReminderAction, type ReminderOutcome } from './reminders';
 import { syncReminders } from './scheduler';
@@ -14,26 +14,6 @@ import { notificationPermission, setUpNotifications, systemScheduler } from './s
 // expo-task-manager loads the bundle in the background and needs the task to be defined.
 
 export const REMINDER_TASK = 'ghq-reminder-actions';
-
-let backgroundDb: Promise<Db> | null = null;
-
-/**
- * The database for the task: opened on the first action, as the app is not running, and again
- * after «Elimina tutti i dati» has closed it.
- */
-function databaseForTask(): Promise<Db> {
-  backgroundDb ??= openAppDatabase().catch((error: unknown) => {
-    backgroundDb = null;
-    throw error;
-  });
-  return backgroundDb.then((db) => {
-    if (isAppDatabaseOpen(db)) {
-      return db;
-    }
-    backgroundDb = null;
-    return databaseForTask();
-  });
-}
 
 /** The phone offset from UTC, in minutes east. */
 function tzOffsetAt(now: number): number {

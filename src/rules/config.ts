@@ -240,3 +240,15 @@ export const SETTINGS_SCREEN = {
    */
   newQuietInterval: { start: '22:00', end: '07:00' },
 } as const;
+
+/** The backup in the cloud (stack-tecnologico.md, point 4; design-sezioni.md 10.8). */
+export const BACKUP = {
+  /** The system runs the automatic backup at most this often, in minutes: once a day. */
+  autoIntervalMinutes: 24 * 60,
+  /**
+   * The automatic backup is skipped when the last one is more recent than this, in hours, so a
+   * task that the system runs a little early does not make two backups on the same day.
+   * PROVISIONAL (backlog T57): the documents say only «giornaliero».
+   */
+  autoMinGapHours: 20,
+} as const;
