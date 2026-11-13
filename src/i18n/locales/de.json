@@ -526,7 +526,8 @@
       "streakWeeks": "Serie {{streak}} Wochen",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, keine Daten in den letzten 30 Tagen",
       "skippedReason": "übersprungen · {{reason}}",
-      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} eingefroren"
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} eingefroren",
+      "health": "mit Gesundheitsdaten"
     },
     "difficulty": {
       "easy": "Leicht",
@@ -695,7 +696,29 @@
       "increment": "Schritt pro Tippen",
       "summary": "Jedes Tippen fügt {{increment}} hinzu, bis {{target}}. Automatisch vorgeschlagen: ändere es, wenn du willst.",
       "missing": "Gib Wert, Einheit und Schritt ein.",
-      "done": "Fertig"
+      "done": "Fertig",
+      "health": {
+        "title": "Mit Health verbinden",
+        "title_apple": "Mit Health verbinden",
+        "title_health_connect": "Mit Health Connect verbinden",
+        "explain": "Die Mission kann mit den Daten von {{app}} von selbst vorankommen: Die Erlaubnis wird erst bei der Auswahl eines Datentyps erfragt.",
+        "linked_steps": "Nur die heutigen Schritte werden aus {{app}} gelesen: Der Wert steigt von selbst und die Mission wird beim Ziel abgeschlossen.",
+        "linked_active_minutes": "Nur die heutigen aktiven Minuten werden aus {{app}} gelesen: Der Wert steigt von selbst und die Mission wird beim Ziel abgeschlossen.",
+        "linked_sleep_hours": "Nur die Schlafstunden der letzten Nacht werden aus {{app}} gelesen: Der Wert steigt von selbst und die Mission wird beim Ziel abgeschlossen.",
+        "asking": "Warte auf die Erlaubnis von {{app}}…",
+        "denied": "Keine Erlaubnis: Schließe die Mission von Hand ab. Du kannst sie in den Einstellungen von {{app}} geben.",
+        "not_asked": "Auf diesem Telefon wurde noch nicht gefragt: Tippe den Datentyp erneut an, um sie zu verbinden.",
+        "unavailable": "Gesundheitsdaten sind auf diesem Telefon nicht verfügbar: Schließe die Mission von Hand ab.",
+        "app": "Health",
+        "app_apple": "Health",
+        "app_health_connect": "Health Connect",
+        "metrics": {
+          "none": "Nein",
+          "steps": "Schritte",
+          "active_minutes": "Aktive Minuten",
+          "sleep_hours": "Schlafstunden"
+        }
+      }
     },
     "timesPerWeek": "N-mal pro Woche",
     "timesPerWeekUnit_one": "Mal pro Woche",
@@ -1318,7 +1341,8 @@
       "minute": "Min.",
       "milliliter": "ml",
       "km": "km",
-      "time": "Mal"
+      "time": "Mal",
+      "hour": "Std."
     },
     "goal": "Ziel: {{target}}.",
     "average": "Durchschnitt: {{value}} pro Tag · Ziel {{target}}",
@@ -1652,6 +1676,10 @@
       "yesterday": "gestern",
       "deadlineMissed": "Die Frist ist abgelaufen.",
       "completeA11y": "{{name}} abschließen"
+    },
+    "healthGoal": {
+      "body": "Ziel erreicht: {{target}}",
+      "gain": "{{goal}} · +{{xp}} {{xpTerm}}"
     }
   },
   "widgets": {

@@ -370,3 +370,20 @@ export const WIDGETS = {
   /** Rows with very large system text (design 12.10). */
   rowsLargeText: 3,
 } as const;
+
+/** The data of Apple Salute and Health Connect (design-sezioni.md 12.7; backlog T76). */
+export const HEALTH = {
+  /**
+   * Sleep is read from this many hours before the start of the game day, so the night before
+   * counts for the day. PROVISIONAL (backlog T76): the documents do not say which night counts.
+   */
+  sleepLookbackHours: 6,
+  /** Hours of sleep are counted in tenths, rounded down. PROVISIONAL (backlog T76). */
+  sleepDecimals: 1,
+  /**
+   * The background reading runs at most this often, in minutes (the system decides when; 15 is
+   * the least it accepts). PROVISIONAL (backlog T76): the documents say only «nel task in
+   * background».
+   */
+  backgroundIntervalMinutes: 60,
+} as const;

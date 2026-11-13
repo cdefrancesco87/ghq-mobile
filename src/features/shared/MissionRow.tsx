@@ -60,6 +60,8 @@ interface ToComplete {
   readonly progress?: number;
   /** A long press on the control; the menu of the row when missing («Inserisci valore», 2.5). */
   readonly onControlLongPress?: () => void;
+  /** Linked to Apple Salute or Health Connect: a small heart before the value (design 12.7). */
+  readonly health?: boolean;
 }
 
 export type MissionRowProps = CommonProps &
@@ -103,7 +105,10 @@ export function MissionRow(props: MissionRowProps) {
   const { colors, family, typography } = useTheme();
   const large = useLargeText();
   const { testID, name, difficulty, onPress, onLongPress, actions, warning } = props;
-  const detail = [warning, props.detail].filter(Boolean).join(' · ');
+  const health = (props.variant === 'today' || props.variant === 'priority') && props.health;
+  const detail = [warning, props.detail, health ? t('shared.missionRow.health') : '']
+    .filter(Boolean)
+    .join(' · ');
 
   const difficultyWord = t(`shared.difficulty.${difficulty}`).toLowerCase();
   const doneAt =
@@ -209,6 +214,9 @@ export function MissionRow(props: MissionRowProps) {
                 {warning}
               </ThemedText>
             )}
+            {health ? (
+              <Icon testID={`${testID}-health`} name="cuore" size={16} color={colors.textMuted} />
+            ) : null}
             <ThemedText variant="caption" color={colors.textMuted} style={styles.detail}>
               {closed ? doneAt : props.detail}
             </ThemedText>

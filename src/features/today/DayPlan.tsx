@@ -114,6 +114,7 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
                       onControlLongPress={
                         mission.goalType === 'quantity' ? () => menu.openValue(item) : undefined
                       }
+                      health={mission.healthMetric !== null}
                     />
                   </SkipSwipe>
                 )}

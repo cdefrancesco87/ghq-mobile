@@ -526,7 +526,8 @@
       "streakWeeks": "streak {{streak}} weeks",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, no data in the last 30 days",
       "skippedReason": "skipped · {{reason}}",
-      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} frozen"
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} frozen",
+      "health": "with health data"
     },
     "difficulty": {
       "easy": "Easy",
@@ -695,7 +696,29 @@
       "increment": "Increment per tap",
       "summary": "Each tap adds {{increment}} up to {{target}}. Suggested automatically: change it if you like.",
       "missing": "Enter the value, unit and increment.",
-      "done": "Done"
+      "done": "Done",
+      "health": {
+        "title": "Link to Health",
+        "title_apple": "Link to Health",
+        "title_health_connect": "Link to Health Connect",
+        "explain": "The mission can move by itself with the data of {{app}}: the permission is asked only when you choose a data type.",
+        "linked_steps": "Only today's steps are read from {{app}}: the value rises by itself and the mission is completed at the goal.",
+        "linked_active_minutes": "Only today's active minutes are read from {{app}}: the value rises by itself and the mission is completed at the goal.",
+        "linked_sleep_hours": "Only last night's hours of sleep are read from {{app}}: the value rises by itself and the mission is completed at the goal.",
+        "asking": "Waiting for the permission of {{app}}…",
+        "denied": "Permission not given: complete the mission by hand. You can give it in the settings of {{app}}.",
+        "not_asked": "The permission was never asked on this phone: tap the data type again to link it.",
+        "unavailable": "Health data are not available on this phone: complete the mission by hand.",
+        "app": "Health",
+        "app_apple": "Health",
+        "app_health_connect": "Health Connect",
+        "metrics": {
+          "none": "No",
+          "steps": "Steps",
+          "active_minutes": "Active minutes",
+          "sleep_hours": "Hours of sleep"
+        }
+      }
     },
     "timesPerWeek": "N times a week",
     "timesPerWeekUnit_one": "time a week",
@@ -1318,7 +1341,8 @@
       "minute": "min",
       "milliliter": "ml",
       "km": "km",
-      "time": "times"
+      "time": "times",
+      "hour": "h"
     },
     "goal": "Goal: {{target}}.",
     "average": "Average: {{value}} a day · goal {{target}}",
@@ -1652,6 +1676,10 @@
       "yesterday": "yesterday",
       "deadlineMissed": "The deadline has passed.",
       "completeA11y": "Complete {{name}}"
+    },
+    "healthGoal": {
+      "body": "Goal reached: {{target}}",
+      "gain": "{{goal}} · +{{xp}} {{xpTerm}}"
     }
   },
   "widgets": {

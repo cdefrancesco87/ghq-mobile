@@ -101,6 +101,7 @@ export function TodayMissions({ view, tzOffset, actions, menu, hint = false }: T
                       onControlLongPress={
                         mission.goalType === 'quantity' ? () => menu.openValue(item) : undefined
                       }
+                      health={mission.healthMetric !== null}
                       onPress={() => menu.openDetail(item)}
                       onLongPress={() => menu.open(item)}
                       actions={menu.rowActions(item)}

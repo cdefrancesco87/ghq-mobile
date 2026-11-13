@@ -51,7 +51,7 @@ export async function syncSystemReminders(db: Db, now = Date.now()): Promise<voi
 }
 
 /** The widgets show a completion made from a notification (design-sezioni.md 12.2). */
-async function syncSystemWidgets(db: Db): Promise<void> {
+export async function syncSystemWidgets(db: Db): Promise<void> {
   try {
     const host = systemWidgetHost();
     if (host !== null) {

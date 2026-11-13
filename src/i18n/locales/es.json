@@ -526,7 +526,8 @@
       "streakWeeks": "racha {{streak}} semanas",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, sin datos en los últimos 30 días",
       "skippedReason": "saltada · {{reason}}",
-      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} congelada"
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} congelada",
+      "health": "con datos de salud"
     },
     "difficulty": {
       "easy": "Fácil",
@@ -695,7 +696,29 @@
       "increment": "Incremento por toque",
       "summary": "Cada toque añade {{increment}} hasta {{target}}. Propuesto automáticamente: cámbialo si quieres.",
       "missing": "Escribe el valor, la unidad y el incremento.",
-      "done": "Hecho"
+      "done": "Hecho",
+      "health": {
+        "title": "Conectar con Salud",
+        "title_apple": "Conectar con Salud",
+        "title_health_connect": "Conectar con Health Connect",
+        "explain": "La misión puede avanzar sola con los datos de {{app}}: el permiso se pide solo cuando eliges un dato.",
+        "linked_steps": "Solo se leen los pasos de hoy de {{app}}: el valor sube solo y la misión se completa al llegar al objetivo.",
+        "linked_active_minutes": "Solo se leen los minutos de actividad de hoy de {{app}}: el valor sube solo y la misión se completa al llegar al objetivo.",
+        "linked_sleep_hours": "Solo se leen las horas de sueño de la noche de {{app}}: el valor sube solo y la misión se completa al llegar al objetivo.",
+        "asking": "Esperando el permiso de {{app}}…",
+        "denied": "Permiso no concedido: completa la misión a mano. Puedes darlo en los ajustes de {{app}}.",
+        "not_asked": "En este teléfono aún no se ha pedido el permiso: toca de nuevo el dato para conectarla.",
+        "unavailable": "Los datos de salud no están disponibles en este teléfono: completa la misión a mano.",
+        "app": "Salud",
+        "app_apple": "Salud",
+        "app_health_connect": "Health Connect",
+        "metrics": {
+          "none": "No",
+          "steps": "Pasos",
+          "active_minutes": "Minutos de actividad",
+          "sleep_hours": "Horas de sueño"
+        }
+      }
     },
     "timesPerWeek": "N veces por semana",
     "timesPerWeekUnit_one": "vez por semana",
@@ -1318,7 +1341,8 @@
       "minute": "min",
       "milliliter": "ml",
       "km": "km",
-      "time": "veces"
+      "time": "veces",
+      "hour": "h"
     },
     "goal": "Objetivo: {{target}}.",
     "average": "Media: {{value}} al día · objetivo {{target}}",
@@ -1652,6 +1676,10 @@
       "yesterday": "ayer",
       "deadlineMissed": "La fecha límite ha pasado.",
       "completeA11y": "Completar {{name}}"
+    },
+    "healthGoal": {
+      "body": "Objetivo alcanzado: {{target}}",
+      "gain": "{{goal}} · +{{xp}} {{xpTerm}}"
     }
   },
   "widgets": {

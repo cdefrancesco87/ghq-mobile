@@ -107,6 +107,23 @@ function afterQuietHours(local: number, quietHours: readonly QuietInterval[]): n
 }
 
 /**
+ * The UTC instant when «Non disturbare» around `now` ends, or `now` outside it: a notification
+ * that is not a reminder (the goal reached with the health data, design-sezioni.md 12.7) waits
+ * until then.
+ *
+ * @param tzOffset Minutes east of UTC.
+ */
+export function quietHoursEnd(
+  now: number,
+  tzOffset: number,
+  quietHours: readonly QuietInterval[],
+): number {
+  const local = Math.floor(now / MS_PER_MINUTE) + tzOffset;
+  const end = afterQuietHours(local, quietHours);
+  return end === local ? now : (end - tzOffset) * MS_PER_MINUTE;
+}
+
+/**
  * The reminders to schedule in a window of game days, ordered by instant. A time earlier than the
  * day change belongs to the night after the game day (01:30 of Monday fires on Tuesday at 01:30).
  * A reminder inside «Non disturbare» waits until the end of the interval, and two times of the

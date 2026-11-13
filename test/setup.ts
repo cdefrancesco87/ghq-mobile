@@ -52,3 +52,34 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
   }
   return { __esModule: true, default: Swipeable, SwipeDirection: { LEFT: 'left', RIGHT: 'right' } };
 });
+
+// The health libraries are native modules (Nitro on iPhone, a TurboModule on Android): the tests
+// use the fake source of test/health.ts, so here they only need to load.
+jest.mock('@kingstinct/react-native-healthkit', () => ({
+  AuthorizationRequestStatus: { unknown: 0, shouldRequest: 1, unnecessary: 2 },
+  CategoryValueSleepAnalysis: {
+    inBed: 0,
+    asleepUnspecified: 1,
+    awake: 2,
+    asleepCore: 3,
+    asleepDeep: 4,
+    asleepREM: 5,
+  },
+  isHealthDataAvailable: jest.fn(() => false),
+  getRequestStatusForAuthorization: jest.fn(async () => 1),
+  requestAuthorization: jest.fn(async () => false),
+  queryStatisticsForQuantity: jest.fn(async () => ({ sources: [] })),
+  queryCategorySamples: jest.fn(async () => []),
+}));
+jest.mock('react-native-health-connect', () => ({
+  SdkAvailabilityStatus: {
+    SDK_UNAVAILABLE: 1,
+    SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED: 2,
+    SDK_AVAILABLE: 3,
+  },
+  getSdkStatus: jest.fn(async () => 1),
+  initialize: jest.fn(async () => false),
+  requestPermission: jest.fn(async () => []),
+  getGrantedPermissions: jest.fn(async () => []),
+  aggregateRecord: jest.fn(async () => ({})),
+}));

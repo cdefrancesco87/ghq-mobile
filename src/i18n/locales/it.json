@@ -526,7 +526,8 @@
       "streakWeeks": "serie {{streak}} settimane",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, nessun dato negli ultimi 30 giorni",
       "skippedReason": "saltata · {{reason}}",
-      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} congelata"
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} congelata",
+      "health": "con i dati di salute"
     },
     "difficulty": {
       "easy": "Facile",
@@ -695,7 +696,29 @@
       "increment": "Incremento per tocco",
       "summary": "Ogni tocco aggiunge {{increment}} fino a {{target}}. Proposto in automatico: modificalo se vuoi.",
       "missing": "Scrivi valore, unità e incremento.",
-      "done": "Fatto"
+      "done": "Fatto",
+      "health": {
+        "title": "Collega a Salute",
+        "title_apple": "Collega a Salute",
+        "title_health_connect": "Collega a Health Connect",
+        "explain": "Puoi far avanzare la missione da sola con i dati di {{app}}: il permesso si chiede solo quando scegli un dato.",
+        "linked_steps": "Si leggono solo i passi di oggi da {{app}}: il valore sale da solo e la missione si completa all'obiettivo.",
+        "linked_active_minutes": "Si leggono solo i minuti di attività di oggi da {{app}}: il valore sale da solo e la missione si completa all'obiettivo.",
+        "linked_sleep_hours": "Si leggono solo le ore di sonno della notte da {{app}}: il valore sale da solo e la missione si completa all'obiettivo.",
+        "asking": "Attendo il permesso di {{app}}…",
+        "denied": "Permesso non dato: la missione resta da completare a mano. Puoi darlo nelle impostazioni di {{app}}.",
+        "not_asked": "Su questo telefono il permesso non è ancora stato chiesto: tocca di nuovo il dato per collegarla.",
+        "unavailable": "I dati di salute non sono disponibili su questo telefono: la missione resta da completare a mano.",
+        "app": "Salute",
+        "app_apple": "Salute",
+        "app_health_connect": "Health Connect",
+        "metrics": {
+          "none": "No",
+          "steps": "Passi",
+          "active_minutes": "Minuti di attività",
+          "sleep_hours": "Ore di sonno"
+        }
+      }
     },
     "timesPerWeek": "N volte a settimana",
     "timesPerWeekUnit_one": "volta a settimana",
@@ -1318,7 +1341,8 @@
       "minute": "min",
       "milliliter": "ml",
       "km": "km",
-      "time": "volte"
+      "time": "volte",
+      "hour": "ore"
     },
     "goal": "Obiettivo: {{target}}.",
     "average": "Media: {{value}} al giorno · obiettivo {{target}}",
@@ -1652,6 +1676,10 @@
       "yesterday": "ieri",
       "deadlineMissed": "La scadenza è passata.",
       "completeA11y": "Completa {{name}}"
+    },
+    "healthGoal": {
+      "body": "Obiettivo raggiunto: {{target}}",
+      "gain": "{{goal}} · +{{xp}} {{xpTerm}}"
     }
   },
   "widgets": {

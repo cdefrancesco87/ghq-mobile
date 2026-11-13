@@ -9,6 +9,7 @@ import { FALLBACK_LANGUAGE } from '../../rules/config';
 import type { EveningSummary } from '../../rules/notifications';
 import type { GameMode } from '../../rules/types';
 import type { ThemeFamily } from '../../theme/themes';
+import { formatAmount } from '../shared/amount';
 
 // The texts of the notifications (design-sezioni.md 11.2–11.5, 11.8), in the language and the
 // lexicon of the theme of the settings. They are written outside React: the background task of
@@ -34,6 +35,16 @@ export interface NotificationTexts {
   evening(summary: EveningSummary): NotificationText;
   /** «Fatto!» with the gains, without them in the Essential mode (design 11.8). */
   confirmation(gains: { readonly xp: number; readonly coins: number }): NotificationText;
+  /**
+   * A mission linked to the health data completed by itself (design 12.7): its name, then
+   * «Obiettivo raggiunto: 8.000 passi · +20 XP», without the XP in the Essential mode.
+   */
+  healthGoal(goal: {
+    readonly name: string;
+    readonly target: number;
+    readonly unit: string;
+    readonly xp: number;
+  }): NotificationText;
   readonly channels: Readonly<Record<Channel, string>>;
 }
 
@@ -120,6 +131,18 @@ export function notificationTexts(settings: TextSettings): NotificationTexts {
           coins > 0
             ? t('notifications.confirmation.coins', { gain, coins, coinsTerm: term('coins_pl') })
             : gain,
+      };
+    },
+    healthGoal: ({ name, target, unit, xp }) => {
+      const goal = t('notifications.healthGoal.body', {
+        target: formatAmount(target, unit, language),
+      });
+      return {
+        title: name,
+        body:
+          settings.gameMode === 'essential' || xp <= 0
+            ? goal
+            : t('notifications.healthGoal.gain', { goal, xp, xpTerm: term('xp_pl') }),
       };
     },
     channels: Object.fromEntries(

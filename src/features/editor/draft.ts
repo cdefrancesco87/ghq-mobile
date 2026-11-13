@@ -2,6 +2,7 @@ import { MISSION_TEMPLATES, type MissionTemplate } from '@/content/templates';
 import type { Mission, MissionGoal, NewMission } from '@/db/repositories/missions';
 import { MEASURABLE } from '@/rules/config';
 import type { Frequency } from '@/rules/frequency';
+import type { HealthMetric } from '@/rules/health';
 import { parseAmount } from '@/rules/measurable';
 import type { Difficulty, GameDay, StatKey } from '@/rules/types';
 
@@ -32,6 +33,11 @@ export interface GoalDraft {
   /** A unit key (`liter`) or a custom unit. */
   readonly unit: string;
   readonly increment: string;
+  /**
+   * The data of Apple Salute or Health Connect that move the mission by themselves (design 12.7);
+   * a quantity goal only, in the unit of the metric.
+   */
+  readonly healthMetric: HealthMetric | null;
 }
 
 export const NO_GOAL: GoalDraft = {
@@ -39,6 +45,7 @@ export const NO_GOAL: GoalDraft = {
   target: '',
   unit: MEASURABLE.units[0],
   increment: '',
+  healthMetric: null,
 };
 
 function goalDraftOf(mission: Mission): GoalDraft {
@@ -50,6 +57,7 @@ function goalDraftOf(mission: Mission): GoalDraft {
     target: mission.goalTarget === null ? '' : String(mission.goalTarget),
     unit: mission.goalUnit ?? NO_GOAL.unit,
     increment: mission.goalStep === null ? '' : String(mission.goalStep),
+    healthMetric: mission.healthMetric,
   };
 }
 
@@ -101,6 +109,8 @@ export function draftFromTemplate(draft: Draft, template: MissionTemplate, name:
           target: String(template.goal.target),
           unit: template.goal.type === 'quantity' ? template.goal.unit : NO_GOAL.unit,
           increment: String(template.goal.increment),
+          // The permission is asked only in the row «Collega a Salute» (design 12.7).
+          healthMetric: null,
         };
   return {
     ...draft,
@@ -161,7 +171,6 @@ export function missionInput(draft: Draft): NewMission & { readonly kind: Missio
       : {
           templateKey: template.key,
           categoryKey: template.category,
-          healthMetric: habit ? (template.healthMetric ?? null) : null,
         }),
     name: draft.name.trim(),
     kind: draft.kind,
@@ -172,5 +181,6 @@ export function missionInput(draft: Draft): NewMission & { readonly kind: Missio
     reminders: habit ? draft.reminders : [],
     bossId: draft.bossId,
     goal: goalOf(draft.goal) ?? { type: 'none' },
+    healthMetric: draft.goal.type === 'quantity' ? draft.goal.healthMetric : null,
   };
 }

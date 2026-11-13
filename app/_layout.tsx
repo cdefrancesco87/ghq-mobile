@@ -4,9 +4,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { Text } from 'react-native';
 
-// Defines the tasks of the notification actions and of the daily backup when the bundle loads,
-// even in the background.
+// Defines the tasks of the notification actions, of the daily backup and of the health data when
+// the bundle loads, even in the background.
 import { useAutoBackupTask } from '@/features/backup/backgroundBackup';
+import '@/features/health/backgroundHealth';
+import { useHealthSync } from '@/features/health/useHealthSync';
 import '@/features/notifications/backgroundTask';
 import { BossNotifications } from '@/features/notifications/BossNotifications';
 import { useReminderActions } from '@/features/notifications/useReminderActions';
@@ -24,6 +26,7 @@ export default function RootLayout() {
   useReminderActions();
   useAutoBackupTask();
   useWidgets();
+  useHealthSync();
   // If a font cannot be loaded the app still starts, with the system font.
   const fontsReady = loaded || error !== null;
   const dataReady = bootstrap.i18n !== null || bootstrap.status === 'error';

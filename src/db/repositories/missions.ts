@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { HABITS_LIST } from '../../rules/config';
 import { frequencySchema, isDueToday, type Frequency } from '../../rules/frequency';
 import { addDays, isGameDay, weekStartOf, weekday } from '../../rules/gameDay';
+import { HEALTH_METRICS, healthUnit } from '../../rules/health';
 import {
   DIFFICULTIES,
   STAT_KEYS,
@@ -223,7 +224,17 @@ function validated(kind: Mission['kind'], fields: MissionFields): MissionFields 
   if (fields.statSecondary !== null && fields.statSecondary === fields.statPrimary) {
     throw new RangeError('The secondary stat must differ from the primary one');
   }
-  return { ...fields, name, frequency, goal: goalSchema.parse(fields.goal) };
+  const goal = goalSchema.parse(fields.goal);
+  if (fields.healthMetric !== null) {
+    // A linked mission reaches its goal with the data of the phone (design-sezioni.md 12.7).
+    if (!HEALTH_METRICS.includes(fields.healthMetric)) {
+      throw new RangeError(`Unknown health metric: ${fields.healthMetric}`);
+    }
+    if (goal.type !== 'quantity' || goal.unit !== healthUnit(fields.healthMetric)) {
+      throw new RangeError('A mission linked to the health data needs a goal in its unit');
+    }
+  }
+  return { ...fields, name, frequency, goal };
 }
 
 function columnsOf(fields: MissionFields) {

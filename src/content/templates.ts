@@ -38,7 +38,7 @@ export interface MissionTemplate {
   readonly goal: TemplateGoal;
   /** Selected already at the first launch (design 1.5). */
   readonly recommended: boolean;
-  /** Health data that can complete the mission by itself. */
+  /** Health data the mission suits: it is linked only in the editor, which asks the permission (T76). */
   readonly healthMetric?: 'steps';
 }
 

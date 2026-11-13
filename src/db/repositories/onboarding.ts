@@ -143,7 +143,6 @@ export function createProfile(db: Db, input: ProfileInput, context: ProfileConte
           statPrimary: template.stat,
           templateKey: template.key,
           categoryKey: template.category,
-          healthMetric: template.healthMetric ?? null,
           sortOrder: index + 1,
           createdAt: now,
           updatedAt: now,

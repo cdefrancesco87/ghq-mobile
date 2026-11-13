@@ -9,11 +9,13 @@ import { SegmentedControl } from '@/features/shared/SegmentedControl';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MEASURABLE } from '@/rules/config';
+import { healthUnit } from '@/rules/health';
 import { parseAmount, suggestIncrement } from '@/rules/measurable';
 import { textStyleOf } from '@/theme/fonts';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { goalOf, NO_GOAL, type GoalDraft } from './draft';
+import { HealthLink } from './HealthLink';
 
 const UNIT_KEYS: readonly string[] = MEASURABLE.units;
 const WHOLE_UNITS: readonly string[] = MEASURABLE.wholeUnits;
@@ -62,6 +64,8 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
   const increment = parseAmount(value.increment);
   const quantity = value.type === 'quantity';
   const unitMissing = quantity && value.unit.trim() === '';
+  // A linked mission counts in the unit of its metric (design 12.7).
+  const linked = value.healthMetric !== null;
 
   return (
     <View testID="editor-goal" style={styles.field}>
@@ -101,30 +105,36 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
           <ThemedText variant="label" color={colors.textMuted}>
             {t('editor.goal.unit')}
           </ThemedText>
-          <View style={styles.chips} accessibilityRole="radiogroup">
-            {UNIT_KEYS.map((key) => (
+          {linked ? (
+            <ThemedText testID="editor-goal-unit-linked" color={colors.text}>
+              {unitName(value.unit, i18n.language)}
+            </ThemedText>
+          ) : (
+            <View style={styles.chips} accessibilityRole="radiogroup">
+              {UNIT_KEYS.map((key) => (
+                <Chip
+                  key={key}
+                  testID={`editor-goal-unit-${key}`}
+                  label={unitName(key, i18n.language)}
+                  selected={!custom && value.unit === key}
+                  onPress={() => {
+                    setCustom(false);
+                    change({ unit: key });
+                  }}
+                />
+              ))}
               <Chip
-                key={key}
-                testID={`editor-goal-unit-${key}`}
-                label={unitName(key, i18n.language)}
-                selected={!custom && value.unit === key}
+                testID="editor-goal-unit-custom"
+                label={t('editor.goal.customUnit')}
+                selected={custom}
                 onPress={() => {
-                  setCustom(false);
-                  change({ unit: key });
+                  setCustom(true);
+                  change({ unit: '' });
                 }}
               />
-            ))}
-            <Chip
-              testID="editor-goal-unit-custom"
-              label={t('editor.goal.customUnit')}
-              selected={custom}
-              onPress={() => {
-                setCustom(true);
-                change({ unit: '' });
-              }}
-            />
-          </View>
-          {custom ? (
+            </View>
+          )}
+          {custom && !linked ? (
             <TextInput
               testID="editor-goal-unit-text"
               value={value.unit}
@@ -162,6 +172,19 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
               {t('editor.goal.missing')}
             </ThemedText>
           )}
+          <HealthLink
+            metric={value.healthMetric}
+            onChange={(metric) => {
+              if (metric !== null) {
+                setCustom(false);
+              }
+              change(
+                metric === null
+                  ? { healthMetric: null }
+                  : { healthMetric: metric, unit: healthUnit(metric) },
+              );
+            }}
+          />
         </>
       ) : null}
     </View>

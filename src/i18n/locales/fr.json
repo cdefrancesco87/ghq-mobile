@@ -526,7 +526,8 @@
       "streakWeeks": "série {{streak}} semaines",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, aucune donnée sur les 30 derniers jours",
       "skippedReason": "passée · {{reason}}",
-      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} gelée"
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} gelée",
+      "health": "avec les données de santé"
     },
     "difficulty": {
       "easy": "Facile",
@@ -695,7 +696,29 @@
       "increment": "Incrément par appui",
       "summary": "Chaque appui ajoute {{increment}} jusqu’à {{target}}. Proposé automatiquement : modifie-le si tu veux.",
       "missing": "Saisis la valeur, l’unité et l’incrément.",
-      "done": "OK"
+      "done": "OK",
+      "health": {
+        "title": "Relier à Santé",
+        "title_apple": "Relier à Santé",
+        "title_health_connect": "Relier à Health Connect",
+        "explain": "La mission peut avancer toute seule avec les données de {{app}} : l'autorisation n'est demandée que lorsque tu choisis une donnée.",
+        "linked_steps": "Seuls les pas d'aujourd'hui sont lus dans {{app}} : la valeur monte toute seule et la mission se termine à l'objectif.",
+        "linked_active_minutes": "Seules les minutes d'activité d'aujourd'hui sont lues dans {{app}} : la valeur monte toute seule et la mission se termine à l'objectif.",
+        "linked_sleep_hours": "Seules les heures de sommeil de la nuit sont lues dans {{app}} : la valeur monte toute seule et la mission se termine à l'objectif.",
+        "asking": "En attente de l'autorisation de {{app}}…",
+        "denied": "Autorisation refusée : termine la mission à la main. Tu peux la donner dans les réglages de {{app}}.",
+        "not_asked": "L'autorisation n'a jamais été demandée sur ce téléphone : touche à nouveau la donnée pour la relier.",
+        "unavailable": "Les données de santé ne sont pas disponibles sur ce téléphone : termine la mission à la main.",
+        "app": "Santé",
+        "app_apple": "Santé",
+        "app_health_connect": "Health Connect",
+        "metrics": {
+          "none": "Non",
+          "steps": "Pas",
+          "active_minutes": "Minutes d'activité",
+          "sleep_hours": "Heures de sommeil"
+        }
+      }
     },
     "timesPerWeek": "N fois par semaine",
     "timesPerWeekUnit_one": "fois par semaine",
@@ -1318,7 +1341,8 @@
       "minute": "min",
       "milliliter": "ml",
       "km": "km",
-      "time": "fois"
+      "time": "fois",
+      "hour": "h"
     },
     "goal": "Objectif : {{target}}.",
     "average": "Moyenne : {{value}} par jour · objectif {{target}}",
@@ -1652,6 +1676,10 @@
       "yesterday": "hier",
       "deadlineMissed": "L'échéance est passée.",
       "completeA11y": "Terminer {{name}}"
+    },
+    "healthGoal": {
+      "body": "Objectif atteint : {{target}}",
+      "gain": "{{goal}} · +{{xp}} {{xpTerm}}"
     }
   },
   "widgets": {

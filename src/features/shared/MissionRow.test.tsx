@@ -358,3 +358,21 @@ describe('categoryIcon', () => {
     expect(categoryIcon('unknown')).toBe('missioni');
   });
 });
+
+describe('MissionRow linked to the health data', () => {
+  it('shows a small heart before the value and says it to the screen reader', async () => {
+    await renderThemed(
+      <MissionRow {...today} detail="6200 di 8000 passi" progress={0.775} health />,
+    );
+    expect(screen.getByTestId('row-health', HIDDEN)).toBeOnTheScreen();
+    expect(screen.getByTestId('row-body')).toHaveProp(
+      'accessibilityLabel',
+      expect.stringContaining('6200 di 8000 passi · con i dati di salute'),
+    );
+  });
+
+  it('has no heart when not linked', async () => {
+    await renderThemed(<MissionRow {...today} />);
+    expect(screen.queryByTestId('row-health', HIDDEN)).toBeNull();
+  });
+});

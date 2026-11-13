@@ -5,10 +5,12 @@ import type { ComponentType } from 'react';
 import { Dimensions, Linking } from 'react-native';
 
 import { archiveBoss, createBoss } from '@/db/repositories/boss';
-import { missionReminderTimes, updateMission } from '@/db/repositories/missions';
+import { createMission, missionReminderTimes, updateMission } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
 import { boss, missionReminders, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { NO_HEALTH } from '@/features/health/source';
+import { setHealthSource } from '@/features/health/system';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
 import { startApp, useAppStore } from '@/stores/app';
@@ -26,6 +28,7 @@ import Editor from '../../../app/editor';
 import Index from '../../../app/index';
 import Stats from '../../../app/stats';
 import { FRIDAY, at, clockAt, newGame } from '../../../test/game';
+import { createFakeHealthSource, type FakeHealthSource } from '../../../test/health';
 
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
@@ -104,6 +107,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   await setFontScale(1);
+  setHealthSource(null);
 });
 
 describe('Mission editor: basic fields', () => {
@@ -711,5 +715,102 @@ describe('Mission editor: other frequencies and templates', () => {
     const [journal] = db.select().from(missions).all();
     await openToEdit(db, journal.id);
     expect(screen.queryByTestId('editor-use-template')).toBeNull();
+  });
+});
+
+describe('Mission editor: health data', () => {
+  let health: FakeHealthSource;
+
+  beforeEach(() => {
+    health = createFakeHealthSource('apple');
+    setHealthSource(health);
+  });
+
+  async function stepsGoal() {
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Cammina');
+    await fireEvent.press(screen.getByTestId('editor-more'));
+    await fireEvent.press(screen.getByTestId('editor-option-goal'));
+    await fireEvent.press(screen.getByTestId('editor-goal-type-quantity'));
+    await fireEvent.changeText(screen.getByTestId('editor-goal-target'), '8000');
+  }
+
+  it('links the steps, asking the permission only when they are chosen', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await stepsGoal();
+    expect(screen.getByTestId('editor-goal-health')).toHaveTextContent('Collega a Salute', {
+      exact: false,
+    });
+    expect(health.requested).toEqual([]);
+    await fireEvent.press(screen.getByTestId('editor-goal-health-steps'));
+    expect(health.requested).toEqual(['steps']);
+    expect(screen.getByTestId('editor-goal-unit-linked')).toHaveTextContent('passi');
+    expect(screen.getByTestId('editor-goal-health-status')).toHaveTextContent(
+      'Si leggono solo i passi di oggi da Salute',
+      { exact: false },
+    );
+    await fireEvent.press(screen.getByTestId('editor-goal-done'));
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Cammina')).toMatchObject({
+      goalType: 'quantity',
+      goalTarget: 8000,
+      goalUnit: 'step',
+      healthMetric: 'steps',
+    });
+
+    // Back to «No»: the mission is completed by hand again.
+    await openToEdit(db, created(db, 'Cammina')!.id);
+    await fireEvent.press(screen.getByTestId('editor-option-goal'));
+    expect(screen.getByRole('button', { name: 'Passi', selected: true })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('editor-goal-health-none'));
+    await fireEvent.press(screen.getByTestId('editor-goal-done'));
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Cammina')?.healthMetric).toBeNull();
+  });
+
+  it('says that the permission was denied and leaves the mission to do by hand', async () => {
+    health.answers.steps = 'denied';
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await stepsGoal();
+    await fireEvent.press(screen.getByTestId('editor-goal-health-steps'));
+    expect(screen.getByTestId('editor-goal-health-status')).toHaveTextContent(
+      'Permesso non dato: la missione resta da completare a mano.',
+      { exact: false },
+    );
+    expect(screen.queryByTestId('editor-goal-unit-linked')).toBeNull();
+    await fireEvent.press(screen.getByTestId('editor-goal-unit-step'));
+    await fireEvent.press(screen.getByTestId('editor-goal-done'));
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Cammina')).toMatchObject({ goalUnit: 'step', healthMetric: null });
+  });
+
+  it('says that a linked mission lost its permission', async () => {
+    const db = newGame(['journal']);
+    const walk = createMission(
+      db,
+      {
+        name: 'Cammina',
+        goal: { type: 'quantity', target: 8000, unit: 'step', increment: 1000 },
+        healthMetric: 'steps',
+      },
+      { now: at(FRIDAY, 9), tzOffset: 60 },
+    );
+    health.permissions.steps = 'denied';
+    await openToEdit(db, walk.id);
+    await fireEvent.press(screen.getByTestId('editor-option-goal'));
+    expect(await screen.findByText('Permesso non dato', { exact: false })).toBeOnTheScreen();
+  });
+
+  it('says that a phone without health data cannot link', async () => {
+    setHealthSource(NO_HEALTH);
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await stepsGoal();
+    await fireEvent.press(screen.getByTestId('editor-goal-health-sleep_hours'));
+    expect(screen.getByTestId('editor-goal-health-status')).toHaveTextContent(
+      'I dati di salute non sono disponibili su questo telefono',
+      { exact: false },
+    );
   });
 });
