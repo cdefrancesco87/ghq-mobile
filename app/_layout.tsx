@@ -14,6 +14,7 @@ import { BossNotifications } from '@/features/notifications/BossNotifications';
 import { useReminderActions } from '@/features/notifications/useReminderActions';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { useBootstrap } from '@/features/shell/useBootstrap';
+import { useTimerActivities } from '@/features/widgets/useTimerActivities';
 import { useWidgets } from '@/features/widgets/useWidgets';
 import { FONT_FILES } from '@/theme/fonts';
 
@@ -26,6 +27,7 @@ export default function RootLayout() {
   useReminderActions();
   useAutoBackupTask();
   useWidgets();
+  useTimerActivities();
   useHealthSync();
   // If a font cannot be loaded the app still starts, with the system font.
   const fontsReady = loaded || error !== null;

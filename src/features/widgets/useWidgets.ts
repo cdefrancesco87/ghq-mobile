@@ -12,6 +12,7 @@ import { LARGE_TEXT_SCALE } from '@/theme/textScale';
 
 import { handleWidgetTarget, type WidgetOutcome } from './actions';
 import { syncWidgets, type WidgetHost } from './sync';
+import { decodeActivityTarget } from './timerActivity';
 import { onWidgetTouch, systemWidgetHost } from './system';
 
 // Keeps the widgets of the phone in line while the app runs (design-sezioni.md 12.2, 12.3): at
@@ -100,6 +101,10 @@ export function useWidgets(): void {
     });
     const dayCheck = setInterval(syncIfNewDay, DAY_CHECK_MS);
     const stopTouches = onWidgetTouch((target) => {
+      if (decodeActivityTarget(target) !== null) {
+        // A button of the Live Activity of a timer (`useTimerActivities`).
+        return;
+      }
       try {
         // `runAction` refreshes the stores and starts a sync through `onActionDone`.
         const outcome = runAction((actionDb, clock) => handleWidgetTarget(actionDb, target, clock));

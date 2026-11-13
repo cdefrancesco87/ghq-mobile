@@ -2,7 +2,13 @@ import { and, eq } from 'drizzle-orm';
 
 import { completeMission, skipMission } from '@/db/repositories/completion';
 import { getSetting } from '@/db/repositories/settings';
-import { discardTimer, startTimer, stopTimer, timersOn } from '@/db/repositories/timers';
+import {
+  completeTimer,
+  discardTimer,
+  startTimer,
+  stopTimer,
+  timersOn,
+} from '@/db/repositories/timers';
 import { getTodayView } from '@/db/repositories/todayView';
 import { events, missionDays } from '@/db/schema';
 import type { Db } from '@/db/types';
@@ -154,5 +160,34 @@ describe('a completion or a skip from elsewhere', () => {
     startTimer(other.db, { missionId: other.id, ...clock(0) });
     skipMission(other.db, { missionId: other.id, reason: 'rest', ...clock(1) });
     expect(getSetting(other.db, 'mission_timers')).toEqual({});
+  });
+});
+
+describe('completeTimer', () => {
+  it('completes the mission with the minutes missing and forgets the timer', () => {
+    const { db, id } = setup();
+    startTimer(db, { missionId: id, ...clock(0) });
+    stopTimer(db, { missionId: id, ...clock(4) });
+    startTimer(db, { missionId: id, ...clock(10) });
+    const result = completeTimer(db, { missionId: id, ...clock(11) });
+    expect(result?.status).toBe('completed');
+    expect(dayOf(db, id)).toMatchObject({ status: 'done', value: 10 });
+    expect(timersOn(db, '2026-11-06').size).toBe(0);
+    expectHeroMatchesLog(db);
+  });
+
+  it('completes also without a running timer, once', () => {
+    const { db, id } = setup();
+    expect(completeTimer(db, { missionId: id, ...clock(0) })?.status).toBe('completed');
+    expect(completeTimer(db, { missionId: id, ...clock(1) })).toBeNull();
+    const done = db.select().from(events).where(eq(events.type, 'mission.completed')).all();
+    expect(done).toHaveLength(1);
+  });
+
+  it('does nothing for a mission without a duration goal or skipped', () => {
+    const { db, id } = setup();
+    expect(completeTimer(db, { missionId: missionId(db, 'journal'), ...clock(0) })).toBeNull();
+    skipMission(db, { missionId: id, reason: 'rest', ...clock(0) });
+    expect(completeTimer(db, { missionId: id, ...clock(1) })).toBeNull();
   });
 });

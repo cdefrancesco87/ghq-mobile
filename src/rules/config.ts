@@ -483,6 +483,15 @@ export const TIMER = {
   tickMs: 1000,
 } as const;
 
+/** The Live Activity of a running timer on iPhone (design-sezioni.md 12.5; backlog T87). */
+export const LIVE_ACTIVITY = {
+  /**
+   * How long «Fatto!» stays on the Lock Screen after the end, in milliseconds («per qualche
+   * secondo»). PROVISIONAL (backlog T87).
+   */
+  doneDismissMs: 4000,
+} as const;
+
 /** The single check-in after days without opening the app (design-sezioni.md 11.6; T80). */
 export const RECALL = {
   /** It fires this many days after the last opening, at the same time of day. */

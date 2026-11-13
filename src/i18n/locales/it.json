@@ -1916,7 +1916,18 @@
     "openA11y": "Apri {{name}}",
     "moreA11y": "Apri Oggi",
     "unseenA11y_one": "{{count}} notifica non vista",
-    "unseenA11y_other": "{{count}} notifiche non viste"
+    "unseenA11y_other": "{{count}} notifiche non viste",
+    "timer": {
+      "pause": "Pausa",
+      "resume": "Riprendi",
+      "complete": "Completa",
+      "done": "Fatto!",
+      "paused": "In pausa",
+      "timeUp": "Tempo finito",
+      "pauseA11y": "Metti in pausa {{name}}",
+      "resumeA11y": "Riprendi {{name}}",
+      "completeA11y": "Completa {{name}}"
+    }
   },
   "pause": {
     "value": {

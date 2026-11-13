@@ -74,7 +74,7 @@ export function widgetThemeOf(setting: SettingValue<'theme'>): WidgetTheme {
   return { family: theme.family, light: theme, dark: theme };
 }
 
-function colorsOf({
+export function colorsOf({
   background,
   surface,
   border,

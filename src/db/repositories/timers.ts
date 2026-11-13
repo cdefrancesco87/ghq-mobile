@@ -132,3 +132,27 @@ export function stopTimer(db: Db, input: StopTimerInput): CompletionResult | nul
 
 /** Forgets the timer of a mission without saving its minutes (a mission skipped or completed). */
 export const discardTimer = forgetMissionTimer;
+
+/**
+ * «Completa» of the Live Activity of a timer (design 12.5; backlog T87): the timer is forgotten
+ * and the mission is completed with the minutes still missing, as if the timer had reached the
+ * end now. Null when the mission is no longer a duration mission to do today.
+ */
+export function completeTimer(db: Db, input: StopTimerInput): CompletionResult | null {
+  return db.transaction((tx) => {
+    const day = todayOf(tx, input);
+    forgetMissionTimer(tx, input.missionId, input.now);
+    const timed = timedMission(tx, input.missionId, day);
+    if (timed === null) {
+      return null;
+    }
+    return progressMission(tx, {
+      missionId: input.missionId,
+      source: 'app',
+      idemKey: input.idemKey ?? null,
+      now: input.now,
+      tzOffset: input.tzOffset,
+      amount: Math.max(timed.mission.goalTarget - timed.value, 0),
+    });
+  });
+}

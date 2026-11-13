@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 
 import { pendingTargets } from './actions';
 import type { WidgetHost } from './sync';
+import type { TimerActivityHost, TimerActivityProps } from './timerActivity';
 
 // The widgets of the system through expo-widgets. The module is loaded on first use, so the
 // screens, the tests and a build without the native module (Expo Go, the web) keep working: there
@@ -74,4 +75,47 @@ export function onWidgetTouch(listener: (target: string) => void): () => void {
   } catch {
     return () => undefined;
   }
+}
+
+type TimerActivityModule = typeof import('./GhqTimerActivity');
+let timerActivityModule: TimerActivityModule | null | undefined;
+
+function loadTimerActivity(): TimerActivityModule | null {
+  if (timerActivityModule === undefined) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      timerActivityModule = require('./GhqTimerActivity') as TimerActivityModule;
+    } catch {
+      timerActivityModule = null;
+    }
+  }
+  return timerActivityModule;
+}
+
+/**
+ * The Live Activities of the timers (design 12.5; backlog T87), on iPhone only; null elsewhere
+ * and where expo-widgets is not available (Android, the web, Expo Go).
+ */
+export function systemTimerActivityHost(): TimerActivityHost | null {
+  const factory = loadTimerActivity()?.timerActivity ?? null;
+  if (factory === null || Platform.OS !== 'ios') {
+    return null;
+  }
+  const find = (id: string) => factory.getInstances().find((activity) => activity.getId() === id);
+  // Past the end the system shows the activity as stale: the layout then says «Tempo finito».
+  const staleOf = (props: TimerActivityProps) =>
+    props.phase === 'running' ? new Date(props.endsAt) : undefined;
+  return {
+    start: (props) => factory.start(props, props.url, staleOf(props)).getId(),
+    update: async (id, props) => {
+      await find(id)?.update(props, staleOf(props));
+    },
+    end: async (id, props, dismissAt) => {
+      await find(id)?.end(
+        dismissAt === null ? 'immediate' : { after: new Date(dismissAt) },
+        props ?? undefined,
+      );
+    },
+    list: () => factory.getInstances().map((activity) => activity.getId()),
+  };
 }

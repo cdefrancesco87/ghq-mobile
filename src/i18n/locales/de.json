@@ -1916,7 +1916,18 @@
     "openA11y": "{{name}} öffnen",
     "moreA11y": "Heute öffnen",
     "unseenA11y_one": "{{count}} ungelesene Benachrichtigung",
-    "unseenA11y_other": "{{count}} ungelesene Benachrichtigungen"
+    "unseenA11y_other": "{{count}} ungelesene Benachrichtigungen",
+    "timer": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "complete": "Complete",
+      "done": "Done!",
+      "paused": "Paused",
+      "timeUp": "Time's up",
+      "pauseA11y": "Pause {{name}}",
+      "resumeA11y": "Resume {{name}}",
+      "completeA11y": "Complete {{name}}"
+    }
   },
   "pause": {
     "value": {
