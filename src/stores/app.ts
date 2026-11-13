@@ -67,6 +67,21 @@ export async function startApp(options: StartOptions): Promise<void> {
   }
 }
 
+type ActionListener = (db: Db) => void;
+
+const actionListeners = new Set<ActionListener>();
+
+/**
+ * Calls `listener` after every action that succeeded, for work that follows the data (the
+ * reminders). Returns the function that stops listening.
+ */
+export function onActionDone(listener: ActionListener): () => void {
+  actionListeners.add(listener);
+  return () => {
+    actionListeners.delete(listener);
+  };
+}
+
 /**
  * Runs an action of a repository with the database and the clock of the app, then refreshes the
  * stores. If the action throws, the database did not change and the stores stay as they are.
@@ -76,5 +91,12 @@ export function runAction<T>(action: (db: Db, clock: ActionClock) => T): T {
   const result = action(db, clock());
   loadStores(db);
   useAppStore.setState({ hasProfile: hasProfile(db) });
+  for (const listener of actionListeners) {
+    try {
+      listener(db);
+    } catch {
+      // The action is already saved: a listener that fails must not make it look failed.
+    }
+  }
   return result;
 }

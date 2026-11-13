@@ -5,6 +5,7 @@ import { notDeleted } from '../../db/repositories/events';
 import { gameDayOf, getSetting } from '../../db/repositories/settings';
 import { missions, scheduledReminders } from '../../db/schema';
 import type { Db } from '../../db/types';
+import type { GameDay } from '../../rules/types';
 
 // The logic of the actions on a reminder (stack-tecnologico.md, point 5; modello-dati.md 3.9 and
 // 4.4). It depends on no screen, no React state and no Expo module: the notifications of the
@@ -62,6 +63,8 @@ export interface ScheduleReminderInput {
   readonly tzOffset: number;
   /** For a reminder that comes from a snooze. */
   readonly snoozeCount?: number;
+  /** The game day the reminder belongs to; the game day of `now` when missing. */
+  readonly gameDay?: GameDay;
 }
 
 function missionName(db: Db, missionId: string): string {
@@ -113,7 +116,8 @@ export async function scheduleReminder(
       {
         osId,
         missionId: input.missionId,
-        gameDay: gameDayOf(input.now, input.tzOffset, getSetting(db, 'day_change')),
+        gameDay:
+          input.gameDay ?? gameDayOf(input.now, input.tzOffset, getSetting(db, 'day_change')),
         fireAt: input.fireAt,
         snoozeCount,
       },

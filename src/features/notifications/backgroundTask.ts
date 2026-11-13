@@ -4,7 +4,8 @@ import * as TaskManager from 'expo-task-manager';
 import { openAppDatabase } from '../../db/client';
 import type { Db } from '../../db/types';
 import { handleReminderAction, type ReminderOutcome } from './reminders';
-import { setUpNotifications, systemScheduler } from './system';
+import { syncReminders } from './scheduler';
+import { notificationPermission, setUpNotifications, systemScheduler } from './system';
 
 // The entry of the actions of the notifications. On Android, with the app closed, the action
 // reaches the task defined here (expo-task-manager); on iPhone, and with the app open, it reaches
@@ -28,6 +29,21 @@ function databaseForTask(): Promise<Db> {
 /** The phone offset from UTC, in minutes east. */
 function tzOffsetAt(now: number): number {
   return -new Date(now).getTimezoneOffset();
+}
+
+/**
+ * Aligns the notifications of the system with the reminders of the missions (`syncReminders`),
+ * only with the permission granted. It never throws: a failure waits for the next call.
+ */
+export async function syncSystemReminders(db: Db, now = Date.now()): Promise<void> {
+  try {
+    if ((await notificationPermission()) !== 'granted') {
+      return;
+    }
+    await syncReminders(db, systemScheduler, { now, tzOffset: tzOffsetAt(now) });
+  } catch {
+    // Nothing to show: the reminders are aligned again at the next start or action.
+  }
 }
 
 /** Runs the action of a notification response on the given database. */
@@ -56,7 +72,10 @@ TaskManager.defineTask<Notifications.NotificationTaskPayload>(
       return Notifications.BackgroundNotificationTaskResult.NoData;
     }
     try {
-      const outcome = await handleNotificationResponse(await databaseForTask(), data);
+      const db = await databaseForTask();
+      const outcome = await handleNotificationResponse(db, data);
+      // The app may not open for a while: the task moves the window of the reminders on.
+      await syncSystemReminders(db);
       return outcome.outcome === 'failed'
         ? Notifications.BackgroundNotificationTaskResult.Failed
         : Notifications.BackgroundNotificationTaskResult.NewData;

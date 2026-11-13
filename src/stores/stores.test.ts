@@ -7,7 +7,7 @@ import { daySummaries, heroStats, missionDays } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { createTestDb } from '../../test/db';
 import { FRIDAY, at, clockAt, missionId, newGame } from '../../test/game';
-import { runAction, startApp, useAppStore } from './app';
+import { onActionDone, runAction, startApp, useAppStore } from './app';
 import { useHeroStore } from './hero';
 import { useSettingsStore } from './settings';
 import { useThemeStore } from './theme';
@@ -117,6 +117,32 @@ describe('runAction', () => {
     await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(FRIDAY, 10) });
 
     expect(runAction(() => 42)).toBe(42);
+  });
+
+  it('tells the listeners after an action, not after one that throws', async () => {
+    const db = newGame(['drink_water']);
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(FRIDAY, 10) });
+    const listener = jest.fn();
+    const failing = jest.fn(() => {
+      throw new Error('listener');
+    });
+    const stop = onActionDone(listener);
+    const stopFailing = onActionDone(failing);
+
+    expect(runAction(() => 42)).toBe(42);
+    expect(listener).toHaveBeenCalledWith(db);
+    expect(() =>
+      runAction(() => {
+        throw new Error('action');
+      }),
+    ).toThrow('action');
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    stop();
+    stopFailing();
+    runAction(() => 0);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(failing).toHaveBeenCalledTimes(1);
   });
 
   it('creates the profile at the first launch and the stores follow', async () => {

@@ -155,5 +155,13 @@ export const MOOD = {
   sadBelow: 0.3,
 } as const;
 
+/** How the reminders are scheduled in the system (stack-tecnologico.md, point 5). */
+export const REMINDERS = {
+  /** Game days scheduled ahead, from today; they are scheduled again at every start. */
+  windowDays: 7,
+  /** iOS keeps at most 64 scheduled notifications per app: the earliest ones win. */
+  maxScheduled: 64,
+} as const;
+
 /** Language of the first launch when no device language is supported (CLAUDE.md, choice 19). */
 export const FALLBACK_LANGUAGE: Language = 'en';

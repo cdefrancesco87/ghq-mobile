@@ -1,0 +1,206 @@
+import { asc } from 'drizzle-orm';
+
+import { completeMission } from '@/db/repositories/completion';
+import {
+  archiveMission,
+  createMission,
+  deleteMission,
+  restoreMission,
+  updateMission,
+} from '@/db/repositories/missions';
+import { setSetting } from '@/db/repositories/settings';
+import { undoEvent } from '@/db/repositories/undo';
+import { scheduledReminders } from '@/db/schema';
+import type { Db } from '@/db/types';
+import { REMINDERS } from '@/rules/config';
+
+import { FRIDAY, TZ, at, clockAt, missionId, newGame } from '../../../test/game';
+import { handleReminderAction, type ReminderRequest, type ReminderScheduler } from './reminders';
+import { syncReminders } from './scheduler';
+
+/** expo-notifications in memory: ids `os-1`, `os-2`… and the notifications still pending. */
+class FakeScheduler implements ReminderScheduler {
+  readonly pending = new Map<string, ReminderRequest>();
+  scheduledCount = 0;
+  readonly cancelled: string[] = [];
+
+  schedule(request: ReminderRequest): Promise<string> {
+    this.scheduledCount += 1;
+    const osId = `os-${this.scheduledCount}`;
+    this.pending.set(osId, request);
+    return Promise.resolve(osId);
+  }
+
+  cancel(osIds: readonly string[]): Promise<void> {
+    for (const osId of osIds) {
+      this.pending.delete(osId);
+      this.cancelled.push(osId);
+    }
+    return Promise.resolve();
+  }
+
+  /** The pending notifications as «mission@local day hour:minute» in Rome, in order. */
+  times(): string[] {
+    return [...this.pending.values()]
+      .sort((a, b) => a.fireAt - b.fireAt)
+      .map((request) => {
+        const local = new Date(request.fireAt + TZ * 60_000).toISOString();
+        return `${request.title}@${local.slice(8, 10)} ${local.slice(11, 16)}`;
+      });
+  }
+}
+
+const NOW = at(FRIDAY, 20);
+const SYNC = { now: NOW, tzOffset: TZ };
+
+function setUp(times = ['08:00', '21:00']) {
+  const db = newGame(['journal']);
+  const journal = missionId(db, 'journal');
+  updateMission(db, journal, { name: 'Journal', reminders: times }, clockAt(FRIDAY, 9));
+  return { db, journal, scheduler: new FakeScheduler() };
+}
+
+function rows(db: Db) {
+  return db.select().from(scheduledReminders).orderBy(asc(scheduledReminders.fireAt)).all();
+}
+
+describe('syncReminders', () => {
+  it('schedules the future reminders of the window and remembers their game day', async () => {
+    const { db, journal, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    // Friday 08:00 has passed; then two a day up to Thursday 12, the seventh game day.
+    expect(scheduler.times()).toEqual([
+      'Journal@06 21:00',
+      ...['07', '08', '09', '10', '11', '12'].flatMap((day) => [
+        `Journal@${day} 08:00`,
+        `Journal@${day} 21:00`,
+      ]),
+    ]);
+    expect(REMINDERS.windowDays).toBe(7);
+    expect(rows(db)[0]).toEqual({
+      osId: 'os-1',
+      missionId: journal,
+      gameDay: '2026-11-06',
+      fireAt: at(FRIDAY, 21),
+      snoozeCount: 0,
+    });
+    expect(rows(db)[1]).toMatchObject({ gameDay: '2026-11-07', fireAt: at(7, 8) });
+  });
+
+  it('changes nothing when nothing changed', async () => {
+    const { db, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    const before = rows(db);
+    await syncReminders(db, scheduler, { now: NOW + 60_000, tzOffset: TZ });
+    expect(rows(db)).toEqual(before);
+    expect(scheduler.cancelled).toEqual([]);
+  });
+
+  it('follows a change of the times and of the quiet hours', async () => {
+    const { db, journal, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    updateMission(db, journal, { reminders: ['21:00'] }, SYNC);
+    setSetting(db, 'quiet_hours', [{ start: '20:30', end: '21:30' }], NOW);
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.times().slice(0, 2)).toEqual(['Journal@06 21:30', 'Journal@07 21:30']);
+    expect(rows(db)).toHaveLength(7);
+  });
+
+  it('gives a completed mission no more reminders that day, and gives them back on undo', async () => {
+    const { db, journal, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    const result = completeMission(db, { missionId: journal, source: 'app', ...SYNC });
+    expect(result.status).toBe('completed');
+    await scheduler.cancel(result.cancelledNotificationIds);
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.times()[0]).toBe('Journal@07 08:00');
+
+    undoEvent(db, result.completion!.eventId, SYNC);
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.times()[0]).toBe('Journal@06 21:00');
+  });
+
+  it('keeps a snoozed reminder', async () => {
+    const { db, journal, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    const later = at(FRIDAY, 21, 1);
+    const snoozed = await handleReminderAction(db, scheduler, {
+      actionId: 'snooze',
+      notificationId: 'os-1',
+      missionId: journal,
+      now: later,
+      tzOffset: TZ,
+    });
+    expect(snoozed).toMatchObject({ outcome: 'snoozed', snoozeCount: 1 });
+    await syncReminders(db, scheduler, { now: later, tzOffset: TZ });
+    expect(scheduler.times()[0]).toBe('Journal@06 21:11');
+    expect(rows(db)[0]).toMatchObject({ gameDay: '2026-11-06', snoozeCount: 1 });
+  });
+
+  it('keeps the reminders already shown today, so Snooze and Complete still find them', async () => {
+    const { db, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    await syncReminders(db, scheduler, { now: at(FRIDAY, 21, 5), tzOffset: TZ });
+    expect(rows(db)[0]).toMatchObject({ osId: 'os-1', fireAt: at(FRIDAY, 21) });
+    expect(scheduler.cancelled).toEqual([]);
+  });
+
+  it('cancels the reminders of the days already over', async () => {
+    const { db, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    // Saturday 7 at 07:00: Friday's game day is over.
+    await syncReminders(db, scheduler, { now: at(7, 7), tzOffset: TZ });
+    expect(scheduler.cancelled).toEqual(['os-1']);
+    expect(rows(db)[0]).toMatchObject({ gameDay: '2026-11-07', fireAt: at(7, 8) });
+  });
+
+  it('stops the reminders of a mission archived or left without times', async () => {
+    const { db, journal, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    archiveMission(db, journal, SYNC);
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.pending.size).toBe(0);
+    expect(rows(db)).toEqual([]);
+
+    restoreMission(db, journal, SYNC);
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.pending.size).toBe(13);
+    updateMission(db, journal, { reminders: [] }, SYNC);
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.pending.size).toBe(0);
+  });
+
+  it('cancels everything when no mission is left', async () => {
+    const { db, journal, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    deleteMission(db, journal, SYNC);
+    await expect(syncReminders(db, scheduler, SYNC)).resolves.toEqual({
+      scheduled: 0,
+      cancelled: 0,
+    });
+    expect(rows(db)).toEqual([]);
+  });
+
+  it('never keeps more than 64 notifications scheduled, the earliest ones', async () => {
+    const { db, scheduler } = setUp(['06:00', '09:00', '12:00', '15:00', '18:00', '21:00']);
+    createMission(
+      db,
+      {
+        kind: 'habit',
+        name: 'Water',
+        frequency: { type: 'daily' },
+        statPrimary: 'constitution',
+        reminders: ['06:30', '09:30', '12:30', '15:30', '18:30', '21:30'],
+      },
+      SYNC,
+    );
+    await syncReminders(db, scheduler, SYNC);
+    expect(REMINDERS.maxScheduled).toBe(64);
+    expect(scheduler.pending.size).toBe(64);
+    expect(rows(db)).toHaveLength(64);
+    const times = scheduler.times();
+    expect(times[0]).toBe('Journal@06 21:00');
+    // 2 on Friday evening, 12 a day from Saturday to Wednesday, then 2 on Thursday morning.
+    expect(times[63]).toBe('Water@12 06:30');
+  });
+});
