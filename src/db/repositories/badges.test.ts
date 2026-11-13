@@ -76,7 +76,26 @@ describe('unlockBadges', () => {
     const keys = unlockBadges(db, clockAt(FRIDAY, 10)).moments.map(
       (event) => (event.payload as { badge: string }).badge,
     );
-    expect(keys).toEqual(['streakBest_3', 'streakBest_7', 'level_5', 'statLevelMax_3']);
+    expect(keys).toEqual(['streakBest_3', 'streakBest_7', 'level_5', 'stat_wisdom_3']);
+  });
+
+  it('unlocks the badges of a stat at levels 3, 6 and 10, once each (backlog T84)', () => {
+    const db = newGame(['journal']);
+    const unlock = (hour: number) =>
+      unlockBadges(db, clockAt(FRIDAY, hour)).moments.map(
+        (event) => (event.payload as { badge: string }).badge,
+      );
+    // Level 3 from 600 points, 6 from 2100, 10 from 5500 (statistiche-eroe.md).
+    db.update(heroStats).set({ points: 599 }).where(eq(heroStats.statKey, 'strength')).run();
+    expect(unlock(10)).toEqual([]);
+    db.update(heroStats).set({ points: 600 }).where(eq(heroStats.statKey, 'strength')).run();
+    expect(unlock(11)).toEqual(['stat_strength_3']);
+    db.update(heroStats).set({ points: 2100 }).where(eq(heroStats.statKey, 'strength')).run();
+    expect(unlock(12)).toEqual(['stat_strength_6']);
+    db.update(heroStats).set({ points: 5500 }).where(eq(heroStats.statKey, 'strength')).run();
+    expect(unlock(13)).toEqual(['stat_strength_10']);
+    expect(unlock(14)).toEqual([]);
+    expect(badgeMetrics(db).stat_charisma).toBe(0);
   });
 });
 

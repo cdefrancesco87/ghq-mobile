@@ -220,6 +220,24 @@ describe('Profile', () => {
     expect(screen.queryByTestId(`profile-stat-mission-${missionId(db, 'run')}`)).toBeNull();
   });
 
+  it('shows the three badges of the stat at the bottom of its detail (backlog T84)', async () => {
+    const db = newGame(['meditation']);
+    setPoints(db, 'strength', 2200);
+    await open(db);
+    await fireEvent.press(screen.getByTestId('profile-stat-strength'));
+    expect(await screen.findByTestId('profile-stat-badges')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Badge di Movimento' })).toBeOnTheScreen();
+    for (const level of [3, 6, 10]) {
+      expect(screen.getByTestId(`profile-stat-badges-stat_strength_${level}`)).toBeOnTheScreen();
+    }
+    expect(screen.queryByTestId('profile-stat-badges-stat_wisdom_3')).toBeNull();
+    // Points set by hand: the badges are still locked, with the level reached.
+    expect(text('profile-stat-badges-stat_strength_10-caption')).toBe('6 di 10');
+    expect(
+      screen.getByLabelText('Movimento · Oro, bloccato. Porta Movimento al livello 10: 6 di 10'),
+    ).toBeOnTheScreen();
+  });
+
   it('says when a stat has no gains and no missions', async () => {
     await open(newGame(['meditation']));
     await fireEvent.press(screen.getByTestId('profile-stat-charisma'));

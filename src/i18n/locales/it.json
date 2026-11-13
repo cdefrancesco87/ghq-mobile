@@ -1752,13 +1752,14 @@
       "level": "{{level}} {{n}}",
       "fullDays": "{{fullDay}} ×{{n}}",
       "plans": "{{plan}} ×{{n}}",
-      "statLevelMax": "Talento {{n}}",
       "completions_1": "Primo passo",
       "bossesDefeated_1": "Prima vittoria",
       "fullDays_1": "{{fullDay}}",
       "plans_1": "{{plan}}",
       "companionStage_1": "Schiusa",
-      "companionStage_2": "Cresciuti insieme"
+      "companionStage_2": "Cresciuti insieme",
+      "stat": "{{rank}} di {{stat}}",
+      "stat_minimal": "{{stat}} · {{rank}}"
     },
     "condition": {
       "completions_one": "Completa {{count}} {{mission}}",
@@ -1775,9 +1776,30 @@
       "plans_other": "Ottieni il bonus «{{plan}}» {{count}} volte",
       "companionStage_one": "Fai schiudere l'uovo",
       "companionStage_other": "Fai crescere {{companion}} fino all'età adulta",
-      "statLevelMax_one": "Porta una statistica al livello {{count}}",
-      "statLevelMax_other": "Porta una statistica al livello {{count}}"
-    }
+      "stat_one": "Porta {{stat}} al livello {{count}}",
+      "stat_other": "Porta {{stat}} al livello {{count}}"
+    },
+    "statRank": {
+      "level3": "Apprendista",
+      "level3_arcade": "Novizio",
+      "level3_fantasy": "Recluta",
+      "level3_cyberpunk": "Matricola",
+      "level3_lovecraft": "Iniziato",
+      "level3_minimal": "Bronzo",
+      "level6": "Esperto",
+      "level6_arcade": "Pro",
+      "level6_fantasy": "Veterano",
+      "level6_cyberpunk": "Specialista",
+      "level6_lovecraft": "Adepto",
+      "level6_minimal": "Argento",
+      "level10": "Maestro",
+      "level10_arcade": "Leggenda",
+      "level10_fantasy": "Campione",
+      "level10_cyberpunk": "Icona",
+      "level10_lovecraft": "Custode",
+      "level10_minimal": "Oro"
+    },
+    "statSection": "Badge di {{stat}}"
   },
   "essential": {
     "firstSteps": "Primi passi",

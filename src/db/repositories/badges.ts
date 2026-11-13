@@ -12,7 +12,7 @@ import {
 import { COMPANION_STAGES } from '../../rules/companion';
 import { BADGES } from '../../rules/config';
 import { statLevel } from '../../rules/stats';
-import type { GameDay } from '../../rules/types';
+import type { GameDay, StatKey } from '../../rules/types';
 import { badges, boss, companion, events, hero, heroStats } from '../schema';
 import type { Db } from '../types';
 import { appendEvent, type EventRow } from './events';
@@ -46,11 +46,14 @@ export function badgeMetrics(db: Db): BadgeMetrics {
   const pet = db.select().from(companion).get();
   const bossesDefeated =
     db.select({ value: count() }).from(boss).where(eq(boss.status, 'defeated')).get()?.value ?? 0;
-  const statLevels = db
-    .select()
-    .from(heroStats)
-    .all()
-    .map((row) => statLevel(row.points));
+  const statLevels = new Map(
+    db
+      .select()
+      .from(heroStats)
+      .all()
+      .map((row) => [row.statKey, statLevel(row.points)] as const),
+  );
+  const levelOf = (stat: StatKey) => statLevels.get(stat) ?? 0;
   return {
     completions: pet?.completionsTotal ?? 0,
     streakBest: current?.streakBest ?? 0,
@@ -59,7 +62,12 @@ export function badgeMetrics(db: Db): BadgeMetrics {
     fullDays: bonusDays(db, 'bonus.full_day'),
     plans: bonusDays(db, 'bonus.plan'),
     companionStage: COMPANION_STAGES.indexOf(pet?.stage ?? 'egg'),
-    statLevelMax: Math.max(0, ...statLevels),
+    stat_strength: levelOf('strength'),
+    stat_constitution: levelOf('constitution'),
+    stat_intelligence: levelOf('intelligence'),
+    stat_wisdom: levelOf('wisdom'),
+    stat_charisma: levelOf('charisma'),
+    stat_discipline: levelOf('discipline'),
   };
 }
 

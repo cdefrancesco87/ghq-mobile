@@ -3,6 +3,7 @@ import {
   badgeProgress,
   checkBadges,
   NO_PROGRESS,
+  statOfBadge,
   type BadgeDefinition,
   type BadgeMetrics,
 } from '@/rules/badges';
@@ -58,5 +59,25 @@ describe('checkBadges', () => {
   it('gives a whole, positive number of coins', () => {
     expect(Number.isInteger(BADGES.coins)).toBe(true);
     expect(BADGES.coins).toBeGreaterThan(0);
+  });
+});
+
+describe('stat badges (backlog T84)', () => {
+  const forza: BadgeDefinition = { key: 'stat_strength_6', metric: 'stat_strength', target: 6 };
+
+  it('counts the level of their own stat only', () => {
+    expect(badgeProgress(forza, metrics({ stat_strength: 4, stat_wisdom: 9 }))).toEqual({
+      current: 4,
+      target: 6,
+      reached: false,
+    });
+    expect(checkBadges([forza], metrics({ stat_strength: 6 }), [])).toEqual(['stat_strength_6']);
+    expect(checkBadges([forza], metrics({ stat_wisdom: 10 }), [])).toEqual([]);
+  });
+
+  it('tells the stat of a badge, none for the other badges', () => {
+    expect(statOfBadge(forza)).toBe('strength');
+    expect(statOfBadge({ key: 'x', metric: 'stat_discipline', target: 3 })).toBe('discipline');
+    expect(statOfBadge(DEFINITIONS[0])).toBeNull();
   });
 });

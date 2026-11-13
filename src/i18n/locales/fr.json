@@ -1752,13 +1752,14 @@
       "level": "{{level}} {{n}}",
       "fullDays": "{{fullDay}} ×{{n}}",
       "plans": "{{plan}} ×{{n}}",
-      "statLevelMax": "Talent {{n}}",
       "completions_1": "Premier pas",
       "bossesDefeated_1": "Première victoire",
       "fullDays_1": "{{fullDay}}",
       "plans_1": "{{plan}}",
       "companionStage_1": "Éclos",
-      "companionStage_2": "Grandis ensemble"
+      "companionStage_2": "Grandis ensemble",
+      "stat": "{{rank}} of {{stat}}",
+      "stat_minimal": "{{stat}} · {{rank}}"
     },
     "condition": {
       "completions_one": "Accomplis {{count}} {{mission}}",
@@ -1775,9 +1776,30 @@
       "plans_other": "Obtiens le bonus « {{plan}} » {{count}} fois",
       "companionStage_one": "Fais éclore l'œuf",
       "companionStage_other": "Fais grandir {{companion}} jusqu'à l'âge adulte",
-      "statLevelMax_one": "Amène une statistique au niveau {{count}}",
-      "statLevelMax_other": "Amène une statistique au niveau {{count}}"
-    }
+      "stat_one": "Bring {{stat}} to level {{count}}",
+      "stat_other": "Bring {{stat}} to level {{count}}"
+    },
+    "statRank": {
+      "level3": "Apprentice",
+      "level3_arcade": "Rookie",
+      "level3_fantasy": "Recruit",
+      "level3_cyberpunk": "Newbie",
+      "level3_lovecraft": "Initiate",
+      "level3_minimal": "Bronze",
+      "level6": "Expert",
+      "level6_arcade": "Pro",
+      "level6_fantasy": "Veteran",
+      "level6_cyberpunk": "Specialist",
+      "level6_lovecraft": "Adept",
+      "level6_minimal": "Silver",
+      "level10": "Master",
+      "level10_arcade": "Legend",
+      "level10_fantasy": "Champion",
+      "level10_cyberpunk": "Icon",
+      "level10_lovecraft": "Keeper",
+      "level10_minimal": "Gold"
+    },
+    "statSection": "{{stat}} badges"
   },
   "essential": {
     "firstSteps": "Premiers pas",

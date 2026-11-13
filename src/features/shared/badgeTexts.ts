@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 import { BADGE_LIST, NAMED_BADGES } from '@/content/badges';
 import { termInSentence } from '@/i18n/lexicon';
-import type { BadgeDefinition } from '@/rules/badges';
+import { statOfBadge, type BadgeDefinition } from '@/rules/badges';
 import { companionName } from '@/rules/companion';
 import { useHeroStore } from '@/stores/hero';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -35,14 +35,30 @@ export function useBadgeTexts(): BadgeTexts {
     plan: term('dayPlan'),
     companion: companionName(chosenName, term('companion')),
   });
+  // The badges of the stats (backlog T84): «Campione di Forza», the rank in the lexicon of the
+  // theme and the name of the stat in the theme.
+  const statName = (badge: BadgeDefinition) => {
+    const stat = statOfBadge(badge);
+    return stat === null ? null : t(`stats.${stat}`, { context: family });
+  };
   return {
-    nameOf: (badge) =>
-      t(`badges.name.${NAMED_BADGES.has(badge.key) ? badge.key : badge.metric}`, {
+    nameOf: (badge) => {
+      const stat = statName(badge);
+      if (stat !== null) {
+        const rank = t(`badges.statRank.level${badge.target}`, { context: family });
+        return t('badges.name.stat', { context: family, rank, stat });
+      }
+      return t(`badges.name.${NAMED_BADGES.has(badge.key) ? badge.key : badge.metric}`, {
         ...values(),
         n: badge.target,
-      }),
-    conditionOf: (badge) =>
-      t(`badges.condition.${badge.metric}`, { ...values(), count: badge.target }),
+      });
+    },
+    conditionOf: (badge) => {
+      const stat = statName(badge);
+      return stat !== null
+        ? t('badges.condition.stat', { stat, count: badge.target })
+        : t(`badges.condition.${badge.metric}`, { ...values(), count: badge.target });
+    },
     find: (key) => BADGE_LIST.find((badge) => badge.key === key),
   };
 }

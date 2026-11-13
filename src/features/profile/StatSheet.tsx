@@ -10,6 +10,7 @@ import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useLargeText } from '@/features/shared/useLargeText';
 import { formatDay } from '@/features/stats/format';
+import { BadgeGrid } from './BadgesScreen';
 import { addDays } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -24,7 +25,8 @@ export interface StatSheetProps {
 /**
  * The detail of a stat in a sheet (design-sezioni.md 9.5; mockup D33A): level, points towards the
  * next level and how many are missing, what makes it grow, the latest gains from the log
- * («+20 Corsa, ieri») and the missions that feed it.
+ * («+20 Corsa, ieri») and the missions that feed it; at the bottom its three badges, at levels 3,
+ * 6 and 10 (backlog T84), shown without opening another sheet.
  */
 export function StatSheet({ visible, detail, onClose }: StatSheetProps) {
   const largeText = useLargeText();
@@ -43,7 +45,7 @@ export function StatSheet({ visible, detail, onClose }: StatSheetProps) {
 function Content({ detail }: { readonly detail: StatDetail }) {
   const { t, i18n } = useTranslation();
   const { colors, family } = useTheme();
-  const { stat, points, progress, gains, missions, today } = detail;
+  const { stat, points, progress, gains, missions, today, badges } = detail;
   const name = t(`stats.${stat}`, { context: family });
   const next = progress.level + 1;
   const when = (day: GameDay) =>
@@ -144,6 +146,15 @@ function Content({ detail }: { readonly detail: StatDetail }) {
           </Card>
         )}
       </View>
+
+      {badges.length === 0 ? null : (
+        <View style={styles.block}>
+          <ThemedText variant="caption" color={colors.textMuted} accessibilityRole="header">
+            {t('badges.statSection', { stat: name })}
+          </ThemedText>
+          <BadgeGrid testID="profile-stat-badges" items={badges} />
+        </View>
+      )}
     </View>
   );
 }

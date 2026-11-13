@@ -1752,13 +1752,14 @@
       "level": "{{level}} {{n}}",
       "fullDays": "{{fullDay}} ×{{n}}",
       "plans": "{{plan}} ×{{n}}",
-      "statLevelMax": "Talent {{n}}",
       "completions_1": "Erster Schritt",
       "bossesDefeated_1": "Erster Sieg",
       "fullDays_1": "{{fullDay}}",
       "plans_1": "{{plan}}",
       "companionStage_1": "Geschlüpft",
-      "companionStage_2": "Zusammen gewachsen"
+      "companionStage_2": "Zusammen gewachsen",
+      "stat": "{{rank}} of {{stat}}",
+      "stat_minimal": "{{stat}} · {{rank}}"
     },
     "condition": {
       "completions_one": "Schließe {{count}} {{mission}} ab",
@@ -1775,9 +1776,30 @@
       "plans_other": "Hol dir den Bonus «{{plan}}» {{count}}-mal",
       "companionStage_one": "Lass das Ei schlüpfen",
       "companionStage_other": "Zieh {{companion}} groß",
-      "statLevelMax_one": "Bring einen Wert auf Level {{count}}",
-      "statLevelMax_other": "Bring einen Wert auf Level {{count}}"
-    }
+      "stat_one": "Bring {{stat}} to level {{count}}",
+      "stat_other": "Bring {{stat}} to level {{count}}"
+    },
+    "statRank": {
+      "level3": "Apprentice",
+      "level3_arcade": "Rookie",
+      "level3_fantasy": "Recruit",
+      "level3_cyberpunk": "Newbie",
+      "level3_lovecraft": "Initiate",
+      "level3_minimal": "Bronze",
+      "level6": "Expert",
+      "level6_arcade": "Pro",
+      "level6_fantasy": "Veteran",
+      "level6_cyberpunk": "Specialist",
+      "level6_lovecraft": "Adept",
+      "level6_minimal": "Silver",
+      "level10": "Master",
+      "level10_arcade": "Legend",
+      "level10_fantasy": "Champion",
+      "level10_cyberpunk": "Icon",
+      "level10_lovecraft": "Keeper",
+      "level10_minimal": "Gold"
+    },
+    "statSection": "{{stat}} badges"
   },
   "essential": {
     "firstSteps": "Erste Schritte",

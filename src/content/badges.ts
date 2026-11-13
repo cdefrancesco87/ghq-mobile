@@ -7,6 +7,9 @@ import type { BadgeDefinition, BadgeMetric } from '@/rules/badges';
 //
 // DRAFT to be reviewed by Claudio (CLAUDE.md, choice 7): list, thresholds and names.
 
+/** The levels of a stat that unlock its three badges (statistiche-eroe.md: «proposta di soglie»). */
+export const STAT_BADGE_LEVELS: readonly number[] = [3, 6, 10];
+
 const THRESHOLDS: Readonly<Record<BadgeMetric, readonly number[]>> = {
   completions: [1, 10, 50, 100, 250, 500, 1000],
   streakBest: [3, 7, 14, 30, 60, 100, 365],
@@ -15,7 +18,13 @@ const THRESHOLDS: Readonly<Record<BadgeMetric, readonly number[]>> = {
   fullDays: [1, 10, 50],
   plans: [1, 10, 50],
   companionStage: [1, 2],
-  statLevelMax: [3, 6, 10],
+  // The badges of the stats (backlog T84): levels 3, 6 and 10, as proposed in statistiche-eroe.md.
+  stat_strength: STAT_BADGE_LEVELS,
+  stat_constitution: STAT_BADGE_LEVELS,
+  stat_intelligence: STAT_BADGE_LEVELS,
+  stat_wisdom: STAT_BADGE_LEVELS,
+  stat_charisma: STAT_BADGE_LEVELS,
+  stat_discipline: STAT_BADGE_LEVELS,
 };
 
 /** The badges with a name of their own, instead of the one of their metric. */

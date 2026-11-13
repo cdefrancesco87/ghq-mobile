@@ -13,7 +13,8 @@ const COLUMNS = 3;
 
 export interface BadgeGridProps {
   readonly items: readonly BadgeItem[];
-  readonly onOpen: (item: BadgeItem) => void;
+  /** Without it the badges are only shown. */
+  readonly onOpen?: (item: BadgeItem) => void;
   readonly testID: string;
 }
 
@@ -31,7 +32,7 @@ export function BadgeGrid({ items, onOpen, testID }: BadgeGridProps) {
               key={item.badge.key}
               testID={`${testID}-${item.badge.key}`}
               item={item}
-              onOpen={() => onOpen(item)}
+              onOpen={onOpen === undefined ? undefined : () => onOpen(item)}
             />
           ))}
           {Array.from({ length: COLUMNS - row.length }, (_, filler) => (

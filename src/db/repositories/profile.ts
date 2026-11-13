@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
+import { statOfBadge } from '../../rules/badges';
 import { HERO_LEVELS, PROFILE, STATS } from '../../rules/config';
 import { addDays, diffDays } from '../../rules/gameDay';
 import { xpToNext } from '../../rules/level';
@@ -22,7 +23,7 @@ import { formArrow, statProgress, type FormArrow, type StatProgress } from '../.
 import { STAT_KEYS, type GameDay, type StatKey } from '../../rules/types';
 import { boss, events, hero, heroStats, missionDays, missions } from '../schema';
 import type { Db } from '../types';
-import { getBadgesView, type BadgesView } from './badges';
+import { getBadgesView, type BadgeItem, type BadgesView } from './badges';
 import { getCompanionView, type CompanionView } from './companion';
 import { appendEvent, notDeleted } from './events';
 import { loadHero, type ActionClock, type Hero } from './hero';
@@ -75,6 +76,8 @@ export interface StatDetail extends StatRow {
   readonly gains: readonly StatGain[];
   /** The missions that feed the stat, as primary or secondary stat, not archived. */
   readonly missions: readonly { readonly id: string; readonly name: string }[];
+  /** The badges of the stat, at levels 3, 6 and 10 (backlog T84; design-sezioni.md 9.5). */
+  readonly badges: readonly BadgeItem[];
 }
 
 function statRows(db: Db): Map<StatKey, number> {
@@ -213,6 +216,7 @@ export function getStatDetail(
       name: row.missionName ?? row.bossName ?? '',
     })),
     missions: feeding,
+    badges: getBadgesView(db).badges.filter((item) => statOfBadge(item.badge) === stat),
   };
 }
 

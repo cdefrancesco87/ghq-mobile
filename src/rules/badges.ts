@@ -2,6 +2,8 @@
 // of the hero, reached once and kept. The list lives in src/content/badges.ts; the coins in
 // BADGES of config.ts. Pure functions: the numbers come from the repository.
 
+import { STAT_KEYS, type StatKey } from './types';
+
 /** The numbers a badge can count. */
 export const BADGE_METRICS = [
   /** Missions completed in all (the counter of the companion, backfills included). */
@@ -17,10 +19,25 @@ export const BADGE_METRICS = [
   'plans',
   /** Stage of the companion: 0 egg, 1 puppy, 2 adult. */
   'companionStage',
-  /** The level of the highest stat. */
-  'statLevelMax',
+  // The level of each stat (backlog T84; statistiche-eroe.md «Badge delle statistiche»).
+  'stat_strength',
+  'stat_constitution',
+  'stat_intelligence',
+  'stat_wisdom',
+  'stat_charisma',
+  'stat_discipline',
 ] as const;
 export type BadgeMetric = (typeof BADGE_METRICS)[number];
+
+/** The metric that counts the level of a stat. */
+export function statBadgeMetric(stat: StatKey): BadgeMetric {
+  return `stat_${stat}`;
+}
+
+/** The stat of a badge of the stats; null for the other badges. */
+export function statOfBadge(badge: BadgeDefinition): StatKey | null {
+  return STAT_KEYS.find((stat) => badge.metric === statBadgeMetric(stat)) ?? null;
+}
 
 export type BadgeMetrics = Readonly<Record<BadgeMetric, number>>;
 

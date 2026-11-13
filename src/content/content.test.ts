@@ -118,7 +118,12 @@ describe('badges', () => {
     const highest = (metric: string) =>
       Math.max(...BADGE_LIST.filter((b) => b.metric === metric).map((b) => b.target));
     expect(highest('level')).toBeLessThanOrEqual(HERO_LEVELS.max);
-    expect(highest('statLevelMax')).toBeLessThanOrEqual(STATS.levelMax);
+    for (const stat of STAT_KEYS) {
+      expect(BADGE_LIST.filter((b) => b.metric === `stat_${stat}`).map((b) => b.target)).toEqual([
+        3, 6, 10,
+      ]);
+      expect(highest(`stat_${stat}`)).toBeLessThanOrEqual(STATS.levelMax);
+    }
     expect(highest('companionStage')).toBe(COMPANION_STAGES.length - 1);
   });
 });

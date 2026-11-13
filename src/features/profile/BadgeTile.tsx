@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { BadgeItem } from '@/db/repositories/badges';
 import { useBadgeTexts } from '@/features/shared/badgeTexts';
@@ -23,7 +23,8 @@ export function useBadgeDate(): (item: BadgeItem) => string {
 
 export interface BadgeTileProps {
   readonly item: BadgeItem;
-  readonly onOpen: () => void;
+  /** Without it the badge is only shown, as at the bottom of the detail of a stat. */
+  readonly onOpen?: () => void;
   readonly testID: string;
 }
 
@@ -47,15 +48,8 @@ export function BadgeTile({ item, onOpen, testID }: BadgeTileProps) {
         current: item.progress.current,
         target: item.progress.target,
       });
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={t('badges.openHint')}
-      onPress={onOpen}
-      style={styles.tile}
-    >
+  const body = (
+    <>
       <BadgeMedal unlocked={unlocked} size={BADGE_SIZE} label={name} />
       <ThemedText
         variant="label"
@@ -75,6 +69,25 @@ export function BadgeTile({ item, onOpen, testID }: BadgeTileProps) {
           ? dateOf(item)
           : t('badges.progress', { current: item.progress.current, target: item.progress.target })}
       </ThemedText>
+    </>
+  );
+  if (onOpen === undefined) {
+    return (
+      <View testID={testID} accessible accessibilityLabel={label} style={styles.tile}>
+        {body}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={t('badges.openHint')}
+      onPress={onOpen}
+      style={styles.tile}
+    >
+      {body}
     </Pressable>
   );
 }
