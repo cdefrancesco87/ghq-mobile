@@ -1,6 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -101,63 +110,70 @@ export function Sheet({
           importantForAccessibility="no"
           style={[StyleSheet.absoluteFill, { backgroundColor: SCRIM }]}
         />
-        <Animated.View
-          testID={testID}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-          style={[
-            styles.panel,
-            size === 'full'
-              ? { height: height - insets.top }
-              : { maxHeight: height / 2 + insets.bottom },
-            { paddingBottom: insets.bottom + 16 },
-            slideStyle,
-          ]}
+        {/* A field in the sheet stays above the keyboard (Android resizes the modal by itself). */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          pointerEvents="box-none"
+          style={styles.root}
         >
-          <Frame
-            shape={shape.sheet}
-            edge="top"
-            fill={colors.surfaceHigh}
-            // The neon top edge of Cyberpunk (misure-componenti.md, correction 7).
-            stroke={family === 'cyberpunk' ? colors.xp : colors.border}
-            testID={`${testID}-frame`}
-          />
-          <GestureDetector gesture={drag}>
-            <View testID={`${testID}-handle`} style={styles.handleArea}>
-              {/* Beside the title, not around it: an accessible parent would hide it. */}
-              <View
-                testID={`${testID}-close`}
-                accessible
-                accessibilityRole="button"
-                accessibilityLabel={t('shared.close')}
-                // iOS activates through the tap, Android only through the `activate` action.
-                onAccessibilityTap={onClose}
-                accessibilityActions={ACTIVATE_ACTIONS}
-                onAccessibilityAction={onClose}
-                style={StyleSheet.absoluteFill}
-              />
-              <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
-              {title === undefined ? null : (
-                // Not accessible by default on Android: touching it would read the button behind it.
-                <ThemedText
-                  accessible
-                  variant="sectionTitle"
-                  accessibilityRole="header"
-                  style={styles.title}
-                >
-                  {title}
-                </ThemedText>
-              )}
-            </View>
-          </GestureDetector>
-          <ScrollView
-            style={size === 'full' ? styles.fullContent : styles.halfContent}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
+          <Animated.View
+            testID={testID}
+            accessibilityViewIsModal
+            onAccessibilityEscape={onClose}
+            style={[
+              styles.panel,
+              size === 'full'
+                ? { height: height - insets.top }
+                : { maxHeight: height / 2 + insets.bottom },
+              { paddingBottom: insets.bottom + 16 },
+              slideStyle,
+            ]}
           >
-            {children}
-          </ScrollView>
-        </Animated.View>
+            <Frame
+              shape={shape.sheet}
+              edge="top"
+              fill={colors.surfaceHigh}
+              // The neon top edge of Cyberpunk (misure-componenti.md, correction 7).
+              stroke={family === 'cyberpunk' ? colors.xp : colors.border}
+              testID={`${testID}-frame`}
+            />
+            <GestureDetector gesture={drag}>
+              <View testID={`${testID}-handle`} style={styles.handleArea}>
+                {/* Beside the title, not around it: an accessible parent would hide it. */}
+                <View
+                  testID={`${testID}-close`}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={t('shared.close')}
+                  // iOS activates through the tap, Android only through the `activate` action.
+                  onAccessibilityTap={onClose}
+                  accessibilityActions={ACTIVATE_ACTIONS}
+                  onAccessibilityAction={onClose}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
+                {title === undefined ? null : (
+                  // Not accessible by default on Android: touching it would read the button behind it.
+                  <ThemedText
+                    accessible
+                    variant="sectionTitle"
+                    accessibilityRole="header"
+                    style={styles.title}
+                  >
+                    {title}
+                  </ThemedText>
+                )}
+              </View>
+            </GestureDetector>
+            <ScrollView
+              style={size === 'full' ? styles.fullContent : styles.halfContent}
+              contentContainerStyle={styles.content}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          </Animated.View>
+        </KeyboardAvoidingView>
       </GestureHandlerRootView>
     </Modal>
   );

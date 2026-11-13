@@ -6,6 +6,7 @@ import { archiveCompletedSingles } from '../db/repositories/missions';
 import { hasProfile } from '../db/repositories/onboarding';
 import type { Db } from '../db/types';
 import { useHeroStore } from './hero';
+import { useHighlightStore } from './highlight';
 import { closeSession, getSession, openSession, systemClock } from './session';
 import { useSettingsStore } from './settings';
 import { useThemeStore } from './theme';
@@ -68,6 +69,43 @@ export async function startApp(options: StartOptions): Promise<void> {
   } catch (error) {
     closeSession();
     useAppStore.setState({ status: 'error', db: null, hasProfile: false, error });
+  }
+}
+
+export interface WipeOptions {
+  /** Cancels the notifications scheduled with the system; a failure does not stop the wipe. */
+  readonly cancelNotifications: () => Promise<void>;
+  /** Closes the database and deletes its files: `deleteAppDatabase` in the app. */
+  readonly deleteDatabase: () => Promise<void> | void;
+  /** Creates the new database with the migrations: `openAppDatabase` in the app. */
+  readonly openDatabase: () => Promise<Db>;
+  /** The phone clock when missing. */
+  readonly clock?: () => ActionClock;
+}
+
+/**
+ * «Elimina tutti i dati» (US-IMP-05; design-sezioni.md 10.8): cancels the notifications, closes
+ * and deletes the database (the event log cannot be emptied with DELETE), opens a new empty one
+ * and loads the stores from it, so the app is back at its first launch. The stores keep the old
+ * values until the new database is open, so no screen draws from a closed one. It never throws:
+ * true when done, false when the app is left in the `error` status.
+ */
+export async function wipeAllData(options: WipeOptions): Promise<boolean> {
+  const clock = options.clock ?? systemClock;
+  await options.cancelNotifications().catch(() => undefined);
+  try {
+    closeSession();
+    await options.deleteDatabase();
+    const db = await options.openDatabase();
+    openSession({ db, clock });
+    loadStores(db);
+    useHighlightStore.getState().clear();
+    useAppStore.setState({ status: 'ready', db, hasProfile: hasProfile(db), error: null });
+    return true;
+  } catch (error) {
+    closeSession();
+    useAppStore.setState({ status: 'error', db: null, hasProfile: false, error });
+    return false;
   }
 }
 

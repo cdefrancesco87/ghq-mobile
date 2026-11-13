@@ -52,6 +52,12 @@ export const systemScheduler: ReminderScheduler = {
   },
 };
 
+/** Cancels every scheduled notification of the app and clears those shown («Elimina tutti i dati»). */
+export async function cancelAllNotifications(): Promise<void> {
+  await Notifications.cancelAllScheduledNotificationsAsync();
+  await Notifications.dismissAllNotificationsAsync();
+}
+
 /**
  * Prepares the channel (Android) and the categories with the Complete and Snooze actions, which
  * do not open the app.

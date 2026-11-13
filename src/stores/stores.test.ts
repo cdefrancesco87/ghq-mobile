@@ -7,8 +7,10 @@ import { daySummaries, heroStats, missionDays } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { createTestDb } from '../../test/db';
 import { FRIDAY, at, clockAt, missionId, newGame } from '../../test/game';
-import { onActionDone, runAction, startApp, useAppStore } from './app';
+import { onActionDone, runAction, startApp, useAppStore, wipeAllData } from './app';
 import { useHeroStore } from './hero';
+import { useHighlightStore } from './highlight';
+import { getSession } from './session';
 import { useSettingsStore } from './settings';
 import { useThemeStore } from './theme';
 
@@ -205,5 +207,85 @@ describe('settings and theme stores', () => {
     expect(() => useSettingsStore.getState().update('week_start', 3 as 1)).toThrow();
 
     expect(useSettingsStore.getState().settings.week_start).toBe(1);
+  });
+});
+
+describe('wipeAllData', () => {
+  async function startedGame() {
+    const db = newGame(['drink_water']);
+    setSetting(db, 'theme', 'cyberpunk', at(FRIDAY, 9));
+    setSetting(db, 'language', 'fr', at(FRIDAY, 9));
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: clock(FRIDAY, 10) });
+    return db;
+  }
+
+  it('cancels the notifications, deletes the database and starts again from the first launch', async () => {
+    await startedGame();
+    useHighlightStore.getState().highlight('mission-1');
+    const steps: string[] = [];
+    const fresh = createTestDb();
+
+    const done = await wipeAllData({
+      cancelNotifications: async () => {
+        steps.push('cancel');
+      },
+      deleteDatabase: () => {
+        steps.push('delete');
+        // The old database is closed: no action may reach it any more.
+        expect(() => getSession()).toThrow(/not started/);
+      },
+      openDatabase: async () => {
+        steps.push('open');
+        return fresh;
+      },
+      clock: clock(FRIDAY, 11),
+    });
+
+    expect(done).toBe(true);
+    expect(steps).toEqual(['cancel', 'delete', 'open']);
+    expect(useAppStore.getState()).toMatchObject({ status: 'ready', db: fresh, hasProfile: false });
+    expect(getSession().db).toBe(fresh);
+    expect(useHeroStore.getState()).toMatchObject({ hero: null, stats: {}, companionName: null });
+    expect(useThemeStore.getState().theme).toBe('minimal');
+    expect(useSettingsStore.getState().settings.language).toBe('en');
+    expect(useHighlightStore.getState().missionId).toBeNull();
+    // The actions run on the new database.
+    runAction((db, now) =>
+      createProfile(
+        db,
+        { name: 'Ada', language: 'it', theme: 'minimal', templateKeys: ['drink_water'] },
+        now,
+      ),
+    );
+    expect(useHeroStore.getState().hero).toMatchObject({ name: 'Ada', level: 1 });
+  });
+
+  it('goes on when the notifications cannot be cancelled', async () => {
+    await startedGame();
+
+    const done = await wipeAllData({
+      cancelNotifications: () => Promise.reject(new Error('no permission')),
+      deleteDatabase: () => undefined,
+      openDatabase: () => Promise.resolve(createTestDb()),
+      clock: clock(FRIDAY, 11),
+    });
+
+    expect(done).toBe(true);
+    expect(useAppStore.getState()).toMatchObject({ status: 'ready', hasProfile: false });
+  });
+
+  it('shows the error when the database cannot be deleted or opened again', async () => {
+    await startedGame();
+    const failure = new Error('disk full');
+
+    const done = await wipeAllData({
+      cancelNotifications: () => Promise.resolve(),
+      deleteDatabase: () => undefined,
+      openDatabase: () => Promise.reject(failure),
+    });
+
+    expect(done).toBe(false);
+    expect(useAppStore.getState()).toMatchObject({ status: 'error', db: null, error: failure });
+    expect(() => getSession()).toThrow(/not started/);
   });
 });

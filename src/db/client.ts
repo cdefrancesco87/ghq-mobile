@@ -7,6 +7,7 @@ import migrations from '../../drizzle/migrations';
 import { lastAppliedMigrationAt, migrateWithBackup, type DatabaseFiles } from './migrateWithBackup';
 import * as schema from './schema';
 import type { Db } from './types';
+import { deleteDatabaseFiles } from './wipe';
 
 export const DATABASE_NAME = 'ghq.db';
 
@@ -31,11 +32,23 @@ interface AppDatabase {
   readonly db: ExpoSQLiteDatabase<typeof schema>;
 }
 
+const databasePath = () => `${defaultDatabaseDirectory}/${DATABASE_NAME}`;
+
+/** The connections open on the file: the app's and the one of the notification task. */
+const connections = new Set<AppDatabase>();
+
 function open(): AppDatabase {
   // The change listener lets Drizzle's useLiveQuery refresh the lists by itself.
   const sqlite = openDatabaseSync(DATABASE_NAME, { enableChangeListener: true });
   sqlite.execSync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
-  return { sqlite, db: drizzle(sqlite, { schema }) };
+  const opened = { sqlite, db: drizzle(sqlite, { schema }) };
+  connections.add(opened);
+  return opened;
+}
+
+function close(opened: AppDatabase): void {
+  connections.delete(opened);
+  opened.sqlite.closeSync();
 }
 
 /**
@@ -44,13 +57,29 @@ function open(): AppDatabase {
  */
 export async function openAppDatabase(): Promise<Db> {
   const { db } = await migrateWithBackup<AppDatabase>({
-    path: `${defaultDatabaseDirectory}/${DATABASE_NAME}`,
+    path: databasePath(),
     files: appFiles,
     journal: migrations.journal.entries,
     open,
-    close: ({ sqlite }) => sqlite.closeSync(),
+    close,
     lastAppliedAt: (opened) => lastAppliedMigrationAt(opened.db),
     migrate: (opened) => migrate(opened.db, migrations),
   });
   return db;
+}
+
+/** False once «Elimina tutti i dati» has closed the connection of `db`. */
+export function isAppDatabaseOpen(db: Db): boolean {
+  return [...connections].some((opened) => opened.db === db);
+}
+
+/**
+ * Closes every connection to the database and deletes its files («Elimina tutti i dati»). The
+ * next `openAppDatabase` creates a new empty database with the migrations.
+ */
+export function deleteAppDatabase(): void {
+  for (const opened of [...connections]) {
+    close(opened);
+  }
+  deleteDatabaseFiles(databasePath(), appFiles);
 }

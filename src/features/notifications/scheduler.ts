@@ -147,6 +147,16 @@ async function sync(db: Db, scheduler: ReminderScheduler, input: SyncInput): Pro
 let queue: Promise<unknown> = Promise.resolve();
 
 /**
+ * Runs `task` after the syncs already started and before the next ones, so a sync in progress
+ * cannot schedule again what `task` cancels («Elimina tutti i dati»).
+ */
+export function afterReminderSyncs<T>(task: () => Promise<T>): Promise<T> {
+  const run = queue.then(task);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
+/**
  * Aligns the scheduled notifications with the reminders of the missions: schedules the missing
  * ones of the window (the earliest, within the iOS limit), cancels the ones no longer wanted
  * and those of the days already over. Reminders already shown today and snoozed ones stay, so
@@ -157,7 +167,5 @@ export function syncReminders(
   scheduler: ReminderScheduler,
   input: SyncInput,
 ): Promise<SyncResult> {
-  const run = queue.then(() => sync(db, scheduler, input));
-  queue = run.catch(() => undefined);
-  return run;
+  return afterReminderSyncs(() => sync(db, scheduler, input));
 }

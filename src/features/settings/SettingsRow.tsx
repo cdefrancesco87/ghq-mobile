@@ -26,6 +26,8 @@ export interface SettingsRowProps {
   readonly switchValue?: boolean;
   readonly onSwitch?: (value: boolean) => void;
   readonly last?: boolean;
+  /** A row that destroys data («Elimina tutti i dati»): icon and name in the danger colour. */
+  readonly danger?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export function SettingsRow({
   switchValue,
   onSwitch,
   last = false,
+  danger = false,
 }: SettingsRowProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -56,11 +59,17 @@ export function SettingsRow({
   const body = (
     <>
       <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <Icon name={icon} size={20} color={colors.textMuted} />
+        <Icon name={icon} size={20} color={danger ? colors.dangerText : colors.textMuted} />
       </View>
       <View testID={`${testID}-text`} style={[styles.text, largeText ? null : styles.inline]}>
         <View style={styles.flex}>
-          <ThemedText variant="body">{label}</ThemedText>
+          <ThemedText
+            testID={`${testID}-label`}
+            variant="body"
+            color={danger ? colors.dangerText : undefined}
+          >
+            {label}
+          </ThemedText>
           {caption === undefined ? null : (
             <ThemedText testID={`${testID}-caption`} variant="caption" color={colors.textMuted}>
               {caption}
