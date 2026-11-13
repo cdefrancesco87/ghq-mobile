@@ -1,14 +1,19 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
+import type { BackfillDay } from '@/db/repositories/backfill';
 import type { HeatmapDay, HeatmapMark } from '@/db/repositories/heatmap';
+import { Button } from '@/features/shared/Button';
 import { Card } from '@/features/shared/Card';
 import { Icon } from '@/features/shared/Icon';
 import type { IconName } from '@/features/shared/icons';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { termInSentence } from '@/i18n/lexicon';
+import type { GameDay } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
+import { BackfillPicker } from './BackfillPicker';
 import { formatDay } from './format';
 
 const MARK_ICONS: Record<HeatmapMark, IconName> = {
@@ -23,6 +28,9 @@ export interface HeatmapDaySheetProps {
   /** The day shown, kept while the sheet slides away. */
   readonly day: HeatmapDay | null;
   readonly onClose: () => void;
+  readonly today: GameDay;
+  /** The missions of the day that can be completed afterwards; null or empty for none. */
+  readonly backfill: BackfillDay | null;
 }
 
 /** «Giovedì 5 novembre»: the long date of a day, with a capital letter. */
@@ -34,10 +42,17 @@ export function longDay(day: HeatmapDay['day'], language: string): string {
 /**
  * The sheet of a day of the heatmap (design-sezioni.md 8.3, mockup D30): the date, the missions
  * done out of those expected with the percentage, and every mission of the day (done, missed,
- * skipped; today also those still to do). The forgotten completion arrives with T68.
+ * skipped; today also those still to do). On the 7 days before today «+ Completamento
+ * dimenticato» turns the sheet into the choice of a missed mission (US-STAT-03).
  */
-export function HeatmapDaySheet({ visible, day, onClose }: HeatmapDaySheetProps) {
+export function HeatmapDaySheet({ visible, day, onClose, today, backfill }: HeatmapDaySheetProps) {
   const { t, i18n } = useTranslation();
+  // The choice of the forgotten completion, for the day it was opened on.
+  const [picking, setPicking] = useState<GameDay | null>(null);
+  const pickingNow = visible && day !== null && picking === day.day;
+  if (!visible && picking !== null) {
+    setPicking(null);
+  }
   const { colors, family } = useTheme();
   const term = (count: number) =>
     termInSentence(
@@ -58,7 +73,9 @@ export function HeatmapDaySheet({ visible, day, onClose }: HeatmapDaySheetProps)
       onClose={onClose}
       title={day === null ? undefined : longDay(day.day, i18n.language)}
     >
-      {day === null ? null : (
+      {day === null ? null : pickingNow && backfill !== null ? (
+        <BackfillPicker days={[backfill]} today={today} withDays={false} onDone={onClose} />
+      ) : (
         <View style={styles.content}>
           <ThemedText testID="stats-day-count" color={colors.textMuted}>
             {day.rate === null
@@ -96,6 +113,14 @@ export function HeatmapDaySheet({ visible, day, onClose }: HeatmapDaySheetProps)
               ))}
             </Card>
           )}
+          {backfill !== null && backfill.missions.length > 0 ? (
+            <Button
+              testID="stats-day-backfill"
+              variant="secondary"
+              label={t('backfill.open')}
+              onPress={() => setPicking(day.day)}
+            />
+          ) : null}
         </View>
       )}
     </Sheet>

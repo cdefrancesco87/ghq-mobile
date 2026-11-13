@@ -1262,6 +1262,15 @@
     "keep": "Lascia com'è",
     "undone": "Voce annullata"
   },
+  "backfill": {
+    "open": "+ Completamento dimenticato",
+    "title": "Completamento dimenticato",
+    "note": "Dà solo {{xp}} e monete di base. Non restituisce i punti di {{hp}} persi e non ripara i giorni di {{streak}} già persi.",
+    "confirm": "Aggiungi il completamento",
+    "choose": "Scegli prima cosa hai completato",
+    "done": "Completamento aggiunto: +{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+    "empty": "Negli ultimi 7 giorni non c'è nulla da recuperare."
+  },
   "missionDetail": {
     "title": "Andamento",
     "gone": "Qui non c'è più niente da vedere.",

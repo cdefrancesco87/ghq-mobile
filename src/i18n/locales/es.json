@@ -1262,6 +1262,15 @@
     "keep": "Dejarla",
     "undone": "Entrada deshecha"
   },
+  "backfill": {
+    "open": "+ Completado olvidado",
+    "title": "Completado olvidado",
+    "note": "Da solo {{xp}} y monedas base. No devuelve los puntos de {{hp}} perdidos ni repara los días de {{streak}} ya perdidos.",
+    "confirm": "Añadir el completado",
+    "choose": "Elige primero lo que completaste",
+    "done": "Completado añadido: +{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+    "empty": "No hay nada que recuperar en los últimos 7 días."
+  },
   "missionDetail": {
     "title": "Evolución",
     "gone": "Aquí ya no hay nada que ver.",

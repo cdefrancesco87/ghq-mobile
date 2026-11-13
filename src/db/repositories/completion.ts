@@ -103,7 +103,7 @@ function dueMission(tx: Db, missionId: string, day: GameDay): Mission {
   return mission;
 }
 
-function missionDayOf(tx: Db, missionId: string, day: GameDay) {
+export function missionDayOf(tx: Db, missionId: string, day: GameDay) {
   return tx
     .select()
     .from(missionDays)
@@ -111,7 +111,7 @@ function missionDayOf(tx: Db, missionId: string, day: GameDay) {
     .get();
 }
 
-function writeMissionDay(tx: Db, row: typeof missionDays.$inferInsert): void {
+export function writeMissionDay(tx: Db, row: typeof missionDays.$inferInsert): void {
   const { missionId, gameDay, ...changes } = row;
   tx.insert(missionDays)
     .values(row)
@@ -120,7 +120,7 @@ function writeMissionDay(tx: Db, row: typeof missionDays.$inferInsert): void {
 }
 
 /** One more completion for the companion: the egg hatches at the first one. */
-function countCompletion(tx: Db, clock: ActionClock): void {
+export function countCompletion(tx: Db, clock: ActionClock): void {
   const current = tx.select().from(companion).get();
   if (current === undefined) {
     throw new RangeError('There is no companion yet: the first launch must create it');

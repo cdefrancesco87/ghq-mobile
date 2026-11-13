@@ -276,6 +276,21 @@ export const QUEST_LOG = {
   pageSize: 50,
 } as const;
 
+/**
+ * A forgotten completion added from the Registro or the heatmap (US-STAT-03, design-sezioni.md 8.3
+ * and 8.6), up to 7 days back. It gives back no hit points and repairs no broken streak. PROVISIONAL
+ * (backlog T68): the rewards follow the «Proposta» of xp-e-monete.md section 1, not yet approved:
+ * base XP and coins, without the streak multiplier, the halving of the exhausted day or the
+ * bonuses of the day. Also provisional: the stat points of the mission are given (they are part of
+ * the base of a completion) and the linked boss takes no damage (a past day cannot defeat a boss).
+ */
+export const BACKFILL = {
+  /** Days before today that can still be corrected. */
+  maxDaysBack: 7,
+  givesStatPoints: true,
+  damagesBoss: false,
+} as const;
+
 /** How the reminders are scheduled in the system (stack-tecnologico.md, point 5). */
 export const REMINDERS = {
   /** Game days scheduled ahead, from today; they are scheduled again at every start. */

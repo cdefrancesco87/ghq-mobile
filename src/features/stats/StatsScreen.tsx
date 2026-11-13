@@ -22,6 +22,7 @@ import { Heatmap } from './Heatmap';
 import { HeatmapDaySheet, longDay } from './HeatmapDaySheet';
 import { QuestLog } from './QuestLog';
 import { SummaryTile } from './SummaryTile';
+import { useBackfillCandidates } from './useBackfillCandidates';
 import { useHeatmapDay } from './useHeatmapDay';
 import { TrendRow } from './TrendRow';
 
@@ -50,6 +51,7 @@ export function StatsScreen({ view }: StatsScreenProps) {
   const [openDay, setOpenDay] = useState<GameDay | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
   const day = useHeatmapDay(openDay);
+  const backfill = useBackfillCandidates(openDay);
 
   const showDay = (gameDay: GameDay) => {
     setOpenDay(gameDay);
@@ -155,7 +157,13 @@ export function StatsScreen({ view }: StatsScreenProps) {
           </>
         )}
       </ScrollView>
-      <HeatmapDaySheet visible={sheetVisible} day={day} onClose={() => setSheetVisible(false)} />
+      <HeatmapDaySheet
+        visible={sheetVisible}
+        day={day}
+        today={view.heatmap.today}
+        backfill={backfill?.[0] ?? null}
+        onClose={() => setSheetVisible(false)}
+      />
     </View>
   );
 }

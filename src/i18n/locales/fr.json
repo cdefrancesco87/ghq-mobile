@@ -1262,6 +1262,15 @@
     "keep": "Garder",
     "undone": "Entrée annulée"
   },
+  "backfill": {
+    "open": "+ Réalisation oubliée",
+    "title": "Réalisation oubliée",
+    "note": "Donne seulement les {{xp}} et pièces de base. Ne rend pas les points de {{hp}} perdus et ne répare pas les jours de {{streak}} déjà perdus.",
+    "confirm": "Ajouter la réalisation",
+    "choose": "Choisis d'abord ce que tu as fait",
+    "done": "Réalisation ajoutée : +{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+    "empty": "Rien à rattraper ces 7 derniers jours."
+  },
   "missionDetail": {
     "title": "Évolution",
     "gone": "Il n'y a plus rien à voir ici.",

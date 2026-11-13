@@ -16,7 +16,7 @@ import { Chip } from '@/features/shared/Chip';
 import { ConfirmDialog } from '@/features/shared/ConfirmDialog';
 import { EmptyState } from '@/features/shared/EmptyState';
 import { Icon } from '@/features/shared/Icon';
-import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
+import { Sheet, SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import type { IconName } from '@/features/shared/icons';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
@@ -27,8 +27,10 @@ import { addDays } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
 import { runAction } from '@/stores/app';
 import { useTheme } from '@/theme/ThemeProvider';
+import { BackfillPicker } from './BackfillPicker';
 import { longDay } from './HeatmapDaySheet';
 import { NO_RANGE, QuestLogFilterSheet, type QuestLogRange } from './QuestLogFilterSheet';
+import { useBackfillCandidates } from './useBackfillCandidates';
 import { useQuestLog } from './useQuestLog';
 
 const ICONS: Record<QuestLogType, IconName> = {
@@ -61,7 +63,8 @@ const kindKey = (type: QuestLogType) => type.replace('.', '_');
  * Salti, Boss and Oggetti with «Filtra» for a mission and the days, the entries grouped by day
  * with the icon of the type, the text in the lexicon of the theme and what they gave on the right.
  * A completion, a skip or a step of today is undone from the menu of its entry, with a
- * confirmation (the rules of T40).
+ * confirmation (the rules of T40). «+ Completamento dimenticato» completes afterwards a mission of
+ * the last 7 days (US-STAT-03), shown only when there is one.
  */
 export function QuestLog() {
   const { t, i18n } = useTranslation();
@@ -75,7 +78,11 @@ export function QuestLog() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [queued, setQueued] = useState<QuestLogEntry | null>(null);
   const [confirming, setConfirming] = useState<QuestLogEntry | null>(null);
+  const [backfillVisible, setBackfillVisible] = useState(false);
+  // A new key at every opening: the choice of the previous one is forgotten.
+  const [backfillKey, setBackfillKey] = useState(0);
   const view = useQuestLog({ filter, ...range, limit });
+  const backfill = useBackfillCandidates();
 
   // The dialog opens once the menu has slid away: two modals at once do not open on iOS.
   useEffect(() => {
@@ -220,6 +227,17 @@ export function QuestLog() {
           onPress={() => setFilterVisible(true)}
         />
       </ScrollView>
+      {backfill !== null && backfill.length > 0 ? (
+        <Button
+          testID="stats-log-backfill"
+          variant="secondary"
+          label={t('backfill.open')}
+          onPress={() => {
+            setBackfillKey(backfillKey + 1);
+            setBackfillVisible(true);
+          }}
+        />
+      ) : null}
       {empty ? (
         <EmptyState
           testID={ranged || filter !== 'all' ? 'stats-log-empty-filtered' : 'stats-log-empty'}
@@ -309,6 +327,20 @@ export function QuestLog() {
         }}
         onClose={() => setFilterVisible(false)}
       />
+      <Sheet
+        testID="stats-backfill"
+        visible={backfillVisible}
+        onClose={() => setBackfillVisible(false)}
+        size="full"
+        title={t('backfill.title')}
+      >
+        <BackfillPicker
+          key={backfillKey}
+          days={backfill ?? []}
+          today={view.today}
+          onDone={() => setBackfillVisible(false)}
+        />
+      </Sheet>
       <ActionSheet
         testID="stats-log-menu"
         visible={menuVisible}

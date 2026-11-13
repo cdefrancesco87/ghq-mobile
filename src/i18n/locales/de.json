@@ -1262,6 +1262,15 @@
     "keep": "Behalten",
     "undone": "Eintrag rückgängig gemacht"
   },
+  "backfill": {
+    "open": "+ Vergessener Abschluss",
+    "title": "Vergessener Abschluss",
+    "note": "Gibt nur Basis-{{xp}} und Münzen. Verlorene {{hp}}-Punkte kommen nicht zurück, verlorene {{streak}}-Tage werden nicht repariert.",
+    "confirm": "Abschluss hinzufügen",
+    "choose": "Wähle zuerst, was du erledigt hast",
+    "done": "Abschluss hinzugefügt: +{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+    "empty": "In den letzten 7 Tagen gibt es nichts nachzutragen."
+  },
   "missionDetail": {
     "title": "Verlauf",
     "gone": "Hier gibt es nichts mehr zu sehen.",

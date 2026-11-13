@@ -1262,6 +1262,15 @@
     "keep": "Keep it",
     "undone": "Entry undone"
   },
+  "backfill": {
+    "open": "+ Forgotten completion",
+    "title": "Forgotten completion",
+    "note": "Gives only base {{xp}} and coins. It does not give back lost {{hp}} points or repair {{streak}} days already lost.",
+    "confirm": "Add the completion",
+    "choose": "First choose what you completed",
+    "done": "Completion added: +{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+    "empty": "Nothing to catch up on in the last 7 days."
+  },
   "missionDetail": {
     "title": "Progress",
     "gone": "There is nothing left to see here.",

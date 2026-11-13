@@ -421,3 +421,81 @@ describe('Statistics: Log', () => {
     expect(screen.queryByTestId(`stats-log-entry-${gone.completion!.eventId}`)).toBeNull();
   });
 });
+
+describe('Statistics: forgotten completion', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  const backfills = (db: Db) =>
+    db.select().from(events).where(eq(events.type, 'mission.backfilled')).all();
+
+  it('completes afterwards a mission of the last 7 days from the Registro', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal', 'no_social_evening']);
+    const journal = missionId(db, 'journal');
+    await openLog(db, 9);
+
+    await fireEvent.press(screen.getByTestId('stats-log-backfill'));
+    expect(await screen.findByText('Completamento dimenticato')).toBeOnTheScreen();
+    expect(screen.getByTestId('backfill-picker')).toHaveTextContent(/Ieri/);
+    expect(screen.getByTestId('backfill-note')).toHaveTextContent(
+      /Non restituisce i punti di energia persi e non ripara i giorni di serie già persi\./,
+    );
+    expect(screen.getByTestId('backfill-confirm')).toBeDisabled();
+
+    await fireEvent.press(screen.getByTestId(`backfill-option-2026-11-07-${journal}`));
+    expect(screen.getByTestId(`backfill-option-2026-11-07-${journal}`)).toBeChecked();
+    await fireEvent.press(screen.getByTestId('backfill-confirm'));
+    await act(async () => {
+      jest.advanceTimersByTime(SHEET_DURATION_MS);
+    });
+
+    expect(backfills(db)).toEqual([
+      expect.objectContaining({ missionId: journal, gameDay: '2026-11-07', source: 'backfill' }),
+    ]);
+    expect(screen.getByTestId('stats-log-day-2026-11-07')).toHaveTextContent(
+      /Completamento dimenticato/,
+    );
+    expect(screen.getByText(/^Completamento aggiunto: \+\d+ XP · \+\d+ monete$/)).toBeOnTheScreen();
+  });
+
+  it('offers no forgotten completion when nothing was missed', async () => {
+    await openLog(newGame(['journal']), 6);
+    expect(screen.queryByTestId('stats-log-backfill')).toBeNull();
+  });
+
+  it('completes afterwards from the sheet of a day of the heatmap', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal', 'no_social_evening']);
+    const journal = missionId(db, 'journal');
+    await open(db, 9);
+
+    expect(screen.getByTestId('stats-heatmap-2026-11-07-0')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('stats-heatmap-2026-11-07'));
+    await fireEvent.press(await screen.findByTestId('stats-day-backfill'));
+    // Only the missions of that day, without the headers of the days.
+    expect(screen.queryByText('Ieri')).toBeNull();
+    await fireEvent.press(screen.getByTestId(`backfill-option-2026-11-07-${journal}`));
+    await fireEvent.press(screen.getByTestId('backfill-confirm'));
+    await act(async () => {
+      jest.advanceTimersByTime(SHEET_DURATION_MS);
+    });
+
+    expect(backfills(db)).toHaveLength(1);
+    expect(screen.getByTestId('stats-heatmap-2026-11-07-2')).toBeOnTheScreen();
+  });
+
+  it('offers it only on the 7 days before today', async () => {
+    const db = newGame(['journal']);
+    await open(db, 15);
+
+    await fireEvent.press(screen.getByTestId('stats-heatmap-2026-11-07'));
+    expect(await screen.findByText('Sabato 7 novembre')).toBeOnTheScreen();
+    expect(screen.queryByTestId('stats-day-backfill')).toBeNull();
+    await fireEvent.press(screen.getByTestId('stats-day-sheet-backdrop'));
+    await fireEvent.press(screen.getByTestId('stats-heatmap-2026-11-08'));
+    expect(await screen.findByText('Domenica 8 novembre')).toBeOnTheScreen();
+    expect(screen.getByTestId('stats-day-backfill')).toBeOnTheScreen();
+  });
+});
