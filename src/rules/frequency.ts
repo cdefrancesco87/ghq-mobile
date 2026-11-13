@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { diffDays, isGameDay, weekStartOf, weekday, type Weekday } from './gameDay';
+import { isPausedOn } from './pause';
 import type { GameDay } from './types';
 
 // When a mission is due. The frequency is stored as JSON in `missions.frequency` and validated
@@ -123,7 +124,7 @@ export function isDueToday(mission: DueMission, day: GameDay, ctx: ScheduleConte
   if (mission.deletedAt !== null || mission.status === 'archived') {
     return false;
   }
-  if (mission.status === 'paused' && (mission.pausedUntil === null || day < mission.pausedUntil)) {
+  if (isPausedOn(mission, day)) {
     return false;
   }
   if (mission.kind === 'task') {

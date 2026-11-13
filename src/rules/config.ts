@@ -214,6 +214,16 @@ export const HABITS_LIST = {
 } as const;
 
 /**
+ * Pausing a mission (design-sezioni.md 3.6). PROVISIONAL (backlog T62): «3 giorni», «1 settimana»
+ * and «2 settimane» are that many game days of pause, today included; the sheet starts on one week
+ * as in mockup D19A.
+ */
+export const MISSION_PAUSE = {
+  presetDays: [3, 7, 14],
+  defaultDays: 7,
+} as const;
+
+/**
  * Statistics, overview (design-sezioni.md 8.2, 8.4). PROVISIONAL (backlog T52): the documents do
  * not say which days the periods cover; they are the last game days up to today, included.
  */

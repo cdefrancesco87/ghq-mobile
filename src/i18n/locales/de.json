@@ -525,7 +525,8 @@
       "streakWeek": "Serie {{streak}} Woche",
       "streakWeeks": "Serie {{streak}} Wochen",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, keine Daten in den letzten 30 Tagen",
-      "skippedReason": "übersprungen · {{reason}}"
+      "skippedReason": "übersprungen · {{reason}}",
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} eingefroren"
     },
     "difficulty": {
       "easy": "Leicht",
@@ -789,7 +790,9 @@
       "stickyLevel": "Lv {{level}}"
     },
     "notices": {
-      "shieldUsed": "Der Schild hat gestern deine Serie geschützt."
+      "shieldUsed": "Der Schild hat gestern deine Serie geschützt.",
+      "resumed_one": "Pause vorbei: „{{names}}“ ist ab heute zurück.",
+      "resumed_other": "Pause vorbei: {{names}} sind ab heute zurück."
     },
     "rest": {
       "title": "Ruhetag",
@@ -900,7 +903,9 @@
       "edit": "Bearbeiten",
       "archive": "Archivieren",
       "restore": "Wiederherstellen",
-      "delete": "Löschen"
+      "delete": "Löschen",
+      "pause": "Pausieren",
+      "resume": "Fortsetzen"
     },
     "delete": {
       "title": "«{{name}}» und den ganzen Verlauf löschen?",
@@ -918,6 +923,29 @@
       "habits": "Keine Gewohnheiten.",
       "tasks": "Keine einmaligen Aufgaben.",
       "archived": "Keine archivierten Missionen."
+    },
+    "search": {
+      "open": "Suchen",
+      "placeholder": "Mission suchen",
+      "clear": "Suche löschen",
+      "cancel": "Abbrechen",
+      "noResults": "Keine Ergebnisse für „{{query}}“",
+      "create": "„{{name}}“ erstellen"
+    },
+    "pausedGroup": "Pausiert",
+    "pausedUntil": "Pausiert bis {{day}}. {{month}}",
+    "pausedOpen": "Pausiert, ohne Enddatum",
+    "pausedToast": "Pausiert",
+    "resumedToast": "Wieder aktiv",
+    "pause": {
+      "title": "Bis wann?",
+      "preset_3": "3 Tage",
+      "preset_7": "1 Woche",
+      "preset_14": "2 Wochen",
+      "date": "Datum wählen",
+      "dateChosen": "Bis {{day}}. {{month}}",
+      "open": "Ohne Enddatum",
+      "confirm": "Pausieren"
     }
   },
   "goals": {

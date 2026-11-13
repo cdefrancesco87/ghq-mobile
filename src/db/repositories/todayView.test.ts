@@ -6,7 +6,7 @@ import {
   skipMission,
 } from '@/db/repositories/completion';
 import { changeHero } from '@/db/repositories/hero';
-import { createMission, deleteMission, pauseMission } from '@/db/repositories/missions';
+import { createMission, deleteMission, getMission, pauseMission } from '@/db/repositories/missions';
 import { setSetting, setWeekRules } from '@/db/repositories/settings';
 import { getTodayView } from '@/db/repositories/todayView';
 import { undoEvent } from '@/db/repositories/undo';
@@ -61,7 +61,7 @@ describe('getTodayView', () => {
       shieldUsedYesterday: false,
       coinsStolen: [],
       companionGrewTo: 'baby',
-      resumedMissionIds: [],
+      resumedMissions: [],
     });
   });
 
@@ -314,14 +314,17 @@ describe('getTodayView', () => {
     expect(getTodayView(db, clockAt(FRIDAY + 2, 12)).notices.coinsStolen).toEqual([]);
   });
 
-  it('tells the missions back from a pause today', () => {
+  it('tells the missions back from a pause today, without the deleted ones', () => {
     const db = newGame(['meditation']);
     const meditation = missionId(db, 'meditation');
     pauseMission(db, meditation, '2026-11-07', clockAt(FRIDAY, 10));
+    const gone = createMission(db, { name: 'Sparita' }, clockAt(FRIDAY, 10)).id;
+    pauseMission(db, gone, '2026-11-07', clockAt(FRIDAY, 10));
+    deleteMission(db, gone, clockAt(FRIDAY, 11));
 
-    expect(getTodayView(db, clockAt(FRIDAY, 12)).notices.resumedMissionIds).toEqual([]);
-    expect(getTodayView(db, clockAt(FRIDAY + 1, 12)).notices.resumedMissionIds).toEqual([
-      meditation,
+    expect(getTodayView(db, clockAt(FRIDAY, 12)).notices.resumedMissions).toEqual([]);
+    expect(getTodayView(db, clockAt(FRIDAY + 1, 12)).notices.resumedMissions).toEqual([
+      { id: meditation, name: getMission(db, meditation)?.name },
     ]);
   });
 

@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 
+import { closePendingDays } from '@/db/repositories/closing';
 import { completeMission } from '@/db/repositories/completion';
 import { listHabitsView } from '@/db/repositories/habitsView';
 import {
@@ -47,9 +48,11 @@ function novemberDays(from: number, to: number): GameDay[] {
 
 function item(db: Db, id: string, day = 16) {
   const view = listHabitsView(db, clockAt(day, 10));
-  return [...view.categories.flatMap((category) => category.items), ...view.archived].find(
-    (row) => row.mission.id === id,
-  );
+  return [
+    ...view.categories.flatMap((category) => category.items),
+    ...view.paused,
+    ...view.archived,
+  ].find((row) => row.mission.id === id);
 }
 
 describe('listHabitsView', () => {
@@ -119,6 +122,51 @@ describe('listHabitsView', () => {
     ).id;
     completeMission(db, { missionId: id, source: 'app', ...clockAt(7, 10) });
     expect(item(db, id, 9)).toMatchObject({ doneDay: '2026-11-07', completionRate: 100 });
+  });
+});
+
+describe('listHabitsView, paused missions', () => {
+  it('puts the paused missions in their own group, with the last paused day', () => {
+    const db = newGame(['meditation', 'read_pages']);
+    const yoga = createMission(db, { name: 'Yoga', categoryKey: 'health' }, clockAt(6, 9)).id;
+    const open = createMission(db, { name: 'Diario' }, clockAt(6, 9)).id;
+    pauseMission(db, yoga, '2026-11-21', clockAt(10, 9));
+    pauseMission(db, open, null, clockAt(10, 9));
+
+    const view = listHabitsView(db, clockAt(12, 10));
+    const ids = view.categories.flatMap((category) => category.items.map((row) => row.mission.id));
+    expect(ids).not.toContain(yoga);
+    expect(ids).not.toContain(open);
+    expect(view.paused.map((row) => row.mission.id)).toEqual([yoga, open]);
+    expect(view.paused.map((row) => row.pausedLastDay)).toEqual(['2026-11-20', null]);
+    expect(view.paused.every((row) => row.paused)).toBe(true);
+    // The paused missions still count among the active ones of the header.
+    expect(view.counts.all).toBe(4);
+  });
+
+  it('brings a mission back to its category by itself on the day its pause ends', () => {
+    const db = newGame(['journal']);
+    const yoga = createMission(db, { name: 'Yoga', categoryKey: 'health' }, clockAt(6, 9)).id;
+    pauseMission(db, yoga, '2026-11-14', clockAt(10, 9));
+
+    expect(item(db, yoga, 13)).toMatchObject({ paused: true, pausedLastDay: '2026-11-13' });
+    const back = listHabitsView(db, clockAt(14, 10));
+    expect(back.paused).toEqual([]);
+    expect(item(db, yoga, 14)).toMatchObject({ paused: false, pausedLastDay: null });
+    expect(back.categories.find((category) => category.key === 'health')?.items).toHaveLength(1);
+  });
+
+  it('keeps the streak of a paused mission frozen across the closed days', () => {
+    const db = newGame(['journal']);
+    const yoga = createMission(db, { name: 'Yoga' }, clockAt(6, 9)).id;
+    const run = createMission(db, { name: 'Corsa' }, clockAt(6, 9)).id;
+    closePendingDays(db, clockAt(10, 9));
+    db.update(missions).set({ streak: 4 }).run();
+    pauseMission(db, yoga, null, clockAt(10, 9));
+    closePendingDays(db, clockAt(20, 9));
+    expect(item(db, yoga, 20)?.mission.streak).toBe(4);
+    // A mission not paused and never done loses its streak on the same days.
+    expect(item(db, run, 20)?.mission.streak).toBe(0);
   });
 });
 

@@ -38,7 +38,8 @@ export interface TodayScreenProps {
 }
 
 /**
- * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the notice of the shield, the hero
+ * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the notices of the shield and of the
+ * missions back from a pause (3.6), the hero
  * card, the plan of the day, the bosses and the missions of today, or the empty states.
  */
 export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
@@ -50,6 +51,8 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const [heroBottom, setHeroBottom] = useState<number | null>(null);
   const [sticky, setSticky] = useState(false);
   const [shieldClosed, setShieldClosed] = useState(false);
+  const [resumedClosed, setResumedClosed] = useState(false);
+  const resumed = view.notices.resumedMissions;
   const actions = useMissionActions();
   const menu = useMissionMenu(view, actions);
   // Skipped missions are out of the counters but still listed among the done ones.
@@ -94,6 +97,28 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
                 accessibilityRole="button"
                 accessibilityLabel={t('shared.close')}
                 onPress={() => setShieldClosed(true)}
+                hitSlop={hitSlopFor(CLOSE_ICON)}
+              >
+                <Icon name="chiudi" size={CLOSE_ICON} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
+        {resumed.length > 0 && !resumedClosed ? (
+          <Card testID="today-notice-resumed">
+            <View style={styles.notice}>
+              <Icon name="play" size={20} color={colors.infoText} />
+              <ThemedText style={styles.flex}>
+                {t('today.notices.resumed', {
+                  count: resumed.length,
+                  names: resumed.map((mission) => mission.name).join(', '),
+                })}
+              </ThemedText>
+              <Pressable
+                testID="today-notice-resumed-close"
+                accessibilityRole="button"
+                accessibilityLabel={t('shared.close')}
+                onPress={() => setResumedClosed(true)}
                 hitSlop={hitSlopFor(CLOSE_ICON)}
               >
                 <Icon name="chiudi" size={CLOSE_ICON} color={colors.textMuted} />

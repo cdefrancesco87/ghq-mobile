@@ -76,6 +76,11 @@ export type MissionRowProps = CommonProps &
         readonly completionRate: number | null;
         /** Archived, or a single task already done: muted text (design 3.7). */
         readonly muted?: boolean;
+        /**
+         * Paused (design 3.6): muted, a lock beside the frozen streak and no rate; `detail` says
+         * until when.
+         */
+        readonly paused?: boolean;
       }
     | {
         readonly variant: 'done';
@@ -125,27 +130,35 @@ export function MissionRow(props: MissionRowProps) {
     props.variant === 'list' && props.completionRate !== null
       ? Math.min(Math.max(props.completionRate, 0), 100)
       : null;
-  const muted = closed || (props.variant === 'list' && props.muted === true);
+  const paused = props.variant === 'list' && props.paused === true;
+  const muted = closed || paused || (props.variant === 'list' && props.muted === true);
   const valueColor = muted ? colors.textMuted : colors.text;
   const listValues =
     props.variant === 'list' ? (
       <>
         <View style={styles.value}>
-          <Icon name="serie" size={16} color={colors.textMuted} />
+          <Icon
+            testID={`${testID}-${paused ? 'lock' : 'streak'}`}
+            name={paused ? 'lucchetto' : 'serie'}
+            size={16}
+            color={colors.textMuted}
+          />
           <ThemedText variant="numbers" color={valueColor}>
             {String(props.streak)}
           </ThemedText>
         </View>
-        <View style={styles.value}>
-          <ProgressRing
-            progress={(rate ?? 0) / 100}
-            size={RATE_RING_SIZE}
-            strokeWidth={RATE_RING_STROKE}
-          />
-          <ThemedText testID={`${testID}-rate`} variant="numbers" color={valueColor}>
-            {rate === null ? NO_RATE : `${rate}%`}
-          </ThemedText>
-        </View>
+        {paused ? null : (
+          <View style={styles.value}>
+            <ProgressRing
+              progress={(rate ?? 0) / 100}
+              size={RATE_RING_SIZE}
+              strokeWidth={RATE_RING_STROKE}
+            />
+            <ThemedText testID={`${testID}-rate`} variant="numbers" color={valueColor}>
+              {rate === null ? NO_RATE : `${rate}%`}
+            </ThemedText>
+          </View>
+        )}
       </>
     ) : null;
 
@@ -248,7 +261,11 @@ export function MissionRow(props: MissionRowProps) {
         return t('shared.missionRow.openLabel', { name, detail });
       case 'list':
         return t(
-          rate === null ? 'shared.missionRow.listLabelNoRate' : 'shared.missionRow.listLabel',
+          paused
+            ? 'shared.missionRow.listLabelPaused'
+            : rate === null
+              ? 'shared.missionRow.listLabelNoRate'
+              : 'shared.missionRow.listLabel',
           {
             name,
             detail,

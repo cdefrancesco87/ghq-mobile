@@ -525,7 +525,8 @@
       "streakWeek": "streak {{streak}} week",
       "streakWeeks": "streak {{streak}} weeks",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, no data in the last 30 days",
-      "skippedReason": "skipped · {{reason}}"
+      "skippedReason": "skipped · {{reason}}",
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} frozen"
     },
     "difficulty": {
       "easy": "Easy",
@@ -789,7 +790,9 @@
       "stickyLevel": "Lv {{level}}"
     },
     "notices": {
-      "shieldUsed": "The shield protected your streak yesterday."
+      "shieldUsed": "The shield protected your streak yesterday.",
+      "resumed_one": "Pause over: “{{names}}” is back from today.",
+      "resumed_other": "Pause over: {{names}} are back from today."
     },
     "rest": {
       "title": "Rest day",
@@ -900,7 +903,9 @@
       "edit": "Edit",
       "archive": "Archive",
       "restore": "Restore",
-      "delete": "Delete"
+      "delete": "Delete",
+      "pause": "Pause",
+      "resume": "Resume"
     },
     "delete": {
       "title": "Delete «{{name}}» and all its history?",
@@ -918,6 +923,29 @@
       "habits": "No habits.",
       "tasks": "No one-off tasks.",
       "archived": "No archived quests."
+    },
+    "search": {
+      "open": "Search",
+      "placeholder": "Search a mission",
+      "clear": "Clear the search",
+      "cancel": "Cancel",
+      "noResults": "No results for “{{query}}”",
+      "create": "Create “{{name}}”"
+    },
+    "pausedGroup": "Paused",
+    "pausedUntil": "Paused until {{month}} {{day}}",
+    "pausedOpen": "Paused, no end date",
+    "pausedToast": "Paused",
+    "resumedToast": "Active again",
+    "pause": {
+      "title": "Until when?",
+      "preset_3": "3 days",
+      "preset_7": "1 week",
+      "preset_14": "2 weeks",
+      "date": "Choose a date",
+      "dateChosen": "Until {{month}} {{day}}",
+      "open": "No end date",
+      "confirm": "Pause"
     }
   },
   "goals": {

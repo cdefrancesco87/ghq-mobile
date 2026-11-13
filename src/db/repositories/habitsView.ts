@@ -2,6 +2,7 @@ import { and, asc, inArray } from 'drizzle-orm';
 
 import { TEMPLATE_CATEGORIES, type TemplateCategory } from '../../content/templates';
 import { completionRate, pauseSpans, type PauseEvent } from '../../rules/missionRate';
+import { isPausedOn, pauseLastDay } from '../../rules/pause';
 import type { GameDay } from '../../rules/types';
 import { events, missionDays, missions } from '../schema';
 import type { Db } from '../types';
@@ -22,6 +23,10 @@ export interface HabitItem {
   readonly doneDay: GameDay | null;
   /** The game day of the archive, for the archived missions. */
   readonly archivedDay: GameDay | null;
+  /** Paused today (design-sezioni.md 3.6): a pause past its end day is over by itself. */
+  readonly paused: boolean;
+  /** The last paused day, for «In pausa fino al …»; null without an end or when not paused. */
+  readonly pausedLastDay: GameDay | null;
 }
 
 export interface HabitsCategory {
@@ -41,8 +46,13 @@ export interface HabitsView {
     readonly tasks: number;
     readonly archived: number;
   };
-  /** The missions not archived, by category in the order of the templates, without empty ones. */
+  /**
+   * The missions neither archived nor paused, by category in the order of the templates, without
+   * empty ones.
+   */
   readonly categories: readonly HabitsCategory[];
+  /** The paused missions, in the order of the list: the group «In pausa» at the bottom (3.1). */
+  readonly paused: readonly HabitItem[];
   /** The archived missions, the latest first. */
   readonly archived: readonly HabitItem[];
 }
@@ -116,6 +126,7 @@ export function listHabitsView(db: Db, clock: ActionClock): HabitsView {
       })),
     );
     const doneDays = own.filter((day) => day.status === 'done').map((day) => day.gameDay);
+    const paused = isPausedOn(mission, today);
     return {
       mission,
       completionRate: completionRate({
@@ -127,6 +138,8 @@ export function listHabitsView(db: Db, clock: ActionClock): HabitsView {
       }),
       doneDay: mission.kind === 'task' && doneDays.length > 0 ? doneDays.sort()[0] : null,
       archivedDay,
+      paused,
+      pausedLastDay: paused ? pauseLastDay(mission.pausedUntil) : null,
     };
   };
 
@@ -136,7 +149,10 @@ export function listHabitsView(db: Db, clock: ActionClock): HabitsView {
     .sort((a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0))
     .map(itemOf);
   const categories = [...TEMPLATE_CATEGORIES, null]
-    .map((key) => ({ key, items: current.filter((row) => categoryOf(row.mission) === key) }))
+    .map((key) => ({
+      key,
+      items: current.filter((row) => !row.paused && categoryOf(row.mission) === key),
+    }))
     .filter((category) => category.items.length > 0);
   const doneToday = days.filter((day) => day.gameDay === today && day.status === 'done').length;
   return {
@@ -149,6 +165,7 @@ export function listHabitsView(db: Db, clock: ActionClock): HabitsView {
       archived: archived.length,
     },
     categories,
+    paused: current.filter((row) => row.paused),
     archived,
   };
 }

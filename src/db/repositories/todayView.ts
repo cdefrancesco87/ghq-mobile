@@ -22,6 +22,7 @@ import { bonusGiven, skipsThisWeek, type SkipReason } from './completion';
 import { loadHero, type Hero } from './hero';
 import { listTodayMissions, type Mission } from './missions';
 import { gameDayOf, getSetting, weekRulesOn } from './settings';
+import { notDeleted } from './events';
 
 // Everything the upper part of Today shows, read with one call (T39; design-sezioni.md 2.1–2.8).
 // It only reads: the actions stay in the other repositories.
@@ -67,8 +68,8 @@ export interface TodayNotices {
   }[];
   /** The stage the companion reached today, if it grew. */
   readonly companionGrewTo: CompanionStage | null;
-  /** Missions whose pause ended today. */
-  readonly resumedMissionIds: readonly string[];
+  /** Missions whose pause ended today (design-sezioni.md 3.6). */
+  readonly resumedMissions: readonly { readonly id: string; readonly name: string }[];
 }
 
 export interface TodayView {
@@ -149,12 +150,18 @@ function notices(db: Db, day: GameDay, exhaustedDay: GameDay | null): TodayNotic
     companionGrewTo: (COMPANION_STAGES as readonly unknown[]).includes(growth)
       ? (growth as CompanionStage)
       : null,
-    resumedMissionIds: db
-      .select({ id: missionsTable.id })
+    resumedMissions: db
+      .select({ id: missionsTable.id, name: missionsTable.name })
       .from(missionsTable)
-      .where(and(eq(missionsTable.status, 'paused'), eq(missionsTable.pausedUntil, day)))
-      .all()
-      .map((row) => row.id),
+      .where(
+        and(
+          notDeleted(missionsTable),
+          eq(missionsTable.status, 'paused'),
+          eq(missionsTable.pausedUntil, day),
+        ),
+      )
+      .orderBy(asc(missionsTable.sortOrder))
+      .all(),
   };
 }
 

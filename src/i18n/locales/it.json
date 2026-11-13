@@ -525,7 +525,8 @@
       "streakWeek": "serie {{streak}} settimana",
       "streakWeeks": "serie {{streak}} settimane",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, nessun dato negli ultimi 30 giorni",
-      "skippedReason": "saltata · {{reason}}"
+      "skippedReason": "saltata · {{reason}}",
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} congelata"
     },
     "difficulty": {
       "easy": "Facile",
@@ -789,7 +790,9 @@
       "stickyLevel": "Lv {{level}}"
     },
     "notices": {
-      "shieldUsed": "Lo scudo ha protetto la tua serie ieri."
+      "shieldUsed": "Lo scudo ha protetto la tua serie ieri.",
+      "resumed_one": "Pausa finita: «{{names}}» torna da oggi.",
+      "resumed_other": "Pausa finita: {{names}} tornano da oggi."
     },
     "rest": {
       "title": "Giorno di riposo",
@@ -900,7 +903,9 @@
       "edit": "Modifica",
       "archive": "Archivia",
       "restore": "Ripristina",
-      "delete": "Elimina"
+      "delete": "Elimina",
+      "pause": "Metti in pausa",
+      "resume": "Riprendi"
     },
     "delete": {
       "title": "Eliminare «{{name}}» e tutto il suo storico?",
@@ -918,6 +923,29 @@
       "habits": "Nessuna abitudine.",
       "tasks": "Nessuna attività singola.",
       "archived": "Nessuna missione archiviata."
+    },
+    "search": {
+      "open": "Cerca",
+      "placeholder": "Cerca una missione",
+      "clear": "Cancella la ricerca",
+      "cancel": "Annulla",
+      "noResults": "Nessun risultato per «{{query}}»",
+      "create": "Crea «{{name}}»"
+    },
+    "pausedGroup": "In pausa",
+    "pausedUntil": "In pausa fino al {{day}} {{month}}",
+    "pausedOpen": "In pausa, senza data di fine",
+    "pausedToast": "In pausa",
+    "resumedToast": "Di nuovo attiva",
+    "pause": {
+      "title": "Fino a quando?",
+      "preset_3": "3 giorni",
+      "preset_7": "1 settimana",
+      "preset_14": "2 settimane",
+      "date": "Scegli una data",
+      "dateChosen": "Fino al {{day}} {{month}}",
+      "open": "Senza data di fine",
+      "confirm": "Metti in pausa"
     }
   },
   "goals": {

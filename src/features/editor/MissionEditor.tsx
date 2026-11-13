@@ -105,6 +105,8 @@ export interface MissionEditorProps {
   readonly bossId?: string;
   /** Opens «Usa un modello» at once, as the empty Abitudini do (design-sezioni.md 4.11). */
   readonly library?: boolean;
+  /** The name already written, from «Crea “…”» of the search in Abitudini (3.3). */
+  readonly name?: string;
 }
 
 /**
@@ -114,7 +116,12 @@ export interface MissionEditorProps {
  * and Enter save a daily medium habit (US-EDT-01). Editing opens at full height, with Archive,
  * Delete and «Vale dai prossimi completamenti»; closing with changes asks «Scartare le modifiche?».
  */
-export function MissionEditor({ missionId, bossId, library = false }: MissionEditorProps) {
+export function MissionEditor({
+  missionId,
+  bossId,
+  library = false,
+  name: initialName = '',
+}: MissionEditorProps) {
   const { t, i18n } = useTranslation();
   const { colors, family, typography } = useTheme();
   const router = useRouter();
@@ -128,7 +135,7 @@ export function MissionEditor({ missionId, bossId, library = false }: MissionEdi
   const { db } = getSession();
   const [initial] = useState<Draft | null>(() => {
     if (missionId === undefined) {
-      return newDraft(bossId ?? null);
+      return { ...newDraft(bossId ?? null), name: initialName };
     }
     const mission = getMission(db, missionId);
     return mission === null ? null : draftOf(mission, missionReminderTimes(db, missionId));
@@ -173,8 +180,10 @@ export function MissionEditor({ missionId, bossId, library = false }: MissionEdi
   const taken = useMemo(
     () =>
       isMissionNameTaken(db, draft.name) &&
-      draft.name.trim().toLocaleLowerCase() !== initial?.name.trim().toLocaleLowerCase(),
-    [db, draft.name, initial],
+      // A new mission is never «itself», even with the name brought from the search (3.3).
+      (missionId === undefined ||
+        draft.name.trim().toLocaleLowerCase() !== initial?.name.trim().toLocaleLowerCase()),
+    [db, draft.name, initial, missionId],
   );
   const bosses = useMemo(() => listActiveBosses(db), [db]);
   const rewards = baseRewards(draft.difficulty, draft.statPrimary);

@@ -525,7 +525,8 @@
       "streakWeek": "racha {{streak}} semana",
       "streakWeeks": "racha {{streak}} semanas",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, sin datos en los últimos 30 días",
-      "skippedReason": "saltada · {{reason}}"
+      "skippedReason": "saltada · {{reason}}",
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} congelada"
     },
     "difficulty": {
       "easy": "Fácil",
@@ -789,7 +790,9 @@
       "stickyLevel": "Nv {{level}}"
     },
     "notices": {
-      "shieldUsed": "El escudo protegió tu racha ayer."
+      "shieldUsed": "El escudo protegió tu racha ayer.",
+      "resumed_one": "Pausa terminada: «{{names}}» vuelve desde hoy.",
+      "resumed_other": "Pausa terminada: {{names}} vuelven desde hoy."
     },
     "rest": {
       "title": "Día de descanso",
@@ -900,7 +903,9 @@
       "edit": "Editar",
       "archive": "Archivar",
       "restore": "Restaurar",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "pause": "Pausar",
+      "resume": "Reanudar"
     },
     "delete": {
       "title": "¿Eliminar «{{name}}» y todo su historial?",
@@ -918,6 +923,29 @@
       "habits": "Ningún hábito.",
       "tasks": "Ninguna tarea puntual.",
       "archived": "Ninguna misión archivada."
+    },
+    "search": {
+      "open": "Buscar",
+      "placeholder": "Buscar una misión",
+      "clear": "Borrar la búsqueda",
+      "cancel": "Cancelar",
+      "noResults": "Sin resultados para «{{query}}»",
+      "create": "Crear «{{name}}»"
+    },
+    "pausedGroup": "En pausa",
+    "pausedUntil": "En pausa hasta el {{day}} de {{month}}",
+    "pausedOpen": "En pausa, sin fecha de fin",
+    "pausedToast": "En pausa",
+    "resumedToast": "Activa de nuevo",
+    "pause": {
+      "title": "¿Hasta cuándo?",
+      "preset_3": "3 días",
+      "preset_7": "1 semana",
+      "preset_14": "2 semanas",
+      "date": "Elegir una fecha",
+      "dateChosen": "Hasta el {{day}} de {{month}}",
+      "open": "Sin fecha de fin",
+      "confirm": "Pausar"
     }
   },
   "goals": {

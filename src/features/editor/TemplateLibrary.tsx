@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   MISSION_TEMPLATES,
@@ -12,19 +12,14 @@ import { Card } from '@/features/shared/Card';
 import { Chip } from '@/features/shared/Chip';
 import { describeFrequency } from '@/features/shared/describeFrequency';
 import { Difficulty } from '@/features/shared/Difficulty';
-import { Frame } from '@/features/shared/Frame';
 import { Icon } from '@/features/shared/Icon';
 import { categoryIcon, statIcon } from '@/features/shared/icons';
 import { searchable } from '@/features/shared/searchable';
+import { SearchField } from '@/features/shared/SearchField';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
-import { MIN_TOUCH } from '@/features/shared/touch';
-import { textStyleOf } from '@/theme/fonts';
-import { SHAPES } from '@/theme/shapes';
-import { MAX_TEXT_SCALE } from '@/theme/textScale';
 import { useTheme } from '@/theme/ThemeProvider';
 
-const FIELD_HEIGHT = 48;
 const ROW_MIN_HEIGHT = 64;
 
 export interface TemplateLibraryProps {
@@ -41,7 +36,7 @@ export interface TemplateLibraryProps {
  */
 export function TemplateLibrary({ visible, onClose, onChoose }: TemplateLibraryProps) {
   const { t } = useTranslation();
-  const { colors, family, typography } = useTheme();
+  const { colors } = useTheme();
   const [category, setCategory] = useState<TemplateCategory>(TEMPLATE_CATEGORIES[0]);
   const [query, setQuery] = useState('');
   const [wasVisible, setWasVisible] = useState(visible);
@@ -65,35 +60,14 @@ export function TemplateLibrary({ visible, onClose, onChoose }: TemplateLibraryP
       title={t('editor.library.title')}
     >
       <View style={styles.content}>
-        <View style={styles.search}>
-          <Frame shape={SHAPES[family].control} fill={colors.surface} stroke={colors.textMuted} />
-          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <Icon name="cerca" size={20} color={colors.textMuted} />
-          </View>
-          <TextInput
+        <View style={styles.searchRow}>
+          <SearchField
             testID="editor-library-search"
             value={query}
             onChangeText={setQuery}
             placeholder={t('editor.library.search')}
-            placeholderTextColor={colors.textMuted}
-            selectionColor={colors.primary}
-            maxFontSizeMultiplier={MAX_TEXT_SCALE}
-            autoCorrect={false}
-            returnKeyType="search"
-            accessibilityLabel={t('editor.library.search')}
-            style={[styles.input, textStyleOf(typography.body), { color: colors.text }]}
+            clearLabel={t('editor.library.clear')}
           />
-          {query === '' ? null : (
-            <Pressable
-              testID="editor-library-search-clear"
-              accessibilityRole="button"
-              accessibilityLabel={t('editor.library.clear')}
-              onPress={() => setQuery('')}
-              style={styles.clear}
-            >
-              <Icon name="chiudi" size={20} color={colors.textMuted} />
-            </Pressable>
-          )}
         </View>
         <View style={styles.chips}>
           {TEMPLATE_CATEGORIES.map((item) => (
@@ -176,15 +150,7 @@ function TemplateCard({ template, name, first, onPress }: TemplateCardProps) {
 
 const styles = StyleSheet.create({
   content: { gap: 16, paddingBottom: 16 },
-  search: {
-    minHeight: FIELD_HEIGHT,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingLeft: 12,
-  },
-  input: { flex: 1, minHeight: FIELD_HEIGHT },
-  clear: { width: MIN_TOUCH, height: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' },
+  searchRow: { flexDirection: 'row' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   center: { textAlign: 'center' },
   list: { paddingVertical: 0 },

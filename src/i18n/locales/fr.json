@@ -525,7 +525,8 @@
       "streakWeek": "série {{streak}} semaine",
       "streakWeeks": "série {{streak}} semaines",
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, aucune donnée sur les 30 derniers jours",
-      "skippedReason": "passée · {{reason}}"
+      "skippedReason": "passée · {{reason}}",
+      "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} gelée"
     },
     "difficulty": {
       "easy": "Facile",
@@ -789,7 +790,9 @@
       "stickyLevel": "Nv {{level}}"
     },
     "notices": {
-      "shieldUsed": "Le bouclier a protégé ta série hier."
+      "shieldUsed": "Le bouclier a protégé ta série hier.",
+      "resumed_one": "Pause terminée : « {{names}} » revient dès aujourd'hui.",
+      "resumed_other": "Pause terminée : {{names}} reviennent dès aujourd'hui."
     },
     "rest": {
       "title": "Jour de repos",
@@ -900,7 +903,9 @@
       "edit": "Modifier",
       "archive": "Archiver",
       "restore": "Restaurer",
-      "delete": "Supprimer"
+      "delete": "Supprimer",
+      "pause": "Mettre en pause",
+      "resume": "Reprendre"
     },
     "delete": {
       "title": "Supprimer «{{name}}» et tout son historique ?",
@@ -918,6 +923,29 @@
       "habits": "Aucune habitude.",
       "tasks": "Aucune tâche ponctuelle.",
       "archived": "Aucune mission archivée."
+    },
+    "search": {
+      "open": "Rechercher",
+      "placeholder": "Rechercher une mission",
+      "clear": "Effacer la recherche",
+      "cancel": "Annuler",
+      "noResults": "Aucun résultat pour « {{query}} »",
+      "create": "Créer « {{name}} »"
+    },
+    "pausedGroup": "En pause",
+    "pausedUntil": "En pause jusqu'au {{day}} {{month}}",
+    "pausedOpen": "En pause, sans date de fin",
+    "pausedToast": "En pause",
+    "resumedToast": "De nouveau active",
+    "pause": {
+      "title": "Jusqu'à quand ?",
+      "preset_3": "3 jours",
+      "preset_7": "1 semaine",
+      "preset_14": "2 semaines",
+      "date": "Choisir une date",
+      "dateChosen": "Jusqu'au {{day}} {{month}}",
+      "open": "Sans date de fin",
+      "confirm": "Mettre en pause"
     }
   },
   "goals": {

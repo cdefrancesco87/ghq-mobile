@@ -4,13 +4,19 @@ import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-librar
 import type { ComponentType } from 'react';
 
 import { completeMission } from '@/db/repositories/completion';
-import { archiveMission, createMission, deleteMission } from '@/db/repositories/missions';
+import {
+  archiveMission,
+  createMission,
+  deleteMission,
+  pauseMission,
+} from '@/db/repositories/missions';
 import { missionDays, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
 import { startApp, useAppStore } from '@/stores/app';
+import { useHabitsUiStore } from '@/stores/habits';
 import { useHeroStore } from '@/stores/hero';
 import { useSettingsStore } from '@/stores/settings';
 import { useThemeStore } from '@/stores/theme';
@@ -72,6 +78,7 @@ beforeEach(() => {
   useHeroStore.getState().reset();
   useSettingsStore.getState().reset();
   useThemeStore.getState().reset();
+  useHabitsUiStore.setState({ filter: 'all' });
 });
 
 afterEach(() => {
@@ -216,6 +223,7 @@ describe('Habits: archive and delete', () => {
     const body = screen.getByTestId(`${row(water)}-body`);
     expect(body.props.accessibilityActions.map((action: { name: string }) => action.name)).toEqual([
       'edit',
+      'pause',
       'archive',
       'delete',
     ]);
@@ -304,5 +312,165 @@ describe('Habits: single tasks done', () => {
     expect(db.select().from(missionDays).where(eq(missionDays.missionId, task)).all()).toHaveLength(
       1,
     );
+  });
+});
+
+describe('Habits: search', () => {
+  it('filters while typing inside the active filter, with the archived at the bottom in «Tutte»', async () => {
+    const db = newGame(['drink_water', 'read_pages']);
+    const run = createMission(db, { name: 'Corsa al parco' }, clockAt(FRIDAY, 9)).id;
+    const old = createMission(db, { name: 'Corsa in salita' }, clockAt(FRIDAY, 9)).id;
+    const task = createMission(
+      db,
+      { name: 'Comprare scarpe da corsa', kind: 'task' },
+      clockAt(FRIDAY, 9),
+    ).id;
+    archiveMission(db, old, clockAt(FRIDAY, 9));
+    await openHabits(db);
+
+    await fireEvent.press(screen.getByTestId('habits-search-open'));
+    await fireEvent.changeText(screen.getByTestId('habits-search'), 'CORSA');
+
+    expect(screen.getByTestId(row(run))).toBeOnTheScreen();
+    expect(screen.getByTestId(row(task))).toBeOnTheScreen();
+    expect(screen.queryByTestId(row(missionId(db, 'drink_water')))).toBeNull();
+    // The archived match comes last, muted, with Restore.
+    expect(screen.getByTestId('habits-archived')).toContainElement(screen.getByTestId(row(old)));
+    expect(screen.getByTestId(`${row(old)}-restore`)).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByTestId('habits-filter-habits'));
+    expect(screen.getByTestId(row(run))).toBeOnTheScreen();
+    expect(screen.queryByTestId(row(task))).toBeNull();
+    expect(screen.queryByTestId(row(old))).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('habits-search-cancel'));
+    expect(screen.getByTestId(row(missionId(db, 'drink_water')))).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Abitudini' })).toBeOnTheScreen();
+  });
+
+  it('offers «Crea “…”» with no result, which opens the editor with the name', async () => {
+    const db = newGame(['drink_water']);
+    await openHabits(db);
+
+    await fireEvent.press(screen.getByTestId('habits-search-open'));
+    await fireEvent.changeText(screen.getByTestId('habits-search'), ' Zumba ');
+
+    expect(screen.getByTestId('habits-search-empty')).toHaveTextContent(
+      /Nessun risultato per «Zumba»/,
+    );
+    await fireEvent.press(screen.getByTestId('habits-search-create'));
+    expect(await screen.findByRole('header', { name: 'Nuova abitudine' })).toBeOnTheScreen();
+    expect(screen.getByTestId('editor-name')).toHaveProp('value', 'Zumba');
+    expect(screen.queryByTestId('editor-name-taken')).toBeNull();
+  });
+
+  it('remembers the filter when coming back to the screen', async () => {
+    const db = newGame(['drink_water']);
+    await openHabits(db);
+
+    await fireEvent.press(screen.getByTestId('habits-filter-tasks'));
+    await fireEvent.press(screen.getByTestId('tab-today'));
+    await screen.findByTestId('today-screen');
+    await fireEvent.press(screen.getByTestId('tab-habits'));
+    await screen.findByTestId('habits-screen');
+
+    expect(screen.getByTestId('habits-filter-tasks')).toHaveProp('accessibilityState', {
+      selected: true,
+    });
+    expect(useHabitsUiStore.getState().filter).toBe('tasks');
+  });
+});
+
+describe('Habits: pause', () => {
+  const statusOf = (db: Db, id: string) =>
+    db.select().from(missions).where(eq(missions.id, id)).get();
+
+  async function openPause(id: string) {
+    await openMenu(id);
+    await fireEvent.press(screen.getByTestId('habits-menu-pause'));
+    await waitForDialog();
+  }
+
+  it('pauses for a week by default: «In pausa» group, lock on the streak, «Riprendi» first', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['drink_water', 'read_pages']);
+    const water = missionId(db, 'drink_water');
+    db.update(missions).set({ streak: 4 }).where(eq(missions.id, water)).run();
+    await openHabits(db);
+
+    await openPause(water);
+    expect(screen.getByTestId('habits-pause')).toHaveTextContent(/Fino a quando\?/);
+    expect(screen.getByTestId('habits-pause-7')).toHaveProp('accessibilityState', {
+      checked: true,
+    });
+    await fireEvent.press(screen.getByTestId('habits-pause-confirm'));
+
+    // Friday 6: paused 6–12, active again on the 13th.
+    expect(statusOf(db, water)).toMatchObject({ status: 'paused', pausedUntil: '2026-11-13' });
+    expect(screen.getByTestId('habits-category-paused')).toContainElement(
+      screen.getByTestId(row(water)),
+    );
+    expect(screen.getByTestId(row(water))).toHaveTextContent(/In pausa fino al 12 novembre/);
+    expect(
+      screen.getByTestId(`${row(water)}-lock`, { includeHiddenElements: true }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByTestId(`${row(water)}-rate`)).toBeNull();
+    expect(screen.getByTestId(`${row(water)}-body`)).toHaveProp(
+      'accessibilityLabel',
+      expect.stringMatching(/In pausa fino al 12 novembre, .*serie 4 giorni congelata$/),
+    );
+
+    const body = screen.getByTestId(`${row(water)}-body`);
+    expect(body.props.accessibilityActions[0].name).toBe('resume');
+    await openMenu(water);
+    await fireEvent.press(screen.getByTestId('habits-menu-resume'));
+    expect(statusOf(db, water)).toMatchObject({ status: 'active', pausedUntil: null });
+    expect(screen.queryByTestId('habits-category-paused')).toBeNull();
+  });
+
+  it('pauses without an end, or until a chosen date', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['drink_water', 'read_pages']);
+    const water = missionId(db, 'drink_water');
+    const read = missionId(db, 'read_pages');
+    await openHabits(db);
+
+    await openPause(water);
+    await fireEvent.press(screen.getByTestId('habits-pause-open'));
+    await fireEvent.press(screen.getByTestId('habits-pause-confirm'));
+    expect(statusOf(db, water)).toMatchObject({ status: 'paused', pausedUntil: null });
+    expect(screen.getByTestId(row(water))).toHaveTextContent(/In pausa, senza data di fine/);
+
+    await waitForDialog();
+    await openPause(read);
+    await fireEvent.press(screen.getByTestId('habits-pause-date'));
+    await fireEvent(screen.getByTestId('habits-pause-picker'), 'change', {
+      nativeEvent: { timestamp: new Date(2026, 10, 20, 12, 0).getTime(), utcOffset: 0 },
+    });
+    expect(screen.getByTestId('habits-pause-date')).toHaveTextContent('Fino al 20 novembre');
+    await fireEvent.press(screen.getByTestId('habits-pause-confirm'));
+    expect(statusOf(db, read)).toMatchObject({ status: 'paused', pausedUntil: '2026-11-21' });
+    expect(screen.getByTestId(row(read))).toHaveTextContent(/In pausa fino al 20 novembre/);
+  });
+
+  it('brings the mission back by itself on the end day, with a notice in Today', async () => {
+    const db = newGame(['drink_water', 'read_pages']);
+    const water = missionId(db, 'drink_water');
+    pauseMission(db, water, '2026-11-09', clockAt(FRIDAY, 10));
+    await openHabits(db, () => clockAt(9, 10));
+
+    expect(screen.queryByTestId('habits-category-paused')).toBeNull();
+    expect(screen.getByTestId('habits-category-health')).toContainElement(
+      screen.getByTestId(row(water)),
+    );
+
+    await fireEvent.press(screen.getByTestId('tab-today'));
+    await screen.findByTestId('today-screen');
+    expect(screen.getByTestId('today-notice-resumed')).toHaveTextContent(
+      /Pausa finita: «templates\.drink_water\.name» torna da oggi\./,
+    );
+    expect(screen.getByTestId(`today-mission-${water}`)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('today-notice-resumed-close'));
+    expect(screen.queryByTestId('today-notice-resumed')).toBeNull();
   });
 });
