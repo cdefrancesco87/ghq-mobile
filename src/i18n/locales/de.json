@@ -523,7 +523,8 @@
       "streakDay": "Serie {{streak}} Tag",
       "streakDays": "Serie {{streak}} Tage",
       "streakWeek": "Serie {{streak}} Woche",
-      "streakWeeks": "Serie {{streak}} Wochen"
+      "streakWeeks": "Serie {{streak}} Wochen",
+      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, keine Daten in den letzten 30 Tagen"
     },
     "difficulty": {
       "easy": "Leicht",
@@ -765,6 +766,52 @@
         "planFull": "Es gibt schon 3 Prioritäten: Entferne eine, um eine andere hinzuzufügen.",
         "failed": "Etwas ist schiefgelaufen. Versuch es noch einmal."
       }
+    }
+  },
+  "habits": {
+    "active_one": "{{count}} aktiv",
+    "active_other": "{{count}} aktiv",
+    "filters": {
+      "label": "Filter",
+      "all": "Alle {{count}}",
+      "habits": "Gewohnheiten {{count}}",
+      "tasks": "Einmalig {{count}}",
+      "archived": "Archiviert {{count}}",
+      "allLabel": "Alle: {{count}}",
+      "habitsLabel": "Gewohnheiten: {{count}}",
+      "tasksLabel": "Einmalige Aufgaben: {{count}}",
+      "archivedLabel": "Archiviert: {{count}}"
+    },
+    "noCategory": "Ohne Kategorie",
+    "categoryLabel": "{{name}}: {{count}}",
+    "doneOn": "Erledigt am {{day}}. {{month}}",
+    "archivedOn": "Archiviert am {{day}}. {{month}}",
+    "restore": "Wiederherstellen",
+    "restoreLabel": "{{name}} wiederherstellen",
+    "restored": "Mission wiederhergestellt",
+    "archivedToast": "Archiviert",
+    "menu": {
+      "edit": "Bearbeiten",
+      "archive": "Archivieren",
+      "restore": "Wiederherstellen",
+      "delete": "Löschen"
+    },
+    "delete": {
+      "title": "«{{name}}» und den ganzen Verlauf löschen?",
+      "message": "Das lässt sich nicht rückgängig machen.",
+      "confirm": "Löschen",
+      "archiveInstead": "Stattdessen archivieren"
+    },
+    "empty": {
+      "title": "Noch keine Missionen",
+      "create": "Mission erstellen",
+      "template": "Vorlage verwenden"
+    },
+    "emptyFilter": {
+      "all": "Keine aktiven Missionen.",
+      "habits": "Keine Gewohnheiten.",
+      "tasks": "Keine einmaligen Aufgaben.",
+      "archived": "Keine archivierten Missionen."
     }
   }
 }

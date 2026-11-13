@@ -523,7 +523,8 @@
       "streakDay": "streak {{streak}} day",
       "streakDays": "streak {{streak}} days",
       "streakWeek": "streak {{streak}} week",
-      "streakWeeks": "streak {{streak}} weeks"
+      "streakWeeks": "streak {{streak}} weeks",
+      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, no data in the last 30 days"
     },
     "difficulty": {
       "easy": "Easy",
@@ -765,6 +766,52 @@
         "planFull": "There are already 3 priorities: remove one to add another.",
         "failed": "Something went wrong. Try again."
       }
+    }
+  },
+  "habits": {
+    "active_one": "{{count}} active",
+    "active_other": "{{count}} active",
+    "filters": {
+      "label": "Filters",
+      "all": "All {{count}}",
+      "habits": "Habits {{count}}",
+      "tasks": "One-off {{count}}",
+      "archived": "Archived {{count}}",
+      "allLabel": "All: {{count}}",
+      "habitsLabel": "Habits: {{count}}",
+      "tasksLabel": "One-off tasks: {{count}}",
+      "archivedLabel": "Archived: {{count}}"
+    },
+    "noCategory": "No category",
+    "categoryLabel": "{{name}}: {{count}}",
+    "doneOn": "Done on {{month}} {{day}}",
+    "archivedOn": "Archived on {{month}} {{day}}",
+    "restore": "Restore",
+    "restoreLabel": "Restore {{name}}",
+    "restored": "Quest restored",
+    "archivedToast": "Archived",
+    "menu": {
+      "edit": "Edit",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete"
+    },
+    "delete": {
+      "title": "Delete «{{name}}» and all its history?",
+      "message": "This cannot be undone.",
+      "confirm": "Delete",
+      "archiveInstead": "Archive instead"
+    },
+    "empty": {
+      "title": "No quests, for now",
+      "create": "Create a quest",
+      "template": "Use a template"
+    },
+    "emptyFilter": {
+      "all": "No active quests.",
+      "habits": "No habits.",
+      "tasks": "No one-off tasks.",
+      "archived": "No archived quests."
     }
   }
 }

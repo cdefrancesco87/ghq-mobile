@@ -1,5 +1,7 @@
-import { ScreenPlaceholder } from '@/features/shell/ScreenPlaceholder';
+import { HabitsScreen } from '@/features/habits/HabitsScreen';
+import { useHabitsView } from '@/features/habits/useHabitsView';
 
 export default function Habits() {
-  return <ScreenPlaceholder titleKey="habits" />;
+  const view = useHabitsView();
+  return view === null ? null : <HabitsScreen view={view} />;
 }

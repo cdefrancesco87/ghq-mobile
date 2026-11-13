@@ -523,7 +523,8 @@
       "streakDay": "serie {{streak}} giorno",
       "streakDays": "serie {{streak}} giorni",
       "streakWeek": "serie {{streak}} settimana",
-      "streakWeeks": "serie {{streak}} settimane"
+      "streakWeeks": "serie {{streak}} settimane",
+      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, nessun dato negli ultimi 30 giorni"
     },
     "difficulty": {
       "easy": "Facile",
@@ -765,6 +766,52 @@
         "planFull": "Ci sono già 3 priorità: togline una per aggiungerne un'altra.",
         "failed": "Qualcosa non ha funzionato. Riprova."
       }
+    }
+  },
+  "habits": {
+    "active_one": "{{count}} attiva",
+    "active_other": "{{count}} attive",
+    "filters": {
+      "label": "Filtri",
+      "all": "Tutte {{count}}",
+      "habits": "Abitudini {{count}}",
+      "tasks": "Singole {{count}}",
+      "archived": "Archiviate {{count}}",
+      "allLabel": "Tutte: {{count}}",
+      "habitsLabel": "Abitudini: {{count}}",
+      "tasksLabel": "Attività singole: {{count}}",
+      "archivedLabel": "Archiviate: {{count}}"
+    },
+    "noCategory": "Senza categoria",
+    "categoryLabel": "{{name}}: {{count}}",
+    "doneOn": "Fatta il {{day}} {{month}}",
+    "archivedOn": "Archiviata il {{day}} {{month}}",
+    "restore": "Ripristina",
+    "restoreLabel": "Ripristina {{name}}",
+    "restored": "Missione ripristinata",
+    "archivedToast": "Archiviata",
+    "menu": {
+      "edit": "Modifica",
+      "archive": "Archivia",
+      "restore": "Ripristina",
+      "delete": "Elimina"
+    },
+    "delete": {
+      "title": "Eliminare «{{name}}» e tutto il suo storico?",
+      "message": "Non si può annullare.",
+      "confirm": "Elimina",
+      "archiveInstead": "Archivia invece"
+    },
+    "empty": {
+      "title": "Nessuna missione, per ora",
+      "create": "Crea una missione",
+      "template": "Usa un modello"
+    },
+    "emptyFilter": {
+      "all": "Nessuna missione attiva.",
+      "habits": "Nessuna abitudine.",
+      "tasks": "Nessuna attività singola.",
+      "archived": "Nessuna missione archiviata."
     }
   }
 }

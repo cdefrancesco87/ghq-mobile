@@ -250,6 +250,27 @@ function listOrder(a: TodayMission, b: TodayMission): number {
   return a.time < b.time ? -1 : 1;
 }
 
+/**
+ * The companion on `day` with `doneCount` missions done that day: its mood follows choice 13 of
+ * CLAUDE.md (a completion today, otherwise the last 3 closed days).
+ */
+export function companionOn(db: Db, day: GameDay, doneCount: number): TodayView['companion'] {
+  const lastDays = db
+    .select({ scheduledCount: daySummaries.scheduledCount, doneCount: daySummaries.doneCount })
+    .from(daySummaries)
+    .where(lt(daySummaries.gameDay, day))
+    .orderBy(desc(daySummaries.gameDay))
+    .limit(3)
+    .all()
+    .reverse();
+  const pet = db.select().from(companion).get();
+  return {
+    stage: pet?.stage ?? 'egg',
+    name: pet?.name ?? null,
+    mood: moodFor(lastDays, doneCount),
+  };
+}
+
 /** The data of Today for the game day of `clock` (US-OGGI-01). */
 export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): TodayView {
   const day = gameDayOf(clock.now, clock.tzOffset, getSetting(db, 'day_change'));
@@ -307,25 +328,12 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
     })
     .sort(listOrder);
   const doneCount = today.filter((item) => item.state === 'done').length;
-  const lastDays = db
-    .select({ scheduledCount: daySummaries.scheduledCount, doneCount: daySummaries.doneCount })
-    .from(daySummaries)
-    .where(lt(daySummaries.gameDay, day))
-    .orderBy(desc(daySummaries.gameDay))
-    .limit(3)
-    .all()
-    .reverse();
-  const pet = db.select().from(companion).get();
   return {
     day,
     restDay: getSetting(db, 'rest_days').includes(weekday(day)),
     hero: current,
     xpToNext: xpToNext(current.level),
-    companion: {
-      stage: pet?.stage ?? 'egg',
-      name: pet?.name ?? null,
-      mood: moodFor(lastDays, doneCount),
-    },
+    companion: companionOn(db, day, doneCount),
     missions: today,
     plan: db
       .select({ missionId: dayPlan.missionId })

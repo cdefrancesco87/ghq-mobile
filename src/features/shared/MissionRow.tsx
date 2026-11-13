@@ -26,6 +26,8 @@ const RATE_RING_SIZE = 16;
 const RATE_RING_STROKE = 3;
 /** The column of the icon: in Arcade a pixel drawing is 24 and a line drawing 20. */
 const ICON_COLUMN_WIDTH = 24;
+/** The rate of a mission that was never expected yet. */
+const NO_RATE = '–';
 
 /** An action of the screen reader: the same as the swipe and the menu of the row. */
 export interface MissionRowAction {
@@ -68,8 +70,10 @@ export type MissionRowProps = CommonProps &
         readonly streak: number;
         /** `times_per_week` missions count their streak in weeks. */
         readonly streakUnit?: 'days' | 'weeks';
-        /** Completion in the last 30 days, from 0 to 100. */
-        readonly completionRate: number;
+        /** Completion in the last 30 days, from 0 to 100; null when nothing was expected yet. */
+        readonly completionRate: number | null;
+        /** Archived, or a single task already done: muted text (design 3.7). */
+        readonly muted?: boolean;
       }
     | {
         readonly variant: 'done';
@@ -105,21 +109,30 @@ export function MissionRow(props: MissionRowProps) {
   ) : null;
   const notches =
     props.variant === 'done' ? null : <Difficulty difficulty={difficulty} showWord={false} />;
-  const rate = props.variant === 'list' ? Math.min(Math.max(props.completionRate, 0), 100) : 0;
+  const rate =
+    props.variant === 'list' && props.completionRate !== null
+      ? Math.min(Math.max(props.completionRate, 0), 100)
+      : null;
+  const muted = props.variant === 'done' || (props.variant === 'list' && props.muted === true);
+  const valueColor = muted ? colors.textMuted : colors.text;
   const listValues =
     props.variant === 'list' ? (
       <>
         <View style={styles.value}>
           <Icon name="serie" size={16} color={colors.textMuted} />
-          <ThemedText variant="numbers">{String(props.streak)}</ThemedText>
+          <ThemedText variant="numbers" color={valueColor}>
+            {String(props.streak)}
+          </ThemedText>
         </View>
         <View style={styles.value}>
           <ProgressRing
-            progress={rate / 100}
+            progress={(rate ?? 0) / 100}
             size={RATE_RING_SIZE}
             strokeWidth={RATE_RING_STROKE}
           />
-          <ThemedText variant="numbers">{`${rate}%`}</ThemedText>
+          <ThemedText testID={`${testID}-rate`} variant="numbers" color={valueColor}>
+            {rate === null ? NO_RATE : `${rate}%`}
+          </ThemedText>
         </View>
       </>
     ) : null;
@@ -160,7 +173,7 @@ export function MissionRow(props: MissionRowProps) {
         <View style={styles.texts}>
           <ThemedText
             numberOfLines={large ? LARGE_TEXT_NAME_LINES : NAME_LINES}
-            color={props.variant === 'done' ? colors.textMuted : colors.text}
+            color={muted ? colors.textMuted : colors.text}
             style={props.variant === 'done' ? styles.struck : undefined}
           >
             {name}
@@ -212,13 +225,16 @@ export function MissionRow(props: MissionRowProps) {
       case 'priority':
         return t('shared.missionRow.openLabel', { name, detail });
       case 'list':
-        return t('shared.missionRow.listLabel', {
-          name,
-          detail,
-          difficulty: difficultyWord,
-          streak: streakWords(props.streak, props.streakUnit ?? 'days'),
-          rate,
-        });
+        return t(
+          rate === null ? 'shared.missionRow.listLabelNoRate' : 'shared.missionRow.listLabel',
+          {
+            name,
+            detail,
+            difficulty: difficultyWord,
+            streak: streakWords(props.streak, props.streakUnit ?? 'days'),
+            rate,
+          },
+        );
       case 'done':
         return t('shared.missionRow.doneLabel', { name, difficulty: difficultyWord, doneAt });
     }

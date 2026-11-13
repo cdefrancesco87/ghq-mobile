@@ -155,6 +155,14 @@ export const MOOD = {
   sadBelow: 0.3,
 } as const;
 
+/** The Habits list (design-sezioni.md 3.2, 3.7). */
+export const HABITS_LIST = {
+  /** The completion rate of a row covers this many game days, today included. */
+  rateWindowDays: 30,
+  /** A completed single task stays in the list this many days, then is archived by itself. */
+  doneTaskVisibleDays: 7,
+} as const;
+
 /** How the reminders are scheduled in the system (stack-tecnologico.md, point 5). */
 export const REMINDERS = {
   /** Game days scheduled ahead, from today; they are scheduled again at every start. */

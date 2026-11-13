@@ -16,16 +16,21 @@ export interface EmptyStateProps {
   /** The action, when there is one: a rest day has none. */
   readonly actionLabel?: string;
   readonly onAction?: () => void;
+  /** A second, secondary action, e.g. «Usa un modello» in Habits (design-sezioni.md 3.8). */
+  readonly secondaryActionLabel?: string;
+  readonly onSecondaryAction?: () => void;
   readonly testID: string;
 }
 
-/** The empty state: the companion, a sentence and at most one action (design-sezioni.md A6). */
+/** The empty state: the companion, a sentence and its actions (design-sezioni.md A6). */
 export function EmptyState({
   companion,
   title,
   message,
   actionLabel,
   onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
   testID,
 }: EmptyStateProps) {
   const { colors } = useTheme();
@@ -46,6 +51,14 @@ export function EmptyState({
         </ThemedText>
         {actionLabel === undefined || onAction === undefined ? null : (
           <Button label={actionLabel} onPress={onAction} testID={`${testID}-action`} />
+        )}
+        {secondaryActionLabel === undefined || onSecondaryAction === undefined ? null : (
+          <Button
+            variant="secondary"
+            label={secondaryActionLabel}
+            onPress={onSecondaryAction}
+            testID={`${testID}-secondary`}
+          />
         )}
       </View>
     </Card>

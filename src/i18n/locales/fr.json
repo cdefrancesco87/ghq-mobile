@@ -523,7 +523,8 @@
       "streakDay": "série {{streak}} jour",
       "streakDays": "série {{streak}} jours",
       "streakWeek": "série {{streak}} semaine",
-      "streakWeeks": "série {{streak}} semaines"
+      "streakWeeks": "série {{streak}} semaines",
+      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, aucune donnée sur les 30 derniers jours"
     },
     "difficulty": {
       "easy": "Facile",
@@ -765,6 +766,52 @@
         "planFull": "Il y a déjà 3 priorités : retires-en une pour en ajouter une autre.",
         "failed": "Un problème est survenu. Réessaie."
       }
+    }
+  },
+  "habits": {
+    "active_one": "{{count}} active",
+    "active_other": "{{count}} actives",
+    "filters": {
+      "label": "Filtres",
+      "all": "Toutes {{count}}",
+      "habits": "Habitudes {{count}}",
+      "tasks": "Ponctuelles {{count}}",
+      "archived": "Archivées {{count}}",
+      "allLabel": "Toutes : {{count}}",
+      "habitsLabel": "Habitudes : {{count}}",
+      "tasksLabel": "Tâches ponctuelles : {{count}}",
+      "archivedLabel": "Archivées : {{count}}"
+    },
+    "noCategory": "Sans catégorie",
+    "categoryLabel": "{{name}} : {{count}}",
+    "doneOn": "Faite le {{day}} {{month}}",
+    "archivedOn": "Archivée le {{day}} {{month}}",
+    "restore": "Restaurer",
+    "restoreLabel": "Restaurer {{name}}",
+    "restored": "Mission restaurée",
+    "archivedToast": "Archivée",
+    "menu": {
+      "edit": "Modifier",
+      "archive": "Archiver",
+      "restore": "Restaurer",
+      "delete": "Supprimer"
+    },
+    "delete": {
+      "title": "Supprimer «{{name}}» et tout son historique ?",
+      "message": "Impossible d’annuler.",
+      "confirm": "Supprimer",
+      "archiveInstead": "Archiver plutôt"
+    },
+    "empty": {
+      "title": "Aucune mission, pour l’instant",
+      "create": "Créer une mission",
+      "template": "Utiliser un modèle"
+    },
+    "emptyFilter": {
+      "all": "Aucune mission active.",
+      "habits": "Aucune habitude.",
+      "tasks": "Aucune tâche ponctuelle.",
+      "archived": "Aucune mission archivée."
     }
   }
 }

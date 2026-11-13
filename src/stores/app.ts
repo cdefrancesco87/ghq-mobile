@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { closePendingDays } from '../db/repositories/closing';
 import type { ActionClock } from '../db/repositories/hero';
+import { archiveCompletedSingles } from '../db/repositories/missions';
 import { hasProfile } from '../db/repositories/onboarding';
 import type { Db } from '../db/types';
 import { useHeroStore } from './hero';
@@ -10,7 +11,8 @@ import { useSettingsStore } from './settings';
 import { useThemeStore } from './theme';
 
 // The start of the app (stack-tecnologico.md, point 2; modello-dati.md, sections 7 and 8): open
-// the database and apply the migrations, close the days that are pending, load settings, theme
+// the database and apply the migrations, close the days that are pending, archive the single
+// tasks done a week ago, load settings, theme
 // and hero. After that every action of a screen goes through `runAction`, which refreshes the
 // stores once the repository has written.
 
@@ -57,7 +59,9 @@ export async function startApp(options: StartOptions): Promise<void> {
   const clock = options.clock ?? systemClock;
   try {
     const db = await options.openDatabase();
-    closePendingDays(db, clock());
+    const now = clock();
+    closePendingDays(db, now);
+    archiveCompletedSingles(db, now);
     loadStores(db);
     openSession({ db, clock });
     useAppStore.setState({ status: 'ready', db, hasProfile: hasProfile(db), error: null });

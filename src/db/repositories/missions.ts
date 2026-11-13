@@ -2,8 +2,9 @@ import { and, asc, eq, gte, inArray, lte, max, ne } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { z } from 'zod';
 
+import { HABITS_LIST } from '../../rules/config';
 import { frequencySchema, isDueToday, type Frequency } from '../../rules/frequency';
-import { isGameDay, weekStartOf, weekday } from '../../rules/gameDay';
+import { addDays, isGameDay, weekStartOf, weekday } from '../../rules/gameDay';
 import {
   DIFFICULTIES,
   STAT_KEYS,
@@ -434,6 +435,50 @@ export function deleteMission(
     save(tx, missionId, { deletedAt: context.now, updatedAt: context.now });
     record(tx, 'mission.deleted', missionId, context);
     return { cancelledNotificationIds: scheduled.map((row) => row.osId) };
+  });
+}
+
+/**
+ * Archives by itself every single task done at least 7 days ago (analisi-funzionale.md, section
+ * 3; design-sezioni.md 3.7 ★). It runs at every start, after the day closing; running it again
+ * changes nothing. Returns the ids of the tasks archived now.
+ */
+export function archiveCompletedSingles(db: Db, context: ActionContext): string[] {
+  return db.transaction((tx) => {
+    const lastVisible = addDays(today(tx, context), -HABITS_LIST.doneTaskVisibleDays);
+    const due = tx
+      .selectDistinct({ id: missions.id })
+      .from(missions)
+      .innerJoin(missionDays, eq(missionDays.missionId, missions.id))
+      .where(
+        and(
+          eq(missions.kind, 'task'),
+          ne(missions.status, 'archived'),
+          notDeleted(missions),
+          eq(missionDays.status, 'done'),
+          lte(missionDays.gameDay, lastVisible),
+        ),
+      )
+      .orderBy(asc(missions.sortOrder))
+      .all()
+      .map((row) => row.id);
+    for (const missionId of due) {
+      save(tx, missionId, {
+        status: 'archived',
+        pausedUntil: null,
+        archivedAt: context.now,
+        updatedAt: context.now,
+      });
+      appendEvent(tx, {
+        type: 'mission.archived',
+        occurredAt: context.now,
+        tzOffset: context.tzOffset,
+        source: 'system',
+        missionId,
+        payload: { auto: true },
+      });
+    }
+    return due;
   });
 }
 

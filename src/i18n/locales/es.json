@@ -523,7 +523,8 @@
       "streakDay": "racha {{streak}} día",
       "streakDays": "racha {{streak}} días",
       "streakWeek": "racha {{streak}} semana",
-      "streakWeeks": "racha {{streak}} semanas"
+      "streakWeeks": "racha {{streak}} semanas",
+      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, sin datos en los últimos 30 días"
     },
     "difficulty": {
       "easy": "Fácil",
@@ -765,6 +766,52 @@
         "planFull": "Ya hay 3 prioridades: quita una para añadir otra.",
         "failed": "Algo salió mal. Inténtalo de nuevo."
       }
+    }
+  },
+  "habits": {
+    "active_one": "{{count}} activa",
+    "active_other": "{{count}} activas",
+    "filters": {
+      "label": "Filtros",
+      "all": "Todas {{count}}",
+      "habits": "Hábitos {{count}}",
+      "tasks": "Puntuales {{count}}",
+      "archived": "Archivadas {{count}}",
+      "allLabel": "Todas: {{count}}",
+      "habitsLabel": "Hábitos: {{count}}",
+      "tasksLabel": "Tareas puntuales: {{count}}",
+      "archivedLabel": "Archivadas: {{count}}"
+    },
+    "noCategory": "Sin categoría",
+    "categoryLabel": "{{name}}: {{count}}",
+    "doneOn": "Hecha el {{day}} de {{month}}",
+    "archivedOn": "Archivada el {{day}} de {{month}}",
+    "restore": "Restaurar",
+    "restoreLabel": "Restaurar {{name}}",
+    "restored": "Misión restaurada",
+    "archivedToast": "Archivada",
+    "menu": {
+      "edit": "Editar",
+      "archive": "Archivar",
+      "restore": "Restaurar",
+      "delete": "Eliminar"
+    },
+    "delete": {
+      "title": "¿Eliminar «{{name}}» y todo su historial?",
+      "message": "No se puede deshacer.",
+      "confirm": "Eliminar",
+      "archiveInstead": "Archivar en su lugar"
+    },
+    "empty": {
+      "title": "Ninguna misión, por ahora",
+      "create": "Crear una misión",
+      "template": "Usar una plantilla"
+    },
+    "emptyFilter": {
+      "all": "Ninguna misión activa.",
+      "habits": "Ningún hábito.",
+      "tasks": "Ninguna tarea puntual.",
+      "archived": "Ninguna misión archivada."
     }
   }
 }

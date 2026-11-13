@@ -15,6 +15,9 @@ export interface ConfirmDialogProps {
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
   readonly cancelLabel?: string;
+  /** A milder way out, e.g. «Archivia invece» (design-sezioni.md 3.7). */
+  readonly alternativeLabel?: string;
+  readonly onAlternative?: () => void;
   readonly testID?: string;
 }
 
@@ -27,6 +30,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   cancelLabel,
+  alternativeLabel,
+  onAlternative,
   testID = 'confirm-dialog',
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
@@ -84,6 +89,14 @@ export function ConfirmDialog({
               {largeText ? confirm : cancel}
               {largeText ? cancel : confirm}
             </View>
+            {alternativeLabel === undefined || onAlternative === undefined ? null : (
+              <Button
+                variant="text"
+                label={alternativeLabel}
+                onPress={onAlternative}
+                testID={`${testID}-alternative`}
+              />
+            )}
           </Card>
         </View>
       </View>
