@@ -125,6 +125,15 @@ export const settingSchemas = {
     last_open_day: gameDay.nullable(),
     recent: z.array(z.string()),
   }),
+  /**
+   * The timers of the duration missions now running (design-sezioni.md 2.5; backlog T79), by
+   * mission id: the game day and the UTC instant of the start. Written only by the actions of the
+   * timers (src/db/repositories/timers.ts).
+   */
+  mission_timers: z.record(
+    z.string(),
+    z.strictObject({ game_day: gameDay, started_at: z.number().int() }),
+  ),
   /** Created once at the first start (getDeviceId); it identifies the device in the event log. */
   device_id: z.string().min(1),
   /** The choices of a first launch in progress: it resumes from here, then it is removed. */
@@ -156,9 +165,9 @@ export type WeekRulesChange = SettingValue<'week_rules_next'>;
 type KeyWithDefault = Exclude<SettingKey, 'device_id' | 'onboarding_draft' | 'week_rules_next'>;
 /**
  * Keys written with setSetting: the day change has its own rule (setDayChange), the general pause
- * its actions (pause.ts).
+ * its actions (pause.ts), the timers theirs (timers.ts).
  */
-type EditableKey = Exclude<KeyWithDefault, 'day_change' | 'general_pause'>;
+type EditableKey = Exclude<KeyWithDefault, 'day_change' | 'general_pause' | 'mission_timers'>;
 
 export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K> } = {
   /** Only a fallback: the first launch uses the language of the phone (getLanguage). */
@@ -178,6 +187,7 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   reminders_enabled: true,
   missed_deadline_seen: 0,
   tale: { shown_day: null, last_open_day: null, recent: [] },
+  mission_timers: {},
 };
 
 function readValid<K extends SettingKey>(db: Db, key: K): SettingValue<K> | undefined {
@@ -236,6 +246,32 @@ export function writeGeneralPause(db: Db, value: SettingValue<'general_pause'>, 
     return;
   }
   write(db, 'general_pause', value, now);
+}
+
+/** Saves the running timers; only the actions of the timers call it (timers.ts). */
+export function writeMissionTimers(
+  db: Db,
+  value: SettingValue<'mission_timers'>,
+  now: number,
+): void {
+  write(db, 'mission_timers', value, now);
+}
+
+/**
+ * Forgets the timer of a mission without saving its minutes: a mission completed or skipped in
+ * another way, so an undo does not bring back an old timer (backlog T79).
+ */
+export function forgetMissionTimer(db: Db, missionId: string, now: number): void {
+  const timers = getSetting(db, 'mission_timers');
+  if (!(missionId in timers)) {
+    return;
+  }
+  write(
+    db,
+    'mission_timers',
+    Object.fromEntries(Object.entries(timers).filter(([id]) => id !== missionId)),
+    now,
+  );
 }
 
 /** The day change time in force on a game day. */

@@ -24,7 +24,7 @@ import { appendEvent } from './events';
 import { changeHero, loadHero, recordLevelUp, type ActionClock } from './hero';
 import { listTodayMissions, type Mission } from './missions';
 import { withMoments, type WithMoments } from './moments';
-import { gameDayOf, getSetting, weekRulesOn } from './settings';
+import { forgetMissionTimer, gameDayOf, getSetting, weekRulesOn } from './settings';
 
 // Completing, progressing and skipping a mission, and the day plan (modello-dati.md 3.5, 3.6 and
 // 4.4). A completion is the same from every source: app, notification, widget or health data.
@@ -264,6 +264,8 @@ function finishCompletion(
     statSecondary: mission.statSecondary,
   });
   const change = changeHero(tx, rewards, input.now);
+  // A running timer ends with the completion, from wherever it comes (T79).
+  forgetMissionTimer(tx, mission.id, input.now);
   const before = missionDayOf(tx, mission.id, day);
   const { event } = appendEvent(tx, {
     type: 'mission.completed',
@@ -457,6 +459,7 @@ export function skipMission(db: Db, input: SkipInput): SkipResult {
     if (skipsLeft(skipped) === 0) {
       throw new RangeError('No skips left this week for this mission');
     }
+    forgetMissionTimer(tx, mission.id, input.now);
     // A skipped priority frees its place in the plan (provisional, T59); the undo puts it back.
     const inPlan = and(eq(dayPlan.gameDay, day), eq(dayPlan.missionId, mission.id));
     const priority = tx.select({ position: dayPlan.position }).from(dayPlan).where(inPlan).get();

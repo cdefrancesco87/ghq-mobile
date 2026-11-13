@@ -528,7 +528,9 @@
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, nessun dato negli ultimi 30 giorni",
       "skippedReason": "saltata · {{reason}}",
       "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} congelata",
-      "health": "con i dati di salute"
+      "health": "con i dati di salute",
+      "timerLabel": "{{name}}, {{difficulty}}, {{xp}} {{xpTerm}}, {{progress}}. Tocca due volte per avviare il timer",
+      "timerPauseLabel": "{{name}}, {{difficulty}}, {{xp}} {{xpTerm}}, {{progress}}. Tocca due volte per mettere in pausa"
     },
     "difficulty": {
       "easy": "Facile",
@@ -723,7 +725,11 @@
           "active_minutes": "Minuti di attività",
           "sleep_hours": "Ore di sonno"
         }
-      }
+      },
+      "duration": "Durata",
+      "minutes": "Minuti",
+      "minutesUnit": "minuti",
+      "timerNote": "Il timer si avvia da Oggi con il tasto play e continua anche a schermo spento."
     },
     "timesPerWeek": "N volte a settimana",
     "timesPerWeekUnit_one": "volta a settimana",
@@ -990,6 +996,13 @@
       "reward": "Ricompensa: {{levelTerm}} {{level}} e {{coins}} {{coinsTerm}}",
       "stepDone": "{{step}}, fatto",
       "hint": "Tocca il cerchio quando l'hai fatta"
+    },
+    "timer": {
+      "ready": "{{minutes}} min",
+      "running": "{{time}} rimasti",
+      "paused": "In pausa · {{time}} rimasti",
+      "notificationTitle": "Tempo finito: {{name}}",
+      "notificationBody": "Apri l'app per raccogliere la ricompensa."
     }
   },
   "habits": {

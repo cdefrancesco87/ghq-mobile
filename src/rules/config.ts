@@ -440,3 +440,20 @@ export const HEALTH = {
    */
   backgroundIntervalMinutes: 60,
 } as const;
+
+/** The timer of the duration missions (design-sezioni.md 2.5, 4.7; backlog T79). */
+export const TIMER = {
+  /** The quick chips of «Durata» in the editor, in minutes (design 4.7). */
+  chips: [5, 10, 15, 30, 60],
+  /** The minutes proposed when «Durata» is chosen. PROVISIONAL (backlog T79). */
+  initialMinutes: 10,
+  /** The longest duration of the counter, in minutes. PROVISIONAL (backlog T79). */
+  maxMinutes: 240,
+  /**
+   * The minutes of a pause are saved with this many decimals (2 = less than a second). PROVISIONAL
+   * (backlog T79).
+   */
+  minuteDecimals: 2,
+  /** How often the countdown of Today is drawn again, in milliseconds. */
+  tickMs: 1000,
+} as const;

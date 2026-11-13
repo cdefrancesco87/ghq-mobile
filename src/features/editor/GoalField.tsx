@@ -8,12 +8,13 @@ import { Chip } from '@/features/shared/Chip';
 import { SegmentedControl } from '@/features/shared/SegmentedControl';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
-import { MEASURABLE } from '@/rules/config';
+import { MEASURABLE, TIMER } from '@/rules/config';
 import { healthUnit } from '@/rules/health';
 import { parseAmount, suggestIncrement } from '@/rules/measurable';
 import { textStyleOf } from '@/theme/fonts';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
+import { Counter } from './Counter';
 import { goalOf, NO_GOAL, type GoalDraft } from './draft';
 import { HealthLink } from './HealthLink';
 
@@ -32,10 +33,20 @@ export interface GoalFieldProps {
   readonly onChange: (goal: GoalDraft) => void;
 }
 
+/** A duration goal of `minutes`: the increment is not shown, it follows the minutes (T79). */
+function durationGoal(minutes: number): GoalDraft {
+  return {
+    ...NO_GOAL,
+    type: 'duration',
+    target: String(minutes),
+    increment: String(suggestIncrement(minutes, true) ?? 1),
+  };
+}
+
 /**
- * «Obiettivo misurabile» (design-sezioni.md 4.7, mockup D15): Sì/No or Quantità, with the value,
+ * «Obiettivo misurabile» (design-sezioni.md 4.7, mockup D15): Sì/No, Quantità, with the value,
  * the unit from the chips or typed, and the increment of one tap, proposed from the target until
- * the user changes it. Durata comes with the timer (T79): a duration goal is not shown here.
+ * the user changes it, or Durata, with the minutes from the chips or the counter (T79).
  */
 export function GoalField({ value, onChange }: GoalFieldProps) {
   const { t, i18n } = useTranslation();
@@ -50,10 +61,6 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
     styles.input,
     { color: colors.text, borderColor: colors.textMuted, borderRadius: radius },
   ];
-
-  if (value.type === 'duration') {
-    return null;
-  }
 
   const change = (changes: Partial<GoalDraft>) => {
     const next = { ...value, ...changes };
@@ -74,10 +81,20 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
         accessibilityLabel={t('editor.goal.title')}
         value={value.type}
         onChange={(type) => {
-          if (type === 'none') {
+          if (type === value.type) {
+            return;
+          }
+          if (type === 'none' || type === 'duration' || value.type === 'duration') {
+            // A new kind of goal starts from its own proposals.
             setIncrementTouched(false);
             setCustom(false);
+          }
+          if (type === 'none') {
             onChange(NO_GOAL);
+          } else if (type === 'duration') {
+            onChange(durationGoal(TIMER.initialMinutes));
+          } else if (value.type === 'duration') {
+            onChange({ ...NO_GOAL, type });
           } else {
             change({ type });
           }
@@ -85,8 +102,10 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
         options={[
           { value: 'none', label: t('editor.goal.yesNo') },
           { value: 'quantity', label: t('editor.goal.quantity') },
+          { value: 'duration', label: t('editor.goal.duration') },
         ]}
       />
+      {value.type === 'duration' ? <DurationField value={value} onChange={onChange} /> : null}
       {quantity ? (
         <>
           <ThemedText variant="label" color={colors.textMuted}>
@@ -188,6 +207,44 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
         </>
       ) : null}
     </View>
+  );
+}
+
+/** «Durata» (design 4.7): minutes with the quick chips and a counter, and the note on the timer. */
+function DurationField({ value, onChange }: GoalFieldProps) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const minutes = parseAmount(value.target) ?? TIMER.initialMinutes;
+  const chips: readonly number[] = TIMER.chips;
+  return (
+    <>
+      <ThemedText variant="label" color={colors.textMuted}>
+        {t('editor.goal.minutes')}
+      </ThemedText>
+      <View style={styles.chips} accessibilityRole="radiogroup">
+        {chips.map((chip) => (
+          <Chip
+            key={chip}
+            testID={`editor-goal-minutes-${chip}`}
+            label={t('today.timer.ready', { minutes: chip })}
+            selected={minutes === chip}
+            onPress={() => onChange(durationGoal(chip))}
+          />
+        ))}
+      </View>
+      <Counter
+        testID="editor-goal-minutes"
+        value={Math.round(minutes)}
+        min={1}
+        max={TIMER.maxMinutes}
+        onChange={(next) => onChange(durationGoal(next))}
+        accessibilityLabel={t('editor.goal.minutes')}
+        unit={t('editor.goal.minutesUnit')}
+      />
+      <ThemedText testID="editor-goal-timer-note" variant="caption" color={colors.textMuted}>
+        {t('editor.goal.timerNote')}
+      </ThemedText>
+    </>
   );
 }
 

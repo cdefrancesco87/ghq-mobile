@@ -15,22 +15,23 @@ import {
 const opened = new Set<string>();
 
 /**
- * A touch on a reminder, a group or the evening summary opens Today; a reminder also gives the
- * row of its mission a short highlight (design-sezioni.md 11.3, 11.5). True if it opened Today.
+ * A touch on a reminder, a group, the evening summary or the end of a timer opens Today; a
+ * reminder and a timer also give the row of their mission a short highlight (design-sezioni.md
+ * 11.3, 11.5; T79). True if it opened Today.
  */
 export function openTodayFrom(response: Notifications.NotificationResponse): boolean {
   const { identifier, content } = response.notification.request;
   const kind = content.data?.kind;
   if (
     response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER ||
-    (kind !== 'reminder' && kind !== 'group' && kind !== 'summary') ||
+    (kind !== 'reminder' && kind !== 'group' && kind !== 'summary' && kind !== 'timer') ||
     opened.has(identifier)
   ) {
     return false;
   }
   opened.add(identifier);
   const missionId = content.data?.missionId;
-  if (kind === 'reminder' && typeof missionId === 'string') {
+  if ((kind === 'reminder' || kind === 'timer') && typeof missionId === 'string') {
     useHighlightStore.getState().highlight(missionId);
   }
   try {

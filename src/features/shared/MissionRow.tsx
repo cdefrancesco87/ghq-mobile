@@ -62,6 +62,12 @@ interface ToComplete {
   readonly onControlLongPress?: () => void;
   /** Linked to Apple Salute or Health Connect: a small heart before the value (design 12.7). */
   readonly health?: boolean;
+  /**
+   * A duration mission (design 2.5, T79): the control is the play, or the pause while the timer
+   * runs, and a thin bar under the name shows the minutes done, from 0 to 1. `detail` gives the
+   * countdown.
+   */
+  readonly timer?: { readonly running: boolean; readonly progress: number };
 }
 
 export type MissionRowProps = CommonProps &
@@ -125,6 +131,7 @@ export function MissionRow(props: MissionRowProps) {
   const actionProps = { accessibilityActions, onAccessibilityAction };
 
   const toComplete = props.variant === 'today' || props.variant === 'priority';
+  const timer = toComplete ? props.timer : undefined;
   const xp = toComplete ? (
     <ThemedText testID={`${testID}-xp`} variant="numbers" color={colors.textMuted}>
       {`+${props.xp}`}
@@ -222,6 +229,24 @@ export function MissionRow(props: MissionRowProps) {
             </ThemedText>
             {large ? null : notches}
           </View>
+          {timer === undefined ? null : (
+            <View
+              testID={`${testID}-timer-bar`}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={[styles.timerBar, { backgroundColor: colors.track }]}
+            >
+              <View
+                style={[
+                  styles.timerFill,
+                  {
+                    backgroundColor: colors.primary,
+                    width: `${Math.round(Math.min(Math.max(timer.progress, 0), 1) * 100)}%`,
+                  },
+                ]}
+              />
+            </View>
+          )}
           {large && !closed ? (
             <View testID={`${testID}-under`} style={styles.meta}>
               {xp}
@@ -245,6 +270,7 @@ export function MissionRow(props: MissionRowProps) {
           onLongPress={props.onControlLongPress ?? onLongPress}
           progress={props.progress}
           showPercentage={!large}
+          timer={timer === undefined ? undefined : timer.running ? 'pause' : 'play'}
           {...actionProps}
         />
       ) : null}
@@ -309,9 +335,14 @@ export function MissionRow(props: MissionRowProps) {
       xpTerm: t('lexicon.xp_pl', { context: family }),
     };
     const label =
-      progress === undefined
-        ? t('shared.missionRow.todoLabel', values)
-        : t('shared.missionRow.progressLabel', { ...values, progress: detail });
+      timer !== undefined
+        ? t(timer.running ? 'shared.missionRow.timerPauseLabel' : 'shared.missionRow.timerLabel', {
+            ...values,
+            progress: detail,
+          })
+        : progress === undefined
+          ? t('shared.missionRow.todoLabel', values)
+          : t('shared.missionRow.progressLabel', { ...values, progress: detail });
     return props.variant === 'priority'
       ? t('shared.missionRow.priorityLabel', { position: props.position, label })
       : label;
@@ -328,6 +359,8 @@ const styles = StyleSheet.create({
   trailing: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   value: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   struck: { textDecorationLine: 'line-through' },
+  timerBar: { height: 3, borderRadius: 2, overflow: 'hidden', marginTop: 4 },
+  timerFill: { height: 3 },
   mark: {
     width: COMPLETION_CONTROL_SIZE,
     height: COMPLETION_CONTROL_SIZE,

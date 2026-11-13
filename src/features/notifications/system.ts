@@ -33,7 +33,10 @@ export const CATEGORY_REMINDER = 'reminder';
 export const CATEGORY_REMINDER_LAST = 'reminder_last';
 
 /** What a touch on a notification of this app opens: `kind` in its data. */
-export type NotificationKind = 'reminder' | 'group' | 'summary';
+export type NotificationKind = 'reminder' | 'group' | 'summary' | 'timer';
+
+/** The identifier of the notification at the end of the timer of a mission (T79). */
+export const TIMER_PREFIX = 'timer:';
 
 // The labels of the buttons, in the language of the last set-up of the categories.
 let labels = { complete: 'Complete', snooze: 'In 10 min' };
@@ -123,6 +126,39 @@ export const systemSummary: SummaryScheduler = {
     });
   },
   cancel: (id) => Notifications.cancelScheduledNotificationAsync(id),
+};
+
+/** The notification at the end of the timer of a duration mission (design 2.5; backlog T79). */
+export interface TimerNotification extends NotificationText {
+  readonly missionId: string;
+  /** UTC instant in milliseconds. */
+  readonly fireAt: number;
+}
+
+/**
+ * The notifications at the end of the timers, one per mission with its own identifier: a touch
+ * opens Today. A notification already shown is taken away with the timer.
+ */
+export const systemTimers = {
+  schedule: async (request: TimerNotification): Promise<void> => {
+    await Notifications.scheduleNotificationAsync({
+      identifier: `${TIMER_PREFIX}${request.missionId}`,
+      content: {
+        title: request.title,
+        body: request.body,
+        data: { missionId: request.missionId, kind: 'timer' },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: request.fireAt,
+        channelId: REMINDER_CHANNEL,
+      },
+    });
+  },
+  cancel: async (missionId: string): Promise<void> => {
+    await Notifications.cancelScheduledNotificationAsync(`${TIMER_PREFIX}${missionId}`);
+    await Notifications.dismissNotificationAsync(`${TIMER_PREFIX}${missionId}`);
+  },
 };
 
 /**

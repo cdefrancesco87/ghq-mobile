@@ -33,6 +33,7 @@ import { TodayBosses } from './TodayBosses';
 import { TodayMissions } from './TodayMissions';
 import { useMissionActions } from './useMissionActions';
 import { useMissionMenu } from './useMissionMenu';
+import { useTimerClock } from './useTimerClock';
 
 const EMPTY_COMPANION_SIZE = 128;
 const CLOSE_ICON = 20;
@@ -77,6 +78,7 @@ export function TodayScreen({
   const hint = view.companion.stage === 'egg' && !hintClosed;
   const resumed = view.notices.resumedMissions;
   const actions = useMissionActions();
+  const timerNow = useTimerClock(view, actions.finishTimer);
   const essential = useEssential();
   // The victory of the quest of the first launch, won in Statistiche, shows back here (1.8).
   const { showWaiting } = useMomentQueue();
@@ -198,7 +200,9 @@ export function TodayScreen({
           <MorningTale view={view} bubble={tale.bubble} onClose={tale.close} />
         )}
         {/* The plan comes before the boss (2.1); the bosses stay also on a day without missions. */}
-        {working ? <DayPlan view={view} tzOffset={tzOffset} actions={actions} menu={menu} /> : null}
+        {working ? (
+          <DayPlan view={view} tzOffset={tzOffset} now={timerNow} actions={actions} menu={menu} />
+        ) : null}
         <TodayBosses view={view} actions={actions} />
         {view.restDay ? (
           <EmptyState
@@ -220,6 +224,7 @@ export function TodayScreen({
           <TodayMissions
             view={view}
             tzOffset={tzOffset}
+            now={timerNow}
             actions={actions}
             menu={menu}
             hint={hint}

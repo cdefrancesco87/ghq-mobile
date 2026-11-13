@@ -305,6 +305,40 @@ describe('Mission editor: other options and editing', () => {
     expect(screen.getByTestId('editor-goal-increment')).toHaveProp('value', '200');
   });
 
+  it('saves a duration goal from the chips and the counter, with the note on the timer', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await name('Lettura');
+    await openOption('goal');
+    await fireEvent.press(screen.getByTestId('editor-goal-type-duration'));
+    // 10 minutes proposed; the timer starts from Today (design 4.7).
+    expect(screen.getByRole('button', { name: '10 min', selected: true })).toBeOnTheScreen();
+    expect(screen.getByTestId('editor-goal-timer-note')).toHaveTextContent(
+      'Il timer si avvia da Oggi',
+      { exact: false },
+    );
+    expect(screen.getByTestId('editor-goal-done')).toBeEnabled();
+    await fireEvent.press(screen.getByTestId('editor-goal-minutes-30'));
+    await fireEvent.press(screen.getByTestId('editor-goal-minutes-more'));
+    expect(screen.getByTestId('editor-goal-minutes-value')).toHaveTextContent('31');
+    expect(screen.getByRole('button', { name: '30 min', selected: false })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('editor-goal-done'));
+    expect(screen.getByTestId('editor-option-goal-value')).toHaveTextContent('31 min');
+    await fireEvent.press(screen.getByTestId('editor-save'));
+
+    const reading = created(db, 'Lettura')!;
+    expect(reading).toMatchObject({ goalType: 'duration', goalTarget: 31, goalUnit: 'minute' });
+    expect(reading.goalStep).toBeGreaterThan(0);
+
+    await openToEdit(db, reading.id);
+    expect(screen.getByTestId('editor-option-goal-value')).toHaveTextContent('31 min');
+    await openOption('goal');
+    expect(screen.getByTestId('editor-goal-minutes-value')).toHaveTextContent('31');
+    // Back to a quantity, the fields start empty.
+    await fireEvent.press(screen.getByTestId('editor-goal-type-quantity'));
+    expect(screen.getByTestId('editor-goal-target')).toHaveProp('value', '');
+  });
+
   it('saves a custom unit and goes back to yes/no', async () => {
     const db = newGame(['journal']);
     await openEditor(db);

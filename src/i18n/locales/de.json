@@ -528,7 +528,9 @@
       "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, keine Daten in den letzten 30 Tagen",
       "skippedReason": "übersprungen · {{reason}}",
       "listLabelPaused": "{{name}}, {{detail}}, {{difficulty}}, {{streak}} eingefroren",
-      "health": "mit Gesundheitsdaten"
+      "health": "mit Gesundheitsdaten",
+      "timerLabel": "{{name}}, {{difficulty}}, {{xp}} {{xpTerm}}, {{progress}}. Double tap to start the timer",
+      "timerPauseLabel": "{{name}}, {{difficulty}}, {{xp}} {{xpTerm}}, {{progress}}. Double tap to pause"
     },
     "difficulty": {
       "easy": "Leicht",
@@ -723,7 +725,11 @@
           "active_minutes": "Aktive Minuten",
           "sleep_hours": "Schlafstunden"
         }
-      }
+      },
+      "duration": "Duration",
+      "minutes": "Minutes",
+      "minutesUnit": "minutes",
+      "timerNote": "Start the timer from Today with the play button; it keeps going with the screen off."
     },
     "timesPerWeek": "N-mal pro Woche",
     "timesPerWeekUnit_one": "Mal pro Woche",
@@ -990,6 +996,13 @@
       "reward": "Belohnung: {{levelTerm}} {{level}} und {{coins}} {{coinsTerm}}",
       "stepDone": "{{step}}, erledigt",
       "hint": "Tippe auf den Kreis, wenn du es erledigt hast"
+    },
+    "timer": {
+      "ready": "{{minutes}} min",
+      "running": "{{time}} left",
+      "paused": "Paused · {{time}} left",
+      "notificationTitle": "Time's up: {{name}}",
+      "notificationBody": "Open the app to collect your reward."
     }
   },
   "habits": {

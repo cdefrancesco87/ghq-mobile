@@ -10,7 +10,7 @@ import { ThemedText } from '@/features/shared/ThemedText';
 import { companionName } from '@/rules/companion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { FullDayCard } from './FullDayCard';
-import { missionIcon, originOf, useMissionTexts } from './missionText';
+import { missionIcon, originOf, timerStateOf, useMissionTexts } from './missionText';
 import { RowHighlight } from './RowHighlight';
 import { SkipSwipe } from './SkipSwipe';
 import type { MissionActions } from './useMissionActions';
@@ -20,6 +20,8 @@ export interface TodayMissionsProps {
   readonly view: TodayView;
   /** Minutes east of UTC, for the times of completion. */
   readonly tzOffset: number;
+  /** The instant of the countdowns of the timers (T79). */
+  readonly now: number;
   readonly actions: MissionActions;
   readonly menu: MissionMenu;
   /** The companion's tip on the first mission, before the first completion (design 1.7). */
@@ -33,10 +35,17 @@ export interface TodayMissionsProps {
  * priorities are only in the Plan (2.3), but the counter counts them. Once the day is full, the
  * card «Giornata completa» takes the place of the counter.
  */
-export function TodayMissions({ view, tzOffset, actions, menu, hint = false }: TodayMissionsProps) {
+export function TodayMissions({
+  view,
+  tzOffset,
+  now,
+  actions,
+  menu,
+  hint = false,
+}: TodayMissionsProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
-  const { detailOf, warningOf, doneTimeOf, reasonOf } = useMissionTexts(view.day, tzOffset);
+  const { detailOf, warningOf, doneTimeOf, reasonOf } = useMissionTexts(view.day, tzOffset, now);
   const [doneOpen, setDoneOpen] = useState(true);
 
   const listed = view.missions.filter((item) => !view.plan.includes(item.mission.id));
@@ -76,6 +85,7 @@ export function TodayMissions({ view, tzOffset, actions, menu, hint = false }: T
             const { mission } = item;
             const target = mission.goalTarget;
             const measurable = mission.goalType !== 'none' && target !== null && target > 0;
+            const timer = timerStateOf(item, now);
             return (
               <Fragment key={mission.id}>
                 {index === 0 ? null : separator}
@@ -97,7 +107,12 @@ export function TodayMissions({ view, tzOffset, actions, menu, hint = false }: T
                       warning={warningOf(item)}
                       xp={item.xp}
                       progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
-                      onComplete={(event) => actions.complete(item, originOf(event))}
+                      timer={timer ?? undefined}
+                      onComplete={(event) =>
+                        timer === null
+                          ? actions.complete(item, originOf(event))
+                          : actions.toggleTimer(item, originOf(event))
+                      }
                       onControlLongPress={
                         mission.goalType === 'quantity' ? () => menu.openValue(item) : undefined
                       }

@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { uuidv7 } from 'uuidv7';
 
@@ -7,18 +8,21 @@ import {
   removeFromDayPlan,
   setDayPlan,
   skipMission,
+  type CompletionResult,
   type SkipReason,
 } from '@/db/repositories/completion';
 import { completeBossStep } from '@/db/repositories/boss';
+import { startTimer, stopTimer } from '@/db/repositories/timers';
 import type { TodayBoss, TodayMission } from '@/db/repositories/todayView';
 import { undoEvent, UndoRefusedError } from '@/db/repositories/undo';
 import { type Point, useCelebration } from '@/features/shared/Celebration';
 import { useMomentQueue } from '@/features/shared/MomentQueue';
 import { useEssential } from '@/features/shared/useGameMode';
 import { useUndoToast } from '@/features/shared/UndoToast';
-import { systemScheduler } from '@/features/notifications/system';
+import { systemScheduler, systemTimers } from '@/features/notifications/system';
 import { DAY_PLAN } from '@/rules/config';
 import { runAction } from '@/stores/app';
+import { useSettingsStore } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export interface MissionActions {
@@ -41,6 +45,13 @@ export interface MissionActions {
    * «Annulla» (choice 25).
    */
   readonly completeStep: (item: TodayBoss, stepId?: string) => number | null;
+  /**
+   * The control of a duration mission (design 2.5, T79): the play starts the timer and schedules
+   * the notification of its end, the pause saves the minutes counted.
+   */
+  readonly toggleTimer: (item: TodayMission, origin: Point) => void;
+  /** The timer reached the end: the mission is completed, with a vibration. */
+  readonly finishTimer: (item: TodayMission) => void;
 }
 
 /** The actions of the rows and the boss cards of Today, with celebration, moments and notices. */
@@ -89,31 +100,18 @@ export function useMissionActions(): MissionActions {
     if (result.cancelledNotificationIds.length > 0) {
       void systemScheduler.cancel(result.cancelledNotificationIds).catch(() => undefined);
     }
+    if (item.timerStartedAt !== null) {
+      // The skip forgot the timer: its end is no longer announced.
+      void systemTimers.cancel(item.mission.id).catch(() => undefined);
+    }
     enqueue(result.moments);
     const { eventId } = result;
     toast.show({ message: t('today.skip.toast'), onUndo: () => undoSkip(eventId) });
   };
 
-  const complete = (item: TodayMission, origin: Point, amount?: number) => {
+  /** What follows an action that may complete a mission: reminders, celebration, Annulla. */
+  const afterCompletion = (item: TodayMission, result: CompletionResult, origin: Point) => {
     const { mission } = item;
-    let result;
-    try {
-      result = runAction((db, { now, tzOffset }) => {
-        const input = {
-          missionId: mission.id,
-          source: 'app',
-          idemKey: `app:${uuidv7()}`,
-          now,
-          tzOffset,
-        } as const;
-        return mission.goalType === 'none'
-          ? completeMission(db, input)
-          : progressMission(db, amount === undefined ? input : { ...input, amount });
-      });
-    } catch {
-      tell(t('today.missions.errors.failed'));
-      return;
-    }
     if (result.cancelledNotificationIds.length > 0) {
       // A reminder left on the phone is only a nuisance: the completion is already saved.
       void systemScheduler.cancel(result.cancelledNotificationIds).catch(() => undefined);
@@ -147,6 +145,85 @@ export function useMissionActions(): MissionActions {
       message: t('today.missions.doneToast'),
       onUndo: () => undo(completion.eventId),
     });
+  };
+
+  const complete = (item: TodayMission, origin: Point, amount?: number) => {
+    const { mission } = item;
+    let result;
+    try {
+      result = runAction((db, { now, tzOffset }) => {
+        const input = {
+          missionId: mission.id,
+          source: 'app',
+          idemKey: `app:${uuidv7()}`,
+          now,
+          tzOffset,
+        } as const;
+        return mission.goalType === 'none'
+          ? completeMission(db, input)
+          : progressMission(db, amount === undefined ? input : { ...input, amount });
+      });
+    } catch {
+      tell(t('today.missions.errors.failed'));
+      return;
+    }
+    afterCompletion(item, result, origin);
+  };
+
+  /** Stops the timer of a mission and saves its minutes; null when it failed or saved nothing. */
+  const stop = (item: TodayMission): CompletionResult | null => {
+    const { mission } = item;
+    // The notification of the end is no longer wanted, or already shown.
+    void systemTimers.cancel(mission.id).catch(() => undefined);
+    try {
+      return runAction((db, { now, tzOffset }) =>
+        stopTimer(db, { missionId: mission.id, now, tzOffset, idemKey: `app:${uuidv7()}` }),
+      );
+    } catch {
+      tell(t('today.missions.errors.failed'));
+      return null;
+    }
+  };
+
+  const toggleTimer = (item: TodayMission, origin: Point) => {
+    const { mission } = item;
+    if (item.timerStartedAt !== null) {
+      const result = stop(item);
+      if (result !== null) {
+        afterCompletion(item, result, origin);
+      }
+      return;
+    }
+    let endsAt;
+    try {
+      endsAt = runAction((db, clock) => startTimer(db, { missionId: mission.id, ...clock })).endsAt;
+    } catch {
+      tell(t('today.missions.errors.failed'));
+      return;
+    }
+    // Without the permission the timer still runs: the end is seen when the app is open.
+    void systemTimers
+      .schedule({
+        missionId: mission.id,
+        title: t('today.timer.notificationTitle', { name: mission.name }),
+        body: t('today.timer.notificationBody'),
+        fireAt: endsAt,
+      })
+      .catch(() => undefined);
+  };
+
+  const finishTimer = (item: TodayMission) => {
+    const result = stop(item);
+    if (result === null) {
+      return;
+    }
+    if (result.completion !== null && useSettingsStore.getState().settings.vibrations) {
+      // The end of the timer is felt even with the eyes elsewhere (design 2.5, T79).
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+        () => undefined,
+      );
+    }
+    afterCompletion(item, result, { x: 0, y: 0 });
   };
 
   const addToPlan = (item: TodayMission) => {
@@ -190,5 +267,15 @@ export function useMissionActions(): MissionActions {
     return result.dealt;
   };
 
-  return { complete, undo, skip, undoSkip, addToPlan, removeFromPlan, completeStep };
+  return {
+    complete,
+    undo,
+    skip,
+    undoSkip,
+    addToPlan,
+    removeFromPlan,
+    completeStep,
+    toggleTimer,
+    finishTimer,
+  };
 }

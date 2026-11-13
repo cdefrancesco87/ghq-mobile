@@ -33,6 +33,7 @@ import { listTodayMissions, type Mission } from './missions';
 import { gameDayOf, getSetting, weekRulesOn } from './settings';
 import { notDeleted } from './events';
 import { getGeneralPause } from './pause';
+import { timersOn } from './timers';
 
 // Everything the upper part of Today shows, read with one call (T39; design-sezioni.md 2.1–2.8).
 // It only reads: the actions stay in the other repositories.
@@ -61,6 +62,8 @@ export interface TodayMission {
   readonly skipReason: SkipReason | null;
   /** The `mission.skipped` event of today not undone, for «Annulla salto». */
   readonly skipEventId: string | null;
+  /** UTC instant of the start of the running timer of a duration mission to do (T79), or null. */
+  readonly timerStartedAt: number | null;
 }
 
 export type TodayBoss = BossProgress;
@@ -379,6 +382,7 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
     list.map((mission) => mission.id),
     day,
   );
+  const timers = timersOn(db, day);
   const today = list
     .map((mission): TodayMission => {
       const row = rows.find((item) => item.missionId === mission.id);
@@ -406,6 +410,10 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
         skipsLeft: skipsLeft(skipped.get(mission.id) ?? 0),
         skipReason: state === 'skipped' ? ((row?.skipReason as SkipReason | null) ?? null) : null,
         skipEventId: state === 'skipped' ? (skips.get(mission.id) ?? null) : null,
+        timerStartedAt:
+          state === 'todo' && mission.goalType === 'duration'
+            ? (timers.get(mission.id) ?? null)
+            : null,
       };
     })
     .sort(listOrder);

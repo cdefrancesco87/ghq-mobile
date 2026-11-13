@@ -23,6 +23,9 @@ const GLYPH_CENTER = GLYPH_SIZE / 2;
 const GLYPH_CUT = 6;
 const RING_SIZE = 40;
 const CHECK = 'M8 14.5l4 4 8-9';
+/** Play and pause of the timer (L29: not among the icons yet, a triangle and two bars). */
+const PLAY = 'M9 6.5v15l13-7.5z';
+const PAUSE = 'M8.5 7h4v14h-4zM15.5 7h4v14h-4z';
 export const STAR = 'M14 1.5l3.7 8 8.8 1-6.5 6 1.7 8.6-7.7-4.3-7.7 4.3 1.7-8.6-6.5-6 8.8-1z';
 
 function checkMark(color: string) {
@@ -133,6 +136,8 @@ export interface CompletionControlProps {
   readonly progress?: number;
   /** Writes the percentage inside the ring. */
   readonly showPercentage?: boolean;
+  /** A duration mission (T79): the play of its timer, or the pause while it runs. */
+  readonly timer?: 'play' | 'pause';
   readonly accessibilityActions?: readonly AccessibilityActionInfo[];
   readonly onAccessibilityAction?: (event: AccessibilityActionEvent) => void;
 }
@@ -145,6 +150,7 @@ export function CompletionControl({
   onLongPress,
   progress,
   showPercentage = true,
+  timer,
   accessibilityActions,
   onAccessibilityAction,
 }: CompletionControlProps) {
@@ -160,7 +166,13 @@ export function CompletionControl({
       onAccessibilityAction={onAccessibilityAction}
       style={styles.control}
     >
-      {progress === undefined ? (
+      {timer !== undefined ? (
+        <View testID={`${testID}-${timer}`}>
+          <Glyph>
+            <Path d={timer === 'play' ? PLAY : PAUSE} fill={colors.primary} />
+          </Glyph>
+        </View>
+      ) : progress === undefined ? (
         <Glyph>{emptyGlyph(family, colors.textMuted)}</Glyph>
       ) : (
         <>

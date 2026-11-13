@@ -14,7 +14,7 @@ import { DAY_PLAN } from '@/rules/config';
 import { canAddToPlan, isPlanComplete } from '@/rules/day';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
-import { missionIcon, originOf, useMissionTexts } from './missionText';
+import { missionIcon, originOf, timerStateOf, useMissionTexts } from './missionText';
 import { SkipSwipe } from './SkipSwipe';
 import type { MissionActions } from './useMissionActions';
 import type { MissionMenu } from './useMissionMenu';
@@ -25,6 +25,8 @@ const SEAL_SIZE = 32;
 export interface DayPlanProps {
   readonly view: TodayView;
   readonly tzOffset: number;
+  /** The instant of the countdowns of the timers (T79). */
+  readonly now: number;
   readonly actions: MissionActions;
   readonly menu: MissionMenu;
 }
@@ -33,10 +35,10 @@ export interface DayPlanProps {
  * Piano del giorno (design-sezioni.md 2.3, mockup B2): the priorities numbered 1–3, the empty
  * place that opens «Scegli una priorità», the seal with the bonus once they are all done.
  */
-export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
+export function DayPlan({ view, tzOffset, now, actions, menu }: DayPlanProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
-  const { detailOf, warningOf, doneTimeOf } = useMissionTexts(view.day, tzOffset);
+  const { detailOf, warningOf, doneTimeOf } = useMissionTexts(view.day, tzOffset, now);
 
   // «Salta oggi» takes a priority out of the plan (T59): the filter only guards older days.
   const priorities = view.plan
@@ -91,6 +93,7 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
             };
             const target = mission.goalTarget;
             const measurable = mission.goalType !== 'none' && target !== null && target > 0;
+            const timer = timerStateOf(item, now);
             return (
               <Fragment key={mission.id}>
                 {index === 0 ? null : separator}
@@ -110,7 +113,12 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
                       warning={warningOf(item)}
                       xp={item.xp}
                       progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
-                      onComplete={(event) => actions.complete(item, originOf(event))}
+                      timer={timer ?? undefined}
+                      onComplete={(event) =>
+                        timer === null
+                          ? actions.complete(item, originOf(event))
+                          : actions.toggleTimer(item, originOf(event))
+                      }
                       onControlLongPress={
                         mission.goalType === 'quantity' ? () => menu.openValue(item) : undefined
                       }
