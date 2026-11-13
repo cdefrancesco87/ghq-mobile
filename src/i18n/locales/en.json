@@ -1092,5 +1092,57 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "notes": "Notes"
+  },
+  "profile": {
+    "settings": "Settings",
+    "rename": "Change name",
+    "nameLabel": "Hero name",
+    "nameHint": "Up to {{max}} characters",
+    "toNext": "{{xp}} of {{max}} {{xpTerm}} to {{levelTerm}} {{next}}",
+    "maxLevel": "Highest level reached",
+    "numbersLabel": "{{label}}: {{value}}",
+    "bossesDefeated": "Bosses defeated",
+    "bossesDefeated_fantasy": "Nemeses defeated",
+    "bossesDefeated_cyberpunk": "Firewalls breached",
+    "bossesDefeated_lovecraft": "Horrors defeated",
+    "bossesDefeated_minimal": "Goals reached",
+    "sheet": "Character sheet",
+    "more": "More",
+    "statLevel": "Lv {{level}}",
+    "statMax": "Max",
+    "statEmpty": "Complete missions of this kind",
+    "statLabel": "{{name}}, level {{level}}, {{points}} points of {{max}}",
+    "statLabel_max": "{{name}}, highest level, {{points}} points",
+    "statHint": "Opens the detail",
+    "detail": {
+      "title": "{{name}} · Lv {{level}}",
+      "subtitle": "Stat level",
+      "towards": "Towards level {{level}}",
+      "left_one": "{{count}} point to level {{level}}",
+      "left_other": "{{count}} points to level {{level}}",
+      "total_one": "{{count}} point in all",
+      "total_other": "{{count}} points in all",
+      "grows": {
+        "strength": "Grows with sport, training and physical activity.",
+        "constitution": "Grows with food, sleep and health.",
+        "intelligence": "Grows with study, reading and languages.",
+        "wisdom": "Grows with meditation, journaling and reflection.",
+        "charisma": "Grows with relationships, family and friends.",
+        "discipline": "Grows with home, work, finances and order."
+      },
+      "gains": "Latest gains",
+      "gain": "+{{points}} {{name}}, {{when}}",
+      "today": "today",
+      "yesterday": "yesterday",
+      "noGains": "No gains yet.",
+      "missions": "{{term}} that make it grow",
+      "noMissions": "Choose this stat in the editor to make it grow."
+    },
+    "links": {
+      "stats": "Statistics",
+      "shop": "{{shop}} and {{inventory}}",
+      "trophiesSoon": "{{hall}} is coming soon.",
+      "rowLabel": "{{label}}, {{value}}"
+    }
   }
 }

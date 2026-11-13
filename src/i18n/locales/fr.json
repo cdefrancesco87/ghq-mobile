@@ -1092,5 +1092,57 @@
     "today": "Aujourd'hui",
     "yesterday": "Hier",
     "notes": "Notes"
+  },
+  "profile": {
+    "settings": "Réglages",
+    "rename": "Changer de nom",
+    "nameLabel": "Nom du héros",
+    "nameHint": "Jusqu'à {{max}} caractères",
+    "toNext": "{{xp}} sur {{max}} {{xpTerm}} avant {{levelTerm}} {{next}}",
+    "maxLevel": "Niveau maximum atteint",
+    "numbersLabel": "{{label}} : {{value}}",
+    "bossesDefeated": "Boss vaincus",
+    "bossesDefeated_fantasy": "Némésis vaincues",
+    "bossesDefeated_cyberpunk": "Pare-feu percés",
+    "bossesDefeated_lovecraft": "Horreurs vaincues",
+    "bossesDefeated_minimal": "Objectifs atteints",
+    "sheet": "Fiche de personnage",
+    "more": "Plus",
+    "statLevel": "Niv {{level}}",
+    "statMax": "Max",
+    "statEmpty": "Accomplis des missions de ce type",
+    "statLabel": "{{name}}, niveau {{level}}, {{points}} points sur {{max}}",
+    "statLabel_max": "{{name}}, niveau maximum, {{points}} points",
+    "statHint": "Ouvre le détail",
+    "detail": {
+      "title": "{{name}} · Niv {{level}}",
+      "subtitle": "Niveau de la statistique",
+      "towards": "Vers le niveau {{level}}",
+      "left_one": "Encore {{count}} point avant le niveau {{level}}",
+      "left_other": "Encore {{count}} points avant le niveau {{level}}",
+      "total_one": "{{count}} point en tout",
+      "total_other": "{{count}} points en tout",
+      "grows": {
+        "strength": "Grandit avec le sport, l'entraînement et l'activité physique.",
+        "constitution": "Grandit avec l'alimentation, le sommeil et la santé.",
+        "intelligence": "Grandit avec l'étude, la lecture et les langues.",
+        "wisdom": "Grandit avec la méditation, le journal et la réflexion.",
+        "charisma": "Grandit avec les relations, la famille et les amis.",
+        "discipline": "Grandit avec la maison, le travail, les finances et l'ordre."
+      },
+      "gains": "Derniers gains",
+      "gain": "+{{points}} {{name}}, {{when}}",
+      "today": "aujourd'hui",
+      "yesterday": "hier",
+      "noGains": "Pas encore de gains.",
+      "missions": "{{term}} qui la font grandir",
+      "noMissions": "Choisis cette statistique dans l'éditeur pour la faire grandir."
+    },
+    "links": {
+      "stats": "Statistiques",
+      "shop": "{{shop}} et {{inventory}}",
+      "trophiesSoon": "{{hall}} arrive bientôt.",
+      "rowLabel": "{{label}}, {{value}}"
+    }
   }
 }

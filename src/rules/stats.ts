@@ -56,8 +56,20 @@ export function statPointsToNext(level: number): number {
   return STATS.pointsToNextFactor * (level + STATS.pointsToNextOffset);
 }
 
-/** Level of a stat from its total points: from 0 up to the cap, while the points keep adding up. */
-export function statLevel(points: number): number {
+/** Where a stat stands: its level and the points towards the next one. */
+export interface StatProgress {
+  /** From 0 to STATS.levelMax. */
+  readonly level: number;
+  /** Points gained inside the level; at the cap, all the points above it. */
+  readonly inLevel: number;
+  /** Points of the whole level, to reach the next one; null at the cap. */
+  readonly toNext: number | null;
+  /** The stat is at the cap of the first version («Max», design-sezioni.md 9.4). */
+  readonly max: boolean;
+}
+
+/** Level of a stat and points towards the next level, from its total points. */
+export function statProgress(points: number): StatProgress {
   assertNonNegativeInteger(points, 'Stat points');
   let level = 0;
   let remaining = points;
@@ -65,7 +77,13 @@ export function statLevel(points: number): number {
     remaining -= statPointsToNext(level);
     level++;
   }
-  return level;
+  const max = level === STATS.levelMax;
+  return { level, inLevel: remaining, toNext: max ? null : statPointsToNext(level), max };
+}
+
+/** Level of a stat from its total points: from 0 up to the cap, while the points keep adding up. */
+export function statLevel(points: number): number {
+  return statProgress(points).level;
 }
 
 /**

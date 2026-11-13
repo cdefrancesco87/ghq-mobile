@@ -217,3 +217,17 @@ export const REMINDERS = {
 
 /** Language of the first launch when no device language is supported (CLAUDE.md, choice 19). */
 export const FALLBACK_LANGUAGE: Language = 'en';
+
+/** The Profile (design-sezioni.md 9.2, 9.5). */
+export const PROFILE = {
+  /**
+   * The name of the hero changed from the Profile, up to this many characters (design 9.2). The
+   * first launch keeps HERO_NAME_MAX_LENGTH (design 1.3).
+   */
+  nameMaxLength: 24,
+  /**
+   * The latest gains of a stat in its detail. PROVISIONAL (backlog T54): the documents do not
+   * say how many.
+   */
+  recentGainsMax: 5,
+} as const;

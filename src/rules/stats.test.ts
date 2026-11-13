@@ -1,4 +1,4 @@
-import { formArrow, statLevel, statPoints, statPointsToNext } from '@/rules/stats';
+import { formArrow, statLevel, statPoints, statPointsToNext, statProgress } from '@/rules/stats';
 import type { Difficulty, StatKey } from '@/rules/types';
 
 describe('statPoints', () => {
@@ -118,5 +118,28 @@ describe('formArrow', () => {
     expect(() => formArrow(10, 2.5, 60)).toThrow(RangeError);
     expect(() => formArrow(10, 10, 0)).toThrow(RangeError);
     expect(() => formArrow(10, 10, 1.5)).toThrow(RangeError);
+  });
+});
+
+describe('statProgress', () => {
+  it('starts at level 0 with 0 of 100 points', () => {
+    expect(statProgress(0)).toEqual({ level: 0, inLevel: 0, toNext: 100, max: false });
+  });
+
+  it('gives the points inside the level and those needed for the next one', () => {
+    // Level 4 starts at 100 + 200 + 300 + 400 = 1000 points and needs 500 more.
+    expect(statProgress(1340)).toEqual({ level: 4, inLevel: 340, toNext: 500, max: false });
+    expect(statProgress(999)).toEqual({ level: 3, inLevel: 399, toNext: 400, max: false });
+    expect(statProgress(1000)).toEqual({ level: 4, inLevel: 0, toNext: 500, max: false });
+  });
+
+  it('stops at level 10 while the points keep adding up', () => {
+    expect(statProgress(5500)).toEqual({ level: 10, inLevel: 0, toNext: null, max: true });
+    expect(statProgress(7000)).toEqual({ level: 10, inLevel: 1500, toNext: null, max: true });
+  });
+
+  it('refuses negative or fractional points', () => {
+    expect(() => statProgress(-1)).toThrow(RangeError);
+    expect(() => statProgress(1.5)).toThrow(RangeError);
   });
 });

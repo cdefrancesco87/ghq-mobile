@@ -1092,5 +1092,57 @@
     "today": "Heute",
     "yesterday": "Gestern",
     "notes": "Notizen"
+  },
+  "profile": {
+    "settings": "Einstellungen",
+    "rename": "Namen ändern",
+    "nameLabel": "Name des Helden",
+    "nameHint": "Bis zu {{max}} Zeichen",
+    "toNext": "{{xp}} von {{max}} {{xpTerm}} bis {{levelTerm}} {{next}}",
+    "maxLevel": "Höchstes Level erreicht",
+    "numbersLabel": "{{label}}: {{value}}",
+    "bossesDefeated": "Besiegte Bosse",
+    "bossesDefeated_fantasy": "Besiegte Nemesis",
+    "bossesDefeated_cyberpunk": "Geknackte Firewalls",
+    "bossesDefeated_lovecraft": "Besiegte Schrecken",
+    "bossesDefeated_minimal": "Erreichte Ziele",
+    "sheet": "Charakterbogen",
+    "more": "Mehr",
+    "statLevel": "Lv {{level}}",
+    "statMax": "Max",
+    "statEmpty": "Erledige Missionen dieser Art",
+    "statLabel": "{{name}}, Level {{level}}, {{points}} von {{max}} Punkten",
+    "statLabel_max": "{{name}}, höchstes Level, {{points}} Punkte",
+    "statHint": "Öffnet die Details",
+    "detail": {
+      "title": "{{name}} · Lv {{level}}",
+      "subtitle": "Level des Attributs",
+      "towards": "Auf dem Weg zu Level {{level}}",
+      "left_one": "Noch {{count}} Punkt bis Level {{level}}",
+      "left_other": "Noch {{count}} Punkte bis Level {{level}}",
+      "total_one": "{{count}} Punkt insgesamt",
+      "total_other": "{{count}} Punkte insgesamt",
+      "grows": {
+        "strength": "Wächst mit Sport, Training und Bewegung.",
+        "constitution": "Wächst mit Ernährung, Schlaf und Gesundheit.",
+        "intelligence": "Wächst mit Lernen, Lesen und Sprachen.",
+        "wisdom": "Wächst mit Meditation, Tagebuch und Nachdenken.",
+        "charisma": "Wächst mit Beziehungen, Familie und Freunden.",
+        "discipline": "Wächst mit Haushalt, Arbeit, Finanzen und Ordnung."
+      },
+      "gains": "Letzte Zuwächse",
+      "gain": "+{{points}} {{name}}, {{when}}",
+      "today": "heute",
+      "yesterday": "gestern",
+      "noGains": "Noch keine Zuwächse.",
+      "missions": "{{term}}, die es wachsen lassen",
+      "noMissions": "Wähle dieses Attribut im Editor, damit es wächst."
+    },
+    "links": {
+      "stats": "Statistiken",
+      "shop": "{{shop}} und {{inventory}}",
+      "trophiesSoon": "{{hall}} kommt bald.",
+      "rowLabel": "{{label}}, {{value}}"
+    }
   }
 }

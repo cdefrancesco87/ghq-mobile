@@ -1092,5 +1092,57 @@
     "today": "Hoy",
     "yesterday": "Ayer",
     "notes": "Notas"
+  },
+  "profile": {
+    "settings": "Ajustes",
+    "rename": "Cambiar nombre",
+    "nameLabel": "Nombre del héroe",
+    "nameHint": "Hasta {{max}} caracteres",
+    "toNext": "{{xp}} de {{max}} {{xpTerm}} para {{levelTerm}} {{next}}",
+    "maxLevel": "Nivel máximo alcanzado",
+    "numbersLabel": "{{label}}: {{value}}",
+    "bossesDefeated": "Jefes derrotados",
+    "bossesDefeated_fantasy": "Némesis derrotadas",
+    "bossesDefeated_cyberpunk": "Firewalls derribados",
+    "bossesDefeated_lovecraft": "Horrores derrotados",
+    "bossesDefeated_minimal": "Objetivos alcanzados",
+    "sheet": "Hoja de personaje",
+    "more": "Más",
+    "statLevel": "Nv {{level}}",
+    "statMax": "Máx",
+    "statEmpty": "Completa misiones de este tipo",
+    "statLabel": "{{name}}, nivel {{level}}, {{points}} puntos de {{max}}",
+    "statLabel_max": "{{name}}, nivel máximo, {{points}} puntos",
+    "statHint": "Abre el detalle",
+    "detail": {
+      "title": "{{name}} · Nv {{level}}",
+      "subtitle": "Nivel de la estadística",
+      "towards": "Hacia el nivel {{level}}",
+      "left_one": "Falta {{count}} punto para el nivel {{level}}",
+      "left_other": "Faltan {{count}} puntos para el nivel {{level}}",
+      "total_one": "{{count}} punto en total",
+      "total_other": "{{count}} puntos en total",
+      "grows": {
+        "strength": "Crece con deporte, entrenamiento y actividad física.",
+        "constitution": "Crece con alimentación, sueño y salud.",
+        "intelligence": "Crece con estudio, lectura e idiomas.",
+        "wisdom": "Crece con meditación, diario y reflexión.",
+        "charisma": "Crece con relaciones, familia y amigos.",
+        "discipline": "Crece con casa, trabajo, finanzas y orden."
+      },
+      "gains": "Últimas ganancias",
+      "gain": "+{{points}} {{name}}, {{when}}",
+      "today": "hoy",
+      "yesterday": "ayer",
+      "noGains": "Aún no hay ganancias.",
+      "missions": "{{term}} que la hacen crecer",
+      "noMissions": "Elige esta estadística en el editor para que crezca."
+    },
+    "links": {
+      "stats": "Estadísticas",
+      "shop": "{{shop}} e {{inventory}}",
+      "trophiesSoon": "{{hall}} llegará pronto.",
+      "rowLabel": "{{label}}, {{value}}"
+    }
   }
 }

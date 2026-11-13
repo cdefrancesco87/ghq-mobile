@@ -1,5 +1,8 @@
-import { ScreenPlaceholder } from '@/features/shell/ScreenPlaceholder';
+import { ProfileScreen } from '@/features/profile/ProfileScreen';
+import { useProfileView } from '@/features/profile/useProfileView';
 
+/** Profilo, the last tab of the bar (design-sezioni.md 9.1). */
 export default function Profile() {
-  return <ScreenPlaceholder titleKey="profile" />;
+  const view = useProfileView();
+  return view === null ? null : <ProfileScreen view={view} />;
 }
