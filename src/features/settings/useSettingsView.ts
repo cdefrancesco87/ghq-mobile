@@ -2,12 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { getDaySettings, type DaySettings } from '@/db/repositories/settings';
+import { getTodayPause, type TodayPause } from '@/db/repositories/todayView';
 import {
   notificationPermission,
   requestNotificationPermission,
   type NotificationPermission,
 } from '@/features/notifications/system';
 import { getSession } from '@/stores/session';
+import type { PauseInterval } from '@/rules/pause';
 import { useSettingsStore, type AppSettings } from '@/stores/settings';
 import { useThemeStore } from '@/stores/theme';
 
@@ -16,19 +18,29 @@ export interface SettingsView {
   readonly theme: ReturnType<typeof useThemeStore.getState>['theme'];
   /** The group Giornata: the rules of today and the changes from tomorrow. */
   readonly day: DaySettings;
+  /** The general pause in progress or scheduled; one already over (not closed yet) is none. */
+  readonly pause: PauseInterval | null;
+  /** The general pause that holds today, for «Riprendi». */
+  readonly todayPause: TodayPause | null;
 }
 
 /** The values of the Settings, read again after every action (`runAction` reloads the stores). */
 export function useSettingsView(): SettingsView {
   const settings = useSettingsStore((state) => state.settings);
   const theme = useThemeStore((state) => state.theme);
-  const day = useMemo(() => {
+  const { day, todayPause } = useMemo(() => {
     const { db, clock } = getSession();
-    return getDaySettings(db, clock());
+    const now = clock();
+    return { day: getDaySettings(db, now), todayPause: getTodayPause(db, now) };
     // `settings` is a dependency only to read the day again when a setting changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings]);
-  return { settings, theme, day };
+  const stored = settings.general_pause;
+  const pause =
+    stored === null || (stored.until_day !== null && stored.until_day < day.today)
+      ? null
+      : { fromDay: stored.from_day, untilDay: stored.until_day };
+  return { settings, theme, day, pause, todayPause };
 }
 
 /**

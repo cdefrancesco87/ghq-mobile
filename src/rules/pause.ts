@@ -143,3 +143,28 @@ export function windowStartOutsidePause(
   }
   return day;
 }
+
+/**
+ * The deadline of a boss once `pause` is over (endPauseIfOver): a deadline from the first paused
+ * day on moves forward by the paused days, an earlier one stays. Null while a pause without an end
+ * holds the deadline, which is not known yet.
+ */
+export function deadlineAfterPause(deadline: GameDay, pause: PauseInterval | null): GameDay | null {
+  if (pause === null || deadline < pause.fromDay) {
+    return deadline;
+  }
+  return pause.untilDay === null
+    ? null
+    : addDays(deadline, pauseLength({ fromDay: pause.fromDay, untilDay: pause.untilDay }));
+}
+
+/**
+ * A deadline the general pause holds («Scadenza ferma», design 2.8): it falls from the first paused
+ * day on, so it moves when the pause ends (endPauseIfOver).
+ */
+export function isDeadlineHeld(
+  deadline: GameDay | null,
+  pause: { readonly fromDay: GameDay } | null,
+): boolean {
+  return deadline !== null && pause !== null && deadline >= pause.fromDay;
+}

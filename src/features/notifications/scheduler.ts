@@ -2,11 +2,13 @@ import { and, inArray, ne } from 'drizzle-orm';
 
 import { recordFiredReminders } from '../../db/repositories/appNotifications';
 import { notDeleted } from '../../db/repositories/events';
+import { getGeneralPause } from '../../db/repositories/pause';
 import { dayChangeOn, gameDayOf, getSetting, weekRulesOn } from '../../db/repositories/settings';
 import { missionDays, missionReminders, missions, scheduledReminders } from '../../db/schema';
 import type { Db } from '../../db/types';
 import { REMINDERS } from '../../rules/config';
 import { addDays, weekStartOf } from '../../rules/gameDay';
+import { isPausedDay } from '../../rules/pause';
 import type { GameDay } from '../../rules/types';
 import { reminderSlots, type ReminderSlot } from '../../rules/notifications';
 import { plannedReminders } from '../../rules/reminders';
@@ -74,7 +76,7 @@ function plan(db: Db, { now, tzOffset }: SyncInput) {
     )
     .all()
     .filter((row) => taskIds.has(row.missionId) || row.day >= thisWeek);
-  const planned = plannedReminders({
+  const reminded = plannedReminders({
     missions: candidates,
     reminders,
     done,
@@ -86,6 +88,10 @@ function plan(db: Db, { now, tzOffset }: SyncInput) {
     weekStart: (day) => rulesOn(day).weekStart,
     restDays: (day) => rulesOn(day).restDays,
   });
+  // No reminder on the days of the general pause (choice 23): the pause in progress or scheduled.
+  const pause = getGeneralPause(db);
+  const pauses = pause === null ? [] : [pause];
+  const planned = reminded.filter((reminder) => !isPausedDay(reminder.gameDay, pauses));
   return { today, planned };
 }
 

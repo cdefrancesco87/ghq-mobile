@@ -26,6 +26,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { DayPlan } from './DayPlan';
 import { HeroCard } from './HeroCard';
 import { HeroStickyBar } from './HeroStickyBar';
+import { PauseBanner } from './PauseBanner';
 import { TodayHeader } from './TodayHeader';
 import { TodayBosses } from './TodayBosses';
 import { TodayMissions } from './TodayMissions';
@@ -49,7 +50,8 @@ export interface TodayScreenProps {
 const NOTHING = () => undefined;
 
 /**
- * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the notices of the shield, of the
+ * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the band of the general pause, the
+ * notices of the shield, of the
  * missions back from a pause (3.6) and of the companion grown up (6.6), the hero
  * card, the plan of the day, the bosses and the missions of today, or the empty states.
  */
@@ -115,6 +117,7 @@ export function TodayScreen({
           doneCount={view.doneCount}
           totalCount={view.totalCount}
         />
+        <PauseBanner pause={view.pause} />
         {view.notices.shieldUsedYesterday && !shieldClosed ? (
           <Card testID="today-notice-shield">
             <View style={styles.notice}>

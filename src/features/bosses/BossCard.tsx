@@ -38,6 +38,8 @@ export interface BossCardProps {
   /** A touch on the card opens the card of the boss (design-sezioni.md 5.3). */
   readonly onOpen: () => void;
   readonly hit: BossHit | null;
+  /** The general pause holds the deadline: «Scadenza ferma» instead of the days (design 2.8). */
+  readonly held?: boolean;
   readonly testID: string;
 }
 
@@ -57,6 +59,7 @@ export function BossCard({
   onCompleteStep,
   onOpen,
   hit,
+  held = false,
   testID,
 }: BossCardProps) {
   const { t } = useTranslation();
@@ -68,16 +71,18 @@ export function BossCard({
   const essential = useEssential();
 
   const daysLeft = boss.deadlineDay === null ? null : diffDays(day, boss.deadlineDay);
-  const near = daysLeft !== null && daysLeft <= BOSS.deadlineWarningDays;
+  const near = !held && daysLeft !== null && daysLeft <= BOSS.deadlineWarningDays;
   const deadline =
     daysLeft === null
       ? null
-      : daysLeft < 0
-        ? t('bosses.card.overdue')
-        : daysLeft === 0
-          ? t('bosses.card.dueToday')
-          : // From 3 days before, «Mancano 3 giorni» in the colour of danger (5.6).
-            t(near ? 'bosses.card.daysLeft' : 'bosses.card.days', { count: daysLeft });
+      : held
+        ? t('bosses.card.held')
+        : daysLeft < 0
+          ? t('bosses.card.overdue')
+          : daysLeft === 0
+            ? t('bosses.card.dueToday')
+            : // From 3 days before, «Mancano 3 giorni» in the colour of danger (5.6).
+              t(near ? 'bosses.card.daysLeft' : 'bosses.card.days', { count: daysLeft });
   const large = variant === 'large';
   const size = SPRITE_SIZE[variant];
   const kind = boss.kind === 'starter' ? 'quest' : boss.difficulty;
@@ -140,7 +145,7 @@ export function BossCard({
             {deadline === null ? null : (
               <View testID={`${testID}-deadline`} style={styles.deadline}>
                 <Icon
-                  name={near ? 'avviso' : 'calendario'}
+                  name={near ? 'avviso' : held ? 'pausa' : 'calendario'}
                   size={16}
                   color={near ? colors.dangerText : colors.textMuted}
                 />

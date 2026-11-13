@@ -760,7 +760,8 @@
       "stepsSummary": "steps {{done}} of {{total}}",
       "openHint": "Opens the card",
       "daysLeft_one": "{{count}} day left",
-      "daysLeft_other": "{{count}} days left"
+      "daysLeft_other": "{{count}} days left",
+      "held": "Deadline on hold"
     },
     "today": {
       "empty": "Turn a goal into a boss",
@@ -1521,7 +1522,8 @@
       "on": "Yes",
       "off": "No"
     },
-    "vibrations": "Vibrations"
+    "vibrations": "Vibrations",
+    "generalPause": "General pause"
   },
   "backup": {
     "title": "Backup and restore",
@@ -1700,5 +1702,51 @@
     "moreA11y": "Open Today",
     "unseenA11y_one": "{{count}} unseen notification",
     "unseenA11y_other": "{{count}} unseen notifications"
+  },
+  "pause": {
+    "value": {
+      "none": "No",
+      "until": "Until {{date}}",
+      "open": "No end date",
+      "from": "From {{date}}"
+    },
+    "sheet": {
+      "explain": "Quests don't cost health, days without completions don't lower your companion's mood, reminders and the evening summary stay silent, boss deadlines move forward. Your streak still counts: complete at least one quest a day to keep it.",
+      "start": "Start",
+      "end": "End",
+      "noEnd": "No end date",
+      "endHint": "The last day chosen is still paused.",
+      "confirm": "Start the pause",
+      "change": "Change",
+      "save": "Use this date",
+      "cancel": "Cancel the pause",
+      "resume": "Resume",
+      "scheduled": "The pause starts on {{date}}.",
+      "inProgress": "Paused since {{date}}.",
+      "lastDay": "Today is the last day of the pause: back to it tomorrow.",
+      "started": "Pause started",
+      "scheduledDone": "Pause scheduled from {{date}}",
+      "changed": "End of the pause changed",
+      "cancelled": "Pause cancelled"
+    },
+    "banner": {
+      "until": "Paused until {{date}} · Your health is safe",
+      "until_essential": "Paused until {{date}}",
+      "open": "Paused · Your health is safe",
+      "open_essential": "Paused",
+      "resume": "Resume",
+      "lastDay": "Back to it tomorrow",
+      "resumeLabel": "Resume: the pause ends today"
+    },
+    "dialog": {
+      "title": "Resume?",
+      "body": "The pause ends today. From tomorrow quests count again.",
+      "bosses_one": "Boss deadlines move forward by {{count}} day.",
+      "bosses_other": "Boss deadlines move forward by {{count}} days.",
+      "bosses_essential_one": "Goal deadlines move forward by {{count}} day.",
+      "bosses_essential_other": "Goal deadlines move forward by {{count}} days.",
+      "confirm": "Resume",
+      "done": "Pause over: back to it tomorrow"
+    }
   }
 }

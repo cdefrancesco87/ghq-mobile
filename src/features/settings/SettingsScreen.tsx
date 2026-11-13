@@ -29,6 +29,7 @@ import { MAX_TEXT_SCALE } from '@/theme/textScale';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ChoiceSheet } from './ChoiceSheet';
 import { GameModeSheet } from './GameModeSheet';
+import { GeneralPauseSheet } from './GeneralPauseSheet';
 import { DAY_CHANGE_TIMES, dayAndMonth, quietTimes, restDaysText, weekdayName } from './format';
 import { RestDaysSheet } from './RestDaysSheet';
 import { SettingsRow } from './SettingsRow';
@@ -55,6 +56,7 @@ type OpenSheet =
   | 'licenses'
   | 'gameMode'
   | 'reduceMotion'
+  | 'pause'
   | null;
 
 const FIELD_HEIGHT = 48;
@@ -80,7 +82,8 @@ interface RowSpec {
  * the row says so («Dal 7 novembre»). Every change that touches the reminders goes through
  * `runAction`, which schedules them again. The row Backup says where and when the last backup was
  * made and opens «Backup e ripristino», which also holds «Elimina tutti i dati» (mockups D38, D39);
- * the search finds it there too. Gioco holds «Livello di gioco», Completo or Essenziale, changed
+ * the search finds it there too. The last row of Giornata is «Pausa generale» (10.5), with its
+ * sheet. Gioco holds «Livello di gioco», Completo or Essenziale, changed
  * through a sheet that says what goes away (10.4, 10.11; mockup D37A). Accessibilità (10.7) holds
  * «Riduci movimento» (Come il telefono, Sì, No, read by `useReduceMotion`) and «Vibrazioni» (read by
  * the celebrations); the row that leads to «Colori per daltonici» waits for T82.
@@ -89,7 +92,7 @@ export function SettingsScreen() {
   const { t, i18n } = useTranslation();
   const { colors, family, typography } = useTheme();
   const router = useRouter();
-  const { settings, theme, day } = useSettingsView();
+  const { settings, theme, day, pause, todayPause } = useSettingsView();
   const { permission, ask } = useNotificationPermission();
   const [query, setQuery] = useState('');
   const [sheet, setSheet] = useState<OpenSheet>(null);
@@ -109,6 +112,24 @@ export function SettingsScreen() {
     restDays.length === 0
       ? t('settings.restDaysNone')
       : restDaysText(restDays, weekStart, language);
+
+  // Pausa generale: «No», «Fino al 20 nov», «Senza data», or «Dal 20 nov» before it starts.
+  const pauseValue =
+    pause === null
+      ? t('pause.value.none')
+      : pause.fromDay > day.today
+        ? t('pause.value.from', { date: dayAndMonth(pause.fromDay, language, true) })
+        : pause.untilDay === null
+          ? t('pause.value.open')
+          : t('pause.value.until', { date: dayAndMonth(pause.untilDay, language, true) });
+  const pauseLabel =
+    pause === null
+      ? pauseValue
+      : pause.fromDay > day.today
+        ? t('pause.value.from', { date: dayAndMonth(pause.fromDay, language) })
+        : pause.untilDay === null
+          ? pauseValue
+          : t('pause.value.until', { date: dayAndMonth(pause.untilDay, language) });
 
   const themeFamily = theme.startsWith('minimal') ? 'minimal' : theme;
   const themeMode =
@@ -248,6 +269,22 @@ export function SettingsScreen() {
               : from(nextWeek.fromDay)
           }
           onPress={() => setSheet('restDays')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'generalPause',
+      group: 'day',
+      label: t('settings.generalPause'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-pause"
+          icon="pausa"
+          label={t('settings.generalPause')}
+          value={pauseValue}
+          valueLabel={pauseLabel}
+          onPress={() => setSheet('pause')}
           last={last}
         />
       ),
@@ -607,6 +644,13 @@ export function SettingsScreen() {
           );
           close();
         }}
+        onClose={close}
+      />
+      <GeneralPauseSheet
+        visible={sheet === 'pause'}
+        today={day.today}
+        pause={pause}
+        todayPause={todayPause}
         onClose={close}
       />
       <GameModeSheet

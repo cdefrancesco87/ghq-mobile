@@ -8,6 +8,7 @@ import {
   restoreMission,
   updateMission,
 } from '@/db/repositories/missions';
+import { resumePause, startPause } from '@/db/repositories/pause';
 import { setSetting, setWeekRules } from '@/db/repositories/settings';
 import { undoEvent } from '@/db/repositories/undo';
 import { appNotifications, scheduledReminders } from '@/db/schema';
@@ -318,5 +319,45 @@ describe('syncReminders with reminders of the same minute (design 11.4)', () => 
     expect(scheduler.times()).toEqual(['Meal@07 08:00', 'Bed@07 08:00']);
     expect(scheduler.groups.size).toBe(6);
     expect(rows(db).filter((row) => row.fireAt === at(7, 8))).toHaveLength(2);
+  });
+
+  describe('general pause (choice 23)', () => {
+    it('schedules no reminder on the paused days, and the others as usual', async () => {
+      const { db, scheduler } = setUp(['21:00']);
+      startPause(db, { fromDay: '2026-11-08', untilDay: '2026-11-10' }, clockAt(FRIDAY, 19));
+      await syncReminders(db, scheduler, SYNC);
+      expect(scheduler.times()).toEqual([
+        'Journal@06 21:00',
+        'Journal@07 21:00',
+        'Journal@11 21:00',
+        'Journal@12 21:00',
+      ]);
+    });
+
+    it('cancels them when the pause starts today and schedules them again at «Riprendi»', async () => {
+      const { db, scheduler } = setUp(['21:00']);
+      await syncReminders(db, scheduler, SYNC);
+      expect(scheduler.pending.size).toBe(7);
+      startPause(db, { fromDay: '2026-11-06', untilDay: null }, clockAt(FRIDAY, 19));
+      await syncReminders(db, scheduler, SYNC);
+      expect(scheduler.pending.size).toBe(0);
+      expect(rows(db)).toEqual([]);
+      // Today stays the last paused day: the reminders come back from tomorrow.
+      resumePause(db, clockAt(FRIDAY, 19));
+      await syncReminders(db, scheduler, SYNC);
+      expect(scheduler.times()).toEqual(
+        ['07', '08', '09', '10', '11', '12'].map((day) => `Journal@${day} 21:00`),
+      );
+    });
+
+    it('schedules them again once the pause is over', async () => {
+      const { db, scheduler } = setUp(['21:00']);
+      startPause(db, { fromDay: '2026-11-06', untilDay: '2026-11-07' }, clockAt(FRIDAY, 19));
+      await syncReminders(db, scheduler, SYNC);
+      expect(scheduler.times()[0]).toBe('Journal@08 21:00');
+      await syncReminders(db, scheduler, { now: at(8, 9), tzOffset: TZ });
+      expect(scheduler.times()).toHaveLength(7);
+      expect(scheduler.times()[0]).toBe('Journal@08 21:00');
+    });
   });
 });

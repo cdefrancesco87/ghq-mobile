@@ -760,7 +760,8 @@
       "stepsSummary": "étapes {{done}} sur {{total}}",
       "openHint": "Ouvre la fiche",
       "daysLeft_one": "Plus que {{count}} jour",
-      "daysLeft_other": "Plus que {{count}} jours"
+      "daysLeft_other": "Plus que {{count}} jours",
+      "held": "Échéance suspendue"
     },
     "today": {
       "empty": "Transforme un objectif en boss",
@@ -1521,7 +1522,8 @@
       "on": "Oui",
       "off": "Non"
     },
-    "vibrations": "Vibrations"
+    "vibrations": "Vibrations",
+    "generalPause": "Pause générale"
   },
   "backup": {
     "title": "Sauvegarde et restauration",
@@ -1700,5 +1702,51 @@
     "moreA11y": "Ouvrir Aujourd'hui",
     "unseenA11y_one": "{{count}} notification non vue",
     "unseenA11y_other": "{{count}} notifications non vues"
+  },
+  "pause": {
+    "value": {
+      "none": "Non",
+      "until": "Jusqu'au {{date}}",
+      "open": "Sans date",
+      "from": "À partir du {{date}}"
+    },
+    "sheet": {
+      "explain": "Les missions ne coûtent pas de vie, les jours sans validation ne baissent pas l'humeur du compagnon, rappels et résumé du soir se taisent, les échéances des boss sont repoussées. La série compte quand même : valide au moins une mission par jour pour ne pas la briser.",
+      "start": "Début",
+      "end": "Fin",
+      "noEnd": "Sans date de fin",
+      "endHint": "Le dernier jour choisi est encore en pause.",
+      "confirm": "Commencer la pause",
+      "change": "Modifier",
+      "save": "Utiliser cette date",
+      "cancel": "Annuler la pause",
+      "resume": "Reprendre",
+      "scheduled": "La pause commence le {{date}}.",
+      "inProgress": "En pause depuis le {{date}}.",
+      "lastDay": "Aujourd'hui est le dernier jour de pause : on reprend demain.",
+      "started": "Pause commencée",
+      "scheduledDone": "Pause prévue à partir du {{date}}",
+      "changed": "Fin de la pause modifiée",
+      "cancelled": "Pause annulée"
+    },
+    "banner": {
+      "until": "En pause jusqu'au {{date}} · Ta vie est à l'abri",
+      "until_essential": "En pause jusqu'au {{date}}",
+      "open": "En pause · Ta vie est à l'abri",
+      "open_essential": "En pause",
+      "resume": "Reprendre",
+      "lastDay": "On reprend demain",
+      "resumeLabel": "Reprendre : la pause se termine aujourd'hui"
+    },
+    "dialog": {
+      "title": "Reprendre ?",
+      "body": "La pause se termine aujourd'hui. Dès demain, les missions comptent à nouveau.",
+      "bosses_one": "Les échéances des boss sont repoussées de {{count}} jour.",
+      "bosses_other": "Les échéances des boss sont repoussées de {{count}} jours.",
+      "bosses_essential_one": "Les échéances des objectifs sont repoussées de {{count}} jour.",
+      "bosses_essential_other": "Les échéances des objectifs sont repoussées de {{count}} jours.",
+      "confirm": "Reprendre",
+      "done": "Pause terminée : on reprend demain"
+    }
   }
 }

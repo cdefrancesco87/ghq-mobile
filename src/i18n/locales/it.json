@@ -760,7 +760,8 @@
       "stepsSummary": "passi {{done}} di {{total}}",
       "openHint": "Apre la scheda",
       "daysLeft_one": "Manca {{count}} giorno",
-      "daysLeft_other": "Mancano {{count}} giorni"
+      "daysLeft_other": "Mancano {{count}} giorni",
+      "held": "Scadenza ferma"
     },
     "today": {
       "empty": "Trasforma un obiettivo in un boss",
@@ -1521,7 +1522,8 @@
       "on": "Sì",
       "off": "No"
     },
-    "vibrations": "Vibrazioni"
+    "vibrations": "Vibrazioni",
+    "generalPause": "Pausa generale"
   },
   "backup": {
     "title": "Backup e ripristino",
@@ -1700,5 +1702,51 @@
     "moreA11y": "Apri Oggi",
     "unseenA11y_one": "{{count}} notifica non vista",
     "unseenA11y_other": "{{count}} notifiche non viste"
+  },
+  "pause": {
+    "value": {
+      "none": "No",
+      "until": "Fino al {{date}}",
+      "open": "Senza data",
+      "from": "Dal {{date}}"
+    },
+    "sheet": {
+      "explain": "Le missioni non tolgono vita, i giorni senza completamenti non abbassano l'umore del compagno, promemoria e riepilogo serale tacciono, le scadenze dei boss si spostano in avanti. La serie invece conta: completa almeno una missione al giorno per non interromperla.",
+      "start": "Inizio",
+      "end": "Fine",
+      "noEnd": "Senza data di fine",
+      "endHint": "L'ultimo giorno scelto è ancora in pausa.",
+      "confirm": "Inizia la pausa",
+      "change": "Cambia",
+      "save": "Usa questa data",
+      "cancel": "Annulla la pausa",
+      "resume": "Riprendi",
+      "scheduled": "La pausa inizia il {{date}}.",
+      "inProgress": "In pausa dal {{date}}.",
+      "lastDay": "Oggi è l'ultimo giorno di pausa: si riparte domani.",
+      "started": "Pausa iniziata",
+      "scheduledDone": "Pausa programmata dal {{date}}",
+      "changed": "Fine della pausa cambiata",
+      "cancelled": "Pausa annullata"
+    },
+    "banner": {
+      "until": "In pausa fino al {{date}} · La vita è al sicuro",
+      "until_essential": "In pausa fino al {{date}}",
+      "open": "In pausa · La vita è al sicuro",
+      "open_essential": "In pausa",
+      "resume": "Riprendi",
+      "lastDay": "Si riparte domani",
+      "resumeLabel": "Riprendi: la pausa finisce oggi"
+    },
+    "dialog": {
+      "title": "Riprendere?",
+      "body": "La pausa finisce oggi. Da domani le missioni tornano a contare.",
+      "bosses_one": "Le scadenze dei boss sono spostate di {{count}} giorno.",
+      "bosses_other": "Le scadenze dei boss sono spostate di {{count}} giorni.",
+      "bosses_essential_one": "Le scadenze degli obiettivi sono spostate di {{count}} giorno.",
+      "bosses_essential_other": "Le scadenze degli obiettivi sono spostate di {{count}} giorni.",
+      "confirm": "Riprendi",
+      "done": "Pausa finita: si riparte domani"
+    }
   }
 }

@@ -760,7 +760,8 @@
       "stepsSummary": "pasos {{done}} de {{total}}",
       "openHint": "Abre la ficha",
       "daysLeft_one": "Queda {{count}} día",
-      "daysLeft_other": "Quedan {{count}} días"
+      "daysLeft_other": "Quedan {{count}} días",
+      "held": "Plazo detenido"
     },
     "today": {
       "empty": "Convierte un objetivo en un boss",
@@ -1521,7 +1522,8 @@
       "on": "Sí",
       "off": "No"
     },
-    "vibrations": "Vibraciones"
+    "vibrations": "Vibraciones",
+    "generalPause": "Pausa general"
   },
   "backup": {
     "title": "Copia y restauración",
@@ -1700,5 +1702,51 @@
     "moreA11y": "Abrir Hoy",
     "unseenA11y_one": "{{count}} notificación sin ver",
     "unseenA11y_other": "{{count}} notificaciones sin ver"
+  },
+  "pause": {
+    "value": {
+      "none": "No",
+      "until": "Hasta el {{date}}",
+      "open": "Sin fecha",
+      "from": "Desde el {{date}}"
+    },
+    "sheet": {
+      "explain": "Las misiones no quitan vida, los días sin completar no bajan el ánimo del compañero, los recordatorios y el resumen de la noche callan, los plazos de los jefes se aplazan. La racha sí cuenta: completa al menos una misión al día para no romperla.",
+      "start": "Inicio",
+      "end": "Fin",
+      "noEnd": "Sin fecha de fin",
+      "endHint": "El último día elegido sigue en pausa.",
+      "confirm": "Empezar la pausa",
+      "change": "Cambiar",
+      "save": "Usar esta fecha",
+      "cancel": "Cancelar la pausa",
+      "resume": "Reanudar",
+      "scheduled": "La pausa empieza el {{date}}.",
+      "inProgress": "En pausa desde el {{date}}.",
+      "lastDay": "Hoy es el último día de pausa: mañana se vuelve.",
+      "started": "Pausa iniciada",
+      "scheduledDone": "Pausa programada desde el {{date}}",
+      "changed": "Fin de la pausa cambiado",
+      "cancelled": "Pausa cancelada"
+    },
+    "banner": {
+      "until": "En pausa hasta el {{date}} · Tu vida está a salvo",
+      "until_essential": "En pausa hasta el {{date}}",
+      "open": "En pausa · Tu vida está a salvo",
+      "open_essential": "En pausa",
+      "resume": "Reanudar",
+      "lastDay": "Mañana se vuelve",
+      "resumeLabel": "Reanudar: la pausa termina hoy"
+    },
+    "dialog": {
+      "title": "¿Reanudar?",
+      "body": "La pausa termina hoy. Desde mañana las misiones vuelven a contar.",
+      "bosses_one": "Los plazos de los jefes se aplazan {{count}} día.",
+      "bosses_other": "Los plazos de los jefes se aplazan {{count}} días.",
+      "bosses_essential_one": "Los plazos de los objetivos se aplazan {{count}} día.",
+      "bosses_essential_other": "Los plazos de los objetivos se aplazan {{count}} días.",
+      "confirm": "Reanudar",
+      "done": "Pausa terminada: mañana se vuelve"
+    }
   }
 }

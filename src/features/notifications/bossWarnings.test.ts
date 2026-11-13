@@ -7,6 +7,7 @@ import {
   type NewBoss,
 } from '@/db/repositories/boss';
 import { getBossEdit } from '@/db/repositories/goalsView';
+import { changePauseEnd, startPause } from '@/db/repositories/pause';
 
 import { FRIDAY, TZ, at, clockAt, newGame } from '../../../test/game';
 import {
@@ -123,5 +124,39 @@ describe('syncBossWarnings', () => {
     deleteBoss(db, third.id, clockAt(FRIDAY, 15));
     await sync(db, scheduler);
     expect(scheduler.pending.size).toBe(0);
+  });
+
+  describe('general pause (choice 23)', () => {
+    it('warns 3 days before the deadline moved by a pause with an end', async () => {
+      const db = newGame(['journal']);
+      const thesis = createBoss(db, THESIS, clockAt(FRIDAY, 10));
+      const scheduler = new FakeScheduler();
+      await sync(db, scheduler);
+      startPause(db, { fromDay: '2026-11-10', untilDay: '2026-11-12' }, clockAt(FRIDAY, 11));
+      expect(await sync(db, scheduler)).toEqual({ scheduled: 1, cancelled: 1 });
+      expect(scheduler.times()).toEqual(['Tesi@20 09:00']);
+      expect([...scheduler.pending.keys()]).toEqual([`boss-warning:${thesis.id}:2026-11-23`]);
+    });
+
+    it('warns on the day after the pause when the moved warning falls inside it', async () => {
+      const db = newGame(['journal']);
+      createBoss(db, { ...THESIS, deadlineDay: '2026-11-10' }, clockAt(FRIDAY, 10));
+      const scheduler = new FakeScheduler();
+      startPause(db, { fromDay: '2026-11-10', untilDay: '2026-11-15' }, clockAt(FRIDAY, 11));
+      await sync(db, scheduler);
+      // Deadline moved to the 16th: its warning on the 13th is a paused day.
+      expect(scheduler.times()).toEqual(['Tesi@16 09:00']);
+    });
+
+    it('warns nothing while a pause without an end holds the deadline', async () => {
+      const db = newGame(['journal']);
+      createBoss(db, THESIS, clockAt(FRIDAY, 10));
+      const scheduler = new FakeScheduler();
+      startPause(db, { fromDay: '2026-11-06', untilDay: null }, clockAt(FRIDAY, 11));
+      expect(await sync(db, scheduler)).toEqual({ scheduled: 0, cancelled: 0 });
+      changePauseEnd(db, '2026-11-07', clockAt(FRIDAY, 12));
+      await sync(db, scheduler);
+      expect(scheduler.times()).toEqual(['Tesi@19 09:00']);
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { completeMission, skipMission } from '@/db/repositories/completion';
 import { deleteMission, updateMission } from '@/db/repositories/missions';
 import { recentNotifications, unseenNotificationCount } from '@/db/repositories/appNotifications';
+import { resumePause, startPause } from '@/db/repositories/pause';
 import { setSetting } from '@/db/repositories/settings';
 import type { Db } from '@/db/types';
 
@@ -114,5 +115,19 @@ describe('syncEveningSummary (design 11.5)', () => {
     setSetting(db, 'evening_summary', { enabled: false, time: '21:00' }, NOW);
     await syncEveningSummary(db, scheduler, SYNC);
     expect(unseenNotificationCount(db, at(FRIDAY, 22))).toBe(0);
+  });
+
+  it('stays silent on a paused day, even after «Riprendi», and comes back the day after', async () => {
+    const { db, scheduler } = setUp(2);
+    await syncEveningSummary(db, scheduler, SYNC);
+    expect(scheduler.pending.size).toBe(1);
+    startPause(db, { fromDay: '2026-11-06', untilDay: null }, clockAt(FRIDAY, 19));
+    expect(await syncEveningSummary(db, scheduler, SYNC)).toBeNull();
+    expect(scheduler.pending.size).toBe(0);
+    resumePause(db, clockAt(FRIDAY, 19));
+    expect(await syncEveningSummary(db, scheduler, SYNC)).toBeNull();
+    expect(await syncEveningSummary(db, scheduler, { now: at(7, 12), tzOffset: TZ })).toMatchObject(
+      { id: 'evening-summary:2026-11-07' },
+    );
   });
 });

@@ -11,6 +11,7 @@ import { MOOD } from '../../rules/config';
 import { completionDeltas } from '../../rules/completion';
 import { skipsLeft } from '../../rules/day';
 import { addDays, weekday } from '../../rules/gameDay';
+import { isDeadlineHeld, isPausedDay, pauseLength } from '../../rules/pause';
 import { xpToNext } from '../../rules/level';
 import type { GameDay } from '../../rules/types';
 import {
@@ -31,6 +32,7 @@ import { loadHero, type Hero } from './hero';
 import { listTodayMissions, type Mission } from './missions';
 import { gameDayOf, getSetting, weekRulesOn } from './settings';
 import { notDeleted } from './events';
+import { getGeneralPause } from './pause';
 
 // Everything the upper part of Today shows, read with one call (T39; design-sezioni.md 2.1–2.8).
 // It only reads: the actions stay in the other repositories.
@@ -87,6 +89,19 @@ export interface StarterQuestView {
   readonly steps: readonly { readonly title: string; readonly done: boolean }[];
 }
 
+/** The general pause that holds today (design-sezioni.md 2.8; CLAUDE.md, choice 23). */
+export interface TodayPause {
+  readonly fromDay: GameDay;
+  /** The last paused day, included; null without an end. */
+  readonly untilDay: GameDay | null;
+  /** Today is the last paused day: everything counts again from tomorrow («Si riparte domani»). */
+  readonly lastDay: boolean;
+  /** The days the boss deadlines move if the pause ends today («Riprendi»). */
+  readonly resumeDays: number;
+  /** Active bosses whose deadline the pause holds («Scadenza ferma»): from its first day on. */
+  readonly heldBosses: number;
+}
+
 export interface TodayView {
   readonly day: GameDay;
   readonly restDay: boolean;
@@ -118,6 +133,29 @@ export interface TodayView {
   /** Missions of today without the skipped ones, which do not count in the day (design 8.3). */
   readonly totalCount: number;
   readonly notices: TodayNotices;
+  /** The general pause, only on a paused day; a pause that starts later is not here. */
+  readonly pause: TodayPause | null;
+}
+
+function pauseOn(day: GameDay, db: Db, bosses: readonly TodayBoss[]): TodayPause | null {
+  const pause = getGeneralPause(db);
+  if (pause === null || !isPausedDay(day, [pause])) {
+    return null;
+  }
+  return {
+    fromDay: pause.fromDay,
+    untilDay: pause.untilDay,
+    lastDay: pause.untilDay === day,
+    resumeDays: pauseLength({ fromDay: pause.fromDay, untilDay: day }),
+    heldBosses: bosses.filter(({ boss: target }) => isDeadlineHeld(target.deadlineDay, pause))
+      .length,
+  };
+}
+
+/** The general pause that holds today, for the Settings (same as `getTodayView(...).pause`). */
+export function getTodayPause(db: Db, clock: { now: number; tzOffset: number }): TodayPause | null {
+  const day = gameDayOf(clock.now, clock.tzOffset, getSetting(db, 'day_change'));
+  return pauseOn(day, db, activeBosses(db));
 }
 
 function starterQuestOf(db: Db): StarterQuestView | null {
@@ -372,6 +410,7 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
     })
     .sort(listOrder);
   const doneCount = today.filter((item) => item.state === 'done').length;
+  const bosses = activeBosses(db);
   return {
     day,
     restDay: weekRulesOn(db, day).restDays.includes(weekday(day)),
@@ -388,10 +427,11 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
       .map((row) => row.missionId),
     planBonus: bonusGiven(db, 'bonus.plan', day),
     fullDay: bonusGiven(db, 'bonus.full_day', day),
-    bosses: activeBosses(db),
+    bosses,
     starterQuest: starterQuestOf(db),
     doneCount,
     totalCount: today.filter((item) => item.state !== 'skipped').length,
     notices: notices(db, day, current.exhaustedDay),
+    pause: pauseOn(day, db, bosses),
   };
 }

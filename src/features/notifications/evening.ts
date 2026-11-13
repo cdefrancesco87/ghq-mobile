@@ -1,9 +1,11 @@
 import { recordSummary } from '../../db/repositories/appNotifications';
+import { getGeneralPause } from '../../db/repositories/pause';
 import { dayChangeOn, gameDayOf, getSetting } from '../../db/repositories/settings';
 import { getTodayView } from '../../db/repositories/todayView';
 import type { Db } from '../../db/types';
 import { addDays } from '../../rules/gameDay';
 import { eveningSummary, eveningSummaryAt } from '../../rules/notifications';
+import { isPausedDay } from '../../rules/pause';
 import { afterReminderSyncs } from './scheduler';
 import { notificationTextsOf, type NotificationText } from './texts';
 
@@ -36,7 +38,10 @@ export interface SummaryInput {
   readonly tzOffset: number;
 }
 
-/** The summary of today still to fire, or null: switched off, already fired, nothing expected. */
+/**
+ * The summary of today still to fire, or null: switched off, already fired, nothing expected, a day
+ * of general pause.
+ */
 export function plannedEveningSummary(
   db: Db,
   { now, tzOffset }: SummaryInput,
@@ -51,6 +56,11 @@ export function plannedEveningSummary(
     tzOffset,
   });
   if (!setting.enabled || fireAt <= now) {
+    return null;
+  }
+  // During the general pause the summary does not fire (design 11.5; choice 23).
+  const pause = getGeneralPause(db);
+  if (pause !== null && isPausedDay(today, [pause])) {
     return null;
   }
   const view = getTodayView(db, { now, tzOffset });

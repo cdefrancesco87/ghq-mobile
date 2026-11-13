@@ -18,6 +18,8 @@ export interface ConfirmDialogProps {
   /** A milder way out, e.g. «Archivia invece» (design-sezioni.md 3.7). */
   readonly alternativeLabel?: string;
   readonly onAlternative?: () => void;
+  /** The look of the confirm button: destructive by default, primary for a mild action. */
+  readonly confirmVariant?: 'destructive' | 'primary';
   readonly testID?: string;
 }
 
@@ -32,6 +34,7 @@ export function ConfirmDialog({
   cancelLabel,
   alternativeLabel,
   onAlternative,
+  confirmVariant = 'destructive',
   testID = 'confirm-dialog',
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
@@ -46,7 +49,7 @@ export function ConfirmDialog({
   );
   const confirm = (
     <Button
-      variant="destructive"
+      variant={confirmVariant}
       label={confirmLabel}
       onPress={onConfirm}
       testID={`${testID}-confirm`}

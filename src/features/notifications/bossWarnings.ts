@@ -1,9 +1,13 @@
 import { eq } from 'drizzle-orm';
 
 import type { Boss } from '../../db/repositories/boss';
+import { getGeneralPause } from '../../db/repositories/pause';
 import { boss } from '../../db/schema';
 import type { Db } from '../../db/types';
 import { deadlineWarningAt } from '../../rules/boss';
+import { BOSS } from '../../rules/config';
+import { addDays } from '../../rules/gameDay';
+import { deadlineAfterPause } from '../../rules/pause';
 import { afterReminderSyncs } from './scheduler';
 
 // The system notification of the deadline warning of a boss (design-sezioni.md 11.6): «Mancano 3
@@ -48,27 +52,44 @@ export interface BossWarningSync {
   readonly cancelled: number;
 }
 
-/** The warnings wanted from `now` on: active bosses whose warning time has not come yet. */
+/**
+ * The warnings wanted from `now` on: active bosses whose warning time has not come yet. A general
+ * pause in progress or scheduled (choice 23) moves the deadlines that fall from its first day on:
+ * the warning is for the moved deadline, never on a paused day (then on the day after the pause),
+ * and none while a pause without an end holds the deadline.
+ */
 export function plannedBossWarnings(
   db: Db,
   { now, tzOffset }: BossWarningInput,
   textOf: (target: Boss) => BossWarningText,
 ): BossWarningRequest[] {
+  const pause = getGeneralPause(db);
   return db
     .select()
     .from(boss)
     .where(eq(boss.status, 'active'))
     .all()
     .flatMap((target) => {
-      if (target.deadlineDay === null) {
+      const deadline =
+        target.deadlineDay === null ? null : deadlineAfterPause(target.deadlineDay, pause);
+      if (deadline === null) {
         return [];
       }
-      const fireAt = deadlineWarningAt(target.deadlineDay, tzOffset);
+      let fireAt = deadlineWarningAt(deadline, tzOffset);
+      const warningDay = addDays(deadline, -BOSS.deadlineWarningDays);
+      if (
+        deadline !== target.deadlineDay &&
+        pause?.untilDay != null &&
+        warningDay <= pause.untilDay
+      ) {
+        // The time of the warning on the first day after the pause.
+        fireAt = deadlineWarningAt(addDays(pause.untilDay, 1 + BOSS.deadlineWarningDays), tzOffset);
+      }
       return fireAt <= now
         ? []
         : [
             {
-              id: `${BOSS_WARNING_PREFIX}${target.id}:${target.deadlineDay}`,
+              id: `${BOSS_WARNING_PREFIX}${target.id}:${deadline}`,
               bossId: target.id,
               fireAt,
               ...textOf(target),

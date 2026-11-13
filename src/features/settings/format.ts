@@ -36,12 +36,12 @@ export function weekdayName(
   return capitalize(name, language);
 }
 
-/** «7 novembre» of a game day. */
-export function dayAndMonth(day: GameDay, language: string): string {
+/** «7 novembre» of a game day, or «7 nov» with `short`. */
+export function dayAndMonth(day: GameDay, language: string, short = false): string {
   const [year, month, dayOfMonth] = day.split('-').map(Number);
   return new Intl.DateTimeFormat(language, {
     day: 'numeric',
-    month: 'long',
+    month: short ? 'short' : 'long',
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(year, month - 1, dayOfMonth)));
 }

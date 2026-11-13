@@ -7,6 +7,7 @@ import {
 } from '@/db/repositories/completion';
 import { changeHero } from '@/db/repositories/hero';
 import { createMission, deleteMission, getMission, pauseMission } from '@/db/repositories/missions';
+import { resumePause, startPause } from '@/db/repositories/pause';
 import { setSetting, setWeekRules } from '@/db/repositories/settings';
 import { getTodayView } from '@/db/repositories/todayView';
 import { undoEvent } from '@/db/repositories/undo';
@@ -367,5 +368,48 @@ describe('getTodayView', () => {
 
     completeStarterStatsStep(db, clockAt(FRIDAY, 11));
     expect(getTodayView(db, clockAt(FRIDAY, 12)).starterQuest).toBeNull();
+  });
+
+  describe('general pause (design 2.8)', () => {
+    const THESIS = { name: 'Tesi', difficulty: 'medium' as const, steps: ['Indice', 'Capitolo'] };
+
+    it('has no pause without one, and none for a pause that starts later', () => {
+      const db = newGame(['meditation']);
+      expect(getTodayView(db, clockAt(FRIDAY, 12)).pause).toBeNull();
+      startPause(db, { fromDay: '2026-11-08', untilDay: null }, clockAt(FRIDAY, 12));
+      expect(getTodayView(db, clockAt(FRIDAY, 12)).pause).toBeNull();
+      expect(getTodayView(db, clockAt(FRIDAY + 2, 12)).pause).not.toBeNull();
+    });
+
+    it('gives the pause of today, the days the deadlines move at «Riprendi» and the bosses held', () => {
+      const db = newGame(['meditation']);
+      createBoss(db, { ...THESIS, deadlineDay: '2026-11-20' }, clockAt(FRIDAY, 9));
+      createBoss(db, { ...THESIS, name: 'Senza data', deadlineDay: null }, clockAt(FRIDAY, 9));
+      startPause(db, { fromDay: TODAY, untilDay: '2026-11-15' }, clockAt(FRIDAY, 9));
+      expect(getTodayView(db, clockAt(FRIDAY + 2, 12)).pause).toEqual({
+        fromDay: TODAY,
+        untilDay: '2026-11-15',
+        lastDay: false,
+        resumeDays: 3,
+        heldBosses: 1,
+      });
+    });
+
+    it('says when today is the last paused day, after «Riprendi» too', () => {
+      const db = newGame(['meditation']);
+      startPause(db, { fromDay: '2026-11-06', untilDay: null }, clockAt(FRIDAY, 9));
+      expect(getTodayView(db, clockAt(FRIDAY, 12)).pause).toMatchObject({
+        untilDay: null,
+        lastDay: false,
+        resumeDays: 1,
+        heldBosses: 0,
+      });
+      resumePause(db, clockAt(FRIDAY, 13));
+      expect(getTodayView(db, clockAt(FRIDAY, 14)).pause).toMatchObject({
+        untilDay: TODAY,
+        lastDay: true,
+      });
+      expect(getTodayView(db, clockAt(FRIDAY + 1, 14)).pause).toBeNull();
+    });
   });
 });

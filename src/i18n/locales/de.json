@@ -760,7 +760,8 @@
       "stepsSummary": "Schritte {{done}} von {{total}}",
       "openHint": "Öffnet die Karte",
       "daysLeft_one": "Noch {{count}} Tag",
-      "daysLeft_other": "Noch {{count}} Tage"
+      "daysLeft_other": "Noch {{count}} Tage",
+      "held": "Frist angehalten"
     },
     "today": {
       "empty": "Mach aus einem Ziel einen Boss",
@@ -1521,7 +1522,8 @@
       "on": "Ja",
       "off": "Nein"
     },
-    "vibrations": "Vibration"
+    "vibrations": "Vibration",
+    "generalPause": "Allgemeine Pause"
   },
   "backup": {
     "title": "Backup und Wiederherstellung",
@@ -1700,5 +1702,51 @@
     "moreA11y": "Heute öffnen",
     "unseenA11y_one": "{{count}} ungelesene Benachrichtigung",
     "unseenA11y_other": "{{count}} ungelesene Benachrichtigungen"
+  },
+  "pause": {
+    "value": {
+      "none": "Nein",
+      "until": "Bis {{date}}",
+      "open": "Ohne Datum",
+      "from": "Ab {{date}}"
+    },
+    "sheet": {
+      "explain": "Missionen kosten keine Gesundheit, Tage ohne Abschluss senken die Laune deines Begleiters nicht, Erinnerungen und Abendübersicht schweigen, Boss-Fristen verschieben sich nach hinten. Die Serie zählt aber: Schließe mindestens eine Mission am Tag ab, damit sie nicht reißt.",
+      "start": "Beginn",
+      "end": "Ende",
+      "noEnd": "Ohne Enddatum",
+      "endHint": "Der gewählte letzte Tag ist noch Pause.",
+      "confirm": "Pause beginnen",
+      "change": "Ändern",
+      "save": "Dieses Datum verwenden",
+      "cancel": "Pause absagen",
+      "resume": "Fortsetzen",
+      "scheduled": "Die Pause beginnt am {{date}}.",
+      "inProgress": "Pause seit {{date}}.",
+      "lastDay": "Heute ist der letzte Pausentag: morgen geht es weiter.",
+      "started": "Pause begonnen",
+      "scheduledDone": "Pause geplant ab {{date}}",
+      "changed": "Ende der Pause geändert",
+      "cancelled": "Pause abgesagt"
+    },
+    "banner": {
+      "until": "Pause bis {{date}} · Deine Gesundheit ist sicher",
+      "until_essential": "Pause bis {{date}}",
+      "open": "Pause · Deine Gesundheit ist sicher",
+      "open_essential": "Pause",
+      "resume": "Fortsetzen",
+      "lastDay": "Morgen geht es weiter",
+      "resumeLabel": "Fortsetzen: die Pause endet heute"
+    },
+    "dialog": {
+      "title": "Fortsetzen?",
+      "body": "Die Pause endet heute. Ab morgen zählen die Missionen wieder.",
+      "bosses_one": "Die Boss-Fristen verschieben sich um {{count}} Tag.",
+      "bosses_other": "Die Boss-Fristen verschieben sich um {{count}} Tage.",
+      "bosses_essential_one": "Die Fristen der Ziele verschieben sich um {{count}} Tag.",
+      "bosses_essential_other": "Die Fristen der Ziele verschieben sich um {{count}} Tage.",
+      "confirm": "Fortsetzen",
+      "done": "Pause beendet: morgen geht es weiter"
+    }
   }
 }

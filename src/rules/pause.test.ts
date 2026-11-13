@@ -1,4 +1,6 @@
 import {
+  deadlineAfterPause,
+  isDeadlineHeld,
   isPausedDay,
   isPausedOn,
   pauseIntervals,
@@ -154,5 +156,37 @@ describe('general pause', () => {
       expect(windowStartOutsidePause('2026-11-30', 30, intervals)).toBe('2026-10-27');
       expect(windowStartOutsidePause('2026-11-16', 3, intervals)).toBe('2026-11-09');
     });
+  });
+});
+
+describe('deadlineAfterPause', () => {
+  const PAUSE = { fromDay: '2026-11-10', untilDay: '2026-11-12' } as const;
+
+  it('moves a deadline from the first paused day on by the paused days', () => {
+    expect(deadlineAfterPause('2026-11-20', PAUSE)).toBe('2026-11-23');
+    expect(deadlineAfterPause('2026-11-10', PAUSE)).toBe('2026-11-13');
+  });
+
+  it('leaves a deadline before the pause, and every deadline without a pause', () => {
+    expect(deadlineAfterPause('2026-11-09', PAUSE)).toBe('2026-11-09');
+    expect(deadlineAfterPause('2026-11-20', null)).toBe('2026-11-20');
+  });
+
+  it('has no deadline yet while a pause without an end holds it', () => {
+    expect(deadlineAfterPause('2026-11-20', { fromDay: '2026-11-10', untilDay: null })).toBeNull();
+    expect(deadlineAfterPause('2026-11-09', { fromDay: '2026-11-10', untilDay: null })).toBe(
+      '2026-11-09',
+    );
+  });
+});
+
+describe('isDeadlineHeld', () => {
+  it('holds a deadline from the first paused day on, never one before or without a pause', () => {
+    const pause = { fromDay: '2026-11-10' } as const;
+    expect(isDeadlineHeld('2026-11-10', pause)).toBe(true);
+    expect(isDeadlineHeld('2026-11-30', pause)).toBe(true);
+    expect(isDeadlineHeld('2026-11-09', pause)).toBe(false);
+    expect(isDeadlineHeld(null, pause)).toBe(false);
+    expect(isDeadlineHeld('2026-11-30', null)).toBe(false);
   });
 });

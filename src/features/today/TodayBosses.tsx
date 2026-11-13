@@ -10,6 +10,7 @@ import { Icon } from '@/features/shared/Icon';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useEssential } from '@/features/shared/useGameMode';
+import { isDeadlineHeld } from '@/rules/pause';
 import { useTheme } from '@/theme/ThemeProvider';
 import { StarterQuestCard } from './StarterQuestCard';
 import type { MissionActions } from './useMissionActions';
@@ -79,6 +80,7 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
         hit={step.hitOf(item.boss.id)}
         onCompleteStep={() => step.completeStep(item)}
         onOpen={() => router.push({ pathname: '/boss/[id]', params: { id: item.boss.id } })}
+        held={isDeadlineHeld(item.boss.deadlineDay, view.pause)}
       />
     </View>
   ));
