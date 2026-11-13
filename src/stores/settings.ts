@@ -34,6 +34,7 @@ const KEYS: readonly StoredKey[] = [
   'quiet_hours',
   'evening_summary',
   'reduce_motion',
+  'vibrations',
   'colorblind',
   'backup',
   'reminders_enabled',

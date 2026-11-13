@@ -1406,7 +1406,8 @@
       "notifications": "Notifications",
       "data": "Données",
       "about": "Informations",
-      "game": "Jeu"
+      "game": "Jeu",
+      "accessibility": "Accessibilité"
     },
     "rowLabel": "{{label}}, {{value}}",
     "from": "À partir du {{date}}",
@@ -1488,7 +1489,15 @@
         "full": "Revenir à Complet",
         "essential": "Passer à Essentiel"
       }
-    }
+    },
+    "reduceMotion": "Réduire les animations",
+    "reduceMotionCaption": "Pas de particules, de secousses ni de zoom : seuls de brefs fondus restent.",
+    "reduceMotionChoices": {
+      "system": "Comme le téléphone",
+      "on": "Oui",
+      "off": "Non"
+    },
+    "vibrations": "Vibrations"
   },
   "backup": {
     "title": "Sauvegarde et restauration",

@@ -1406,7 +1406,8 @@
       "notifications": "Notifications",
       "data": "Data",
       "about": "About",
-      "game": "Game"
+      "game": "Game",
+      "accessibility": "Accessibility"
     },
     "rowLabel": "{{label}}, {{value}}",
     "from": "From {{date}}",
@@ -1488,7 +1489,15 @@
         "full": "Back to Full",
         "essential": "Switch to Essential"
       }
-    }
+    },
+    "reduceMotion": "Reduce motion",
+    "reduceMotionCaption": "No particles, shakes or zooms: short fades stay.",
+    "reduceMotionChoices": {
+      "system": "Like the phone",
+      "on": "Yes",
+      "off": "No"
+    },
+    "vibrations": "Vibrations"
   },
   "backup": {
     "title": "Backup and restore",

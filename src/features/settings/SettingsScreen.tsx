@@ -35,7 +35,15 @@ import { SettingsRow } from './SettingsRow';
 import { TimeSheet } from './TimeSheet';
 import { useNotificationPermission, useSettingsView } from './useSettingsView';
 
-const GROUPS = ['appearance', 'game', 'day', 'notifications', 'data', 'about'] as const;
+const GROUPS = [
+  'appearance',
+  'game',
+  'day',
+  'notifications',
+  'accessibility',
+  'data',
+  'about',
+] as const;
 type Group = (typeof GROUPS)[number];
 type OpenSheet =
   | 'language'
@@ -46,11 +54,13 @@ type OpenSheet =
   | 'privacy'
   | 'licenses'
   | 'gameMode'
+  | 'reduceMotion'
   | null;
 
 const FIELD_HEIGHT = 48;
 const LANGUAGES = Object.keys(LANGUAGE_NAMES) as Language[];
 const WEEK_STARTS: readonly Weekday[] = [1, 7];
+const REDUCE_MOTION = ['system', 'on', 'off'] as const;
 
 interface RowSpec {
   readonly key: string;
@@ -71,7 +81,9 @@ interface RowSpec {
  * `runAction`, which schedules them again. The row Backup says where and when the last backup was
  * made and opens «Backup e ripristino», which also holds «Elimina tutti i dati» (mockups D38, D39);
  * the search finds it there too. Gioco holds «Livello di gioco», Completo or Essenziale, changed
- * through a sheet that says what goes away (10.4, 10.11; mockup D37A). Accessibilità comes with T72.
+ * through a sheet that says what goes away (10.4, 10.11; mockup D37A). Accessibilità (10.7) holds
+ * «Riduci movimento» (Come il telefono, Sì, No, read by `useReduceMotion`) and «Vibrazioni» (read by
+ * the celebrations); the row that leads to «Colori per daltonici» waits for T82.
  */
 export function SettingsScreen() {
   const { t, i18n } = useTranslation();
@@ -340,6 +352,38 @@ export function SettingsScreen() {
       ),
     },
     {
+      key: 'reduceMotion',
+      group: 'accessibility',
+      label: t('settings.reduceMotion'),
+      keywords: [t('settings.reduceMotionCaption')],
+      render: (last) => (
+        <SettingsRow
+          testID="settings-reduce-motion"
+          icon="accessibilita"
+          label={t('settings.reduceMotion')}
+          value={t(`settings.reduceMotionChoices.${settings.reduce_motion}`)}
+          caption={t('settings.reduceMotionCaption')}
+          onPress={() => setSheet('reduceMotion')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'vibrations',
+      group: 'accessibility',
+      label: t('settings.vibrations'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-vibrations"
+          icon="promemoria"
+          label={t('settings.vibrations')}
+          switchValue={settings.vibrations}
+          onSwitch={(enabled) => useSettingsStore.getState().update('vibrations', enabled)}
+          last={last}
+        />
+      ),
+    },
+    {
       key: 'backup',
       group: 'data',
       label: t('settings.backup'),
@@ -489,6 +533,22 @@ export function SettingsScreen() {
         choices={LANGUAGES.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
         selected={settings.language}
         onChoose={chooseLanguage}
+        onClose={close}
+      />
+      <ChoiceSheet
+        testID="settings-reduce-motion-sheet"
+        visible={sheet === 'reduceMotion'}
+        title={t('settings.reduceMotion')}
+        choices={REDUCE_MOTION.map((value) => ({
+          value,
+          label: t(`settings.reduceMotionChoices.${value}`),
+        }))}
+        selected={settings.reduce_motion}
+        notes={[t('settings.reduceMotionCaption')]}
+        onChoose={(value) => {
+          useSettingsStore.getState().update('reduce_motion', value);
+          close();
+        }}
         onClose={close}
       />
       <ChoiceSheet

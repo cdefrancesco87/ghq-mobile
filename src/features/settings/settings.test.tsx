@@ -109,7 +109,14 @@ describe('Settings', () => {
     await press('profile-settings');
     expect(await screen.findByTestId('settings-screen')).toBeOnTheScreen();
     expect(screen.getByText('Impostazioni')).toBeOnTheScreen();
-    for (const group of ['ASPETTO', 'GIORNATA', 'NOTIFICHE', 'DATI', 'INFORMAZIONI']) {
+    for (const group of [
+      'ASPETTO',
+      'GIORNATA',
+      'NOTIFICHE',
+      'ACCESSIBILITÀ',
+      'DATI',
+      'INFORMAZIONI',
+    ]) {
       expect(screen.getByText(group)).toBeOnTheScreen();
     }
     expect(text('settings-theme-value')).toBe('Minimal · Automatico');
@@ -290,6 +297,36 @@ describe('Settings', () => {
     await pickTime('settings-evening-time-sheet', 20, 30);
     expect(getSetting(db, 'evening_summary')).toEqual({ enabled: false, time: '20:30' });
     expect(text('settings-evening-time-value')).toBe('20:30');
+  });
+
+  it('chooses «Riduci movimento» among Come il telefono, Sì and No', async () => {
+    const db = newGame(['meditation']);
+    await open(db);
+    expect(text('settings-reduce-motion-value')).toBe('Come il telefono');
+    expect(getSetting(db, 'reduce_motion')).toBe('system');
+    for (const [value, label] of [
+      ['on', 'Sì'],
+      ['off', 'No'],
+      ['system', 'Come il telefono'],
+    ] as const) {
+      await press('settings-reduce-motion');
+      await press(`settings-reduce-motion-sheet-${value}`);
+      expect(getSetting(db, 'reduce_motion')).toBe(value);
+      expect(useSettingsStore.getState().settings.reduce_motion).toBe(value);
+      expect(text('settings-reduce-motion-value')).toBe(label);
+    }
+  });
+
+  it('turns the vibrations off and on, on by default', async () => {
+    const db = newGame(['meditation']);
+    await open(db);
+    expect(screen.getByTestId('settings-vibrations').props.value).toBe(true);
+    await fireEvent(screen.getByTestId('settings-vibrations'), 'valueChange', false);
+    expect(getSetting(db, 'vibrations')).toBe(false);
+    expect(useSettingsStore.getState().settings.vibrations).toBe(false);
+    expect(screen.getByTestId('settings-vibrations').props.value).toBe(false);
+    await fireEvent(screen.getByTestId('settings-vibrations'), 'valueChange', true);
+    expect(getSetting(db, 'vibrations')).toBe(true);
   });
 
   it('filters the rows while typing in Cerca, without minding accents', async () => {

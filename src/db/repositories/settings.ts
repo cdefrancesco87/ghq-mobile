@@ -85,6 +85,8 @@ export const settingSchemas = {
   evening_summary: z.strictObject({ enabled: z.boolean(), time }),
   /** «Come il telefono», «Sì», «No». */
   reduce_motion: z.enum(['system', 'on', 'off']),
+  /** The light vibration of the celebrations (design 10.7, A7): on by default. */
+  vibrations: z.boolean(),
   colorblind: z.boolean(),
   /**
    * The backup in the cloud (design 10.8): the daily automatic backup, when the last one was made
@@ -146,6 +148,7 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   quiet_hours: [],
   evening_summary: { enabled: true, time: '21:00' },
   reduce_motion: 'system',
+  vibrations: true,
   colorblind: false,
   backup: { auto: false, lastBackupAt: null, lastError: null },
   reminders_enabled: true,

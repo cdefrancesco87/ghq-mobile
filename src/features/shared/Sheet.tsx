@@ -20,6 +20,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { Frame } from './Frame';
 import { ThemedText } from './ThemedText';
 import { MIN_TOUCH } from './touch';
+import { REDUCED_FADE_MS, useReduceMotion } from './useReduceMotion';
 
 /** Openings and closings last 250 ms (design-sezioni.md A7). */
 export const SHEET_DURATION_MS = 250;
@@ -60,7 +61,9 @@ export function Sheet({
   const shape = SHAPES[family];
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const translateY = useSharedValue(height);
+  const reduceMotion = useReduceMotion();
+  const translateY = useSharedValue(reduceMotion ? 0 : height);
+  const opacity = useSharedValue(reduceMotion ? 0 : 1);
   // Stays on screen while it slides away after `visible` turns false.
   const [rendered, setRendered] = useState(visible);
   if (visible && !rendered) {
@@ -68,14 +71,25 @@ export function Sheet({
   }
 
   useEffect(() => {
+    // «Riduci movimento»: the sheet fades in and out in place instead of sliding (A7).
+    if (reduceMotion) {
+      if (visible) {
+        translateY.set(0);
+      }
+      opacity.set(withTiming(visible ? 1 : 0, { duration: REDUCED_FADE_MS }));
+    } else {
+      opacity.set(1);
+      translateY.set(withTiming(visible ? 0 : height, { duration: SHEET_DURATION_MS }));
+    }
     if (visible) {
-      translateY.set(withTiming(0, { duration: SHEET_DURATION_MS }));
       return undefined;
     }
-    translateY.set(withTiming(height, { duration: SHEET_DURATION_MS }));
-    const timer = setTimeout(() => setRendered(false), SHEET_DURATION_MS);
+    const timer = setTimeout(
+      () => setRendered(false),
+      reduceMotion ? REDUCED_FADE_MS : SHEET_DURATION_MS,
+    );
     return () => clearTimeout(timer);
-  }, [visible, height, translateY]);
+  }, [visible, height, translateY, opacity, reduceMotion]);
 
   const drag = Gesture.Pan()
     .withTestId(`${testID}-drag`)
@@ -90,7 +104,10 @@ export function Sheet({
       }
     });
 
-  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.get() }] }));
+  const slideStyle = useAnimatedStyle(() => ({
+    opacity: opacity.get(),
+    transform: [{ translateY: translateY.get() }],
+  }));
 
   return (
     <Modal

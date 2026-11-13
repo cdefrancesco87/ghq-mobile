@@ -38,12 +38,18 @@ function setReduceMotion(value: 'on' | 'off' | 'system') {
   useSettingsStore.setState({ settings: { ...settings, reduce_motion: value } });
 }
 
+function setVibrations(value: boolean) {
+  const { settings } = useSettingsStore.getState();
+  useSettingsStore.setState({ settings: { ...settings, vibrations: value } });
+}
+
 beforeEach(() => {
   jest.useFakeTimers();
   jest.mocked(Haptics.impactAsync).mockClear();
   // React Native's own Jest mock: spying on it again would keep the value between tests.
   jest.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
   setReduceMotion('off');
+  setVibrations(true);
 });
 
 afterEach(() => {
@@ -238,6 +244,17 @@ describe('useCelebration', () => {
     expect(Haptics.impactAsync).toHaveBeenCalledTimes(1);
     expect(queryEffect()).toBeNull();
     expect(screen.queryByTestId('celebration-coin')).toBeNull();
+  });
+
+  it('with «Vibrazioni» off celebrates without vibrating', async () => {
+    setVibrations(false);
+    await renderTap();
+    await fireEvent.press(screen.getByTestId('tap'));
+    expect(screen.getByTestId('celebration-chip')).toBeTruthy();
+    expect(Haptics.impactAsync).not.toHaveBeenCalled();
+    setVibrations(true);
+    await fireEvent.press(screen.getByTestId('tap'));
+    expect(Haptics.impactAsync).toHaveBeenCalledTimes(1);
   });
 
   it.each(['minimal-chiaro', 'arcade', 'fantasy', 'cyberpunk', 'lovecraft'] as const)(

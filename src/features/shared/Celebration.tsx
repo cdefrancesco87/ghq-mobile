@@ -22,6 +22,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
+import { useSettingsStore } from '@/stores/settings';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { ThemeColors, ThemeFamily } from '@/theme/themes';
@@ -103,8 +104,11 @@ export function CelebrationProvider({ children }: { readonly children: ReactNode
   const api = useMemo<CelebrationApi>(
     () => ({
       celebrate: (request) => {
-        // A phone that cannot vibrate refuses: the celebration goes on without.
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+        // «Vibrazioni» of the Settings (design 10.7), read at the touch. A phone that cannot
+        // vibrate refuses: the celebration goes on without.
+        if (useSettingsStore.getState().settings.vibrations) {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+        }
         nextId.current += 1;
         const id = nextId.current;
         setBursts((current) => [...current, { ...request, id }]);

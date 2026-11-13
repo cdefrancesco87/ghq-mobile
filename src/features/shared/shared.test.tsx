@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Dimensions, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { getAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
+import { useSettingsStore } from '@/stores/settings';
 import { contrastRatio, pressedColour } from '@/theme/contrast';
 import { SHAPES } from '@/theme/shapes';
 import { THEMES, THEME_KEYS, type ThemeKey } from '@/theme/themes';
@@ -23,6 +24,7 @@ import { SHEET_DURATION_MS, Sheet, shouldDismissSheet } from './Sheet';
 import { ThemedText } from './ThemedText';
 import { MIN_TOUCH } from './touch';
 import { UNDO_TOAST_MS, UndoToastProvider, useUndoToast } from './UndoToast';
+import { REDUCED_FADE_MS } from './useReduceMotion';
 import { useLargeText } from './useLargeText';
 
 const styleOf = (id: string) =>
@@ -376,6 +378,38 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
       await act(async () => jest.advanceTimersByTime(SHEET_DURATION_MS));
       expect(screen.queryByText('Contenuto')).toBeNull();
     } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('Sheet only fades in place with «Riduci movimento», and goes away after the fade', async () => {
+    jest.useFakeTimers();
+    const { settings } = useSettingsStore.getState();
+    useSettingsStore.setState({ settings: { ...settings, reduce_motion: 'on' } });
+    try {
+      let hide = () => undefined as void;
+      function Harness() {
+        const [visible, setVisible] = useState(true);
+        hide = () => setVisible(false);
+        return (
+          <Sheet visible={visible} onClose={jest.fn()} testID="faded">
+            <Text>Contenuto</Text>
+          </Sheet>
+        );
+      }
+      await renderThemed(<Harness />, { theme });
+      await act(async () => jest.advanceTimersByTime(REDUCED_FADE_MS));
+      const animatedStyle = getAnimatedStyle as unknown as (component: unknown) => ViewStyle;
+      expect(animatedStyle(screen.getByTestId('faded'))).toMatchObject({
+        opacity: 1,
+        transform: [{ translateY: 0 }],
+      });
+
+      await act(async () => hide());
+      await act(async () => jest.advanceTimersByTime(REDUCED_FADE_MS));
+      expect(screen.queryByText('Contenuto')).toBeNull();
+    } finally {
+      useSettingsStore.setState({ settings });
       jest.useRealTimers();
     }
   });
