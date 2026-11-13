@@ -60,6 +60,18 @@ export function sealSpriteKey(family: ThemeFamily): string {
   return `sigillo-${family}`;
 }
 
+const OBJECT_FILES = {
+  potion: 'pozione',
+  shield: 'scudo',
+  coin: 'moneta',
+  backpack: 'zaino',
+} as const;
+
+/** The objects of the shop (esito-lotto4.md): 16×16 in the pixel themes, a line icon in Minimal. */
+export function objectSpriteKey(family: ThemeFamily, object: keyof typeof OBJECT_FILES): string {
+  return `${OBJECT_FILES[object]}-${family}`;
+}
+
 /** The side of a pixel sprite in a box: only whole multiples of its grid (A5), at least once. */
 export function spriteSide(grid: number, box: number): number {
   return grid * Math.max(1, Math.floor(box / grid));

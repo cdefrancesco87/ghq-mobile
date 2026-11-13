@@ -10,6 +10,9 @@ const PIXEL: Readonly<Record<string, (typeof PIXEL_SPRITES)[keyof typeof PIXEL_S
   PIXEL_SPRITES;
 const VECTOR: Readonly<Record<string, string>> = VECTOR_SVGS;
 
+/** The ink of the Minimal line art (the `testo` of Minimal light), drawn in the files. */
+const MINIMAL_INK = '#1f2328';
+
 export function hasSprite(spriteKey: string): boolean {
   return spriteKey in PIXEL || spriteKey in VECTOR;
 }
@@ -21,13 +24,16 @@ export interface SpriteProps {
   readonly size: number;
   /** What the screen reader says. */
   readonly label: string;
+  /** Redraws the ink of a vector sprite in this colour: the text of Minimal dark. */
+  readonly ink?: string;
   readonly testID?: string;
 }
 
 /** One sprite: a PNG already enlarged, or the SVG of the vector art of Minimal. */
-export function Sprite({ spriteKey, size, label, testID }: SpriteProps) {
+export function Sprite({ spriteKey, size, label, ink, testID }: SpriteProps) {
   const pixel = PIXEL[spriteKey];
   const side = pixel === undefined ? size : spriteSide(pixel.grid, size);
+  const vector = VECTOR[spriteKey] ?? null;
   return (
     <View
       testID={testID}
@@ -37,7 +43,11 @@ export function Sprite({ spriteKey, size, label, testID }: SpriteProps) {
       style={[styles.box, { width: size, height: size }]}
     >
       {pixel === undefined ? (
-        <SvgXml xml={VECTOR[spriteKey] ?? null} width={side} height={side} />
+        <SvgXml
+          xml={ink === undefined ? vector : (vector?.replaceAll(MINIMAL_INK, ink) ?? null)}
+          width={side}
+          height={side}
+        />
       ) : (
         <Image
           testID={testID === undefined ? undefined : `${testID}-image`}

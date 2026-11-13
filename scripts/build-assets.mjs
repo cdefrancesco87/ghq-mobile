@@ -159,7 +159,7 @@ const pixelIcons = svgNames('lotto1/pixel').map((path) => [
   path,
 ]);
 
-const isSprite = (path) => /^(boss|compagno|sigillo)-/.test(stem(path));
+const isSprite = (path) => /^(boss|compagno|sigillo|pozione|scudo|zaino|moneta)-/.test(stem(path));
 const spritePaths = [...svgNames('lotto3'), ...svgNames('lotto4'), ...svgNames('lotto8')].filter(
   isSprite,
 );

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { appendEvent } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
-import { buyItem, usePotion } from '@/db/repositories/shop';
+import { buyItem, getShopView, usePotion } from '@/db/repositories/shop';
 import { events, hero, inventory } from '@/db/schema';
 import type { Db } from '@/db/types';
 
@@ -123,5 +123,62 @@ describe('usePotion', () => {
     expect(db.select().from(hero).get()).toMatchObject({ hp: 50, coins: 0 });
     expect(owned(db, 'potion')).toBe(0);
     expectHeroMatchesLog(db);
+  });
+});
+
+describe('buyItem with «Usa subito»', () => {
+  it('buys and drinks the potion in one action, with both events', () => {
+    const db = newGame(['journal']);
+    adjustHero(db, { coins: 60, hp: -20 });
+    expect(buyItem(db, 'potion', NOW, { useNow: true })).toEqual({ hp: 40 });
+    expect(db.select().from(hero).get()).toMatchObject({ hp: 40, coins: 10 });
+    expect(owned(db, 'potion')).toBe(0);
+    const types = db
+      .select()
+      .from(events)
+      .all()
+      .map((event) => event.type);
+    expect(types.slice(-2)).toEqual(['item.bought', 'item.used']);
+    expectHeroMatchesLog(db);
+  });
+
+  it('buys nothing at full hit points', () => {
+    const db = newGame(['journal']);
+    adjustHero(db, { coins: 60 });
+    expect(() => buyItem(db, 'potion', NOW, { useNow: true })).toThrow(
+      expect.objectContaining({ code: 'potion_full_hp' }),
+    );
+    expect(db.select().from(hero).get()?.coins).toBe(60);
+    expect(owned(db, 'potion')).toBe(0);
+    expectHeroMatchesLog(db);
+  });
+
+  it('is only for the potion', () => {
+    const db = newGame(['journal']);
+    adjustHero(db, { coins: 300, hp: -20 });
+    expect(() => buyItem(db, 'shield', NOW, { useNow: true })).toThrow(RangeError);
+    expect(owned(db, 'shield')).toBe(0);
+  });
+});
+
+describe('getShopView', () => {
+  it('reads the balance, the hit points and every item with the number owned', () => {
+    const db = newGame(['journal']);
+    adjustHero(db, { coins: 245, hp: -12 });
+    buyItem(db, 'shield', NOW);
+    expect(getShopView(db)).toEqual({
+      coins: 145,
+      hp: 38,
+      canUsePotion: true,
+      items: [
+        { key: 'potion', price: 50, maxOwned: null, owned: 0 },
+        { key: 'shield', price: 100, maxOwned: 2, owned: 1 },
+      ],
+    });
+  });
+
+  it('says when a potion cannot be used, at full hit points', () => {
+    const db = newGame(['journal']);
+    expect(getShopView(db)).toMatchObject({ hp: 50, canUsePotion: false });
   });
 });
