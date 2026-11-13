@@ -26,6 +26,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { DayPlan } from './DayPlan';
 import { HeroCard } from './HeroCard';
 import { HeroStickyBar } from './HeroStickyBar';
+import { MorningTale, useMorningTale } from './MorningTale';
 import { PauseBanner } from './PauseBanner';
 import { TodayHeader } from './TodayHeader';
 import { TodayBosses } from './TodayBosses';
@@ -53,7 +54,7 @@ const NOTHING = () => undefined;
  * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the band of the general pause, the
  * notices of the shield, of the
  * missions back from a pause (3.6) and of the companion grown up (6.6), the hero
- * card, the plan of the day, the bosses and the missions of today, or the empty states.
+ * card, the morning bubble of the companion (6.14), the plan of the day, the bosses and the missions of today, or the empty states.
  */
 export function TodayScreen({
   view,
@@ -81,6 +82,7 @@ export function TodayScreen({
   const { showWaiting } = useMomentQueue();
   useFocusEffect(showWaiting);
   const menu = useMissionMenu(view, actions);
+  const tale = useMorningTale(view);
   // Skipped missions are out of the counters but still listed among the done ones.
   const working = !view.restDay && view.missions.length > 0;
 
@@ -191,6 +193,10 @@ export function TodayScreen({
         >
           <HeroCard view={view} />
         </View>
+        {/* The morning bubble of the companion, under the hero and before the plan (6.14). */}
+        {tale.bubble === null ? null : (
+          <MorningTale view={view} bubble={tale.bubble} onClose={tale.close} />
+        )}
         {/* The plan comes before the boss (2.1); the bosses stay also on a day without missions. */}
         {working ? <DayPlan view={view} tzOffset={tzOffset} actions={actions} menu={menu} /> : null}
         <TodayBosses view={view} actions={actions} />

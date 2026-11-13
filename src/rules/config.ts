@@ -214,6 +214,19 @@ export const MOOD = {
   sadBelow: 0.3,
 } as const;
 
+/** The tale of the companion: morning bubble and evening summary (design-sezioni.md 6.14). */
+export const TALE = {
+  /**
+   * «Ritorno dopo assenza» from this many whole days without opening the app between the last
+   * opening and today. PROVISIONAL (backlog T91): the design says «2 o più giorni senza aprire».
+   */
+  absenceDays: 2,
+  /** «Serie record» only if the record beaten was at least this long (CLAUDE.md, choice 26). */
+  streakRecordMin: 3,
+  /** A variant is not used again while it is among the last this many of its situation and voice. */
+  recentPerGroup: 3,
+} as const;
+
 /** The Habits list (design-sezioni.md 3.2, 3.7). */
 export const HABITS_LIST = {
   /** The completion rate of a row covers this many game days, today included. */

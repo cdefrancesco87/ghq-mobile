@@ -64,18 +64,21 @@ export function plannedEveningSummary(
     return null;
   }
   const view = getTodayView(db, { now, tzOffset });
-  const summary = eveningSummary(
-    view.missions
-      .filter((item) => item.state !== 'skipped')
-      .map((item) => ({ name: item.mission.name, done: item.state === 'done' })),
-  );
+  const missions = view.missions
+    .filter((item) => item.state !== 'skipped')
+    .map((item) => ({ name: item.mission.name, done: item.state === 'done' }));
+  const summary = eveningSummary(missions);
   if (summary === null) {
     return null;
   }
   return {
     id: `${EVENING_SUMMARY_PREFIX}${today}`,
     fireAt,
-    ...notificationTextsOf(db).evening(summary),
+    // Signed by the companion, in its voice (design 6.14).
+    ...notificationTextsOf(db).evening(summary, {
+      day: today,
+      done: missions.filter((mission) => mission.done).length,
+    }),
   };
 }
 

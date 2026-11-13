@@ -116,6 +116,15 @@ export const settingSchemas = {
    * 5.6): the sheet of a missed deadline opens once, at the first opening after the theft.
    */
   missed_deadline_seen: z.number().int().nonnegative(),
+  /**
+   * The tale of the companion (design-sezioni.md 6.14; backlog T91): the day the morning bubble
+   * was shown, the day the app was opened last, the keys of the texts used lately (oldest first).
+   */
+  tale: z.strictObject({
+    shown_day: gameDay.nullable(),
+    last_open_day: gameDay.nullable(),
+    recent: z.array(z.string()),
+  }),
   /** Created once at the first start (getDeviceId); it identifies the device in the event log. */
   device_id: z.string().min(1),
   /** The choices of a first launch in progress: it resumes from here, then it is removed. */
@@ -168,6 +177,7 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   backup: { auto: false, lastBackupAt: null, lastError: null },
   reminders_enabled: true,
   missed_deadline_seen: 0,
+  tale: { shown_day: null, last_open_day: null, recent: [] },
 };
 
 function readValid<K extends SettingKey>(db: Db, key: K): SettingValue<K> | undefined {

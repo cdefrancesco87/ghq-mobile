@@ -45,32 +45,51 @@ describe('notificationTexts', () => {
     );
   });
 
-  it('writes the evening summary with 0, 2 and 5 missions left (design 11.5)', () => {
+  const DAY = { day: '2026-11-13', done: 1 } as const;
+
+  it('signs the evening summary with the companion, 0, 2 and 5 missions left (design 6.14, 11.5)', () => {
     const texts = notificationTexts({ ...IT, theme: 'fantasy' });
-    expect(texts.evening(summaryWith(0)!)).toEqual({
-      title: 'Giornata completa!',
-      body: 'Il regno festeggia, Claudio.',
+    expect(texts.evening(summaryWith(0)!, DAY)).toEqual({
+      title: 'Rocky',
+      body: 'Grumf. Tutto fatto per oggi, Claudio. Che giornata!',
     });
-    expect(texts.evening(summaryWith(2)!)).toEqual({
-      title: "Com'è andata oggi?",
-      body: "Ti mancano 2 imprese, c'è ancora tempo: A, B.",
+    expect(texts.evening(summaryWith(2)!, DAY)).toEqual({
+      title: 'Rocky',
+      body: "Grumf. Ancora 2 da fare: A, B. C'è tempo!",
     });
-    expect(texts.evening(summaryWith(5)!)).toEqual({
-      title: "Com'è andata oggi?",
-      body: "Ti mancano 5 imprese, c'è ancora tempo: A, B, C e altre 2.",
+    expect(texts.evening(summaryWith(5)!, DAY)).toEqual({
+      title: 'Rocky',
+      body: "Grumf. Ancora 5 da fare: A, B, C e altre 2. C'è tempo!",
     });
   });
 
-  it('agrees «e altri» with a masculine term and speaks of one mission left', () => {
+  it('invites to start when no mission is done yet', () => {
+    const summary = eveningSummary([
+      { name: 'A', done: false },
+      { name: 'B', done: false },
+    ])!;
+    expect(notificationTexts(IT).evening(summary, { ...DAY, done: 0 })).toEqual({
+      title: 'Cloudy',
+      body: 'La giornata non è finita: A, B. Bastano due minuti.',
+    });
+  });
+
+  it('uses the name given to the companion as the title', () => {
+    const texts = notificationTexts({ ...IT, companionName: 'Nuvola' });
+    expect(texts.evening(summaryWith(0)!, DAY).title).toBe('Nuvola');
+  });
+
+  it('agrees «e altri» with a masculine term and writes the other languages', () => {
     const arcade = notificationTexts({ ...IT, theme: 'arcade' });
-    expect(arcade.evening(summaryWith(4)!).body).toBe(
-      "Ti mancano 4 stage, c'è ancora tempo: A, B, C e un altro.",
+    expect(arcade.evening(summaryWith(4)!, DAY)).toEqual({
+      title: 'Pixel',
+      body: "Bip! Ancora 4 da fare: A, B, C e un altro. C'è tempo!",
+    });
+    expect(notificationTexts(IT).evening(summaryWith(1)!, DAY).body).toBe(
+      "Ancora 1 da fare: A. C'è tempo!",
     );
-    expect(notificationTexts(IT).evening(summaryWith(1)!).body).toBe(
-      "Ti manca 1 abitudine, c'è ancora tempo: A.",
-    );
-    expect(notificationTexts({ ...IT, language: 'en' }).evening(summaryWith(5)!).body).toBe(
-      "5 habits left, there's still time: A, B, C and 2 more.",
+    expect(notificationTexts({ ...IT, language: 'en' }).evening(summaryWith(5)!, DAY).body).toBe(
+      "5 still to do: A, B, C and 2 more. There's time!",
     );
   });
 

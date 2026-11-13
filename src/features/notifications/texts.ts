@@ -2,13 +2,17 @@ import { createInstance, type TFunction } from 'i18next';
 
 import { loadHero } from '../../db/repositories/hero';
 import { getSetting } from '../../db/repositories/settings';
+import { companion } from '../../db/schema';
 import type { Db } from '../../db/types';
 import { RESOURCES, type Language } from '../../i18n';
 import { termInSentence } from '../../i18n/lexicon';
 import { FALLBACK_LANGUAGE } from '../../rules/config';
+import { companionName } from '../../rules/companion';
 import type { EveningSummary } from '../../rules/notifications';
-import type { GameMode } from '../../rules/types';
+import { dailyVariant, eveningSituation, voiceOf } from '../../rules/tale';
+import type { GameDay, GameMode } from '../../rules/types';
 import type { ThemeFamily } from '../../theme/themes';
+import { plainTale, taleVariants } from '../companion/taleTexts';
 import { formatAmount } from '../shared/amount';
 
 // The texts of the notifications (design-sezioni.md 11.2–11.5, 11.8), in the language and the
@@ -32,7 +36,15 @@ export interface NotificationTexts {
   readonly snoozeLabel: string;
   /** «3 missioni per adesso» and the names of the missions. */
   group(names: readonly string[]): NotificationText;
-  evening(summary: EveningSummary): NotificationText;
+  /**
+   * The evening summary signed by the companion (design 6.14, 11.5): its name as the title and a
+   * text in its voice, by the situation of the day. `done` is the missions done today; `day`
+   * keeps one variant of the text for the whole day.
+   */
+  evening(
+    summary: EveningSummary,
+    tale: { readonly day: GameDay; readonly done: number },
+  ): NotificationText;
   /** «Fatto!» with the gains, without them in the Essential mode (design 11.8). */
   confirmation(gains: { readonly xp: number; readonly coins: number }): NotificationText;
   /**
@@ -54,6 +66,8 @@ export interface TextSettings {
   readonly theme: string;
   readonly gameMode: GameMode;
   readonly heroName: string;
+  /** The name given to the companion; null or missing means the name of the theme. */
+  readonly companionName?: string | null;
 }
 
 const translators = new Map<Language, TFunction>();
@@ -95,28 +109,30 @@ export function notificationTexts(settings: TextSettings): NotificationTexts {
       title: t('notifications.group.title', { count: names.length, term: missions(names.length) }),
       body: names.join(', '),
     }),
-    evening: (summary) => {
-      if (summary.kind === 'all_done') {
-        return {
-          title: t('notifications.evening.titleDone'),
-          body: t('notifications.evening.done', { context, hero: settings.heroName }),
-        };
-      }
+    evening: (summary, { day, done }) => {
       const gender = t('lexicon.missions_g', { context });
       const others =
-        summary.others === 0
+        summary.kind === 'all_done' || summary.others === 0
           ? ''
           : ` ${t('notifications.evening.others', {
               count: summary.others,
               context: gender === 'm' ? 'm' : undefined,
             })}`;
+      const left = summary.kind === 'all_done' ? 0 : summary.count;
+      const situation = eveningSituation(done, done + left) ?? 'allDone';
+      const voice = voiceOf(settings.theme);
+      const key =
+        dailyVariant(taleVariants(language)(`tale.${voice}.${situation}`), day) ??
+        `tale.${voice}.${situation}.1`;
       return {
-        title: t('notifications.evening.titleLeft'),
-        body: t('notifications.evening.left', {
-          count: summary.count,
-          term: missions(summary.count),
-          list: `${summary.names.join(', ')}${others}`,
-        }),
+        title: companionName(settings.companionName ?? null, t('lexicon.companion', { context })),
+        body: plainTale(
+          t(key, {
+            hero: settings.heroName,
+            count: left,
+            missing: summary.kind === 'all_done' ? '' : `${summary.names.join(', ')}${others}`,
+          }),
+        ),
       };
     },
     confirmation: ({ xp, coins }) => {
@@ -160,6 +176,7 @@ export function notificationTextsOf(db: Db): NotificationTexts {
     // Before the first launch there is no hero: no text names it yet.
   }
   return notificationTexts({
+    companionName: db.select({ name: companion.name }).from(companion).get()?.name ?? null,
     language: getSetting(db, 'language'),
     theme: getSetting(db, 'theme'),
     gameMode: getSetting(db, 'game_mode'),

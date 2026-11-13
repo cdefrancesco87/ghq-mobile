@@ -2,6 +2,7 @@ import { completeMission, skipMission } from '@/db/repositories/completion';
 import { deleteMission, updateMission } from '@/db/repositories/missions';
 import { recentNotifications, unseenNotificationCount } from '@/db/repositories/appNotifications';
 import { resumePause, startPause } from '@/db/repositories/pause';
+import { renameCompanion } from '@/db/repositories/companion';
 import { setSetting } from '@/db/repositories/settings';
 import type { Db } from '@/db/types';
 
@@ -45,8 +46,8 @@ describe('syncEveningSummary (design 11.5)', () => {
       {
         id: 'evening-summary:2026-11-06',
         fireAt: at(FRIDAY, 21),
-        title: "Com'è andata oggi?",
-        body: "Ti mancano 2 abitudini, c'è ancora tempo: Journal, Meal.",
+        title: 'Cloudy',
+        body: 'La giornata non è finita: Journal, Meal. Bastano due minuti.',
       },
     ]);
   });
@@ -55,7 +56,7 @@ describe('syncEveningSummary (design 11.5)', () => {
     const { db, scheduler } = setUp(5);
     await syncEveningSummary(db, scheduler, SYNC);
     expect(scheduler.pending.get('evening-summary:2026-11-06')?.body).toBe(
-      "Ti mancano 5 abitudini, c'è ancora tempo: Journal, Meal, Bed e altre 2.",
+      'La giornata non è finita: Journal, Meal, Bed e altre 2. Bastano due minuti.',
     );
   });
 
@@ -65,8 +66,8 @@ describe('syncEveningSummary (design 11.5)', () => {
     ids.forEach((id) => complete(db, id));
     await syncEveningSummary(db, scheduler, SYNC);
     expect(scheduler.pending.get('evening-summary:2026-11-06')).toMatchObject({
-      title: 'Giornata completa!',
-      body: 'Bel lavoro, Claudio: oggi hai fatto tutto.',
+      title: 'Cloudy',
+      body: 'Tutto fatto per oggi, Claudio. Che giornata!',
     });
   });
 
@@ -76,8 +77,20 @@ describe('syncEveningSummary (design 11.5)', () => {
     complete(db, ids[1]);
     await syncEveningSummary(db, scheduler, SYNC);
     expect(scheduler.pending.get('evening-summary:2026-11-06')?.body).toBe(
-      "Ti manca 1 abitudine, c'è ancora tempo: Bed.",
+      "Ancora 1 da fare: Bed. C'è tempo!",
     );
+  });
+
+  it('signs the summary with the name given to the companion, in the voice of the theme', async () => {
+    const { db, ids, scheduler } = setUp(2);
+    setSetting(db, 'theme', 'arcade', NOW);
+    renameCompanion(db, 'Bit', 'Pixel', SYNC);
+    complete(db, ids[0]);
+    await syncEveningSummary(db, scheduler, SYNC);
+    expect(scheduler.pending.get('evening-summary:2026-11-06')).toMatchObject({
+      title: 'Bit',
+      body: "Bip! Ancora 1 da fare: Meal. C'è tempo!",
+    });
   });
 
   it('follows the time and the switch of the Settings', async () => {
@@ -109,7 +122,7 @@ describe('syncEveningSummary (design 11.5)', () => {
     await syncEveningSummary(db, scheduler, SYNC);
     const view = recentNotifications(db, { now: at(FRIDAY, 22), tzOffset: TZ });
     expect(view.items.map((item) => [item.kind, item.time, item.params.title])).toEqual([
-      ['summary', '21:00', 'Giornata completa!'],
+      ['summary', '21:00', 'Cloudy'],
     ]);
     // Switched off before it fires: it was never sent.
     setSetting(db, 'evening_summary', { enabled: false, time: '21:00' }, NOW);

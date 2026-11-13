@@ -1653,20 +1653,10 @@
       "title": "{{count}} {{term}} para ahora"
     },
     "evening": {
-      "titleLeft": "¿Qué tal el día?",
-      "left_one": "Te queda {{count}} {{term}}, aún hay tiempo: {{list}}.",
-      "left_other": "Te quedan {{count}} {{term}}, aún hay tiempo: {{list}}.",
       "others_one": "y 1 más",
       "others_other": "y {{count}} más",
       "others_m_one": "y 1 más",
-      "others_m_other": "y {{count}} más",
-      "titleDone": "¡Día completo!",
-      "done": "Buen trabajo, {{hero}}: hoy lo hiciste todo.",
-      "done_arcade": "¡STAGE CLEAR! Genial, {{hero}}.",
-      "done_fantasy": "El reino lo celebra, {{hero}}.",
-      "done_cyberpunk": "Todos los contratos ejecutados, {{hero}}.",
-      "done_lovecraft": "Los rituales se han cumplido, {{hero}}.",
-      "done_minimal": "Buen trabajo, {{hero}}: hoy lo hiciste todo."
+      "others_m_other": "y {{count}} más"
     },
     "confirmation": {
       "title": "¡Hecho!",
@@ -1751,6 +1741,558 @@
       "bosses_essential_other": "Los plazos de los objetivos se aplazan {{count}} días.",
       "confirm": "Reanudar",
       "done": "Pausa terminada: mañana se vuelve"
+    }
+  },
+  "tale": {
+    "pixel": {
+      "pauseReturn": {
+        "happy": {
+          "1": "Beep beep! So good to see you, {{hero}}! The break is over."
+        },
+        "normal": {
+          "1": "Beep! Here we are again, {{hero}}: the break is over."
+        },
+        "sad": {
+          "1": "Beep… I was waiting for you, {{hero}}. The break is over."
+        }
+      },
+      "absence": {
+        "happy": {
+          "1": "Beep beep! {{hero}}, what a joy to see you here again!"
+        },
+        "normal": {
+          "1": "Beep! Hello again, {{hero}}! Let's start again, gently."
+        },
+        "sad": {
+          "1": "Beep… I waited for you, {{hero}}. Now we're together again."
+        }
+      },
+      "streakRecord": {
+        "happy": {
+          "1": "Beep beep! Yesterday made **{{streak}} days** in a row: a new record!"
+        },
+        "normal": {
+          "1": "Beep! **{{streak}} days** in a row: your new record."
+        },
+        "sad": {
+          "1": "Beep… Even on grey days: **{{streak}} days** in a row, a record!"
+        }
+      },
+      "bossDefeated": {
+        "happy": {
+          "1": "Beep beep! Yesterday you defeated {{boss}}! What a victory!"
+        },
+        "normal": {
+          "1": "Beep! Yesterday you defeated {{boss}}. Well done."
+        },
+        "sad": {
+          "1": "Beep… Yesterday you beat {{boss}}: that cheers me up."
+        }
+      },
+      "fullDay": {
+        "happy": {
+          "1": "Beep beep! Yesterday **{{done}} of {{scheduled}}**: a full day!"
+        },
+        "normal": {
+          "1": "Beep! Yesterday you did it all: **{{done}} of {{scheduled}}**."
+        },
+        "sad": {
+          "1": "Beep… Yesterday **{{done}} of {{scheduled}}**: that makes me feel better."
+        }
+      },
+      "partialDay": {
+        "happy": {
+          "1": "Beep beep! Yesterday **{{done}} of {{scheduled}}**: a nice step forward!"
+        },
+        "normal": {
+          "1": "Beep! Yesterday **{{done}} of {{scheduled}}**. Every step counts."
+        },
+        "sad": {
+          "1": "Beep… Yesterday **{{done}} of {{scheduled}}**: it's a start."
+        }
+      },
+      "emptyDay": {
+        "happy": {
+          "1": "Beep beep! Yesterday was quiet. Today is a new day!"
+        },
+        "normal": {
+          "1": "Beep! Yesterday is gone. Today we start again."
+        },
+        "sad": {
+          "1": "Beep… Yesterday was hard, but today we can start again together."
+        }
+      },
+      "restDay": {
+        "happy": {
+          "1": "Beep beep! Yesterday was a rest day: batteries full!"
+        },
+        "normal": {
+          "1": "Beep! Yesterday was a rest day. We needed it."
+        },
+        "sad": {
+          "1": "Beep… Yesterday we rested. Today we start slowly."
+        }
+      },
+      "encouragement": {
+        "happy": {
+          "1": "Shall we shine today?"
+        },
+        "normal": {
+          "1": "Shall we start with something small?"
+        },
+        "sad": {
+          "1": "One small step is all I need to smile."
+        }
+      },
+      "allDone": {
+        "1": "Beep! All done for today, {{hero}}. What a day!"
+      },
+      "someLeft": {
+        "1": "Beep! {{count}} still to do: {{missing}}. There's time!"
+      },
+      "noneDone": {
+        "1": "Beep! The day isn't over: {{missing}}. Two minutes are enough."
+      }
+    },
+    "rocky": {
+      "pauseReturn": {
+        "happy": {
+          "1": "Grumf grumf! So good to see you, {{hero}}! The break is over."
+        },
+        "normal": {
+          "1": "Grumf. Here we are again, {{hero}}: the break is over."
+        },
+        "sad": {
+          "1": "Grumf… I was waiting for you, {{hero}}. The break is over."
+        }
+      },
+      "absence": {
+        "happy": {
+          "1": "Grumf grumf! {{hero}}, what a joy to see you here again!"
+        },
+        "normal": {
+          "1": "Grumf. Hello again, {{hero}}! Let's start again, gently."
+        },
+        "sad": {
+          "1": "Grumf… I waited for you, {{hero}}. Now we're together again."
+        }
+      },
+      "streakRecord": {
+        "happy": {
+          "1": "Grumf grumf! Yesterday made **{{streak}} days** in a row: a new record!"
+        },
+        "normal": {
+          "1": "Grumf. **{{streak}} days** in a row: your new record."
+        },
+        "sad": {
+          "1": "Grumf… Even on grey days: **{{streak}} days** in a row, a record!"
+        }
+      },
+      "bossDefeated": {
+        "happy": {
+          "1": "Grumf grumf! Yesterday you defeated {{boss}}! What a victory!"
+        },
+        "normal": {
+          "1": "Grumf. Yesterday you defeated {{boss}}. Well done."
+        },
+        "sad": {
+          "1": "Grumf… Yesterday you beat {{boss}}: that cheers me up."
+        }
+      },
+      "fullDay": {
+        "happy": {
+          "1": "Grumf grumf! Yesterday **{{done}} of {{scheduled}}**: a full day!"
+        },
+        "normal": {
+          "1": "Grumf. Yesterday you did it all: **{{done}} of {{scheduled}}**."
+        },
+        "sad": {
+          "1": "Grumf… Yesterday **{{done}} of {{scheduled}}**: that makes me feel better."
+        }
+      },
+      "partialDay": {
+        "happy": {
+          "1": "Grumf grumf! Yesterday **{{done}} of {{scheduled}}**: a nice step forward!"
+        },
+        "normal": {
+          "1": "Grumf. Yesterday **{{done}} of {{scheduled}}**. Every step counts."
+        },
+        "sad": {
+          "1": "Grumf… Yesterday **{{done}} of {{scheduled}}**: it's a start."
+        }
+      },
+      "emptyDay": {
+        "happy": {
+          "1": "Grumf grumf! Yesterday was quiet. Today is a new day!"
+        },
+        "normal": {
+          "1": "Grumf. Yesterday is gone. Today we start again."
+        },
+        "sad": {
+          "1": "Grumf… Yesterday was hard, but today we can start again together."
+        }
+      },
+      "restDay": {
+        "happy": {
+          "1": "Grumf grumf! Yesterday was a rest day: batteries full!"
+        },
+        "normal": {
+          "1": "Grumf. Yesterday was a rest day. We needed it."
+        },
+        "sad": {
+          "1": "Grumf… Yesterday we rested. Today we start slowly."
+        }
+      },
+      "encouragement": {
+        "happy": {
+          "1": "Shall we shine today?"
+        },
+        "normal": {
+          "1": "Shall we start with something small?"
+        },
+        "sad": {
+          "1": "One small step is all I need to smile."
+        }
+      },
+      "allDone": {
+        "1": "Grumf. All done for today, {{hero}}. What a day!"
+      },
+      "someLeft": {
+        "1": "Grumf. {{count}} still to do: {{missing}}. There's time!"
+      },
+      "noneDone": {
+        "1": "Grumf. The day isn't over: {{missing}}. Two minutes are enough."
+      }
+    },
+    "glitchy": {
+      "pauseReturn": {
+        "happy": {
+          "1": "Bzzt bzzt! So good to see you, {{hero}}! The break is over."
+        },
+        "normal": {
+          "1": "Bzzt. Here we are again, {{hero}}: the break is over."
+        },
+        "sad": {
+          "1": "Bz…zt. I was waiting for you, {{hero}}. The break is over."
+        }
+      },
+      "absence": {
+        "happy": {
+          "1": "Bzzt bzzt! {{hero}}, what a joy to see you here again!"
+        },
+        "normal": {
+          "1": "Bzzt. Hello again, {{hero}}! Let's start again, gently."
+        },
+        "sad": {
+          "1": "Bz…zt. I waited for you, {{hero}}. Now we're together again."
+        }
+      },
+      "streakRecord": {
+        "happy": {
+          "1": "Bzzt bzzt! Yesterday made **{{streak}} days** in a row: a new record!"
+        },
+        "normal": {
+          "1": "Bzzt. **{{streak}} days** in a row: your new record."
+        },
+        "sad": {
+          "1": "Bz…zt. Even on grey days: **{{streak}} days** in a row, a record!"
+        }
+      },
+      "bossDefeated": {
+        "happy": {
+          "1": "Bzzt bzzt! Yesterday you defeated {{boss}}! What a victory!"
+        },
+        "normal": {
+          "1": "Bzzt. Yesterday you defeated {{boss}}. Well done."
+        },
+        "sad": {
+          "1": "Bz…zt. Yesterday you beat {{boss}}: that cheers me up."
+        }
+      },
+      "fullDay": {
+        "happy": {
+          "1": "Bzzt bzzt! Yesterday **{{done}} of {{scheduled}}**: a full day!"
+        },
+        "normal": {
+          "1": "Bzzt. Yesterday you did it all: **{{done}} of {{scheduled}}**."
+        },
+        "sad": {
+          "1": "Bz…zt. Yesterday **{{done}} of {{scheduled}}**: that makes me feel better."
+        }
+      },
+      "partialDay": {
+        "happy": {
+          "1": "Bzzt bzzt! Yesterday **{{done}} of {{scheduled}}**: a nice step forward!"
+        },
+        "normal": {
+          "1": "Bzzt. Yesterday **{{done}} of {{scheduled}}**. Every step counts."
+        },
+        "sad": {
+          "1": "Bz…zt. Yesterday **{{done}} of {{scheduled}}**: it's a start."
+        }
+      },
+      "emptyDay": {
+        "happy": {
+          "1": "Bzzt bzzt! Yesterday was quiet. Today is a new day!"
+        },
+        "normal": {
+          "1": "Bzzt. Yesterday is gone. Today we start again."
+        },
+        "sad": {
+          "1": "Bz…zt. Yesterday was hard, but today we can start again together."
+        }
+      },
+      "restDay": {
+        "happy": {
+          "1": "Bzzt bzzt! Yesterday was a rest day: batteries full!"
+        },
+        "normal": {
+          "1": "Bzzt. Yesterday was a rest day. We needed it."
+        },
+        "sad": {
+          "1": "Bz…zt. Yesterday we rested. Today we start slowly."
+        }
+      },
+      "encouragement": {
+        "happy": {
+          "1": "Shall we shine today?"
+        },
+        "normal": {
+          "1": "Shall we start with something small?"
+        },
+        "sad": {
+          "1": "One small step is all I need to smile."
+        }
+      },
+      "allDone": {
+        "1": "Bzzt. All done for today, {{hero}}. What a day!"
+      },
+      "someLeft": {
+        "1": "Bzzt. {{count}} still to do: {{missing}}. There's time!"
+      },
+      "noneDone": {
+        "1": "Bzzt. The day isn't over: {{missing}}. Two minutes are enough."
+      }
+    },
+    "lumin": {
+      "pauseReturn": {
+        "happy": {
+          "1": "The stars sing. So good to see you, {{hero}}! The break is over."
+        },
+        "normal": {
+          "1": "The stars whisper. Here we are again, {{hero}}: the break is over."
+        },
+        "sad": {
+          "1": "The stars are quiet. I was waiting for you, {{hero}}. The break is over."
+        }
+      },
+      "absence": {
+        "happy": {
+          "1": "The stars sing. {{hero}}, what a joy to see you here again!"
+        },
+        "normal": {
+          "1": "The stars whisper. Hello again, {{hero}}! Let's start again, gently."
+        },
+        "sad": {
+          "1": "The stars are quiet. I waited for you, {{hero}}. Now we're together again."
+        }
+      },
+      "streakRecord": {
+        "happy": {
+          "1": "The stars sing. Yesterday made **{{streak}} days** in a row: a new record!"
+        },
+        "normal": {
+          "1": "The stars whisper. **{{streak}} days** in a row: your new record."
+        },
+        "sad": {
+          "1": "The stars are quiet. Even on grey days: **{{streak}} days** in a row, a record!"
+        }
+      },
+      "bossDefeated": {
+        "happy": {
+          "1": "The stars sing. Yesterday you defeated {{boss}}! What a victory!"
+        },
+        "normal": {
+          "1": "The stars whisper. Yesterday you defeated {{boss}}. Well done."
+        },
+        "sad": {
+          "1": "The stars are quiet. Yesterday you beat {{boss}}: that cheers me up."
+        }
+      },
+      "fullDay": {
+        "happy": {
+          "1": "The stars sing. Yesterday **{{done}} of {{scheduled}}**: a full day!"
+        },
+        "normal": {
+          "1": "The stars whisper. Yesterday you did it all: **{{done}} of {{scheduled}}**."
+        },
+        "sad": {
+          "1": "The stars are quiet. Yesterday **{{done}} of {{scheduled}}**: that makes me feel better."
+        }
+      },
+      "partialDay": {
+        "happy": {
+          "1": "The stars sing. Yesterday **{{done}} of {{scheduled}}**: a nice step forward!"
+        },
+        "normal": {
+          "1": "The stars whisper. Yesterday **{{done}} of {{scheduled}}**. Every step counts."
+        },
+        "sad": {
+          "1": "The stars are quiet. Yesterday **{{done}} of {{scheduled}}**: it's a start."
+        }
+      },
+      "emptyDay": {
+        "happy": {
+          "1": "The stars sing. Yesterday was quiet. Today is a new day!"
+        },
+        "normal": {
+          "1": "The stars whisper. Yesterday is gone. Today we start again."
+        },
+        "sad": {
+          "1": "The stars are quiet. Yesterday was hard, but today we can start again together."
+        }
+      },
+      "restDay": {
+        "happy": {
+          "1": "The stars sing. Yesterday was a rest day: batteries full!"
+        },
+        "normal": {
+          "1": "The stars whisper. Yesterday was a rest day. We needed it."
+        },
+        "sad": {
+          "1": "The stars are quiet. Yesterday we rested. Today we start slowly."
+        }
+      },
+      "encouragement": {
+        "happy": {
+          "1": "Shall we shine today?"
+        },
+        "normal": {
+          "1": "Shall we start with something small?"
+        },
+        "sad": {
+          "1": "One small step is all I need to smile."
+        }
+      },
+      "allDone": {
+        "1": "The stars whisper. All done for today, {{hero}}. What a day!"
+      },
+      "someLeft": {
+        "1": "The stars whisper. {{count}} still to do: {{missing}}. There's time!"
+      },
+      "noneDone": {
+        "1": "The stars whisper. The day isn't over: {{missing}}. Two minutes are enough."
+      }
+    },
+    "cloudy": {
+      "pauseReturn": {
+        "happy": {
+          "1": "So good to see you, {{hero}}! The break is over."
+        },
+        "normal": {
+          "1": "Here we are again, {{hero}}: the break is over."
+        },
+        "sad": {
+          "1": "I was waiting for you, {{hero}}. The break is over."
+        }
+      },
+      "absence": {
+        "happy": {
+          "1": "{{hero}}, what a joy to see you here again!"
+        },
+        "normal": {
+          "1": "Hello again, {{hero}}! Let's start again, gently."
+        },
+        "sad": {
+          "1": "I waited for you, {{hero}}. Now we're together again."
+        }
+      },
+      "streakRecord": {
+        "happy": {
+          "1": "Yesterday made **{{streak}} days** in a row: a new record!"
+        },
+        "normal": {
+          "1": "**{{streak}} days** in a row: your new record."
+        },
+        "sad": {
+          "1": "Even on grey days: **{{streak}} days** in a row, a record!"
+        }
+      },
+      "bossDefeated": {
+        "happy": {
+          "1": "Yesterday you defeated {{boss}}! What a victory!"
+        },
+        "normal": {
+          "1": "Yesterday you defeated {{boss}}. Well done."
+        },
+        "sad": {
+          "1": "Yesterday you beat {{boss}}: that cheers me up."
+        }
+      },
+      "fullDay": {
+        "happy": {
+          "1": "Yesterday **{{done}} of {{scheduled}}**: a full day!"
+        },
+        "normal": {
+          "1": "Yesterday you did it all: **{{done}} of {{scheduled}}**."
+        },
+        "sad": {
+          "1": "Yesterday **{{done}} of {{scheduled}}**: that makes me feel better."
+        }
+      },
+      "partialDay": {
+        "happy": {
+          "1": "Yesterday **{{done}} of {{scheduled}}**: a nice step forward!"
+        },
+        "normal": {
+          "1": "Yesterday **{{done}} of {{scheduled}}**. Every step counts."
+        },
+        "sad": {
+          "1": "Yesterday **{{done}} of {{scheduled}}**: it's a start."
+        }
+      },
+      "emptyDay": {
+        "happy": {
+          "1": "Yesterday was quiet. Today is a new day!"
+        },
+        "normal": {
+          "1": "Yesterday is gone. Today we start again."
+        },
+        "sad": {
+          "1": "Yesterday was hard, but today we can start again together."
+        }
+      },
+      "restDay": {
+        "happy": {
+          "1": "Yesterday was a rest day: batteries full!"
+        },
+        "normal": {
+          "1": "Yesterday was a rest day. We needed it."
+        },
+        "sad": {
+          "1": "Yesterday we rested. Today we start slowly."
+        }
+      },
+      "encouragement": {
+        "happy": {
+          "1": "Shall we shine today?"
+        },
+        "normal": {
+          "1": "Shall we start with something small?"
+        },
+        "sad": {
+          "1": "One small step is all I need to smile."
+        }
+      },
+      "allDone": {
+        "1": "All done for today, {{hero}}. What a day!"
+      },
+      "someLeft": {
+        "1": "{{count}} still to do: {{missing}}. There's time!"
+      },
+      "noneDone": {
+        "1": "The day isn't over: {{missing}}. Two minutes are enough."
+      }
     }
   }
 }
