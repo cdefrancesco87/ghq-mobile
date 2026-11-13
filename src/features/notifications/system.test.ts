@@ -4,10 +4,12 @@ import { CATEGORY_REMINDER, CATEGORY_REMINDER_LAST, reminderCategory } from './s
 const BASE: ReminderRequest = {
   missionId: 'm1',
   title: 'Water',
+  body: 'Time.',
   fireAt: 0,
   snoozeCount: 0,
   increment: null,
   completeLabel: null,
+  snoozeLabel: 'In 10 min',
 };
 
 describe('reminderCategory', () => {

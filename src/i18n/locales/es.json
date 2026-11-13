@@ -1600,5 +1600,48 @@
     "goalWarning_one": "Falta {{count}} día para el plazo de {{name}}",
     "goalWarning_other": "Faltan {{count}} días para el plazo de {{name}}",
     "goalPreview": "Recompensa {{xp}} {{xpTerm}}"
+  },
+  "notifications": {
+    "channels": {
+      "reminders": "Recordatorios",
+      "summaries": "Resúmenes",
+      "boss": "Jefe",
+      "recall": "Aviso de regreso",
+      "confirmations": "Confirmaciones"
+    },
+    "reminder": {
+      "body": "Es la hora que elegiste.",
+      "body_arcade": "¡Stage listo! Pulsa START.",
+      "body_fantasy": "La gesta te espera.",
+      "body_cyberpunk": "Contrato activo, ejecuta.",
+      "body_lovecraft": "El rito te llama.",
+      "body_minimal": "Es la hora que elegiste.",
+      "complete": "Completar",
+      "snooze": "En 10 min"
+    },
+    "group": {
+      "title": "{{count}} {{term}} para ahora"
+    },
+    "evening": {
+      "titleLeft": "¿Qué tal el día?",
+      "left_one": "Te queda {{count}} {{term}}, aún hay tiempo: {{list}}.",
+      "left_other": "Te quedan {{count}} {{term}}, aún hay tiempo: {{list}}.",
+      "others_one": "y 1 más",
+      "others_other": "y {{count}} más",
+      "others_m_one": "y 1 más",
+      "others_m_other": "y {{count}} más",
+      "titleDone": "¡Día completo!",
+      "done": "Buen trabajo, {{hero}}: hoy lo hiciste todo.",
+      "done_arcade": "¡STAGE CLEAR! Genial, {{hero}}.",
+      "done_fantasy": "El reino lo celebra, {{hero}}.",
+      "done_cyberpunk": "Todos los contratos ejecutados, {{hero}}.",
+      "done_lovecraft": "Los rituales se han cumplido, {{hero}}.",
+      "done_minimal": "Buen trabajo, {{hero}}: hoy lo hiciste todo."
+    },
+    "confirmation": {
+      "title": "¡Hecho!",
+      "xp": "+{{xp}} {{xpTerm}}",
+      "coins": "{{gain}} · +{{coins}} {{coinsTerm}}"
+    }
   }
 }

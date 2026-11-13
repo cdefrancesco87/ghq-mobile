@@ -1600,5 +1600,48 @@
     "goalWarning_one": "{{count}} day left until the deadline of {{name}}",
     "goalWarning_other": "{{count}} days left until the deadline of {{name}}",
     "goalPreview": "Reward {{xp}} {{xpTerm}}"
+  },
+  "notifications": {
+    "channels": {
+      "reminders": "Reminders",
+      "summaries": "Summaries",
+      "boss": "Boss",
+      "recall": "Check-in",
+      "confirmations": "Confirmations"
+    },
+    "reminder": {
+      "body": "It's the time you chose.",
+      "body_arcade": "Stage ready! Press START.",
+      "body_fantasy": "The quest awaits you.",
+      "body_cyberpunk": "Contract active, execute.",
+      "body_lovecraft": "The rite is calling you.",
+      "body_minimal": "It's the time you chose.",
+      "complete": "Complete",
+      "snooze": "In 10 min"
+    },
+    "group": {
+      "title": "{{count}} {{term}} for now"
+    },
+    "evening": {
+      "titleLeft": "How did today go?",
+      "left_one": "{{count}} {{term}} left, there's still time: {{list}}.",
+      "left_other": "{{count}} {{term}} left, there's still time: {{list}}.",
+      "others_one": "and 1 more",
+      "others_other": "and {{count}} more",
+      "others_m_one": "and 1 more",
+      "others_m_other": "and {{count}} more",
+      "titleDone": "Day complete!",
+      "done": "Nice work, {{hero}}: you did it all today.",
+      "done_arcade": "STAGE CLEAR! Great job, {{hero}}.",
+      "done_fantasy": "The kingdom celebrates, {{hero}}.",
+      "done_cyberpunk": "All contracts executed, {{hero}}.",
+      "done_lovecraft": "The rituals are fulfilled, {{hero}}.",
+      "done_minimal": "Nice work, {{hero}}: you did it all today."
+    },
+    "confirmation": {
+      "title": "Done!",
+      "xp": "+{{xp}} {{xpTerm}}",
+      "coins": "{{gain}} · +{{coins}} {{coinsTerm}}"
+    }
   }
 }

@@ -1,7 +1,8 @@
 import { asc, eq } from 'drizzle-orm';
 
 import { deleteMission } from '@/db/repositories/missions';
-import { events, scheduledReminders } from '@/db/schema';
+import { setSetting } from '@/db/repositories/settings';
+import { events, missions, scheduledReminders } from '@/db/schema';
 import type { Db } from '@/db/types';
 
 import { FRIDAY, TZ, at, expectHeroMatchesLog, missionId, newGame } from '../../../test/game';
@@ -15,6 +16,7 @@ import {
   type ReminderRequest,
   type ReminderScheduler,
 } from './reminders';
+import { CATEGORY_REMINDER, CATEGORY_REMINDER_LAST, reminderCategory } from './system';
 
 /** A scheduler that remembers what it was asked and gives ids `os-1`, `os-2`… */
 class FakeScheduler implements ReminderScheduler {
@@ -24,6 +26,10 @@ class FakeScheduler implements ReminderScheduler {
   schedule(request: ReminderRequest): Promise<string> {
     this.scheduled.push(request);
     return Promise.resolve(`os-${this.scheduled.length}`);
+  }
+
+  scheduleGroup(): Promise<string> {
+    return Promise.reject(new Error('No group in these tests'));
   }
 
   cancel(osIds: readonly string[]): Promise<void> {
@@ -89,8 +95,11 @@ describe('the Complete action', () => {
   it('completes the mission with source notification and the key of the notification', async () => {
     const { db, scheduler, journal } = setUp();
     const osId = await remind(db, scheduler, journal);
+    // The gains come back for the confirmation «Fatto! +10 XP · +2 monete» (design 11.3).
     await expect(act(db, scheduler, journal, ACTION_COMPLETE, osId)).resolves.toEqual({
       outcome: 'completed',
+      xp: 10,
+      coins: 2,
     });
     const event = db
       .select()
@@ -223,6 +232,25 @@ describe('the Snooze action', () => {
     });
     expect(scheduler.scheduled).toHaveLength(4);
     expect(reminders(db)).toHaveLength(1);
+    // The third snooze comes back without the button «Tra 10 min» (design 11.3).
+    expect(scheduler.scheduled.map(reminderCategory)).toEqual([
+      CATEGORY_REMINDER,
+      CATEGORY_REMINDER,
+      CATEGORY_REMINDER,
+      CATEGORY_REMINDER_LAST,
+    ]);
+  });
+
+  it('writes the reminder with the name of the mission and the tone of the theme', async () => {
+    const { db, scheduler, journal } = setUp();
+    setSetting(db, 'theme', 'lovecraft', NOW);
+    await remind(db, scheduler, journal);
+    const name = db.select().from(missions).where(eq(missions.id, journal)).get()?.name;
+    expect(scheduler.scheduled[0]).toMatchObject({
+      title: name,
+      body: 'Il rito ti chiama.',
+      snoozeLabel: 'Tra 10 min',
+    });
   });
 
   it('does nothing for a reminder that is not remembered any more', async () => {

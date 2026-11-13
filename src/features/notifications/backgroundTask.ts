@@ -3,9 +3,17 @@ import * as TaskManager from 'expo-task-manager';
 
 import { databaseForTask } from '../../db/backgroundDatabase';
 import type { Db } from '../../db/types';
+import { syncEveningSummary } from './evening';
 import { handleReminderAction, type ReminderOutcome } from './reminders';
 import { syncReminders } from './scheduler';
-import { notificationPermission, setUpNotifications, systemScheduler } from './system';
+import {
+  notificationPermission,
+  setUpNotifications,
+  showConfirmation,
+  systemScheduler,
+  systemSummary,
+} from './system';
+import { notificationTextsOf } from './texts';
 
 // The entry of the actions of the notifications. On Android, with the app closed, the action
 // reaches the task defined here (expo-task-manager); on iPhone, and with the app open, it reaches
@@ -21,15 +29,20 @@ function tzOffsetAt(now: number): number {
 }
 
 /**
- * Aligns the notifications of the system with the reminders of the missions (`syncReminders`),
- * only with the permission granted. It never throws: a failure waits for the next call.
+ * Aligns the notifications of the system with the reminders of the missions (`syncReminders`)
+ * and the evening summary, only with the permission granted. Channels and buttons are named
+ * again first, so a new language reaches them. It never throws: a failure waits for the next
+ * call.
  */
 export async function syncSystemReminders(db: Db, now = Date.now()): Promise<void> {
   try {
     if ((await notificationPermission()) !== 'granted') {
       return;
     }
-    await syncReminders(db, systemScheduler, { now, tzOffset: tzOffsetAt(now) });
+    await setUpNotifications(notificationTextsOf(db));
+    const input = { now, tzOffset: tzOffsetAt(now) };
+    await syncReminders(db, systemScheduler, input);
+    await syncEveningSummary(db, systemSummary, input);
   } catch {
     // Nothing to show: the reminders are aligned again at the next start or action.
   }
@@ -45,13 +58,18 @@ export async function handleNotificationResponse(
   if (typeof missionId !== 'string') {
     return { outcome: 'ignored' };
   }
-  return handleReminderAction(db, systemScheduler, {
+  const outcome = await handleReminderAction(db, systemScheduler, {
     actionId: response.actionIdentifier,
     notificationId: response.notification.request.identifier,
     missionId,
     now,
     tzOffset: tzOffsetAt(now),
   });
+  if (outcome.outcome === 'completed') {
+    // «Fatto! +20 XP · +5 monete» (design 11.3); a failure leaves the completion as it is.
+    await showConfirmation(notificationTextsOf(db).confirmation(outcome)).catch(() => undefined);
+  }
+  return outcome;
 }
 
 TaskManager.defineTask<Notifications.NotificationTaskPayload>(
@@ -74,8 +92,11 @@ TaskManager.defineTask<Notifications.NotificationTaskPayload>(
   },
 );
 
-/** Registers the task and prepares channel and categories; call it when the app starts. */
-export async function registerReminderTask(): Promise<void> {
-  await setUpNotifications();
+/**
+ * Prepares channels and categories (Android wants a channel before the permission is asked) and
+ * registers the task of the actions; call it when the app starts.
+ */
+export async function registerReminderTask(db: Db): Promise<void> {
+  await setUpNotifications(notificationTextsOf(db));
   await Notifications.registerTaskAsync(REMINDER_TASK);
 }

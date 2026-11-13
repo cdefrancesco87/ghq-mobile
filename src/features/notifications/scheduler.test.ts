@@ -15,7 +15,12 @@ import type { Db } from '@/db/types';
 import { REMINDERS } from '@/rules/config';
 
 import { FRIDAY, TZ, at, clockAt, missionId, newGame } from '../../../test/game';
-import { handleReminderAction, type ReminderRequest, type ReminderScheduler } from './reminders';
+import {
+  handleReminderAction,
+  type ReminderGroupRequest,
+  type ReminderRequest,
+  type ReminderScheduler,
+} from './reminders';
 import { syncReminders } from './scheduler';
 
 /** expo-notifications in memory: ids `os-1`, `os-2`… and the notifications still pending. */
@@ -24,6 +29,8 @@ class FakeScheduler implements ReminderScheduler {
   scheduledCount = 0;
   readonly cancelled: string[] = [];
 
+  readonly groups = new Map<string, ReminderGroupRequest>();
+
   schedule(request: ReminderRequest): Promise<string> {
     this.scheduledCount += 1;
     const osId = `os-${this.scheduledCount}`;
@@ -31,9 +38,17 @@ class FakeScheduler implements ReminderScheduler {
     return Promise.resolve(osId);
   }
 
+  scheduleGroup(request: ReminderGroupRequest): Promise<string> {
+    this.scheduledCount += 1;
+    const osId = `group-${this.scheduledCount}`;
+    this.groups.set(osId, request);
+    return Promise.resolve(osId);
+  }
+
   cancel(osIds: readonly string[]): Promise<void> {
     for (const osId of osIds) {
       this.pending.delete(osId);
+      this.groups.delete(osId.split('#')[0]);
       this.cancelled.push(osId);
     }
     return Promise.resolve();
@@ -226,5 +241,60 @@ describe('syncReminders', () => {
     expect(times[0]).toBe('Journal@06 21:00');
     // 2 on Friday evening, 12 a day from Saturday to Wednesday, then 2 on Thursday morning.
     expect(times[63]).toBe('Water@12 06:30');
+  });
+});
+
+describe('syncReminders with reminders of the same minute (design 11.4)', () => {
+  function setUpThree() {
+    const db = newGame(['journal', 'healthy_meal', 'bed_by_eleven']);
+    const ids = ['journal', 'healthy_meal', 'bed_by_eleven'].map((key) => missionId(db, key));
+    ['Journal', 'Meal', 'Bed'].forEach((name, index) =>
+      updateMission(db, ids[index], { name, reminders: ['08:00'] }, clockAt(FRIDAY, 9)),
+    );
+    return { db, ids, scheduler: new FakeScheduler() };
+  }
+
+  it('groups 3 reminders of the same minute in one notification, with a row for each', async () => {
+    const { db, scheduler } = setUpThree();
+    await syncReminders(db, scheduler, SYNC);
+    // Saturday to Thursday at 08:00: one group a day, no notification of its own.
+    expect(scheduler.pending.size).toBe(0);
+    expect(scheduler.groups.size).toBe(6);
+    const [first] = [...scheduler.groups.values()].sort((a, b) => a.fireAt - b.fireAt);
+    expect(first).toMatchObject({
+      fireAt: at(7, 8),
+      title: '3 abitudini per adesso',
+      body: 'Journal, Meal, Bed',
+    });
+    expect(rows(db)).toHaveLength(18);
+    expect(rows(db)[0].osId).toMatch(/^group-\d+#3#/);
+  });
+
+  it('keeps the groups when nothing changed', async () => {
+    const { db, scheduler } = setUpThree();
+    await syncReminders(db, scheduler, SYNC);
+    const before = rows(db);
+    await syncReminders(db, scheduler, { now: NOW + 60_000, tzOffset: TZ });
+    expect(rows(db)).toEqual(before);
+    expect(scheduler.cancelled).toEqual([]);
+  });
+
+  it('splits a group when one of its missions is completed before it fires', async () => {
+    const { db, ids, scheduler } = setUpThree();
+    const saturday = { now: at(7, 7), tzOffset: TZ };
+    await syncReminders(db, scheduler, saturday);
+    const result = completeMission(db, {
+      missionId: ids[0],
+      source: 'app',
+      idemKey: 'app:1',
+      now: at(7, 7, 30),
+      tzOffset: TZ,
+    });
+    await scheduler.cancel(result.cancelledNotificationIds);
+    await syncReminders(db, scheduler, { now: at(7, 7, 31), tzOffset: TZ });
+    // Two left at 08:00: one notification each; the next days keep their group.
+    expect(scheduler.times()).toEqual(['Meal@07 08:00', 'Bed@07 08:00']);
+    expect(scheduler.groups.size).toBe(6);
+    expect(rows(db).filter((row) => row.fireAt === at(7, 8))).toHaveLength(2);
   });
 });

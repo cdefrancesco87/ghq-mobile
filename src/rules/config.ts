@@ -299,6 +299,19 @@ export const REMINDERS = {
   maxScheduled: 64,
 } as const;
 
+/**
+ * The notifications of the reminders and the evening summary (design-sezioni.md 11.3–11.5).
+ * PROVISIONAL (backlog T73) where marked: the documents do not give the value.
+ */
+export const NOTIFICATIONS = {
+  /** This many reminders or more in the same minute become one notification (design 11.4). */
+  groupMinSize: 3,
+  /** Missions named in the evening summary, then «e altre 2» (design 11.5). */
+  eveningMaxNames: 3,
+  /** PROVISIONAL: how long the confirmation after Complete stays («qualche secondo», 11.3). */
+  confirmationMs: 4000,
+} as const;
+
 /** Language of the first launch when no device language is supported (CLAUDE.md, choice 19). */
 export const FALLBACK_LANGUAGE: Language = 'en';
 

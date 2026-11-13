@@ -7,6 +7,7 @@ import { missions, scheduledReminders } from '../../db/schema';
 import type { Db } from '../../db/types';
 import type { GameDay } from '../../rules/types';
 import { incrementLabel } from '../shared/amount';
+import { notificationTextsOf } from './texts';
 
 // The logic of the actions on a reminder (stack-tecnologico.md, point 5; modello-dati.md 3.9 and
 // 4.4). It depends on no screen, no React state and no Expo module: the notifications of the
@@ -22,7 +23,10 @@ export const MAX_SNOOZES = 3;
 /** A notification to schedule in the operating system. */
 export interface ReminderRequest {
   readonly missionId: string;
+  /** The name of the mission, always first (design-sezioni.md 11.2). */
   readonly title: string;
+  /** A short sentence in the lexicon of the theme. */
+  readonly body: string;
   /** UTC instant of the delivery, in milliseconds. */
   readonly fireAt: number;
   /** How many times the reminder was snoozed: at the maximum there is no Snooze button. */
@@ -34,6 +38,8 @@ export interface ReminderRequest {
   readonly increment: ReminderIncrement | null;
   /** The label of Complete: «+250 ml» for a measurable mission, null for the default one. */
   readonly completeLabel: string | null;
+  /** The label of Snooze, «Tra 10 min», for the category of a measurable mission. */
+  readonly snoozeLabel: string;
 }
 
 /** One tap of a measurable mission: an amount and the key of its unit (`liter`) or its text. */
@@ -42,10 +48,25 @@ export interface ReminderIncrement {
   readonly unit: string;
 }
 
+/**
+ * One notification for 3 or more reminders of the same minute (design-sezioni.md 11.4): it has no
+ * buttons, a touch opens Today, where each mission is completed.
+ */
+export interface ReminderGroupRequest {
+  readonly missionIds: readonly string[];
+  /** «3 missioni per adesso». */
+  readonly title: string;
+  /** The names of the missions. */
+  readonly body: string;
+  readonly fireAt: number;
+}
+
 /** The notifications of the operating system, as the logic needs them. */
 export interface ReminderScheduler {
   /** Schedules the notification and returns its id in the system. */
   schedule(request: ReminderRequest): Promise<string>;
+  /** Schedules the notification of a group and returns its id in the system. */
+  scheduleGroup(request: ReminderGroupRequest): Promise<string>;
   /** Cancels the scheduled notifications and removes the ones already shown. */
   cancel(osIds: readonly string[]): Promise<void>;
 }
@@ -62,7 +83,9 @@ export interface ReminderActionInput {
 }
 
 export type ReminderOutcome =
-  | { readonly outcome: 'completed' | 'already_done' | 'already_recorded' }
+  /** The rewards were given: the gains of the confirmation «Fatto! +20 XP · +5 monete». */
+  | { readonly outcome: 'completed'; readonly xp: number; readonly coins: number }
+  | { readonly outcome: 'already_done' | 'already_recorded' }
   /** A measurable mission moved on without reaching its target. */
   | { readonly outcome: 'progressed' }
   | { readonly outcome: 'snoozed'; osId: string; fireAt: number; snoozeCount: number }
@@ -134,9 +157,12 @@ export async function scheduleReminder(
   const mission = missionOf(db, input.missionId);
   const increment = incrementOf(mission);
   const snoozeCount = input.snoozeCount ?? 0;
+  const texts = notificationTextsOf(db);
   const osId = await scheduler.schedule({
     missionId: input.missionId,
     title: mission.name,
+    body: texts.reminderBody,
+    snoozeLabel: texts.snoozeLabel,
     fireAt: input.fireAt,
     snoozeCount,
     increment,
@@ -166,6 +192,70 @@ export async function scheduleReminder(
   return osId;
 }
 
+/**
+ * A group is one notification of the system for several rows of `scheduled_reminders`: each row
+ * has the id `<group>#<size>#<mission>`, so a completion cancels the group (the remaining
+ * missions are scheduled again by the next sync) and a group with a row missing is known as
+ * broken.
+ */
+const GROUP_SEPARATOR = '#';
+
+export function groupMemberId(groupId: string, size: number, missionId: string): string {
+  return [groupId, size, missionId].join(GROUP_SEPARATOR);
+}
+
+/** The group of a row of `scheduled_reminders`, or null for a reminder of its own. */
+export function groupOf(osId: string): { readonly groupId: string; readonly size: number } | null {
+  const parts = osId.split(GROUP_SEPARATOR);
+  if (parts.length !== 3) {
+    return null;
+  }
+  return { groupId: parts[0], size: Number(parts[1]) };
+}
+
+export interface ScheduleGroupInput {
+  readonly members: readonly { readonly missionId: string; readonly gameDay: GameDay }[];
+  readonly fireAt: number;
+}
+
+/**
+ * Schedules one notification for reminders of the same minute (design-sezioni.md 11.4) and
+ * remembers a row for each mission, so that completing one cancels the group.
+ */
+export async function scheduleReminderGroup(
+  db: Db,
+  scheduler: ReminderScheduler,
+  { members, fireAt }: ScheduleGroupInput,
+): Promise<string> {
+  const names = members.map((member) => missionOf(db, member.missionId).name);
+  const text = notificationTextsOf(db).group(names);
+  const groupId = await scheduler.scheduleGroup({
+    missionIds: members.map((member) => member.missionId),
+    title: text.title,
+    body: text.body,
+    fireAt,
+  });
+  try {
+    db.transaction((tx) => {
+      for (const member of members) {
+        tx.insert(scheduledReminders)
+          .values({
+            osId: groupMemberId(groupId, members.length, member.missionId),
+            missionId: member.missionId,
+            gameDay: member.gameDay,
+            fireAt,
+            snoozeCount: 0,
+          })
+          .run();
+      }
+    });
+  } catch (error) {
+    await scheduler.cancel([groupId]);
+    throw error;
+  }
+  return groupId;
+}
+
 async function complete(
   db: Db,
   scheduler: ReminderScheduler,
@@ -188,6 +278,8 @@ async function complete(
       // The reminders left for the day, and the notification that was just tapped.
       const ids = new Set([...result.cancelledNotificationIds, input.notificationId]);
       await scheduler.cancel([...ids]);
+      const gains = result.completion ?? { xp: 0, coins: 0 };
+      return { outcome: 'completed', xp: gains.xp, coins: gains.coins };
     } else if (result.status === 'progressed') {
       // The other reminders of the day stay: the target is not reached yet.
       await scheduler.cancel([input.notificationId]);

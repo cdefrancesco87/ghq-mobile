@@ -1600,5 +1600,48 @@
     "goalWarning_one": "Noch {{count}} Tag bis zur Frist von {{name}}",
     "goalWarning_other": "Noch {{count}} Tage bis zur Frist von {{name}}",
     "goalPreview": "Belohnung {{xp}} {{xpTerm}}"
+  },
+  "notifications": {
+    "channels": {
+      "reminders": "Erinnerungen",
+      "summaries": "Zusammenfassungen",
+      "boss": "Boss",
+      "recall": "Erinnerung an die App",
+      "confirmations": "Bestätigungen"
+    },
+    "reminder": {
+      "body": "Es ist die Zeit, die du gewählt hast.",
+      "body_arcade": "Stage bereit! Drück START.",
+      "body_fantasy": "Die Aufgabe erwartet dich.",
+      "body_cyberpunk": "Vertrag aktiv, ausführen.",
+      "body_lovecraft": "Das Ritual ruft dich.",
+      "body_minimal": "Es ist die Zeit, die du gewählt hast.",
+      "complete": "Erledigen",
+      "snooze": "In 10 Min."
+    },
+    "group": {
+      "title": "{{count}} {{term}} für jetzt"
+    },
+    "evening": {
+      "titleLeft": "Wie war dein Tag?",
+      "left_one": "Noch {{count}} {{term}}, du hast noch Zeit: {{list}}.",
+      "left_other": "Noch {{count}} {{term}}, du hast noch Zeit: {{list}}.",
+      "others_one": "und 1 weitere",
+      "others_other": "und {{count}} weitere",
+      "others_m_one": "und 1 weitere",
+      "others_m_other": "und {{count}} weitere",
+      "titleDone": "Tag geschafft!",
+      "done": "Gut gemacht, {{hero}}: heute hast du alles erledigt.",
+      "done_arcade": "STAGE CLEAR! Super, {{hero}}.",
+      "done_fantasy": "Das Königreich feiert, {{hero}}.",
+      "done_cyberpunk": "Alle Verträge ausgeführt, {{hero}}.",
+      "done_lovecraft": "Die Rituale sind vollbracht, {{hero}}.",
+      "done_minimal": "Gut gemacht, {{hero}}: heute hast du alles erledigt."
+    },
+    "confirmation": {
+      "title": "Erledigt!",
+      "xp": "+{{xp}} {{xpTerm}}",
+      "coins": "{{gain}} · +{{coins}} {{coinsTerm}}"
+    }
   }
 }

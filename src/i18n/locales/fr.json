@@ -1600,5 +1600,48 @@
     "goalWarning_one": "Plus que {{count}} jour avant l'échéance de {{name}}",
     "goalWarning_other": "Plus que {{count}} jours avant l'échéance de {{name}}",
     "goalPreview": "Récompense {{xp}} {{xpTerm}}"
+  },
+  "notifications": {
+    "channels": {
+      "reminders": "Rappels",
+      "summaries": "Résumés",
+      "boss": "Boss",
+      "recall": "Relance",
+      "confirmations": "Confirmations"
+    },
+    "reminder": {
+      "body": "C'est l'heure que tu as choisie.",
+      "body_arcade": "Stage prêt ! Appuie sur START.",
+      "body_fantasy": "L'aventure t'attend.",
+      "body_cyberpunk": "Contrat actif, exécute.",
+      "body_lovecraft": "Le rite t'appelle.",
+      "body_minimal": "C'est l'heure que tu as choisie.",
+      "complete": "Terminer",
+      "snooze": "Dans 10 min"
+    },
+    "group": {
+      "title": "{{count}} {{term}} pour maintenant"
+    },
+    "evening": {
+      "titleLeft": "Comment s'est passée ta journée ?",
+      "left_one": "Il te reste {{count}} {{term}}, tu as encore le temps : {{list}}.",
+      "left_other": "Il te reste {{count}} {{term}}, tu as encore le temps : {{list}}.",
+      "others_one": "et 1 autre",
+      "others_other": "et {{count}} autres",
+      "others_m_one": "et 1 autre",
+      "others_m_other": "et {{count}} autres",
+      "titleDone": "Journée complète !",
+      "done": "Beau travail, {{hero}} : tu as tout fait aujourd'hui.",
+      "done_arcade": "STAGE CLEAR ! Bravo, {{hero}}.",
+      "done_fantasy": "Le royaume est en fête, {{hero}}.",
+      "done_cyberpunk": "Tous les contrats exécutés, {{hero}}.",
+      "done_lovecraft": "Les rituels sont accomplis, {{hero}}.",
+      "done_minimal": "Beau travail, {{hero}} : tu as tout fait aujourd'hui."
+    },
+    "confirmation": {
+      "title": "Fait !",
+      "xp": "+{{xp}} {{xpTerm}}",
+      "coins": "{{gain}} · +{{coins}} {{coinsTerm}}"
+    }
   }
 }

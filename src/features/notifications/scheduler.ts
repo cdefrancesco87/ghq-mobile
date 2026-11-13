@@ -7,8 +7,14 @@ import type { Db } from '../../db/types';
 import { REMINDERS } from '../../rules/config';
 import { addDays, weekStartOf } from '../../rules/gameDay';
 import type { GameDay } from '../../rules/types';
-import { plannedReminders, type PlannedReminder } from '../../rules/reminders';
-import { scheduleReminder, type ReminderScheduler } from './reminders';
+import { reminderSlots, type ReminderSlot } from '../../rules/notifications';
+import { plannedReminders } from '../../rules/reminders';
+import {
+  groupOf,
+  scheduleReminder,
+  scheduleReminderGroup,
+  type ReminderScheduler,
+} from './reminders';
 
 // Keeps the notifications of the system and `scheduled_reminders` aligned with the reminders of
 // the missions, on a window of a few days (iOS keeps at most 64 scheduled notifications). It runs
@@ -85,6 +91,10 @@ function plan(db: Db, { now, tzOffset }: SyncInput) {
 const keyOf = (reminder: { missionId: string; fireAt: number }) =>
   `${reminder.missionId}@${reminder.fireAt}`;
 
+/** The key of a group: its minute and its missions, in any order. */
+const groupKeyOf = (fireAt: number, missionIds: readonly string[]) =>
+  `group@${fireAt}@${[...missionIds].sort().join(',')}`;
+
 async function sync(db: Db, scheduler: ReminderScheduler, input: SyncInput): Promise<SyncResult> {
   const { today, planned } = plan(db, input);
   const dueOn = new Set(planned.map((reminder) => `${reminder.missionId}@${reminder.gameDay}`));
@@ -92,7 +102,7 @@ async function sync(db: Db, scheduler: ReminderScheduler, input: SyncInput): Pro
   const existing = db.select().from(scheduledReminders).all();
 
   const stale: string[] = [];
-  const keptFuture = new Set<string>();
+  const keptFuture: (typeof existing)[number][] = [];
   let snoozedFuture = 0;
   for (const row of existing) {
     if (row.gameDay < today) {
@@ -108,23 +118,55 @@ async function sync(db: Db, scheduler: ReminderScheduler, input: SyncInput): Pro
         stale.push(row.osId);
       }
     } else {
-      keptFuture.add(row.osId);
+      keptFuture.push(row);
     }
   }
 
-  const wanted = new Map<string, PlannedReminder>(
-    future
-      .slice(0, Math.max(0, REMINDERS.maxScheduled - snoozedFuture))
-      .map((reminder) => [keyOf(reminder), reminder]),
+  // The notifications wanted: one for each reminder, or one for 3 or more of the same minute.
+  const slots = reminderSlots(future.slice(0, Math.max(0, REMINDERS.maxScheduled - snoozedFuture)));
+  const wanted = new Map<string, ReminderSlot>(
+    slots.map((slot) => [
+      slot.grouped
+        ? groupKeyOf(
+            slot.fireAt,
+            slot.members.map((member) => member.missionId),
+          )
+        : keyOf(slot.members[0]),
+      slot,
+    ]),
   );
-  for (const row of existing) {
-    if (keptFuture.has(row.osId)) {
+
+  // The scheduled notifications that are still wanted stay; a group stays only whole.
+  const groups = new Map<string, (typeof existing)[number][]>();
+  for (const row of keptFuture) {
+    const group = groupOf(row.osId);
+    if (group === null) {
       const key = keyOf(row);
-      if (wanted.get(key)?.gameDay === row.gameDay) {
+      const slot = wanted.get(key);
+      if (slot !== undefined && !slot.grouped && slot.members[0].gameDay === row.gameDay) {
         wanted.delete(key);
       } else {
         stale.push(row.osId);
       }
+    } else {
+      groups.set(group.groupId, [...(groups.get(group.groupId) ?? []), row]);
+    }
+  }
+  for (const rows of groups.values()) {
+    const size = groupOf(rows[0].osId)?.size;
+    const key = groupKeyOf(
+      rows[0].fireAt,
+      rows.map((row) => row.missionId),
+    );
+    const slot = wanted.get(key);
+    const sameDays =
+      slot?.members.every((member) =>
+        rows.some((row) => row.missionId === member.missionId && row.gameDay === member.gameDay),
+      ) ?? false;
+    if (rows.length === size && slot !== undefined && sameDays) {
+      wanted.delete(key);
+    } else {
+      stale.push(...rows.map((row) => row.osId));
     }
   }
 
@@ -132,16 +174,23 @@ async function sync(db: Db, scheduler: ReminderScheduler, input: SyncInput): Pro
     await scheduler.cancel(stale);
     db.delete(scheduledReminders).where(inArray(scheduledReminders.osId, stale)).run();
   }
-  for (const reminder of wanted.values()) {
-    await scheduleReminder(db, scheduler, {
-      missionId: reminder.missionId,
-      fireAt: reminder.fireAt,
-      gameDay: reminder.gameDay,
-      now: input.now,
-      tzOffset: input.tzOffset,
-    });
+  let scheduled = 0;
+  for (const slot of wanted.values()) {
+    if (slot.grouped) {
+      await scheduleReminderGroup(db, scheduler, { members: slot.members, fireAt: slot.fireAt });
+    } else {
+      const [reminder] = slot.members;
+      await scheduleReminder(db, scheduler, {
+        missionId: reminder.missionId,
+        fireAt: reminder.fireAt,
+        gameDay: reminder.gameDay,
+        now: input.now,
+        tzOffset: input.tzOffset,
+      });
+    }
+    scheduled += slot.members.length;
   }
-  return { scheduled: wanted.size, cancelled: stale.length };
+  return { scheduled, cancelled: stale.length };
 }
 
 let queue: Promise<unknown> = Promise.resolve();
