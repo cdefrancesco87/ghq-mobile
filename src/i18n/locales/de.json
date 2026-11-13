@@ -1653,5 +1653,24 @@
       "deadlineMissed": "Die Frist ist abgelaufen.",
       "completeA11y": "{{name}} abschließen"
     }
+  },
+  "widgets": {
+    "remaining_one": "noch {{count}}",
+    "remaining_other": "noch {{count}}",
+    "remaining_m_one": "noch {{count}}",
+    "remaining_m_other": "noch {{count}}",
+    "allDone": "Alles erledigt",
+    "allDone_m": "Alles erledigt",
+    "fullDay": "{{term}}!",
+    "rest": "Ruhetag: deine Serie ist sicher",
+    "xp": "+{{xp}}",
+    "streakDays_one": "{{term}} {{count}} Tag",
+    "streakDays_other": "{{term}} {{count}} Tage",
+    "description": "GHQ, {{streak}}, {{remaining}}",
+    "incrementA11y": "{{amount}} zu {{name}} hinzufügen",
+    "openA11y": "{{name}} öffnen",
+    "moreA11y": "Heute öffnen",
+    "unseenA11y_one": "{{count}} ungelesene Benachrichtigung",
+    "unseenA11y_other": "{{count}} ungelesene Benachrichtigungen"
   }
 }

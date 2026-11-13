@@ -1653,5 +1653,24 @@
       "deadlineMissed": "The deadline has passed.",
       "completeA11y": "Complete {{name}}"
     }
+  },
+  "widgets": {
+    "remaining_one": "{{count}} left",
+    "remaining_other": "{{count}} left",
+    "remaining_m_one": "{{count}} left",
+    "remaining_m_other": "{{count}} left",
+    "allDone": "All done",
+    "allDone_m": "All done",
+    "fullDay": "{{term}}!",
+    "rest": "Rest day: your streak is safe",
+    "xp": "+{{xp}}",
+    "streakDays_one": "{{term}} {{count}} day",
+    "streakDays_other": "{{term}} {{count}} days",
+    "description": "GHQ, {{streak}}, {{remaining}}",
+    "incrementA11y": "Add {{amount}} to {{name}}",
+    "openA11y": "Open {{name}}",
+    "moreA11y": "Open Today",
+    "unseenA11y_one": "{{count}} unseen notification",
+    "unseenA11y_other": "{{count}} unseen notifications"
   }
 }

@@ -12,6 +12,7 @@ import { BossNotifications } from '@/features/notifications/BossNotifications';
 import { useReminderActions } from '@/features/notifications/useReminderActions';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { useBootstrap } from '@/features/shell/useBootstrap';
+import { useWidgets } from '@/features/widgets/useWidgets';
 import { FONT_FILES } from '@/theme/fonts';
 
 // The splash screen stays until the fonts of the themes and the data are ready.
@@ -22,6 +23,7 @@ export default function RootLayout() {
   const bootstrap = useBootstrap();
   useReminderActions();
   useAutoBackupTask();
+  useWidgets();
   // If a font cannot be loaded the app still starts, with the system font.
   const fontsReady = loaded || error !== null;
   const dataReady = bootstrap.i18n !== null || bootstrap.status === 'error';

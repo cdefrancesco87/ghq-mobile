@@ -1653,5 +1653,24 @@
       "deadlineMissed": "La scadenza è passata.",
       "completeA11y": "Completa {{name}}"
     }
+  },
+  "widgets": {
+    "remaining_one": "{{count}} rimasta",
+    "remaining_other": "{{count}} rimaste",
+    "remaining_m_one": "{{count}} rimasto",
+    "remaining_m_other": "{{count}} rimasti",
+    "allDone": "Tutte fatte",
+    "allDone_m": "Tutti fatti",
+    "fullDay": "{{term}}!",
+    "rest": "Giorno di riposo: la serie è al sicuro",
+    "xp": "+{{xp}}",
+    "streakDays_one": "{{term}} {{count}} giorno",
+    "streakDays_other": "{{term}} {{count}} giorni",
+    "description": "GHQ, {{streak}}, {{remaining}}",
+    "incrementA11y": "Aggiungi {{amount}} a {{name}}",
+    "openA11y": "Apri {{name}}",
+    "moreA11y": "Apri Oggi",
+    "unseenA11y_one": "{{count}} notifica non vista",
+    "unseenA11y_other": "{{count}} notifiche non viste"
   }
 }

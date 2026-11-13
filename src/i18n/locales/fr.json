@@ -1653,5 +1653,24 @@
       "deadlineMissed": "L'échéance est passée.",
       "completeA11y": "Terminer {{name}}"
     }
+  },
+  "widgets": {
+    "remaining_one": "{{count}} restante",
+    "remaining_other": "{{count}} restantes",
+    "remaining_m_one": "{{count}} restant",
+    "remaining_m_other": "{{count}} restants",
+    "allDone": "Toutes faites",
+    "allDone_m": "Tous faits",
+    "fullDay": "{{term}} !",
+    "rest": "Jour de repos : ta série est à l'abri",
+    "xp": "+{{xp}}",
+    "streakDays_one": "{{term}} {{count}} jour",
+    "streakDays_other": "{{term}} {{count}} jours",
+    "description": "GHQ, {{streak}}, {{remaining}}",
+    "incrementA11y": "Ajouter {{amount}} à {{name}}",
+    "openA11y": "Ouvrir {{name}}",
+    "moreA11y": "Ouvrir Aujourd'hui",
+    "unseenA11y_one": "{{count}} notification non vue",
+    "unseenA11y_other": "{{count}} notifications non vues"
   }
 }

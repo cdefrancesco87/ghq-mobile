@@ -47,8 +47,8 @@ export interface TextSettings {
 
 const translators = new Map<Language, TFunction>();
 
-/** An i18next of its own for each language, ready at once (no React). */
-function translator(language: Language): TFunction {
+/** An i18next of its own for each language, ready at once (no React); the widgets use it too. */
+export function translator(language: Language): TFunction {
   let t = translators.get(language);
   if (t === undefined) {
     const instance = createInstance();
@@ -65,7 +65,7 @@ function translator(language: Language): TFunction {
   return t;
 }
 
-function familyOf(theme: string): ThemeFamily {
+export function familyOf(theme: string): ThemeFamily {
   return theme.startsWith('minimal') ? 'minimal' : (theme as ThemeFamily);
 }
 

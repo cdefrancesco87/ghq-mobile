@@ -362,3 +362,11 @@ export const BADGES = {
   /** The latest unlocked badges in the row of the Profile. PROVISIONAL (backlog T70). */
   profileRecent: 3,
 } as const;
+
+/** The home screen widgets (design-sezioni.md 12.1–12.10; backlog T75). */
+export const WIDGETS = {
+  /** Rows of missions in the medium widget (design 12.2). */
+  rows: 4,
+  /** Rows with very large system text (design 12.10). */
+  rowsLargeText: 3,
+} as const;

@@ -1653,5 +1653,24 @@
       "deadlineMissed": "La fecha límite ha pasado.",
       "completeA11y": "Completar {{name}}"
     }
+  },
+  "widgets": {
+    "remaining_one": "queda {{count}}",
+    "remaining_other": "quedan {{count}}",
+    "remaining_m_one": "queda {{count}}",
+    "remaining_m_other": "quedan {{count}}",
+    "allDone": "Todas hechas",
+    "allDone_m": "Todos hechos",
+    "fullDay": "¡{{term}}!",
+    "rest": "Día de descanso: tu racha está a salvo",
+    "xp": "+{{xp}}",
+    "streakDays_one": "{{term}} {{count}} día",
+    "streakDays_other": "{{term}} {{count}} días",
+    "description": "GHQ, {{streak}}, {{remaining}}",
+    "incrementA11y": "Añadir {{amount}} a {{name}}",
+    "openA11y": "Abrir {{name}}",
+    "moreA11y": "Abrir Hoy",
+    "unseenA11y_one": "{{count}} notificación sin ver",
+    "unseenA11y_other": "{{count}} notificaciones sin ver"
   }
 }

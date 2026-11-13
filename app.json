@@ -44,7 +44,46 @@
       "expo-web-browser",
       "@react-native-community/datetimepicker",
       "react-native-cloud-storage",
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.ch.ghq.mobile",
+          "enableAndroid": true,
+          "widgets": [
+            {
+              "name": "GhqSmall",
+              "displayName": "GHQ",
+              "description": "Serie, livello e missioni rimaste",
+              "ios": {
+                "supportedFamilies": ["systemSmall"]
+              },
+              "android": {
+                "minWidth": 110,
+                "minHeight": 110,
+                "targetCellWidth": 2,
+                "targetCellHeight": 2,
+                "resizeMode": "none"
+              }
+            },
+            {
+              "name": "GhqMedium",
+              "displayName": "GHQ – Oggi",
+              "description": "Le missioni di oggi da completare con un tocco",
+              "ios": {
+                "supportedFamilies": ["systemMedium"]
+              },
+              "android": {
+                "minWidth": 250,
+                "minHeight": 110,
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "resizeMode": "horizontal"
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

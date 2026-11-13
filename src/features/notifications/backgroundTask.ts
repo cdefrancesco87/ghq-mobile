@@ -3,6 +3,8 @@ import * as TaskManager from 'expo-task-manager';
 
 import { databaseForTask } from '../../db/backgroundDatabase';
 import type { Db } from '../../db/types';
+import { syncWidgets } from '../widgets/sync';
+import { systemWidgetHost } from '../widgets/system';
 import { syncEveningSummary } from './evening';
 import { handleReminderAction, type ReminderOutcome } from './reminders';
 import { syncReminders } from './scheduler';
@@ -48,6 +50,21 @@ export async function syncSystemReminders(db: Db, now = Date.now()): Promise<voi
   }
 }
 
+/** The widgets show a completion made from a notification (design-sezioni.md 12.2). */
+async function syncSystemWidgets(db: Db): Promise<void> {
+  try {
+    const host = systemWidgetHost();
+    if (host !== null) {
+      await syncWidgets(db, host, () => {
+        const now = Date.now();
+        return { now, tzOffset: tzOffsetAt(now) };
+      });
+    }
+  } catch {
+    // The widgets are aligned again when the app opens.
+  }
+}
+
 /** Runs the action of a notification response on the given database. */
 export async function handleNotificationResponse(
   db: Db,
@@ -83,6 +100,7 @@ TaskManager.defineTask<Notifications.NotificationTaskPayload>(
       const outcome = await handleNotificationResponse(db, data);
       // The app may not open for a while: the task moves the window of the reminders on.
       await syncSystemReminders(db);
+      await syncSystemWidgets(db);
       return outcome.outcome === 'failed'
         ? Notifications.BackgroundNotificationTaskResult.Failed
         : Notifications.BackgroundNotificationTaskResult.NewData;
