@@ -13,6 +13,7 @@ import { formatClock } from '@/features/shared/formatClock';
 import { Frame } from '@/features/shared/Frame';
 import { Icon } from '@/features/shared/Icon';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
+import { searchable } from '@/features/shared/searchable';
 import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
@@ -48,13 +49,6 @@ type OpenSheet =
 const FIELD_HEIGHT = 48;
 const LANGUAGES = Object.keys(LANGUAGE_NAMES) as Language[];
 const WEEK_STARTS: readonly Weekday[] = [1, 7];
-
-/** Lower case and without accents, so «lunedi» finds «Lunedì». */
-const searchable = (text: string) =>
-  text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLocaleLowerCase();
 
 interface RowSpec {
   readonly key: string;

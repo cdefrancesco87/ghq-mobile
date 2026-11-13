@@ -19,7 +19,8 @@ export function dayOf(date: Date): GameDay {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` as GameDay;
 }
 
-function dateOf(day: GameDay): Date {
+/** The date of a game day, at midnight on the phone, for the picker. */
+export function dateOf(day: GameDay): Date {
   const [year, month, date] = day.split('-').map(Number);
   return new Date(year, month - 1, date);
 }

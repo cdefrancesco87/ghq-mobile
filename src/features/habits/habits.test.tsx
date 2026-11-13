@@ -165,6 +165,17 @@ describe('Habits: list', () => {
 
     await fireEvent.press(screen.getByTestId('habits-empty-action'));
     expect(await screen.findByRole('header', { name: 'Nuova abitudine' })).toBeOnTheScreen();
+    expect(screen.queryByTestId('editor-library')).toBeNull();
+  });
+
+  it('opens the template library from «Usa un modello»', async () => {
+    const db = newGame(['drink_water']);
+    deleteMission(db, missionId(db, 'drink_water'), clockAt(FRIDAY, 9));
+    await openHabits(db);
+
+    await fireEvent.press(screen.getByTestId('habits-empty-secondary'));
+    expect(await screen.findByTestId('editor-library')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Modelli' })).toBeOnTheScreen();
   });
 });
 

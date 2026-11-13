@@ -688,6 +688,26 @@
       "summary": "Cada toque añade {{increment}} hasta {{target}}. Propuesto automáticamente: cámbialo si quieres.",
       "missing": "Escribe el valor, la unidad y el incremento.",
       "done": "Hecho"
+    },
+    "timesPerWeek": "N veces por semana",
+    "timesPerWeekUnit_one": "vez por semana",
+    "timesPerWeekUnit_other": "veces por semana",
+    "everyNDays": "Cada N días",
+    "daysUnit_one": "día",
+    "daysUnit_other": "días",
+    "startsOn": "Desde el {{day}} de {{month}}",
+    "changeStart": "Cambiar",
+    "counter": {
+      "less": "Menos",
+      "more": "Más"
+    },
+    "library": {
+      "open": "Usar una plantilla",
+      "title": "Plantillas",
+      "search": "Buscar una plantilla",
+      "clear": "Borrar la búsqueda",
+      "noResults": "No se encontró ninguna plantilla",
+      "templateLabel": "{{name}}, {{frequency}}, dificultad {{difficulty}}, {{stat}}"
     }
   },
   "bosses": {

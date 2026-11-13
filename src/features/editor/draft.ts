@@ -1,3 +1,4 @@
+import { MISSION_TEMPLATES, type MissionTemplate } from '@/content/templates';
 import type { Mission, MissionGoal, NewMission } from '@/db/repositories/missions';
 import { MEASURABLE } from '@/rules/config';
 import type { Frequency } from '@/rules/frequency';
@@ -20,6 +21,8 @@ export interface Draft {
   readonly reminders: readonly string[];
   readonly bossId: string | null;
   readonly goal: GoalDraft;
+  /** The template chosen in «Usa un modello» (4.11): it gives the category of a new mission. */
+  readonly template: string | null;
 }
 
 /** «Obiettivo misurabile» as typed (design-sezioni.md 4.7): the numbers are read when saving. */
@@ -81,6 +84,33 @@ export function newDraft(bossId: string | null): Draft {
     reminders: [],
     bossId,
     goal: NO_GOAL,
+    template: null,
+  };
+}
+
+/**
+ * The draft filled by a template (design-sezioni.md 4.11): name, type, difficulty, stat, frequency
+ * and goal come from it; reminders and the linked boss stay as they were. Nothing is saved.
+ */
+export function draftFromTemplate(draft: Draft, template: MissionTemplate, name: string): Draft {
+  const goal: GoalDraft =
+    template.goal.type === 'none'
+      ? NO_GOAL
+      : {
+          type: template.goal.type,
+          target: String(template.goal.target),
+          unit: template.goal.type === 'quantity' ? template.goal.unit : NO_GOAL.unit,
+          increment: String(template.goal.increment),
+        };
+  return {
+    ...draft,
+    name,
+    kind: 'habit',
+    difficulty: template.difficulty,
+    statPrimary: template.stat,
+    frequency: template.frequency,
+    goal,
+    template: template.key,
   };
 }
 
@@ -96,6 +126,8 @@ export function draftOf(mission: Mission, reminders: readonly string[]): Draft {
     reminders,
     bossId: mission.bossId,
     goal: goalDraftOf(mission),
+    // A saved mission keeps its template and category: only a new one takes them.
+    template: null,
   };
 }
 
@@ -122,7 +154,15 @@ export function hasAdvancedValues(draft: Draft): boolean {
  */
 export function missionInput(draft: Draft): NewMission & { readonly kind: Mission['kind'] } {
   const habit = draft.kind === 'habit';
+  const template = MISSION_TEMPLATES.find((item) => item.key === draft.template);
   return {
+    ...(template === undefined
+      ? {}
+      : {
+          templateKey: template.key,
+          categoryKey: template.category,
+          healthMetric: habit ? (template.healthMetric ?? null) : null,
+        }),
     name: draft.name.trim(),
     kind: draft.kind,
     difficulty: draft.difficulty,

@@ -191,9 +191,8 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
             message={t('habits.empty.title')}
             actionLabel={t('habits.empty.create')}
             onAction={() => router.push('/editor')}
-            // The template library comes with T61: until then the editor opens.
             secondaryActionLabel={t('habits.empty.template')}
-            onSecondaryAction={() => router.push('/editor')}
+            onSecondaryAction={() => router.push({ pathname: '/editor', params: { library: '1' } })}
           />
         ) : (
           <>

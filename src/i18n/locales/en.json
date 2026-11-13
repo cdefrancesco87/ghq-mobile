@@ -688,6 +688,26 @@
       "summary": "Each tap adds {{increment}} up to {{target}}. Suggested automatically: change it if you like.",
       "missing": "Enter the value, unit and increment.",
       "done": "Done"
+    },
+    "timesPerWeek": "N times a week",
+    "timesPerWeekUnit_one": "time a week",
+    "timesPerWeekUnit_other": "times a week",
+    "everyNDays": "Every N days",
+    "daysUnit_one": "day",
+    "daysUnit_other": "days",
+    "startsOn": "From {{month}} {{day}}",
+    "changeStart": "Change",
+    "counter": {
+      "less": "Less",
+      "more": "More"
+    },
+    "library": {
+      "open": "Use a template",
+      "title": "Templates",
+      "search": "Search a template",
+      "clear": "Clear the search",
+      "noResults": "No template found",
+      "templateLabel": "{{name}}, {{frequency}}, {{difficulty}} difficulty, {{stat}}"
     }
   },
   "bosses": {

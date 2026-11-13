@@ -688,6 +688,26 @@
       "summary": "Ogni tocco aggiunge {{increment}} fino a {{target}}. Proposto in automatico: modificalo se vuoi.",
       "missing": "Scrivi valore, unità e incremento.",
       "done": "Fatto"
+    },
+    "timesPerWeek": "N volte a settimana",
+    "timesPerWeekUnit_one": "volta a settimana",
+    "timesPerWeekUnit_other": "volte a settimana",
+    "everyNDays": "Ogni N giorni",
+    "daysUnit_one": "giorno",
+    "daysUnit_other": "giorni",
+    "startsOn": "Dal {{day}} {{month}}",
+    "changeStart": "Cambia",
+    "counter": {
+      "less": "Meno",
+      "more": "Più"
+    },
+    "library": {
+      "open": "Usa un modello",
+      "title": "Modelli",
+      "search": "Cerca un modello",
+      "clear": "Cancella la ricerca",
+      "noResults": "Nessun modello trovato",
+      "templateLabel": "{{name}}, {{frequency}}, difficoltà {{difficulty}}, {{stat}}"
     }
   },
   "bosses": {

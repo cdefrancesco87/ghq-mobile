@@ -688,6 +688,26 @@
       "summary": "Chaque appui ajoute {{increment}} jusqu’à {{target}}. Proposé automatiquement : modifie-le si tu veux.",
       "missing": "Saisis la valeur, l’unité et l’incrément.",
       "done": "OK"
+    },
+    "timesPerWeek": "N fois par semaine",
+    "timesPerWeekUnit_one": "fois par semaine",
+    "timesPerWeekUnit_other": "fois par semaine",
+    "everyNDays": "Tous les N jours",
+    "daysUnit_one": "jour",
+    "daysUnit_other": "jours",
+    "startsOn": "À partir du {{day}} {{month}}",
+    "changeStart": "Modifier",
+    "counter": {
+      "less": "Moins",
+      "more": "Plus"
+    },
+    "library": {
+      "open": "Utiliser un modèle",
+      "title": "Modèles",
+      "search": "Chercher un modèle",
+      "clear": "Effacer la recherche",
+      "noResults": "Aucun modèle trouvé",
+      "templateLabel": "{{name}}, {{frequency}}, difficulté {{difficulty}}, {{stat}}"
     }
   },
   "bosses": {

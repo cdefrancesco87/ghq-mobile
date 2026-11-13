@@ -51,6 +51,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { BossSheet } from './BossSheet';
 import { ChoiceButton } from './ChoiceButton';
 import {
+  draftFromTemplate,
   draftOf,
   goalOf,
   hasAdvancedValues,
@@ -64,6 +65,7 @@ import { FrequencySheet } from './FrequencySheet';
 import { GoalSheet } from './GoalField';
 import { OptionRow } from './OptionRow';
 import { RemindersSheet } from './RemindersSheet';
+import { TemplateLibrary } from './TemplateLibrary';
 
 /** Past this length the name shows how many characters it has (design-sezioni.md 4.2). */
 export const NAME_COUNTER_FROM = 60;
@@ -75,7 +77,7 @@ const STAT_SIZE = 52;
 const HALF_SHEET = { sheetAllowedDetents: [0.5, 1] };
 const FULL_SHEET = { sheetAllowedDetents: [1] };
 
-type OptionSheet = 'frequency' | 'due' | 'reminders' | 'boss' | 'goal';
+type OptionSheet = 'frequency' | 'due' | 'reminders' | 'boss' | 'goal' | 'library';
 type Dialog = 'discard' | 'delete';
 
 /** Base values, without the streak multiplier: the preview never promises XP that can change (4.10). */
@@ -101,6 +103,8 @@ export interface MissionEditorProps {
   readonly missionId?: string;
   /** The boss already linked, when the editor is opened from a boss (design-sezioni.md 4.1). */
   readonly bossId?: string;
+  /** Opens «Usa un modello» at once, as the empty Abitudini do (design-sezioni.md 4.11). */
+  readonly library?: boolean;
 }
 
 /**
@@ -110,7 +114,7 @@ export interface MissionEditorProps {
  * and Enter save a daily medium habit (US-EDT-01). Editing opens at full height, with Archive,
  * Delete and «Vale dai prossimi completamenti»; closing with changes asks «Scartare le modifiche?».
  */
-export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
+export function MissionEditor({ missionId, bossId, library = false }: MissionEditorProps) {
   const { t, i18n } = useTranslation();
   const { colors, family, typography } = useTheme();
   const router = useRouter();
@@ -134,7 +138,9 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
   const [expanded, setExpanded] = useState(
     () => editing && initial !== null && hasAdvancedValues(initial),
   );
-  const [sheet, setSheet] = useState<OptionSheet | null>(null);
+  const [sheet, setSheet] = useState<OptionSheet | null>(() =>
+    library && missionId === undefined ? 'library' : null,
+  );
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [failed, setFailed] = useState(false);
   // Enter and Save, or two quick taps, would otherwise save twice.
@@ -369,15 +375,31 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
     >
       <Stack.Screen options={full ? FULL_SHEET : HALF_SHEET} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <ThemedText variant="sectionTitle" accessibilityRole="header">
-          {title}
-        </ThemedText>
+        <View style={styles.header}>
+          <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.flex}>
+            {title}
+          </ThemedText>
+          {/* A saved mission keeps what it is: the templates are only for a new one (4.11). */}
+          {editing ? null : (
+            <Pressable
+              testID="editor-use-template"
+              accessibilityRole="button"
+              onPress={() => setSheet('library')}
+              hitSlop={8}
+              style={styles.link}
+            >
+              <ThemedText variant="label" color={colors.primary}>
+                {t('editor.library.open')}
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
         <View style={styles.field}>
           <TextInput
             testID="editor-name"
             value={draft.name}
             onChangeText={(name) => update({ name })}
-            autoFocus={!editing}
+            autoFocus={!editing && !library}
             multiline
             numberOfLines={NAME_LINES}
             submitBehavior="submit"
@@ -552,6 +574,7 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
       <FrequencySheet
         visible={sheet === 'frequency'}
         value={draft.frequency}
+        today={today}
         onClose={() => setSheet(null)}
         onDone={(frequency) => {
           update({ frequency });
@@ -583,6 +606,19 @@ export function MissionEditor({ missionId, bossId }: MissionEditorProps) {
         onClose={() => setSheet(null)}
         onDone={(chosen) => {
           update({ goal: chosen });
+          setSheet(null);
+        }}
+      />
+      <TemplateLibrary
+        visible={sheet === 'library'}
+        onClose={() => setSheet(null)}
+        onChoose={(template, name) => {
+          const filled = draftFromTemplate(draft, template, name);
+          update(filled);
+          // The frequency or the goal of the template stay in sight (4.5).
+          if (hasAdvancedValues(filled)) {
+            setExpanded(true);
+          }
           setSheet(null);
         }}
       />
@@ -636,6 +672,8 @@ const styles = StyleSheet.create({
   missing: { alignItems: 'center', justifyContent: 'center', padding: 24 },
   content: { gap: 16, padding: 16 },
   field: { gap: 8 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  link: { minHeight: 48, justifyContent: 'center' },
   name: {
     minHeight: NAME_MIN_HEIGHT,
     borderWidth: 1,

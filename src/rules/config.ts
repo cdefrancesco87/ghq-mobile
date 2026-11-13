@@ -96,6 +96,12 @@ export const MEASURABLE = {
   wholeUnits: ['milliliter', 'page', 'step', 'time'],
 } as const;
 
+/** The counters of «Frequenza» in the editor (design-sezioni.md 4.6) and their first values. */
+export const FREQUENCY_EDITOR = {
+  timesPerWeek: { min: 1, max: 6, initial: 3 },
+  everyNDays: { min: 2, max: 30, initial: 2 },
+} as const;
+
 export const SKIP_TODAY = {
   /**
    * A skip that leaves every other mission of the day, or every other priority, done gives the

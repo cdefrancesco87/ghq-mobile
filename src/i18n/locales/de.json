@@ -688,6 +688,26 @@
       "summary": "Jedes Tippen fügt {{increment}} hinzu, bis {{target}}. Automatisch vorgeschlagen: ändere es, wenn du willst.",
       "missing": "Gib Wert, Einheit und Schritt ein.",
       "done": "Fertig"
+    },
+    "timesPerWeek": "N-mal pro Woche",
+    "timesPerWeekUnit_one": "Mal pro Woche",
+    "timesPerWeekUnit_other": "Mal pro Woche",
+    "everyNDays": "Alle N Tage",
+    "daysUnit_one": "Tag",
+    "daysUnit_other": "Tage",
+    "startsOn": "Ab {{day}}. {{month}}",
+    "changeStart": "Ändern",
+    "counter": {
+      "less": "Weniger",
+      "more": "Mehr"
+    },
+    "library": {
+      "open": "Vorlage verwenden",
+      "title": "Vorlagen",
+      "search": "Vorlage suchen",
+      "clear": "Suche löschen",
+      "noResults": "Keine Vorlage gefunden",
+      "templateLabel": "{{name}}, {{frequency}}, Schwierigkeit {{difficulty}}, {{stat}}"
     }
   },
   "bosses": {

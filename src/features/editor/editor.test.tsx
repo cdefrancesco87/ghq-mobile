@@ -545,3 +545,171 @@ describe('Mission editor: other options and editing', () => {
     expect(created(db, meal.name)?.deletedAt).not.toBeNull();
   });
 });
+
+describe('Mission editor: other frequencies and templates', () => {
+  async function openFrequency() {
+    if (screen.queryByTestId('editor-options') === null) {
+      await fireEvent.press(screen.getByTestId('editor-more'));
+    }
+    await fireEvent.press(screen.getByTestId('editor-option-frequency'));
+  }
+
+  it('saves «N volte a settimana» with the counter and reads it again', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Piscina');
+    await openFrequency();
+    await fireEvent.press(screen.getByTestId('editor-frequency-times'));
+    // Starts from 3 and stays between 1 and 6 (design-sezioni.md 4.6).
+    expect(screen.getByTestId('editor-frequency-times-value')).toHaveTextContent('3');
+    await fireEvent.press(screen.getByTestId('editor-frequency-times-less'));
+    await fireEvent.press(screen.getByTestId('editor-frequency-times-less'));
+    expect(screen.getByTestId('editor-frequency-times-less')).toBeDisabled();
+    for (let i = 0; i < 6; i += 1) {
+      await fireEvent.press(screen.getByTestId('editor-frequency-times-more'));
+    }
+    expect(screen.getByTestId('editor-frequency-times-value')).toHaveTextContent('6');
+    expect(screen.getByTestId('editor-frequency-times-more')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('editor-frequency-times-less'));
+    await fireEvent.press(screen.getByTestId('editor-frequency-done'));
+    expect(screen.getByTestId('editor-option-frequency-value')).toHaveTextContent(
+      '5 volte a settimana',
+    );
+    await fireEvent.press(screen.getByTestId('editor-save'));
+
+    const pool = created(db, 'Piscina')!;
+    expect(pool.frequency).toEqual({ type: 'times_per_week', times: 5 });
+
+    await openToEdit(db, pool.id);
+    expect(screen.getByTestId('editor-option-frequency-value')).toHaveTextContent(
+      '5 volte a settimana',
+    );
+    await openFrequency();
+    expect(screen.getByRole('radio', { name: 'N volte a settimana', checked: true })).toBeTruthy();
+    expect(screen.getByTestId('editor-frequency-times-value')).toHaveTextContent('5');
+  });
+
+  it('saves «Ogni N giorni» with the first day and reads it again', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.changeText(screen.getByTestId('editor-name'), 'Innaffia le piante');
+    await openFrequency();
+    await fireEvent.press(screen.getByTestId('editor-frequency-every'));
+    expect(screen.getByTestId('editor-frequency-every-value')).toHaveTextContent('2');
+    expect(screen.getByTestId('editor-frequency-every-less')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('editor-frequency-every-more'));
+    // The first day is today, until it is changed.
+    expect(screen.getByTestId('editor-frequency-from')).toHaveTextContent(/Dal 6 novembre/);
+    await fireEvent.press(screen.getByTestId('editor-frequency-from'));
+    await fireEvent(screen.getByTestId('editor-frequency-picker'), 'change', {
+      nativeEvent: { timestamp: new Date(2026, 10, 8, 12, 0).getTime(), utcOffset: 0 },
+    });
+    expect(screen.getByTestId('editor-frequency-from')).toHaveTextContent(/Dal 8 novembre/);
+    await fireEvent.press(screen.getByTestId('editor-frequency-done'));
+    expect(screen.getByTestId('editor-option-frequency-value')).toHaveTextContent('Ogni 3 giorni');
+    await fireEvent.press(screen.getByTestId('editor-save'));
+
+    const plants = created(db, 'Innaffia le piante')!;
+    expect(plants.frequency).toEqual({ type: 'every_n_days', n: 3, from: '2026-11-08' });
+
+    await openToEdit(db, plants.id);
+    await openFrequency();
+    expect(screen.getByTestId('editor-frequency-every-value')).toHaveTextContent('3');
+    expect(screen.getByTestId('editor-frequency-from')).toHaveTextContent(/Dal 8 novembre/);
+  });
+
+  it('keeps the values of each form while trying another one', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await openFrequency();
+    await fireEvent.press(screen.getByTestId('editor-frequency-times'));
+    await fireEvent.press(screen.getByTestId('editor-frequency-times-more'));
+    await fireEvent.press(screen.getByTestId('editor-frequency-daily'));
+    expect(screen.queryByTestId('editor-frequency-times-value')).toBeNull();
+    await fireEvent.press(screen.getByTestId('editor-frequency-times'));
+    expect(screen.getByTestId('editor-frequency-times-value')).toHaveTextContent('4');
+    // The screen reader changes the counter with a swipe up or down.
+    await fireEvent(
+      screen.getByRole('adjustable', { name: 'N volte a settimana' }),
+      'accessibilityAction',
+      { nativeEvent: { actionName: 'decrement' } },
+    );
+    expect(screen.getByTestId('editor-frequency-times-value')).toHaveTextContent('3');
+  });
+
+  it('fills the editor from a template without creating the mission', async () => {
+    const db = newGame(['journal']);
+    const before = db.select().from(missions).all().length;
+    await openEditor(db);
+    await fireEvent.press(screen.getByTestId('editor-use-template'));
+    expect(screen.getByRole('header', { name: 'Modelli' })).toBeOnTheScreen();
+    // Salute first, with its templates only.
+    expect(screen.getByTestId('editor-library-template-drink_water')).toBeOnTheScreen();
+    expect(screen.queryByTestId('editor-library-template-journal')).toBeNull();
+    await fireEvent.press(screen.getByTestId('editor-library-category-mind'));
+    expect(screen.getByTestId('editor-library-template-journal')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('editor-library-category-health'));
+    await fireEvent.press(screen.getByTestId('editor-library-template-run'));
+
+    expect(db.select().from(missions).all()).toHaveLength(before);
+    expect(screen.getByTestId('editor-name')).toHaveProp('value', 'Corsa 30 min');
+    expect(screen.getByTestId('editor-difficulty-medium')).toBeChecked();
+    expect(screen.getByTestId('editor-stat-strength')).toBeChecked();
+    // The frequency of the template is shown: «Altre opzioni» opens by itself.
+    expect(screen.getByTestId('editor-option-frequency-value')).toHaveTextContent(
+      '3 volte a settimana',
+    );
+
+    await fireEvent.press(screen.getByTestId('editor-difficulty-hard'));
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, 'Corsa 30 min')).toMatchObject({
+      kind: 'habit',
+      difficulty: 'hard',
+      statPrimary: 'strength',
+      frequency: { type: 'times_per_week', times: 3 },
+      goalType: 'duration',
+      goalTarget: 30,
+      templateKey: 'run',
+      categoryKey: 'health',
+    });
+  });
+
+  it('fills a quantity goal from a template', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.press(screen.getByTestId('editor-use-template'));
+    await fireEvent.press(screen.getByTestId('editor-library-template-drink_water'));
+    expect(screen.getByTestId('editor-option-goal-value')).toHaveTextContent('2 L');
+    await fireEvent.press(screen.getByTestId('editor-save'));
+    expect(created(db, "Bevi 2 litri d'acqua")).toMatchObject({
+      goalType: 'quantity',
+      goalTarget: 2,
+      goalUnit: 'liter',
+      goalStep: 0.25,
+      frequency: { type: 'daily' },
+    });
+  });
+
+  it('searches the templates of every category, without accents', async () => {
+    const db = newGame(['journal']);
+    await openEditor(db);
+    await fireEvent.press(screen.getByTestId('editor-use-template'));
+    await fireEvent.changeText(screen.getByTestId('editor-library-search'), 'DIARIO');
+    expect(screen.getByTestId('editor-library-template-journal')).toBeOnTheScreen();
+    expect(screen.queryByTestId('editor-library-template-drink_water')).toBeNull();
+    expect(screen.getByTestId('editor-library-category-health')).not.toBeSelected();
+
+    await fireEvent.changeText(screen.getByTestId('editor-library-search'), 'zzz');
+    expect(screen.getByTestId('editor-library-empty')).toHaveTextContent('Nessun modello trovato');
+
+    await fireEvent.press(screen.getByTestId('editor-library-search-clear'));
+    expect(screen.getByTestId('editor-library-template-drink_water')).toBeOnTheScreen();
+  });
+
+  it('has no templates when editing a saved mission', async () => {
+    const db = newGame(['journal']);
+    const [journal] = db.select().from(missions).all();
+    await openToEdit(db, journal.id);
+    expect(screen.queryByTestId('editor-use-template')).toBeNull();
+  });
+});
