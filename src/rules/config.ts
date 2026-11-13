@@ -268,6 +268,14 @@ export const MISSION_DETAIL = {
   historyMax: 20,
 } as const;
 
+/**
+ * The Registro of Statistics (design-sezioni.md 8.6). PROVISIONAL (backlog T67): the documents do
+ * not say how many entries the list shows at once; «Mostra altre» adds as many again.
+ */
+export const QUEST_LOG = {
+  pageSize: 50,
+} as const;
+
 /** How the reminders are scheduled in the system (stack-tecnologico.md, point 5). */
 export const REMINDERS = {
   /** Game days scheduled ahead, from today; they are scheduled again at every start. */

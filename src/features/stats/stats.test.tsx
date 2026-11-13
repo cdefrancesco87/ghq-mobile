@@ -1,11 +1,16 @@
+import { eq } from 'drizzle-orm';
 import { Stack } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { Dimensions } from 'react-native';
 
+import { closePendingDays } from '@/db/repositories/closing';
+import { completeMission, skipMission } from '@/db/repositories/completion';
+import { deleteMission } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
-import { missionDays } from '@/db/schema';
+import { events, missionDays } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
 import { addDays } from '@/rules/gameDay';
@@ -22,7 +27,7 @@ import Profile from '../../../app/(tabs)/profile';
 import Today from '../../../app/(tabs)/today';
 import Index from '../../../app/index';
 import StatsRoute from '../../../app/stats';
-import { at, clockAt, missionId, newGame } from '../../../test/game';
+import { at, clockAt, missionId, newGame, TZ } from '../../../test/game';
 
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
@@ -200,13 +205,6 @@ describe('Statistics', () => {
     expect(screen).toHavePathnameWithParams(`/stats?missionId=${journal}`);
   });
 
-  it('has the Log as a placeholder', async () => {
-    await open(newGame(['journal']), 6);
-    await fireEvent.press(screen.getByRole('radio', { name: 'Registro' }));
-    expect(screen.getByText('Il Registro arriverà presto.')).toBeOnTheScreen();
-    expect(screen.queryByTestId('stats-summary')).toBeNull();
-  });
-
   it('takes the names of the theme', async () => {
     const db = newGame(['journal']);
     setSetting(db, 'theme', 'arcade', at(6, 9));
@@ -308,5 +306,118 @@ describe('Statistics: heatmap', () => {
     await fireEvent.press(screen.getByTestId('stats-heatmap-2026-11-06'));
     expect(await screen.findByText('Venerdì 6 novembre')).toBeOnTheScreen();
     has(`stats-day-${missionId(db, 'meditation')}-open`);
+  });
+});
+
+function completeAt(db: Db, key: string, day: number, hour = 10) {
+  return completeMission(db, {
+    missionId: missionId(db, key),
+    source: 'app',
+    now: at(day, hour),
+    tzOffset: TZ,
+  });
+}
+
+async function openLog(db: Db, day: number) {
+  await open(db, day);
+  await fireEvent.press(screen.getByRole('radio', { name: 'Registro' }));
+}
+
+describe('Statistics: Log', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('groups the entries by day with what they gave', async () => {
+    const db = newGame(['journal', 'no_social_evening']);
+    completeAt(db, 'journal', 6, 9);
+    closePendingDays(db, clockAt(8, 9));
+    const today = completeAt(db, 'journal', 8, 7);
+    await openLog(db, 8);
+
+    expect(screen.queryByTestId('stats-summary')).toBeNull();
+    expect(screen.getByTestId('stats-log-day-2026-11-08')).toHaveTextContent(/^Oggi/);
+    expect(screen.getByTestId('stats-log-day-2026-11-07')).toHaveTextContent(/^Ieri/);
+    expect(screen.getByTestId('stats-log-day-2026-11-06')).toHaveTextContent(/^Venerdì 6 novembre/);
+    const id = today.completion!.eventId;
+    expect(screen.getByTestId(`stats-log-entry-${id}`)).toHaveTextContent(
+      /templates\.journal\.nameCompletamento · 07:00/,
+    );
+    expect(text(`stats-log-gains-${id}`)).toMatch(/^\+\d+ XP/);
+  });
+
+  it('filters with the chips', async () => {
+    const db = newGame(['journal', 'no_social_evening']);
+    const done = completeAt(db, 'journal', 6, 9);
+    skipMission(db, {
+      missionId: missionId(db, 'no_social_evening'),
+      reason: 'travel',
+      now: at(6, 10),
+      tzOffset: TZ,
+    });
+    await openLog(db, 6);
+
+    await fireEvent.press(screen.getByTestId('stats-log-chip-skips'));
+    expect(screen.queryByTestId(`stats-log-entry-${done.completion!.eventId}`)).toBeNull();
+    expect(screen.getByText('Salto · Viaggio · 10:00')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByTestId('stats-log-chip-items'));
+    expect(screen.getByTestId('stats-log-empty-filtered')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByTestId('stats-log-chip-completions'));
+    expect(screen.getByTestId(`stats-log-entry-${done.completion!.eventId}`)).toBeOnTheScreen();
+  });
+
+  it('filters by mission in the sheet', async () => {
+    const db = newGame(['journal', 'no_social_evening']);
+    const journal = completeAt(db, 'journal', 6, 9);
+    const other = completeAt(db, 'no_social_evening', 6, 10);
+    await openLog(db, 6);
+
+    await fireEvent.press(screen.getByTestId('stats-log-filter-open'));
+    await fireEvent.press(screen.getByTestId(`stats-log-mission-${missionId(db, 'journal')}`));
+    await fireEvent.press(screen.getByTestId('stats-log-apply'));
+    expect(screen.getByTestId(`stats-log-entry-${journal.completion!.eventId}`)).toBeOnTheScreen();
+    expect(screen.queryByTestId(`stats-log-entry-${other.completion!.eventId}`)).toBeNull();
+  });
+
+  it('undoes a completion from its menu, after the dialog, and hides the pair', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal', 'no_social_evening']);
+    const done = completeAt(db, 'journal', 6, 9);
+    const id = done.completion!.eventId;
+    await openLog(db, 6);
+
+    await fireEvent.press(screen.getByTestId(`stats-log-entry-${id}`));
+    await fireEvent.press(screen.getByTestId('stats-log-menu-undo'));
+    await act(async () => {
+      jest.advanceTimersByTime(SHEET_DURATION_MS);
+    });
+    expect(screen.getByTestId('stats-log-undo')).toHaveTextContent(
+      /Annullare «templates\.journal\.name»\?/,
+    );
+    await fireEvent.press(screen.getByTestId('stats-log-undo-confirm'));
+
+    expect(screen.queryByTestId(`stats-log-entry-${id}`)).toBeNull();
+    expect(db.select().from(events).where(eq(events.revertsId, id)).all()).toHaveLength(1);
+  });
+
+  it('offers no menu for an entry of another day', async () => {
+    const db = newGame(['journal']);
+    const done = completeAt(db, 'journal', 6, 9);
+    closePendingDays(db, clockAt(7, 9));
+    await openLog(db, 7);
+
+    const entry = screen.getByTestId(`stats-log-entry-${done.completion!.eventId}`);
+    expect(entry).toBeDisabled();
+  });
+
+  it('leaves out the entries of deleted missions', async () => {
+    const db = newGame(['journal', 'no_social_evening']);
+    const gone = completeAt(db, 'no_social_evening', 6, 9);
+    deleteMission(db, missionId(db, 'no_social_evening'), clockAt(6, 10));
+    await openLog(db, 6);
+
+    expect(screen.queryByTestId(`stats-log-entry-${gone.completion!.eventId}`)).toBeNull();
   });
 });

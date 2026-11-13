@@ -10,7 +10,6 @@ import {
   type StatsView,
 } from '@/db/repositories/statsView';
 import { Card } from '@/features/shared/Card';
-import { EmptyState } from '@/features/shared/EmptyState';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
 import { SegmentedControl } from '@/features/shared/SegmentedControl';
 import { ThemedText } from '@/features/shared/ThemedText';
@@ -21,6 +20,7 @@ import type { GameDay } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Heatmap } from './Heatmap';
 import { HeatmapDaySheet, longDay } from './HeatmapDaySheet';
+import { QuestLog } from './QuestLog';
 import { SummaryTile } from './SummaryTile';
 import { useHeatmapDay } from './useHeatmapDay';
 import { TrendRow } from './TrendRow';
@@ -36,8 +36,7 @@ export interface StatsScreenProps {
 
 /**
  * Statistics, a route of the stack opened from the Profile and from the hero card in Today
- * (design-sezioni.md 8.1, 8.2, 8.4, 8.9, mockup B9, D29): the tabs Panoramica and Registro (a
- * placeholder until T67), the summary 2×2 (one column with very large text, 8.12) whose
+ * (design-sezioni.md 8.1, 8.2, 8.4, 8.9, mockup B9, D29): the tabs Panoramica and Registro (T67), the summary 2×2 (one column with very large text, 8.12) whose
  * comparisons appear only when positive, and the missions from the least constant in the period.
  * The heatmap (8.3) sits between the summary and the trends, its days open a sheet.
  */
@@ -100,7 +99,7 @@ export function StatsScreen({ view }: StatsScreenProps) {
           onChange={setTab}
         />
         {tab === 'log' ? (
-          <EmptyState testID="stats-log-soon" message={t('statsScreen.logSoon')} />
+          <QuestLog />
         ) : (
           <>
             <Summary summary={view.summary} term={term} />
