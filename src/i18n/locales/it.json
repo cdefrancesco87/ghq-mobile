@@ -1216,7 +1216,20 @@
     "moodShare": "Negli ultimi {{days}} giorni hai completato {{done}} {{termDone}} su {{scheduled}} ({{percent}}%).",
     "moodNone": "Negli ultimi {{days}} giorni non c'era nulla in programma.",
     "moodToday": "Oggi hai già completato qualcosa: {{name}} è felice.",
-    "moodSad": "Basta un completamento oggi e tornerà felice."
+    "moodSad": "Basta un completamento oggi e tornerà felice.",
+    "gift": {
+      "row": "Fai un regalo",
+      "rowHint": "Apre i regali che hai",
+      "title": "Fai un regalo",
+      "none": "Non hai regali.",
+      "buy": "Compra nel Negozio",
+      "give": "Dona",
+      "alreadyHappy": "È già felicissimo: il regalo non cambia l'umore.",
+      "thanks": "Grazie, {{hero}}! Ma non dimenticarti di prenderti cura di te stesso. Completa le missioni di oggi!",
+      "raised": "Grazie al regalo, l'umore è salito fino a domani.",
+      "given": "{{name}} ha ricevuto: {{gift}}",
+      "giftedToday": "Il regalo di oggi gli ha alzato l'umore fino a domani."
+    }
   },
   "shop": {
     "title": "Negozio",
@@ -1308,6 +1321,21 @@
       "created": "Ricompensa creata: {{name}}",
       "saved": "Ricompensa modificata: {{name}}",
       "deleted": "Ricompensa eliminata: {{name}}"
+    },
+    "gifts": {
+      "title": "Regali per il compagno",
+      "names": {
+        "cookie": "Biscotto",
+        "candy": "Caramella",
+        "ball": "Palla"
+      },
+      "descriptions": {
+        "cookie": "Un dolcetto: l'umore sale fino a domani.",
+        "candy": "Una caramella: l'umore sale fino a domani.",
+        "ball": "Per giocare insieme: l'umore sale fino a domani."
+      },
+      "give": "Dona a {{name}}",
+      "eggNo": "L'uovo non riceve regali: aspetta che si schiuda."
     }
   },
   "statsScreen": {

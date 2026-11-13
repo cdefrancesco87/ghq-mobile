@@ -9,7 +9,7 @@ import { changeHero } from '@/db/repositories/hero';
 import { createReward } from '@/db/repositories/rewards';
 import { buyItem } from '@/db/repositories/shop';
 import { setSetting } from '@/db/repositories/settings';
-import { events, hero, inventory, rewards } from '@/db/schema';
+import { companion, events, hero, inventory, rewards } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { AppProviders } from '@/features/shell/AppProviders';
@@ -24,6 +24,7 @@ import Habits from '../../../app/(tabs)/habits';
 import New from '../../../app/(tabs)/new';
 import Profile from '../../../app/(tabs)/profile';
 import Today from '../../../app/(tabs)/today';
+import CompanionRoute from '../../../app/companion';
 import Index from '../../../app/index';
 import ShopRoute from '../../../app/shop';
 import { at, clockAt, expectHeroMatchesLog, FRIDAY, newGame, TZ } from '../../../test/game';
@@ -31,6 +32,7 @@ import { at, clockAt, expectHeroMatchesLog, FRIDAY, newGame, TZ } from '../../..
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
   shop: ShopRoute,
+  companion: CompanionRoute,
   '(tabs)/_layout': TabsLayoutRoute,
   '(tabs)/today': Today,
   '(tabs)/habits': Habits,
@@ -492,5 +494,66 @@ describe('Personal rewards', () => {
 
     expect(screen.queryByTestId('shop-rewards-title')).toBeNull();
     expect(screen.queryByTestId('shop-reward-new')).toBeNull();
+  });
+});
+
+describe('Gifts for the companion', () => {
+  it('sells the gifts after the rewards, at the provisional prices', async () => {
+    const db = newGame(['meditation']);
+    adjustHero(db, { coins: 45 });
+    await open(db);
+
+    expect(screen.getByRole('header', { name: 'Regali per il compagno' })).toBeOnTheScreen();
+    expect(text('shop-item-cookie-price')).toBe(20);
+    expect(text('shop-item-candy-price')).toBe(30);
+    expect(text('shop-item-ball-price')).toBe(40);
+
+    await fireEvent.press(screen.getByTestId('shop-item-cookie'));
+    await fireEvent.press(screen.getByTestId('shop-buy-confirm'));
+    expect(owned(db, 'cookie')).toBe(1);
+    expect(text('shop-balance-coins')).toBe(25);
+    expect(screen.getByTestId('shop-item-ball-missing')).toHaveTextContent('Ti mancano 15 monete');
+    expectHeroMatchesLog(db);
+  });
+
+  it('gives a gift from the inventory and opens the companion with its cheer', async () => {
+    const db = newGame(['meditation']);
+    db.update(companion).set({ stage: 'baby', completionsTotal: 20 }).run();
+    adjustHero(db, { coins: 100 });
+    buyItem(db, 'ball', clockAt(FRIDAY, 10));
+    await open(db);
+
+    await fireEvent.press(screen.getByRole('radio', { name: 'Inventario' }));
+    expect(screen.getByTestId('shop-inventory-give-ball')).toHaveAccessibleName('Dona a Cloudy');
+    await fireEvent.press(screen.getByTestId('shop-inventory-give-ball'));
+
+    expect(await screen.findByTestId('companion-screen')).toBeOnTheScreen();
+    expect(
+      screen.getByTestId('companion-gift-cheer', { includeHiddenElements: true }),
+    ).toBeOnTheScreen();
+    expect(owned(db, 'ball')).toBe(0);
+    expect(db.select().from(events).where(eq(events.type, 'companion.gift')).all()).toHaveLength(1);
+    expectHeroMatchesLog(db);
+  });
+
+  it('does not give a gift to the egg', async () => {
+    const db = newGame(['meditation']);
+    adjustHero(db, { coins: 100 });
+    buyItem(db, 'cookie', clockAt(FRIDAY, 10));
+    await open(db);
+
+    await fireEvent.press(screen.getByRole('radio', { name: 'Inventario' }));
+    expect(text('shop-inventory-cookie-detail')).toBe(
+      "L'uovo non riceve regali: aspetta che si schiuda.",
+    );
+    await fireEvent.press(screen.getByTestId('shop-inventory-give-cookie'));
+    expect(owned(db, 'cookie')).toBe(1);
+  });
+
+  it('hides the gifts in the Essential mode', async () => {
+    const db = newGame(['meditation']);
+    setSetting(db, 'game_mode', 'essential', at(FRIDAY, 9));
+    await open(db);
+    expect(screen.queryByTestId('shop-gifts')).toBeNull();
   });
 });

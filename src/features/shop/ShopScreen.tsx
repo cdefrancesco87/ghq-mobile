@@ -3,7 +3,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import type { ItemKey } from '@/content/shop';
+import type { GiftKey, ItemKey } from '@/content/shop';
+import { giveGift } from '@/db/repositories/companion';
 import {
   archiveReward,
   createReward,
@@ -109,7 +110,7 @@ export function ShopScreen({ view }: ShopScreenProps) {
   }, [queued, menuOpen]);
 
   const offerOf = (key: ItemKey) => {
-    const item = view.items.find((candidate) => candidate.key === key);
+    const item = [...view.items, ...view.gifts].find((candidate) => candidate.key === key);
     return item === undefined ? null : { item, offer: shopOffer(item, view.coins, item.owned) };
   };
   const chosen = selected === null ? null : offerOf(selected);
@@ -187,6 +188,12 @@ export function ShopScreen({ view }: ShopScreenProps) {
     setMenuOpen(true);
   };
 
+  // The gift is given here; the companion sheet opens with the cheer (design 7.5, 6.8).
+  const give = (key: GiftKey) => {
+    runAction((db, clock) => giveGift(db, key, clock));
+    router.push('/companion?cheer=1');
+  };
+
   const drink = () => {
     const { hp } = runAction((db, clock) => drinkPotion(db, clock));
     tell(t('shop.used', { name: texts.name('potion'), ...hpValues(hp) }));
@@ -238,13 +245,13 @@ export function ShopScreen({ view }: ShopScreenProps) {
     </>
   );
 
-  const helps = (
+  const group = (title: string, items: ShopView['items'], testID: string) => (
     <View style={styles.group}>
       <ThemedText variant="label" accessibilityRole="header" color={colors.textMuted}>
-        {t('shop.helps')}
+        {title}
       </ThemedText>
-      <View testID="shop-grid" style={styles.column}>
-        {rowsOf(view.items, columns).map((row) => (
+      <View testID={testID} style={styles.column}>
+        {rowsOf(items, columns).map((row) => (
           <GridRow key={row.map((item) => item.key).join()} columns={columns} count={row.length}>
             {row.map((item) => (
               <ItemCard
@@ -261,6 +268,12 @@ export function ShopScreen({ view }: ShopScreenProps) {
         ))}
       </View>
     </View>
+  );
+  const helps = group(t('shop.helps'), view.items, 'shop-grid');
+  // Gifts for the companion (Could), after the rewards (design 7.1); hidden with the shop in the
+  // Essential mode.
+  const giftsGroup = essential ? undefined : (
+    <View style={styles.footer}>{group(t('shop.gifts.title'), view.gifts, 'shop-gifts')}</View>
   );
 
   // The cards of the rewards; «+ Nuova ricompensa» comes last, once every reward is read.
@@ -303,6 +316,7 @@ export function ShopScreen({ view }: ShopScreenProps) {
               )}
             </View>
           }
+          ListFooterComponent={giftsGroup}
           ItemSeparatorComponent={RowGap}
           renderItem={({ item: row }) => (
             <GridRow columns={columns} count={row.length}>
@@ -339,7 +353,7 @@ export function ShopScreen({ view }: ShopScreenProps) {
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
             {top}
-            <InventoryList view={view} onUsePotion={drink} />
+            <InventoryList view={view} onUsePotion={drink} onGiveGift={give} />
           </View>
         </ScrollView>
       )}
@@ -431,6 +445,7 @@ const styles = StyleSheet.create({
   coins: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   welcome: { flex: 1, textAlign: 'right' },
   group: { gap: 8 },
+  footer: { paddingTop: 24 },
   column: { gap: 12 },
   row: { flexDirection: 'row', gap: 12 },
   spacer: { flex: 1 },

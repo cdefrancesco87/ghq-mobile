@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
+import { isGiftKey, type GiftKey } from '@/content/shop';
 import type { ShopView } from '@/db/repositories/shop';
 import { Bar } from '@/features/shared/Bar';
 import { Button } from '@/features/shared/Button';
@@ -9,6 +10,7 @@ import { Card } from '@/features/shared/Card';
 import { EmptyState } from '@/features/shared/EmptyState';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
+import { companionName } from '@/rules/companion';
 import { HP } from '@/rules/config';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ItemSprite } from './ItemSprite';
@@ -20,18 +22,23 @@ const EMPTY_SPRITE_SIZE = 96;
 export interface InventoryListProps {
   readonly view: ShopView;
   readonly onUsePotion: () => void;
+  /** «Dona a Blob»: gives the gift and opens the companion with its cheer (7.5). */
+  readonly onGiveGift: (key: GiftKey) => void;
 }
 
 /**
  * The objects owned (design-sezioni.md 7.5, mockup D28): a row each with the quantity, «Usa» for
  * the potion (off at full hit points, «La vita è già al massimo») and the shield that works by
- * itself; the bar of the hit points shows what a potion gives back. Empty: the backpack.
+ * itself; the bar of the hit points shows what a potion gives back; the gifts have «Dona a Blob»
+ * (off for the egg). Empty: the backpack.
  */
-export function InventoryList({ view, onUsePotion }: InventoryListProps) {
+export function InventoryList({ view, onUsePotion, onGiveGift }: InventoryListProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
   const texts = useShopTexts();
-  const owned = view.items.filter((item) => item.owned > 0);
+  const owned = [...view.items, ...view.gifts].filter((item) => item.owned > 0);
+  const petName = companionName(view.companion.name, t('lexicon.companion', { context: family }));
+  const isEgg = view.companion.stage === 'egg';
 
   if (owned.length === 0) {
     return (
@@ -58,8 +65,11 @@ export function InventoryList({ view, onUsePotion }: InventoryListProps) {
         {owned.map((item, index) => {
           const name = texts.name(item.key);
           const quantity = t('shop.quantity', { count: item.owned });
-          const detail =
-            item.key === 'shield'
+          const detail = isGiftKey(item.key)
+            ? isEgg
+              ? t('shop.gifts.eggNo')
+              : texts.description(item.key)
+            : item.key === 'shield'
               ? t('shop.shieldAuto')
               : view.canUsePotion
                 ? texts.description(item.key)
@@ -97,6 +107,15 @@ export function InventoryList({ view, onUsePotion }: InventoryListProps) {
                     onPress={onUsePotion}
                     disabled={!view.canUsePotion}
                     disabledReason={texts.hpFull}
+                  />
+                ) : null}
+                {isGiftKey(item.key) ? (
+                  <Button
+                    testID={`shop-inventory-give-${item.key}`}
+                    label={t('shop.gifts.give', { name: petName })}
+                    onPress={() => onGiveGift(item.key as GiftKey)}
+                    disabled={isEgg}
+                    disabledReason={t('shop.gifts.eggNo')}
                   />
                 ) : null}
               </View>

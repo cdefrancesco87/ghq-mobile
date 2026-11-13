@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import type { ItemKey } from '@/content/shop';
+import { isGiftKey, type ItemKey } from '@/content/shop';
 import { termInSentence } from '@/i18n/lexicon';
 import { SHOP } from '@/rules/config';
 import type { RewardSize } from '@/rules/rewards';
@@ -40,10 +40,15 @@ export function useShopTexts() {
       ]
         .filter((part) => part !== null)
         .join(', '),
-    name: (key: ItemKey) => t(`lexicon.${key}`, { context: family }),
-    description: (key: ItemKey) =>
-      key === 'potion'
+    name: (key: ItemKey) =>
+      isGiftKey(key) ? t(`shop.gifts.names.${key}`) : t(`lexicon.${key}`, { context: family }),
+    description: (key: ItemKey) => {
+      if (isGiftKey(key)) {
+        return t(`shop.gifts.descriptions.${key}`);
+      }
+      return key === 'potion'
         ? t('shop.potionDescription', { amount: SHOP.potion.hp, hp: inSentence('lexicon.hp') })
-        : t('shop.shieldDescription', { context: family }),
+        : t('shop.shieldDescription', { context: family });
+    },
   };
 }

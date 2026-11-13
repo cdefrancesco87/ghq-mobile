@@ -8,6 +8,7 @@ import {
   type QuestLogFilter,
   type QuestLogType,
 } from '@/db/repositories/questLog';
+import { isGiftKey } from '@/content/shop';
 import { undoEvent, UndoRefusedError } from '@/db/repositories/undo';
 import { useBadgeTexts } from '@/features/shared/badgeTexts';
 import { ActionSheet } from '@/features/shared/ActionSheet';
@@ -145,6 +146,9 @@ export function QuestLog() {
       case 'item.bought':
       case 'item.used':
       case 'shield.consumed':
+        if (entry.itemKey !== null && isGiftKey(entry.itemKey)) {
+          return t(`shop.gifts.names.${entry.itemKey}`);
+        }
         return entry.itemKey === 'potion' || entry.itemKey === 'shield'
           ? lexicon(entry.itemKey)
           : (entry.itemKey ?? '');

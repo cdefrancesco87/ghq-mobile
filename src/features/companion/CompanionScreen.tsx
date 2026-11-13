@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Pressable,
@@ -17,16 +17,23 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { renameCompanion, type CompanionView } from '@/db/repositories/companion';
+import type { GiftKey } from '@/content/shop';
+import { giveGift, renameCompanion, type CompanionView } from '@/db/repositories/companion';
+import type { ShopViewItem } from '@/db/repositories/shop';
 import { announceOnIos } from '@/features/shared/announce';
 import { Bar } from '@/features/shared/Bar';
+import { Button } from '@/features/shared/Button';
 import { Card } from '@/features/shared/Card';
 import { CompanionSprite, useCompanionDescription } from '@/features/shared/CompanionSprite';
 import { Frame } from '@/features/shared/Frame';
 import { Icon } from '@/features/shared/Icon';
+import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useReduceMotion } from '@/features/shared/useReduceMotion';
+import { ItemSprite } from '@/features/shop/ItemSprite';
+import { useShopTexts } from '@/features/shop/shopTexts';
 import { termInSentence } from '@/i18n/lexicon';
 import { companionName } from '@/rules/companion';
 import { COMPANION } from '@/rules/config';
@@ -36,6 +43,7 @@ import { textStyleOf } from '@/theme/fonts';
 import { MAX_TEXT_SCALE } from '@/theme/textScale';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
+import { GIFT_CHEER, GiftCheer } from './GiftCheer';
 import { HABITAT_RATIO, Habitat } from './Habitat';
 
 /** 32×32 at 6× (design-sezioni.md 6.2). */
@@ -49,9 +57,14 @@ const JUMP_DOWN_MS = 180;
 const LINES_PER_GROUP = 3;
 const FIELD_HEIGHT = 56;
 const MOOD_SPRITE_SIZE = 48;
+const GIFT_SPRITE_SIZE = 40;
 
 export interface CompanionScreenProps {
   readonly view: CompanionView;
+  /** The gifts of the shop with the number owned (US-COMP-04). */
+  readonly gifts: readonly ShopViewItem[];
+  /** A gift was just given from the inventory: the sheet opens with the cheer (design 7.5). */
+  readonly cheerOnOpen?: boolean;
 }
 
 /**
@@ -61,8 +74,11 @@ export interface CompanionScreenProps {
  * (up to 20 characters, Invio confirms); the stage; the growth bar with the missions still missing;
  * the mood card with its word and why (6.3, mockup D26B): the share of the last 3 days, today's
  * completion, and when sad how to make it happy again. The egg has no mood yet, so no card.
+ * «Fai un regalo» (6.8, Could) opens the gifts owned; giving one makes the companion cheer for
+ * about 2 seconds with the effect of the theme, then the bubble reminds the missions. No gifts in
+ * the Essential mode (6.11), where the shop is hidden, and none for the egg.
  */
-export function CompanionScreen({ view }: CompanionScreenProps) {
+export function CompanionScreen({ view, gifts, cheerOnOpen = false }: CompanionScreenProps) {
   const { t, i18n } = useTranslation();
   const { colors, family, typography } = useTheme();
   const router = useRouter();
@@ -74,19 +90,76 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
   const [draft, setDraft] = useState('');
   const [taps, setTaps] = useState(0);
   const [line, setLine] = useState<string | null>(null);
+  const [giftsOpen, setGiftsOpen] = useState(false);
+  const [cheering, setCheering] = useState(false);
+  const essential = useEssential();
+  const shopTexts = useShopTexts();
+  const cheerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const jump = useSharedValue(0);
   const jumping = useAnimatedStyle(() => ({ transform: [{ translateY: jump.get() }] }));
 
   const { stage, mood, growth, moodWindow, doneToday } = view;
   const themeDefault = t('lexicon.companion', { context: family });
   const name = companionName(view.name, themeDefault);
-  const description = useCompanionDescription({ stage, mood, name });
+  const pose = cheering ? (reduceMotion ? 'happy' : 'cheering') : mood;
+  const description = useCompanionDescription({ stage, mood: pose, name });
   const habitatWidth = Math.min(window.width, window.height * HABITAT_MAX_SHARE * HABITAT_RATIO);
   const term = (count: number) =>
     termInSentence(
       t(count === 1 ? 'lexicon.missions' : 'lexicon.missions_pl', { context: family }),
       i18n.language,
     );
+
+  const cheer = () => {
+    setLine(null);
+    setCheering(true);
+    if (!reduceMotion) {
+      const hop = () => [
+        withTiming(-GIFT_CHEER.hopHeight, { duration: GIFT_CHEER.hopUpMs }),
+        withTiming(0, { duration: GIFT_CHEER.hopDownMs }),
+      ];
+      jump.set(withSequence(...hop(), ...hop()));
+    }
+    if (cheerTimer.current !== null) {
+      clearTimeout(cheerTimer.current);
+    }
+    cheerTimer.current = setTimeout(() => {
+      cheerTimer.current = null;
+      setCheering(false);
+      const text = t('companion.gift.thanks', { hero: heroName });
+      setLine(text);
+      announceOnIos(t('companion.says', { name, text }));
+    }, GIFT_CHEER.durationMs);
+  };
+  useEffect(
+    () => () => {
+      if (cheerTimer.current !== null) {
+        clearTimeout(cheerTimer.current);
+      }
+    },
+    [],
+  );
+  // Opened right after «Dona» in the inventory: the cheer starts once.
+  const cheered = useRef(false);
+  useEffect(() => {
+    if (cheerOnOpen && !cheered.current) {
+      cheered.current = true;
+      cheer();
+    }
+    // Only on opening.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const give = (key: GiftKey) => {
+    // A second tap while the sheet slides away gives nothing more.
+    if (!giftsOpen) {
+      return;
+    }
+    runAction((db, clock) => giveGift(db, key, clock));
+    setGiftsOpen(false);
+    announceOnIos(t('companion.gift.given', { name, gift: shopTexts.name(key) }));
+    cheer();
+  };
 
   const say = () => {
     const group = stage === 'egg' ? 'egg' : mood;
@@ -144,6 +217,7 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
           termDone: term(moodWindow.done),
           termScheduled: term(moodWindow.scheduled),
         }),
+    view.giftRaised ? t('companion.gift.giftedToday') : null,
     mood === 'sad' ? t('companion.moodSad') : null,
   ].filter((reason): reason is string => reason !== null);
 
@@ -156,6 +230,7 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
       >
         <View style={styles.habitat}>
           <Habitat width={habitatWidth}>
+            {cheering ? <GiftCheer width={habitatWidth} reduced={reduceMotion} /> : null}
             {line === null ? null : (
               <Pressable
                 testID="companion-bubble"
@@ -183,7 +258,7 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
               >
                 <CompanionSprite
                   stage={stage}
-                  mood={mood}
+                  mood={pose}
                   name={name}
                   size={SPRITE_SIZE}
                   testID="companion-sprite"
@@ -300,7 +375,36 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
             </View>
           </Card>
         )}
+        {stage === 'egg' || essential ? null : (
+          <Card testID="companion-gift" style={styles.card}>
+            <Pressable
+              testID="companion-gift-open"
+              accessibilityRole="button"
+              accessibilityLabel={t('companion.gift.row')}
+              accessibilityHint={t('companion.gift.rowHint')}
+              onPress={() => setGiftsOpen(true)}
+              style={styles.giftRow}
+            >
+              <Icon name="regalo" color={colors.text} />
+              <ThemedText variant="label" style={styles.flex}>
+                {t('companion.gift.row')}
+              </ThemedText>
+              <Icon name="avanti" size={20} color={colors.textMuted} />
+            </Pressable>
+          </Card>
+        )}
       </ScrollView>
+      <GiftSheet
+        visible={giftsOpen}
+        gifts={gifts}
+        alreadyHappy={mood === 'happy'}
+        onGive={give}
+        onShop={() => {
+          setGiftsOpen(false);
+          router.push('/shop');
+        }}
+        onClose={() => setGiftsOpen(false)}
+      />
 
       <Pressable
         testID="companion-back"
@@ -315,8 +419,84 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
   );
 }
 
+/** The gifts owned with their number and «Dona»; none: «Compra nel Negozio» (design 6.8). */
+function GiftSheet({
+  visible,
+  gifts,
+  alreadyHappy,
+  onGive,
+  onShop,
+  onClose,
+}: {
+  readonly visible: boolean;
+  readonly gifts: readonly ShopViewItem[];
+  readonly alreadyHappy: boolean;
+  readonly onGive: (key: GiftKey) => void;
+  readonly onShop: () => void;
+  readonly onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const texts = useShopTexts();
+  const owned = gifts.filter((gift) => gift.owned > 0);
+  return (
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title={t('companion.gift.title')}
+      testID="companion-gift-sheet"
+    >
+      {owned.length === 0 ? (
+        <View style={styles.giftList}>
+          <ThemedText testID="companion-gift-none" color={colors.textMuted}>
+            {t('companion.gift.none')}
+          </ThemedText>
+          <Button testID="companion-gift-shop" label={t('companion.gift.buy')} onPress={onShop} />
+        </View>
+      ) : (
+        <View style={styles.giftList}>
+          {alreadyHappy ? (
+            <ThemedText testID="companion-gift-happy" variant="caption" color={colors.textMuted}>
+              {t('companion.gift.alreadyHappy')}
+            </ThemedText>
+          ) : null}
+          {owned.map((gift) => {
+            const giftName = texts.name(gift.key);
+            const quantity = t('shop.quantity', { count: gift.owned });
+            return (
+              <View key={gift.key} testID={`companion-gift-${gift.key}`} style={styles.giftItem}>
+                <View
+                  accessible
+                  accessibilityLabel={`${giftName}, ${t('shop.owned', { count: gift.owned })}`}
+                  style={styles.giftName}
+                >
+                  <ItemSprite object={gift.key as GiftKey} size={GIFT_SPRITE_SIZE} />
+                  <ThemedText style={styles.flex}>
+                    {giftName} <ThemedText color={colors.textMuted}>{quantity}</ThemedText>
+                  </ThemedText>
+                </View>
+                <Button
+                  testID={`companion-gift-give-${gift.key}`}
+                  label={t('companion.gift.give')}
+                  accessibilityLabel={`${t('companion.gift.give')} ${giftName}`}
+                  onPress={() => onGive(gift.key as GiftKey)}
+                />
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </Sheet>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  flex: { flex: 1 },
+  giftRow: { minHeight: MIN_TOUCH, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  giftList: { gap: 12, paddingVertical: 8 },
+  giftItem: { minHeight: MIN_TOUCH + 8, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  giftName: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   habitat: { alignItems: 'center' },
   bubble: {
     maxWidth: 260,

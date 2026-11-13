@@ -3,6 +3,7 @@ import {
   growthOf,
   moodFor,
   moodWindowOf,
+  raisedMood,
   stageFor,
   storedCompanionName,
   type CompanionStage,
@@ -77,6 +78,14 @@ describe('moodFor', () => {
     expect(moodFor(days([4, 3], [3, 3], [3, 2]), 0)).toBe('happy');
     expect(moodFor(days([4, 1], [3, 1], [3, 0]), 0)).toBe('sad');
     expect(moodFor(days([10, 5], [10, 5], [10, 5]), 0)).toBe('normal');
+  });
+
+  it('goes up one level with a gift today, until the change of day (US-COMP-04)', () => {
+    expect(moodFor(days([4, 1], [3, 1], [3, 0]), 0, true)).toBe('normal');
+    expect(moodFor(days([10, 5], [10, 5], [10, 5]), 0, true)).toBe('happy');
+    expect(moodFor(days([4, 3], [3, 3], [3, 2]), 0, true)).toBe('happy');
+    expect(moodFor([], 0, true)).toBe('happy');
+    expect(moodFor(days([4, 1], [3, 1], [3, 0]), 1, true)).toBe('happy');
   });
 
   it('rejects impossible days', () => {
@@ -199,5 +208,13 @@ describe('storedCompanionName', () => {
   it('accepts up to 20 characters and refuses longer names', () => {
     expect(storedCompanionName('A'.repeat(20), 'Cloudy')).toBe('A'.repeat(20));
     expect(() => storedCompanionName('A'.repeat(21), 'Cloudy')).toThrow(RangeError);
+  });
+});
+
+describe('raisedMood', () => {
+  it('raises the mood by one level, never above happy', () => {
+    expect(raisedMood('sad')).toBe('normal');
+    expect(raisedMood('normal')).toBe('happy');
+    expect(raisedMood('happy')).toBe('happy');
   });
 });

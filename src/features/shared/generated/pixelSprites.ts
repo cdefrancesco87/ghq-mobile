@@ -95,6 +95,18 @@ export const PIXEL_SPRITES = {
   "corona-main-quest-cyberpunk": { source: require('../../../../assets/sprites/corona-main-quest-cyberpunk.png'), grid: 16 },
   "corona-main-quest-fantasy": { source: require('../../../../assets/sprites/corona-main-quest-fantasy.png'), grid: 16 },
   "corona-main-quest-lovecraft": { source: require('../../../../assets/sprites/corona-main-quest-lovecraft.png'), grid: 16 },
+  "regalo-biscotto-arcade": { source: require('../../../../assets/sprites/regalo-biscotto-arcade.png'), grid: 16 },
+  "regalo-biscotto-cyberpunk": { source: require('../../../../assets/sprites/regalo-biscotto-cyberpunk.png'), grid: 16 },
+  "regalo-biscotto-fantasy": { source: require('../../../../assets/sprites/regalo-biscotto-fantasy.png'), grid: 16 },
+  "regalo-biscotto-lovecraft": { source: require('../../../../assets/sprites/regalo-biscotto-lovecraft.png'), grid: 16 },
+  "regalo-caramella-arcade": { source: require('../../../../assets/sprites/regalo-caramella-arcade.png'), grid: 16 },
+  "regalo-caramella-cyberpunk": { source: require('../../../../assets/sprites/regalo-caramella-cyberpunk.png'), grid: 16 },
+  "regalo-caramella-fantasy": { source: require('../../../../assets/sprites/regalo-caramella-fantasy.png'), grid: 16 },
+  "regalo-caramella-lovecraft": { source: require('../../../../assets/sprites/regalo-caramella-lovecraft.png'), grid: 16 },
+  "regalo-palla-arcade": { source: require('../../../../assets/sprites/regalo-palla-arcade.png'), grid: 16 },
+  "regalo-palla-cyberpunk": { source: require('../../../../assets/sprites/regalo-palla-cyberpunk.png'), grid: 16 },
+  "regalo-palla-fantasy": { source: require('../../../../assets/sprites/regalo-palla-fantasy.png'), grid: 16 },
+  "regalo-palla-lovecraft": { source: require('../../../../assets/sprites/regalo-palla-lovecraft.png'), grid: 16 },
 } as const satisfies Readonly<
   Record<string, { readonly source: ImageSourcePropType; readonly grid: number }>
 >;

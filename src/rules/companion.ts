@@ -1,7 +1,8 @@
 import { COMPANION, MOOD } from './config';
 
 // The companion grows with the completions and shows a mood (analisi-funzionale.md,
-// «Regole di gioco», «Compagno», and section 6). Gifts are a later feature.
+// «Regole di gioco», «Compagno», and section 6). A gift raises the mood until the change of day
+// (US-COMP-04, task T86).
 
 /** Stages of the companion, as stored in `companion.stage`. */
 export const COMPANION_STAGES = ['egg', 'baby', 'adult'] as const;
@@ -91,8 +92,32 @@ export function moodWindowOf(lastDays: readonly DayCompletion[]): MoodWindow {
  *
  * @param lastDays The closed days, oldest first; only the last 3 not paused count.
  * @param todayDoneCount Completions done in the current open day (not yet closed).
+ * @param giftToday A gift was given to the companion in the current game day: one level up.
  */
-export function moodFor(lastDays: readonly DayCompletion[], todayDoneCount = 0): Mood {
+export function moodFor(
+  lastDays: readonly DayCompletion[],
+  todayDoneCount = 0,
+  giftToday = false,
+): Mood {
+  const mood = moodWithoutGift(lastDays, todayDoneCount);
+  return giftToday ? raisedMood(mood) : mood;
+}
+
+const MOOD_LEVELS: readonly Mood[] = ['sad', 'normal', 'happy'];
+
+/**
+ * The mood one level up, never above happy: a gift (US-COMP-04). Gifts of the same day never add
+ * up: one level a day, whatever their number (T86, provisional).
+ */
+export function raisedMood(mood: Mood): Mood {
+  const index = MOOD_LEVELS.indexOf(mood);
+  if (index < 0) {
+    throw new RangeError(`Unknown mood: ${mood}`);
+  }
+  return MOOD_LEVELS[Math.min(index + 1, MOOD_LEVELS.length - 1)] ?? 'happy';
+}
+
+function moodWithoutGift(lastDays: readonly DayCompletion[], todayDoneCount: number): Mood {
   const { scheduled, done } = moodWindowOf(lastDays);
   if (todayDoneCount >= 1) {
     return 'happy';

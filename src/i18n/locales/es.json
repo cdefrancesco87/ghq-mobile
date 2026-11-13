@@ -1216,7 +1216,20 @@
     "moodShare": "En los últimos {{days}} días completaste {{done}} de {{scheduled}} {{termScheduled}} ({{percent}} %).",
     "moodNone": "No había nada previsto en los últimos {{days}} días.",
     "moodToday": "Hoy ya completaste algo: {{name}} está feliz.",
-    "moodSad": "Basta con completar algo hoy y volverá a estar feliz."
+    "moodSad": "Basta con completar algo hoy y volverá a estar feliz.",
+    "gift": {
+      "row": "Give a gift",
+      "rowHint": "Opens the gifts you own",
+      "title": "Give a gift",
+      "none": "You have no gifts.",
+      "buy": "Buy in the Shop",
+      "give": "Give",
+      "alreadyHappy": "Already overjoyed: the gift does not change the mood.",
+      "thanks": "Thank you, {{hero}}! But don't forget to take care of yourself. Complete today's quests!",
+      "raised": "Thanks to the gift, the mood is up until tomorrow.",
+      "given": "{{name}} received: {{gift}}",
+      "giftedToday": "Today's gift raised the mood until tomorrow."
+    }
   },
   "shop": {
     "title": "Tienda",
@@ -1308,6 +1321,21 @@
       "created": "Reward created: {{name}}",
       "saved": "Reward changed: {{name}}",
       "deleted": "Reward deleted: {{name}}"
+    },
+    "gifts": {
+      "title": "Gifts for your companion",
+      "names": {
+        "cookie": "Cookie",
+        "candy": "Candy",
+        "ball": "Ball"
+      },
+      "descriptions": {
+        "cookie": "A treat: the mood goes up until tomorrow.",
+        "candy": "A sweet: the mood goes up until tomorrow.",
+        "ball": "To play together: the mood goes up until tomorrow."
+      },
+      "give": "Give to {{name}}",
+      "eggNo": "The egg takes no gifts: wait for it to hatch."
     }
   },
   "statsScreen": {

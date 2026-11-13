@@ -4,7 +4,7 @@ import { COMPANION_STAGES } from '@/rules/companion';
 import { SHOP_ITEMS } from '@/content/shop';
 import { MISSION_TEMPLATES, TEMPLATE_CATEGORIES } from '@/content/templates';
 import { TITLE_KEYS, TITLE_THEMES } from '@/content/titles';
-import { HERO_LEVELS, SHOP, STATS } from '@/rules/config';
+import { GIFTS, HERO_LEVELS, SHOP, STATS } from '@/rules/config';
 import { frequencySchema } from '@/rules/frequency';
 import { DIFFICULTIES, STAT_KEYS } from '@/rules/types';
 
@@ -71,10 +71,13 @@ describe('mission templates', () => {
 });
 
 describe('shop', () => {
-  it('sells the potion and the shield at the prices of the configuration', () => {
+  it('sells the potion, the shield and the gifts at the prices of the configuration', () => {
     expect(SHOP_ITEMS).toEqual([
       { key: 'potion', group: 'helps', price: SHOP.potion.price, maxOwned: null },
       { key: 'shield', group: 'helps', price: SHOP.shield.price, maxOwned: SHOP.shield.maxOwned },
+      { key: 'cookie', group: 'gifts', price: GIFTS.prices.cookie, maxOwned: null },
+      { key: 'candy', group: 'gifts', price: GIFTS.prices.candy, maxOwned: null },
+      { key: 'ball', group: 'gifts', price: GIFTS.prices.ball, maxOwned: null },
     ]);
   });
 });

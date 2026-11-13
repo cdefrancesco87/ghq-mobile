@@ -1,9 +1,10 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { ITEM_KEYS, SHOP_ITEMS, type ItemKey, type ShopItem } from '../../content/shop';
+import type { CompanionStage } from '../../rules/companion';
 import { SHOP } from '../../rules/config';
 import { canUsePotion } from '../../rules/shop';
-import { inventory } from '../schema';
+import { companion, inventory } from '../schema';
 import type { Db } from '../types';
 import { appendEvent } from './events';
 import { changeHero, loadHero, type ActionClock } from './hero';
@@ -46,21 +47,33 @@ export interface ShopView {
   readonly hp: number;
   /** False at full hit points: «Usa» and «Usa subito» are off (choice 18). */
   readonly canUsePotion: boolean;
+  /** The helps: potion and shield. */
   readonly items: readonly ShopViewItem[];
+  /** The gifts for the companion (US-COMP-04, Could). */
+  readonly gifts: readonly ShopViewItem[];
+  /** For «Dona a Blob»: the stored name (null = default of the theme); the egg takes no gifts. */
+  readonly companion: { readonly stage: CompanionStage; readonly name: string | null };
+}
+
+function viewItems(db: Db, group: ShopItem['group']): ShopViewItem[] {
+  return SHOP_ITEMS.filter((item) => item.group === group).map(({ key, price, maxOwned }) => ({
+    key,
+    price,
+    maxOwned,
+    owned: owned(db, key),
+  }));
 }
 
 export function getShopView(db: Db): ShopView {
   const { coins, hp } = loadHero(db);
+  const pet = db.select().from(companion).get();
   return {
     coins,
     hp,
     canUsePotion: canUsePotion(hp),
-    items: SHOP_ITEMS.map(({ key, price, maxOwned }) => ({
-      key,
-      price,
-      maxOwned,
-      owned: owned(db, key),
-    })),
+    items: viewItems(db, 'helps'),
+    gifts: viewItems(db, 'gifts'),
+    companion: { stage: pet?.stage ?? 'egg', name: pet?.name ?? null },
   };
 }
 

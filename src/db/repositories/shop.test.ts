@@ -53,6 +53,19 @@ describe('buyItem', () => {
     expectHeroMatchesLog(db);
   });
 
+  it('sells the gifts for the companion, with no limit on the number owned', () => {
+    const db = newGame(['journal']);
+    adjustHero(db, { coins: 100 });
+    buyItem(db, 'cookie', NOW);
+    buyItem(db, 'cookie', NOW);
+    buyItem(db, 'ball', NOW);
+    expect(db.select().from(hero).get()?.coins).toBe(20);
+    expect([owned(db, 'cookie'), owned(db, 'ball')]).toEqual([2, 1]);
+    expect(() => buyItem(db, 'candy', NOW)).toThrow(RangeError);
+    expect(() => buyItem(db, 'cookie', NOW, { useNow: true })).toThrow(RangeError);
+    expectHeroMatchesLog(db);
+  });
+
   it('refuses a third shield', () => {
     const db = newGame(['journal']);
     adjustHero(db, { coins: 300 });
@@ -174,6 +187,12 @@ describe('getShopView', () => {
         { key: 'potion', price: 50, maxOwned: null, owned: 0 },
         { key: 'shield', price: 100, maxOwned: 2, owned: 1 },
       ],
+      gifts: [
+        { key: 'cookie', price: 20, maxOwned: null, owned: 0 },
+        { key: 'candy', price: 30, maxOwned: null, owned: 0 },
+        { key: 'ball', price: 40, maxOwned: null, owned: 0 },
+      ],
+      companion: { stage: 'egg', name: null },
     });
   });
 

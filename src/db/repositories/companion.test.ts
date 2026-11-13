@@ -1,14 +1,25 @@
 import { eq } from 'drizzle-orm';
 
-import { getCompanionView, renameCompanion } from '@/db/repositories/companion';
+import { getCompanionView, giveGift, renameCompanion } from '@/db/repositories/companion';
 import { completeMission } from '@/db/repositories/completion';
+import { appendEvent } from '@/db/repositories/events';
+import { changeHero } from '@/db/repositories/hero';
+import { buyItem, getShopView } from '@/db/repositories/shop';
 import { deleteMission } from '@/db/repositories/missions';
 import { getTodayView } from '@/db/repositories/todayView';
 import { companion, daySummaries, events } from '@/db/schema';
 import type { Db } from '@/db/types';
 import type { GameDay } from '@/rules/types';
 
-import { at, clockAt, expectHeroMatchesLog, FRIDAY, missionId, newGame } from '../../../test/game';
+import {
+  at,
+  clockAt,
+  expectHeroMatchesLog,
+  FRIDAY,
+  missionId,
+  newGame,
+  TZ,
+} from '../../../test/game';
 
 const NOW = clockAt(FRIDAY, 10);
 
@@ -26,6 +37,8 @@ describe('getCompanionView', () => {
       growth: { stageNumber: 1, stageCount: 3, done: 0, target: 1, left: 1 },
       moodWindow: { days: 3, scheduled: 0, done: 0, percent: null },
       doneToday: 0,
+      giftToday: false,
+      giftRaised: false,
     });
   });
 
@@ -39,6 +52,8 @@ describe('getCompanionView', () => {
       growth: { stageNumber: 2, stageCount: 3, done: 1, target: 150, left: 149 },
       moodWindow: { days: 3, scheduled: 0, done: 0, percent: null },
       doneToday: 1,
+      giftToday: false,
+      giftRaised: false,
     });
   });
 
@@ -117,6 +132,105 @@ describe('mood of the companion', () => {
       moodWindow: { percent: 11 },
       doneToday: 1,
     });
+  });
+});
+
+describe('gifts for the companion', () => {
+  const MONDAY = clockAt(FRIDAY + 3, 10);
+
+  /** A puppy with the given closed days before Monday 9 November, some coins and gifts bought. */
+  function sadPuppy() {
+    const db = newGame(['meditation']);
+    db.update(companion).set({ stage: 'baby', completionsTotal: 20 }).run();
+    [6, 7, 8].forEach((day) =>
+      db
+        .insert(daySummaries)
+        .values({
+          gameDay: `2026-11-0${day}` as GameDay,
+          scheduledCount: 3,
+          doneCount: 0,
+          scheduledXp: 0,
+          missedXp: 0,
+          hpLost: 0,
+          isRestDay: false,
+          fullDay: false,
+          planComplete: false,
+          shieldUsed: false,
+          closedAt: at(day + 1, 6),
+        })
+        .run(),
+    );
+    const change = changeHero(db, { coins: 100 }, at(9, 7));
+    appendEvent(db, {
+      type: 'day.closed',
+      occurredAt: at(9, 7),
+      tzOffset: TZ,
+      source: 'system',
+      gameDay: '2026-11-08',
+      deltas: change.deltas,
+    });
+    buyItem(db, 'cookie', MONDAY);
+    buyItem(db, 'ball', MONDAY);
+    return db;
+  }
+
+  it('gives a gift: one less in the inventory, the event, the mood one level up', () => {
+    const db = sadPuppy();
+    expect(getCompanionView(db, MONDAY)).toMatchObject({ mood: 'sad', giftToday: false });
+
+    expect(giveGift(db, 'cookie', MONDAY)).toEqual({ before: 'sad', after: 'normal' });
+    expect(getShopView(db).gifts.find((gift) => gift.key === 'cookie')?.owned).toBe(0);
+    const gifts = db.select().from(events).where(eq(events.type, 'companion.gift')).all();
+    expect(gifts).toHaveLength(1);
+    expect(gifts[0]).toMatchObject({
+      itemKey: 'cookie',
+      gameDay: '2026-11-09',
+      dXp: 0,
+      dCoins: 0,
+      dHp: 0,
+    });
+    expect(getCompanionView(db, MONDAY)).toMatchObject({
+      mood: 'normal',
+      giftToday: true,
+      giftRaised: true,
+    });
+    expect(getTodayView(db, MONDAY).companion.mood).toBe('normal');
+    expectHeroMatchesLog(db);
+  });
+
+  it('raises the mood one level a day, whatever the number of gifts', () => {
+    const db = sadPuppy();
+    giveGift(db, 'cookie', MONDAY);
+    expect(giveGift(db, 'ball', MONDAY)).toEqual({ before: 'normal', after: 'normal' });
+  });
+
+  it('keeps the mood up until the change of day, then it follows the last 3 days again', () => {
+    const db = sadPuppy();
+    giveGift(db, 'cookie', clockAt(FRIDAY + 3, 23));
+    // Still Monday's game day until 06:00 of Tuesday.
+    expect(getCompanionView(db, clockAt(FRIDAY + 4, 5)).mood).toBe('normal');
+    expect(getCompanionView(db, clockAt(FRIDAY + 4, 7))).toMatchObject({
+      giftToday: false,
+      giftRaised: false,
+    });
+  });
+
+  it('can be given to a happy companion, which cheers while the mood stays', () => {
+    const db = sadPuppy();
+    completeMission(db, { missionId: missionId(db, 'meditation'), source: 'app', ...MONDAY });
+    expect(giveGift(db, 'cookie', MONDAY)).toEqual({ before: 'happy', after: 'happy' });
+    expect(getCompanionView(db, MONDAY)).toMatchObject({ giftToday: true, giftRaised: false });
+    expectHeroMatchesLog(db);
+  });
+
+  it('refuses a gift not owned, an unknown gift and a gift to the egg', () => {
+    const db = sadPuppy();
+    expect(() => giveGift(db, 'candy', MONDAY)).toThrow(RangeError);
+    expect(() => giveGift(db, 'potion' as never, MONDAY)).toThrow(RangeError);
+    db.update(companion).set({ stage: 'egg' }).run();
+    expect(() => giveGift(db, 'cookie', MONDAY)).toThrow(RangeError);
+    expect(getShopView(db).gifts.find((gift) => gift.key === 'cookie')?.owned).toBe(1);
+    expect(db.select().from(events).where(eq(events.type, 'companion.gift')).all()).toEqual([]);
   });
 });
 

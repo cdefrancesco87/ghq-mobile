@@ -4,8 +4,11 @@ import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-librar
 import type { ComponentType } from 'react';
 
 import { completeMission } from '@/db/repositories/completion';
+import { appendEvent } from '@/db/repositories/events';
+import { changeHero } from '@/db/repositories/hero';
+import { buyItem } from '@/db/repositories/shop';
 import { setSetting } from '@/db/repositories/settings';
-import { companion, daySummaries, events } from '@/db/schema';
+import { companion, daySummaries, events, inventory } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
@@ -22,11 +25,13 @@ import Profile from '../../../app/(tabs)/profile';
 import Today from '../../../app/(tabs)/today';
 import CompanionRoute from '../../../app/companion';
 import Index from '../../../app/index';
-import { at, clockAt, FRIDAY, missionId, newGame } from '../../../test/game';
+import ShopRoute from '../../../app/shop';
+import { at, clockAt, FRIDAY, missionId, newGame, TZ } from '../../../test/game';
 
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
   companion: CompanionRoute,
+  shop: ShopRoute,
   '(tabs)/_layout': TabsLayoutRoute,
   '(tabs)/today': Today,
   '(tabs)/habits': Habits,
@@ -303,5 +308,128 @@ describe('Companion evolution', () => {
     await open(db, '/today');
     await screen.findByTestId('today-screen');
     expect(screen.queryByTestId('today-notice-grown')).toBeNull();
+  });
+});
+
+describe('Companion gifts', () => {
+  const NOON = clockAt(FRIDAY, 12);
+
+  /** A sad puppy (1 of 9 in the last 3 days) with the given gifts bought. */
+  function sadPuppyWith(...gifts: ('cookie' | 'candy' | 'ball')[]) {
+    const db = newGame(['meditation']);
+    db.update(companion).set({ stage: 'baby', completionsTotal: 20 }).run();
+    [3, 4, 5].forEach((day, index) =>
+      db
+        .insert(daySummaries)
+        .values({
+          gameDay: `2026-11-0${day}` as GameDay,
+          scheduledCount: 3,
+          doneCount: index === 1 ? 1 : 0,
+          scheduledXp: 0,
+          missedXp: 0,
+          hpLost: 0,
+          isRestDay: false,
+          fullDay: false,
+          planComplete: false,
+          shieldUsed: false,
+          closedAt: at(day + 1, 6),
+        })
+        .run(),
+    );
+    const change = changeHero(db, { coins: 200 }, at(FRIDAY, 8));
+    appendEvent(db, {
+      type: 'day.closed',
+      occurredAt: at(FRIDAY, 8),
+      tzOffset: TZ,
+      source: 'system',
+      gameDay: '2026-11-05',
+      deltas: change.deltas,
+    });
+    gifts.forEach((gift) => buyItem(db, gift, NOON));
+    return db;
+  }
+
+  const owned = (db: Db, key: string) =>
+    db.select().from(inventory).where(eq(inventory.itemKey, key)).get()?.quantity ?? 0;
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('gives a gift: the companion cheers, then thanks and the mood is up until tomorrow', async () => {
+    jest.useFakeTimers();
+    const db = sadPuppyWith('cookie', 'cookie');
+    setSetting(db, 'reduce_motion', 'off', at(FRIDAY, 9));
+    await open(db);
+    expect(text('companion-mood-word')).toBe('Triste');
+
+    await fireEvent.press(screen.getByTestId('companion-gift-open'));
+    expect(screen.getByTestId('companion-gift-cookie')).toHaveTextContent('Biscotto ×2', {
+      exact: false,
+    });
+    await fireEvent.press(screen.getByTestId('companion-gift-give-cookie'));
+    // A second tap while the sheet slides away gives nothing more.
+    await fireEvent.press(screen.getByTestId('companion-gift-give-cookie'));
+    expect(owned(db, 'cookie')).toBe(1);
+    expect(db.select().from(events).where(eq(events.type, 'companion.gift')).all()).toHaveLength(1);
+
+    expect(screen.getByTestId('companion-pet')).toHaveAccessibleName('Cloudy, cucciolo, esultante');
+    expect(screen.getByTestId('companion-gift-cheer', HIDDEN)).toBeOnTheScreen();
+    expect(text('companion-mood-word')).toBe('Normale');
+    expect(text('companion-mood-reason')).toBe(
+      'Negli ultimi 3 giorni hai completato 1 abitudine su 9 (11%). ' +
+        "Il regalo di oggi gli ha alzato l'umore fino a domani.",
+    );
+
+    await act(async () => jest.advanceTimersByTime(2000));
+    expect(screen.queryByTestId('companion-gift-cheer', HIDDEN)).toBeNull();
+    expect(screen.getByTestId('companion-pet')).toHaveAccessibleName('Cloudy, cucciolo, normale');
+    expect(screen.getByTestId('companion-bubble')).toHaveAccessibleName(
+      'Cloudy dice: Grazie, Claudio! Ma non dimenticarti di prenderti cura di te stesso. ' +
+        'Completa le missioni di oggi!',
+    );
+  });
+
+  it('with Riduci movimento keeps the happy face and one heart, without hops', async () => {
+    const db = sadPuppyWith('ball');
+    setSetting(db, 'reduce_motion', 'on', at(FRIDAY, 9));
+    await open(db);
+    await fireEvent.press(screen.getByTestId('companion-gift-open'));
+    await fireEvent.press(screen.getByTestId('companion-gift-give-ball'));
+    expect(screen.getByTestId('companion-pet')).toHaveAccessibleName('Cloudy, cucciolo, felice');
+    expect(
+      screen.getByTestId('companion-gift-cheer', HIDDEN).props.children as unknown[],
+    ).toHaveLength(1);
+  });
+
+  it('says when the companion is already happy, and still lets the gift be given', async () => {
+    const db = sadPuppyWith('candy');
+    completeMission(db, { missionId: missionId(db, 'meditation'), source: 'app', ...NOON });
+    await open(db);
+    await fireEvent.press(screen.getByTestId('companion-gift-open'));
+    expect(screen.getByTestId('companion-gift-happy')).toHaveTextContent(
+      "È già felicissimo: il regalo non cambia l'umore.",
+    );
+    await fireEvent.press(screen.getByTestId('companion-gift-give-candy'));
+    expect(owned(db, 'candy')).toBe(0);
+    expect(text('companion-mood-word')).toBe('Felice');
+  });
+
+  it('sends to the shop when there is no gift', async () => {
+    await open(sadPuppyWith());
+    await fireEvent.press(screen.getByTestId('companion-gift-open'));
+    expect(screen.getByTestId('companion-gift-none')).toHaveTextContent('Non hai regali.');
+    await fireEvent.press(screen.getByTestId('companion-gift-shop'));
+    expect(await screen.findByTestId('shop-screen')).toBeOnTheScreen();
+  });
+
+  it('has no gifts for the egg and in the Essential mode', async () => {
+    await open(newGame(['meditation']));
+    expect(screen.queryByTestId('companion-gift')).toBeNull();
+
+    const db = sadPuppyWith('cookie');
+    setSetting(db, 'game_mode', 'essential', at(FRIDAY, 9));
+    await open(db);
+    expect(screen.queryByTestId('companion-gift')).toBeNull();
   });
 });

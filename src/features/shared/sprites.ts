@@ -70,9 +70,15 @@ const OBJECT_FILES = {
   shield: 'scudo',
   coin: 'moneta',
   backpack: 'zaino',
+  cookie: 'regalo-biscotto',
+  candy: 'regalo-caramella',
+  ball: 'regalo-palla',
 } as const;
 
-/** The objects of the shop (esito-lotto4.md): 16×16 in the pixel themes, a line icon in Minimal. */
+/**
+ * The objects of the shop (esito-lotto4.md; the gifts from lotto 8): 16×16 in the pixel themes, a
+ * line icon in Minimal.
+ */
 export function objectSpriteKey(family: ThemeFamily, object: keyof typeof OBJECT_FILES): string {
   return `${OBJECT_FILES[object]}-${family}`;
 }

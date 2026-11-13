@@ -339,13 +339,24 @@ export function moodDaysBefore(db: Db, day: GameDay): DayCompletion[] {
     .reverse();
 }
 
+/** A gift was given to the companion on `day`: its mood is one level up until the next day. */
+export function giftGivenOn(db: Db, day: GameDay): boolean {
+  return (
+    db
+      .select({ id: events.id })
+      .from(events)
+      .where(and(eq(events.type, 'companion.gift'), eq(events.gameDay, day)))
+      .get() !== undefined
+  );
+}
+
 export function companionOn(db: Db, day: GameDay, doneCount: number): TodayView['companion'] {
   const lastDays = moodDaysBefore(db, day);
   const pet = db.select().from(companion).get();
   return {
     stage: pet?.stage ?? 'egg',
     name: pet?.name ?? null,
-    mood: moodFor(lastDays, doneCount),
+    mood: moodFor(lastDays, doneCount, giftGivenOn(db, day)),
   };
 }
 

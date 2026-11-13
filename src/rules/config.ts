@@ -140,6 +140,15 @@ export const SHOP = {
   shield: { price: 100, maxOwned: 2 },
 } as const;
 
+/**
+ * Gifts for the companion (US-COMP-04, design-sezioni.md 6.8; task T86, Could). PROVISIONAL (C13):
+ * the prices are not decided yet and xp-e-monete.md (section 2) has no proposal; they stay below
+ * the potion (50), the cheapest help, because a gift only raises the mood until tomorrow.
+ */
+export const GIFTS = {
+  prices: { cookie: 20, candy: 30, ball: 40 },
+} as const;
+
 /** The sizes of a personal reward (US-NEG-03), from the smallest. */
 export const REWARD_SIZES = ['small', 'medium', 'large', 'epic'] as const;
 

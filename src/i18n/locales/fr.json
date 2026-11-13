@@ -1216,7 +1216,20 @@
     "moodShare": "Ces {{days}} derniers jours, tu as réussi {{done}} {{termScheduled}} sur {{scheduled}} ({{percent}} %).",
     "moodNone": "Rien n'était prévu ces {{days}} derniers jours.",
     "moodToday": "Tu as déjà réussi quelque chose aujourd'hui : {{name}} est joyeux.",
-    "moodSad": "Une seule réussite aujourd'hui et il sera de nouveau joyeux."
+    "moodSad": "Une seule réussite aujourd'hui et il sera de nouveau joyeux.",
+    "gift": {
+      "row": "Give a gift",
+      "rowHint": "Opens the gifts you own",
+      "title": "Give a gift",
+      "none": "You have no gifts.",
+      "buy": "Buy in the Shop",
+      "give": "Give",
+      "alreadyHappy": "Already overjoyed: the gift does not change the mood.",
+      "thanks": "Thank you, {{hero}}! But don't forget to take care of yourself. Complete today's quests!",
+      "raised": "Thanks to the gift, the mood is up until tomorrow.",
+      "given": "{{name}} received: {{gift}}",
+      "giftedToday": "Today's gift raised the mood until tomorrow."
+    }
   },
   "shop": {
     "title": "Boutique",
@@ -1308,6 +1321,21 @@
       "created": "Reward created: {{name}}",
       "saved": "Reward changed: {{name}}",
       "deleted": "Reward deleted: {{name}}"
+    },
+    "gifts": {
+      "title": "Gifts for your companion",
+      "names": {
+        "cookie": "Cookie",
+        "candy": "Candy",
+        "ball": "Ball"
+      },
+      "descriptions": {
+        "cookie": "A treat: the mood goes up until tomorrow.",
+        "candy": "A sweet: the mood goes up until tomorrow.",
+        "ball": "To play together: the mood goes up until tomorrow."
+      },
+      "give": "Give to {{name}}",
+      "eggNo": "The egg takes no gifts: wait for it to hatch."
     }
   },
   "statsScreen": {
