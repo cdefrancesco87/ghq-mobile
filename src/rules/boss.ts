@@ -1,5 +1,5 @@
 import { roundXp } from './completion';
-import { BOSS, BOSS_EDIT, STARTER_QUEST_REWARD, STATS } from './config';
+import { BOSS, BOSS_EDIT, SHOP, STARTER_QUEST_REWARD, STATS } from './config';
 import { addDays, diffDays } from './gameDay';
 import { xpToNext } from './level';
 import {
@@ -105,6 +105,23 @@ export function victoryReward(steps: number, difficulty: Difficulty): VictoryRew
   }
   const xp = roundXp(steps * BOSS.victoryXpPerStep * BOSS.difficultyMultiplier[difficulty]);
   return { xp, coins: Math.floor(xp / BOSS.victoryXpPerCoin) };
+}
+
+/** The shield of a victory: one shield, or its coins when the hero already owns the most. */
+export interface VictoryShield {
+  readonly shield: number;
+  readonly coins: number;
+}
+
+/**
+ * The streak shield of a victory (analisi-funzionale.md, «Regole di gioco», decided on 12/11): one
+ * shield, or 100 coins instead when the hero already owns 2. The quest of the first launch too.
+ */
+export function victoryShield(shieldsOwned: number): VictoryShield {
+  assertNonNegativeInteger(shieldsOwned, 'Shields owned');
+  return shieldsOwned >= SHOP.shield.maxOwned
+    ? { shield: 0, coins: BOSS.victoryShieldCoins }
+    : { shield: BOSS.victoryShields, coins: 0 };
 }
 
 export interface BossPreview extends VictoryReward {

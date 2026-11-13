@@ -21,7 +21,16 @@ import { getBossView } from '@/db/repositories/bossView';
 import { getGoalsView } from '@/db/repositories/goalsView';
 import { appendEvent, type EventType } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
-import { appNotifications, boss, bossSteps, events, hero, heroStats, missions } from '@/db/schema';
+import {
+  appNotifications,
+  boss,
+  bossSteps,
+  events,
+  hero,
+  heroStats,
+  inventory,
+  missions,
+} from '@/db/schema';
 import type { Db } from '@/db/types';
 
 import { at, clockAt, expectHeroMatchesLog, missionId, newGame, TZ } from '../../../test/game';
@@ -64,6 +73,17 @@ function giveCoins(db: Db, coins: number): void {
     gameDay: '2026-11-05',
     deltas: change.deltas,
   });
+}
+
+function setShields(db: Db, quantity: number): void {
+  db.insert(inventory)
+    .values({ itemKey: 'shield', quantity })
+    .onConflictDoUpdate({ target: inventory.itemKey, set: { quantity } })
+    .run();
+}
+
+function shields(db: Db): number {
+  return db.select().from(inventory).where(eq(inventory.itemKey, 'shield')).get()?.quantity ?? 0;
 }
 
 function eventsOf(db: Db, type: EventType) {
@@ -234,6 +254,52 @@ describe('completeBossStep', () => {
     ).toBe(true);
     expectHeroMatchesLog(db);
   });
+
+  it.each([
+    { owned: 0, after: 1, coins: 9, payload: { shield: 1, shieldCoins: 0 } },
+    { owned: 1, after: 2, coins: 9, payload: { shield: 1, shieldCoins: 0 } },
+    { owned: 2, after: 2, coins: 109, payload: { shield: 0, shieldCoins: 100 } },
+  ])(
+    'gives a shield at the victory with $owned shields, or 100 coins with 2',
+    ({ owned, after, coins, payload }) => {
+      const db = newGame(['journal']);
+      setShields(db, owned);
+      const thesis = createBoss(db, THESIS, NOW);
+      const [first, second, third] = stepIds(db, thesis.id);
+      completeBossStep(db, first, NOW);
+      completeBossStep(db, second, NOW);
+      const victory = completeBossStep(db, third, NOW);
+      expect(victory.moments.map((event) => event.type)).toEqual(['boss.defeated']);
+      expect(victory.moments[0]).toMatchObject({ dXp: 45, dCoins: coins, payload });
+      expect(shields(db)).toBe(after);
+      expect(db.select().from(hero).get()).toMatchObject({ xpTotal: 45, coins });
+      // No event of its own: the shield is in the payload of the victory.
+      expect(eventsOf(db, 'item.bought')).toHaveLength(0);
+      expectHeroMatchesLog(db);
+    },
+  );
+
+  it.each([
+    { owned: 0, after: 1, coins: 50 },
+    { owned: 2, after: 2, coins: 150 },
+  ])(
+    'gives the shield for the quest of the first launch too, with $owned shields',
+    ({ owned, after, coins }) => {
+      const db = newGame(['journal']);
+      setShields(db, owned);
+      const [, second, third] = stepIds(db, starterQuest(db).id);
+      completeBossStep(db, second, NOW);
+      const victory = completeBossStep(db, third, NOW);
+      expect(victory.moments.map((event) => event.type)).toEqual([
+        'boss.defeated',
+        'hero.level_up',
+      ]);
+      expect(victory.moments[0]).toMatchObject({ dXp: 200, dCoins: coins });
+      expect(victory.moments[0].payload).toMatchObject({ starter: true, shield: after - owned });
+      expect(shields(db)).toBe(after);
+      expectHeroMatchesLog(db);
+    },
+  );
 
   it('refuses a step already done or of a boss that is not active', () => {
     const db = newGame(['journal']);

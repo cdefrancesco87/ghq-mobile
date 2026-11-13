@@ -390,6 +390,48 @@ describe('MomentQueue', () => {
     expect(screen.getByText('+120 Esperienza · +24 Oro')).toBeTruthy();
   });
 
+  it('shows the shield of the victory with its sprite, «+1» and its flight', async () => {
+    const won = event('boss.defeated', 'shield', {
+      dXp: 120,
+      dCoins: 24,
+      payload: { shield: 1, shieldCoins: 0 },
+    });
+    await renderQueue([won], 'fantasy');
+    expect(screen.getByTestId('moment-shield-gained')).toBeTruthy();
+    expect(screen.getByText('Scudo +1')).toBeTruthy();
+    expect(screen.getByTestId('moment-shield-fly')).toBeTruthy();
+    expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
+      'Vittoria!. Più 120 Esperienza, più 24 Oro, più 1 scudo',
+    );
+  });
+
+  it('turns the shield into 100 coins with 2 shields already', async () => {
+    const won = event('boss.defeated', 'coins', {
+      dXp: 120,
+      dCoins: 124,
+      payload: { shield: 0, shieldCoins: 100 },
+    });
+    expect(momentsFromEvents([won])[0]).toMatchObject({
+      coins: 24,
+      shield: { kind: 'coins', coins: 100 },
+    });
+    setReduceMotion('on');
+    await renderQueue([won], 'fantasy');
+    expect(screen.getByText('+120 Esperienza · +24 Oro')).toBeTruthy();
+    expect(screen.getByText('Scudo: ne hai già 2, ricevi 100 oro')).toBeTruthy();
+    expect(screen.getByTestId('moment-shield-coins')).toBeTruthy();
+    expect(screen.queryByTestId('moment-shield-fly')).toBeNull();
+    expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
+      'Vittoria!. Più 120 Esperienza, più 24 Oro, più 100 oro al posto di 1 scudo, ne hai già 2',
+    );
+  });
+
+  it('shows no shield for a victory written before it existed', async () => {
+    await renderQueue([VICTORY], 'fantasy');
+    expect(screen.queryByTestId('moment-shield-gained')).toBeNull();
+    expect(screen.queryByTestId('moment-shield-coins')).toBeNull();
+  });
+
   it('counts nothing up with «Riduci movimento»', async () => {
     setReduceMotion('on');
     await renderQueue([VICTORY], 'fantasy');

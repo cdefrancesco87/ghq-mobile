@@ -15,6 +15,7 @@ import { SvgXml } from 'react-native-svg';
 import { TITLE_KEYS } from '@/content/titles';
 import { termInSentence } from '@/i18n/lexicon';
 import { companionName } from '@/rules/companion';
+import { SHOP } from '@/rules/config';
 import { useHeroStore } from '@/stores/hero';
 import { useTheme } from '@/theme/ThemeProvider';
 import { announceOnIos } from './announce';
@@ -22,7 +23,9 @@ import { useBadgeTexts } from './badgeTexts';
 import { Button } from './Button';
 import { CompanionSprite } from './CompanionSprite';
 import { iconXml, type IconName } from './icons';
-import type { Moment } from './moments';
+import type { Moment, VictoryShieldMoment } from './moments';
+import { Sprite } from './Sprite';
+import { objectSpriteKey } from './sprites';
 import { ThemedText } from './ThemedText';
 import { MIN_TOUCH } from './touch';
 
@@ -48,6 +51,15 @@ const EDGE = 16;
 const COUNT_MS = 800;
 const COUNT_STEPS = 20;
 
+/** The shield of a victory: its 16×16 sprite at 3× (design-sezioni.md 5.5). */
+const SHIELD_SPRITE_SIZE = 48;
+/** The sprite of a shield turned into coins is shown off. */
+const SHIELD_OFF_OPACITY = 0.4;
+/** The «+1» of the shield flies up once the reward has counted up. */
+const SHIELD_FLY_DELAY_MS = DETAIL_DELAY_MS + COUNT_MS;
+const SHIELD_FLY_MS = 700;
+const SHIELD_FLY_HEIGHT = 48;
+
 const CONFETTI_DELAY_MS = 1000;
 const CONFETTI_MS = 800;
 const CONFETTI_STAGGER_MS = 40;
@@ -60,6 +72,8 @@ interface MomentTexts {
   readonly detail?: string;
   /** What the screen reader says after the title, when it differs from the detail. */
   readonly spokenDetail?: string;
+  /** The line of the shield of a victory (design-sezioni.md 5.5). */
+  readonly shield?: string;
 }
 
 /**
@@ -94,6 +108,28 @@ function useCountUp(value: number, run: boolean): number {
 function useMomentTexts(moment: Moment): MomentTexts {
   const { t, i18n } = useTranslation();
   const { family } = useTheme();
+  const victoryShieldTexts = (shield: VictoryShieldMoment | undefined) => {
+    if (shield === undefined) {
+      return undefined;
+    }
+    const name = t('lexicon.shield', { context: family });
+    const values = {
+      shield: name,
+      shieldInSentence: termInSentence(name, i18n.language),
+      max: SHOP.shield.maxOwned,
+      coins: shield.coins,
+      coinsTerm: termInSentence(t('lexicon.coins_pl', { context: family }), i18n.language),
+    };
+    return shield.kind === 'gained'
+      ? {
+          shown: t('shared.moments.shieldGained', values),
+          spoken: t('shared.moments.shieldGainedLabel', values),
+        }
+      : {
+          shown: t('shared.moments.shieldCoins', values),
+          spoken: t('shared.moments.shieldCoinsLabel', values),
+        };
+  };
   const chosenName = useHeroStore((state) => state.companionName);
   const badgeTexts = useBadgeTexts();
   switch (moment.kind) {
@@ -117,10 +153,13 @@ function useMomentTexts(moment: Moment): MomentTexts {
         coins: moment.coins,
         coinsTerm: t('lexicon.coins_pl', { context: family }),
       };
+      const spokenReward = t('shared.moments.rewardLabel', values);
+      const shield = victoryShieldTexts(moment.shield);
       return {
         title: t('lexicon.victory', { context: family }),
         detail: t('shared.moments.reward', values),
-        spokenDetail: t('shared.moments.rewardLabel', values),
+        spokenDetail: shield === undefined ? spokenReward : `${spokenReward}, ${shield.spoken}`,
+        shield: shield?.shown,
       };
     }
     case 'hatch':
@@ -149,6 +188,56 @@ function useMomentTexts(moment: Moment): MomentTexts {
       };
     }
   }
+}
+
+/**
+ * The shield of a victory (design-sezioni.md 5.5): its sprite with the name and «+1», which flies
+ * up once the reward has counted up; with 2 shields already the sprite is off and the line says
+ * the coins given instead. With «Riduci movimento» the «+1» does not fly.
+ */
+function ShieldRow({
+  shield,
+  text,
+  reduceMotion,
+}: {
+  readonly shield: VictoryShieldMoment;
+  readonly text: string;
+  readonly reduceMotion: boolean;
+}) {
+  const { colors, family } = useTheme();
+  const fly = useSharedValue(0);
+  const gained = shield.kind === 'gained';
+  useEffect(() => {
+    if (gained && !reduceMotion) {
+      fly.set(withDelay(SHIELD_FLY_DELAY_MS, withTiming(1, { duration: SHIELD_FLY_MS })));
+    }
+  }, [fly, gained, reduceMotion]);
+  const flyStyle = useAnimatedStyle(() => ({
+    opacity: fly.get() === 0 ? 0 : 1 - fly.get(),
+    transform: [{ translateY: -SHIELD_FLY_HEIGHT * fly.get() }],
+  }));
+  return (
+    <View testID={`moment-shield-${shield.kind}`} style={styles.shieldRow}>
+      <View testID="moment-shield-sprite" style={gained ? null : { opacity: SHIELD_OFF_OPACITY }}>
+        <Sprite
+          spriteKey={objectSpriteKey(family, 'shield')}
+          size={SHIELD_SPRITE_SIZE}
+          label=""
+          ink={family === 'minimal' ? colors.text : undefined}
+        />
+      </View>
+      <ThemedText color={gained ? colors.text : colors.textMuted} style={styles.shieldText}>
+        {text}
+      </ThemedText>
+      {gained && !reduceMotion ? (
+        <Animated.View testID="moment-shield-fly" style={[styles.shieldFly, flyStyle]}>
+          <ThemedText variant="label" color={colors.coinsText}>
+            +1
+          </ThemedText>
+        </Animated.View>
+      ) : null}
+    </View>
+  );
 }
 
 /** A circle in every theme (mockup D35B, storyboard C2c); smaller for the starter quest (1.8). */
@@ -308,7 +397,7 @@ export function MomentScreen({ moment, reduceMotion, onSkip, onSeeTrophy }: Mome
   const victory = moment.kind === 'boss_defeated' ? moment : null;
   const xp = useCountUp(victory?.xp ?? 0, victory !== null && !reduceMotion);
   const coins = useCountUp(victory?.coins ?? 0, victory !== null && !reduceMotion);
-  const { title, detail: finalDetail, spokenDetail } = useMomentTexts(moment);
+  const { title, detail: finalDetail, spokenDetail, shield } = useMomentTexts(moment);
   // The reward on screen counts up; the screen reader hears the final values at once.
   const { detail } = useMomentTexts(victory === null ? moment : { ...victory, xp, coins });
   const spoken = spokenDetail ?? finalDetail;
@@ -391,10 +480,13 @@ export function MomentScreen({ moment, reduceMotion, onSkip, onSeeTrophy }: Mome
             {title}
           </ThemedText>
           {detail === undefined ? null : (
-            <Animated.View style={detailStyle}>
+            <Animated.View style={[styles.details, detailStyle]}>
               <ThemedText color={colors.textMuted} style={styles.centered}>
                 {detail}
               </ThemedText>
+              {victory?.shield === undefined || shield === undefined ? null : (
+                <ShieldRow shield={victory.shield} text={shield} reduceMotion={reduceMotion} />
+              )}
             </Animated.View>
           )}
         </Animated.View>
@@ -449,6 +541,10 @@ const styles = StyleSheet.create({
   },
   texts: { alignItems: 'center', gap: 8 },
   centered: { textAlign: 'center' },
+  details: { alignItems: 'center', gap: 12 },
+  shieldRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  shieldText: { flexShrink: 1 },
+  shieldFly: { position: 'absolute', right: 0, top: 0 },
   grow: { width: SPRITE_SIZE, height: SPRITE_SIZE },
   levelNumber: { fontSize: LEVEL_FONT_SIZE, lineHeight: LEVEL_FONT_SIZE * 1.2 },
   iconEmblem: {

@@ -12,6 +12,7 @@ import {
   starterQuestReward,
   stepStatPoints,
   victoryReward,
+  victoryShield,
   type BossHealth,
 } from '@/rules/boss';
 import type { Difficulty, StatKey } from '@/rules/types';
@@ -242,5 +243,21 @@ describe('daysTaken', () => {
     expect(daysTaken('2026-08-01', '2026-08-15')).toBe(14);
     expect(daysTaken('2026-08-01', '2026-08-02')).toBe(1);
     expect(daysTaken('2026-08-01', '2026-08-01')).toBe(1);
+  });
+});
+
+describe('victoryShield', () => {
+  it('gives a shield while the hero owns fewer than 2', () => {
+    expect(victoryShield(0)).toEqual({ shield: 1, coins: 0 });
+    expect(victoryShield(1)).toEqual({ shield: 1, coins: 0 });
+  });
+
+  it('gives 100 coins instead with 2 shields already', () => {
+    expect(victoryShield(2)).toEqual({ shield: 0, coins: 100 });
+  });
+
+  it('refuses a negative or fractional number of shields', () => {
+    expect(() => victoryShield(-1)).toThrow(RangeError);
+    expect(() => victoryShield(1.5)).toThrow(RangeError);
   });
 });

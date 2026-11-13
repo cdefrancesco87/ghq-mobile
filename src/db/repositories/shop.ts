@@ -11,11 +11,12 @@ import { changeHero, loadHero, type ActionClock } from './hero';
 // The shop and the inventory (analisi-funzionale.md, section 7; xp-e-monete.md, section 2).
 // The shield is used by the closing of the days, never by hand.
 
-function owned(tx: Db, itemKey: ItemKey): number {
+export function owned(tx: Db, itemKey: ItemKey): number {
   return tx.select().from(inventory).where(eq(inventory.itemKey, itemKey)).get()?.quantity ?? 0;
 }
 
-function addToInventory(tx: Db, itemKey: ItemKey, quantity: number): void {
+/** Adds (or, with a negative quantity, takes away) some of an item, inside a transaction. */
+export function addToInventory(tx: Db, itemKey: ItemKey, quantity: number): void {
   tx.insert(inventory)
     .values({ itemKey, quantity })
     .onConflictDoUpdate({

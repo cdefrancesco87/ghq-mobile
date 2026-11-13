@@ -173,6 +173,9 @@ describe('game configuration', () => {
       maxActive: 3,
       minSteps: 2,
       maxSteps: 20,
+      // «più uno scudo della serie (100 monete al suo posto se se ne hanno già 2)», 12/11.
+      victoryShields: 1,
+      victoryShieldCoins: 100,
     });
   });
 

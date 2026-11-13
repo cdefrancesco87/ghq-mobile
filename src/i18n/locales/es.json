@@ -558,7 +558,11 @@
       "hatchName": "Ponle un nombre",
       "hatchConfirm": "Confirmar",
       "badgeDetail": "{{name}} · +{{coins}} {{coinsTerm}}",
-      "badgeDetailLabel": "{{name}}, más {{coins}} {{coinsTerm}}"
+      "badgeDetailLabel": "{{name}}, más {{coins}} {{coinsTerm}}",
+      "shieldGained": "{{shield}} +1",
+      "shieldCoins": "{{shield}}: ya tienes {{max}}, recibes {{coins}} {{coinsTerm}}",
+      "shieldGainedLabel": "más 1 {{shieldInSentence}}",
+      "shieldCoinsLabel": "más {{coins}} {{coinsTerm}} en lugar de 1 {{shieldInSentence}}, ya tienes {{max}}"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {

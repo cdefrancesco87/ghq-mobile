@@ -11,6 +11,7 @@ import {
   starterQuestReward,
   stepStatPoints,
   victoryReward,
+  victoryShield,
 } from '../../rules/boss';
 import { BOSS, BOSS_EDIT } from '../../rules/config';
 import { isGameDay } from '../../rules/gameDay';
@@ -29,6 +30,7 @@ import { changeHero, loadHero, recordLevelUp, type ActionClock } from './hero';
 import { withMoments, type WithMoments } from './moments';
 import { getGeneralPause } from './pause';
 import { gameDayOf, getSetting, setSetting } from './settings';
+import { addToInventory, owned } from './shop';
 
 // The bosses (analisi-funzionale.md, section 5; modello-dati.md, 3.8): creation, steps, damage
 // from the completions, victory, archive and deadlines.
@@ -112,7 +114,7 @@ export function healBoss(tx: Db, bossId: string, points: number, now: number): v
 
 /**
  * Marks a step as done: 20 damage, 10 points to the stat of the boss if it has one, and the
- * victory with its reward when it was the last step.
+ * victory with its reward and a streak shield (or 100 coins) when it was the last step.
  */
 export function markStepDone(tx: Db, stepId: string, clock: ActionClock): StepResult {
   const step = tx.select().from(bossSteps).where(eq(bossSteps.id, stepId)).get();
@@ -155,7 +157,13 @@ export function markStepDone(tx: Db, stepId: string, clock: ActionClock): StepRe
       target.kind === 'starter'
         ? starterQuestReward(loadHero(tx))
         : victoryReward(steps, target.difficulty);
-    const change = changeHero(tx, { xp: reward.xp, coins: reward.coins }, clock.now);
+    // A streak shield too, or its coins with 2 already (decided on 12/11): the inventory changes
+    // here, with no event of its own; the payload of the victory says which.
+    const shield = victoryShield(owned(tx, 'shield'));
+    if (shield.shield > 0) {
+      addToInventory(tx, 'shield', shield.shield);
+    }
+    const change = changeHero(tx, { xp: reward.xp, coins: reward.coins + shield.coins }, clock.now);
     tx.update(boss)
       .set({ status: 'defeated', defeatedAt: clock.now, updatedAt: clock.now })
       .where(eq(boss.id, target.id))
@@ -165,7 +173,12 @@ export function markStepDone(tx: Db, stepId: string, clock: ActionClock): StepRe
       type: 'boss.defeated',
       deltas: change.deltas,
       // The victory of the quest of the first launch is a smaller moment (design 1.8).
-      payload: { steps, starter: target.kind === 'starter' },
+      payload: {
+        steps,
+        starter: target.kind === 'starter',
+        shield: shield.shield,
+        shieldCoins: shield.coins,
+      },
     });
     recordLevelUp(tx, change, clock);
   }

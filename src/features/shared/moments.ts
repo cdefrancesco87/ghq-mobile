@@ -5,6 +5,21 @@ import { titleIndex } from '@/rules/level';
 // The full-screen moments (design-sezioni.md A7) and their queue. The order of importance is that
 // of the list in A7; change it here.
 
+export interface VictoryShieldMoment {
+  readonly kind: 'gained' | 'coins';
+  /** The coins given instead of the shield; 0 when it is gained. */
+  readonly coins: number;
+}
+
+/** The shield of a `boss.defeated` payload, if it has one. */
+function victoryShieldOf(payload: unknown): VictoryShieldMoment | undefined {
+  const { shield, shieldCoins } = (payload ?? {}) as { shield?: number; shieldCoins?: number };
+  if (shield === undefined) {
+    return undefined;
+  }
+  return shield > 0 ? { kind: 'gained', coins: 0 } : { kind: 'coins', coins: shieldCoins ?? 0 };
+}
+
 export type Moment =
   | {
       readonly kind: 'level_up';
@@ -22,6 +37,12 @@ export type Moment =
       readonly coins: number;
       /** The quest of the first launch: a smaller victory than a boss (design 1.8). */
       readonly starter: boolean;
+      /**
+       * The streak shield of the victory (design-sezioni.md 5.5): gained, or turned into coins
+       * with 2 already. Missing for the victories written before it existed. `coins` above leaves
+       * these coins out.
+       */
+      readonly shield?: VictoryShieldMoment;
     }
   /** The egg hatches at the first completion, with the choice of the name (design 1.8, 6.5). */
   | { readonly kind: 'hatch'; readonly id: string }
@@ -56,15 +77,18 @@ function momentOf(event: EventRow): Moment | null {
         titleIndex: title > titleIndex(from) ? title : null,
       };
     }
-    case 'boss.defeated':
+    case 'boss.defeated': {
+      const shield = victoryShieldOf(payload);
       return {
         kind: 'boss_defeated',
         id,
         bossId: event.bossId,
         xp: event.dXp,
-        coins: event.dCoins,
+        coins: event.dCoins - (shield?.coins ?? 0),
         starter: (payload as { starter?: boolean }).starter === true,
+        ...(shield === undefined ? {} : { shield }),
       };
+    }
     case 'companion.stage_up': {
       const { to } = payload as { to: CompanionStage };
       return to === 'baby' ? { kind: 'hatch', id } : { kind: 'companion_stage', id, stage: to };

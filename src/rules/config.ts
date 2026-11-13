@@ -166,6 +166,10 @@ export const BOSS = {
   /** A boss has from minSteps to maxSteps steps. */
   minSteps: 2,
   maxSteps: 20,
+  /** Shields given by a victory, the quest of the first launch included (decided on 12/11). */
+  victoryShields: 1,
+  /** Coins given instead of the shield when the hero already owns `SHOP.shield.maxOwned`. */
+  victoryShieldCoins: 100,
 } as const;
 
 /**
