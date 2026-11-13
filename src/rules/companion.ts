@@ -45,18 +45,22 @@ export function stageFor(
   return COMPANION_STAGES.indexOf(byCount) > COMPANION_STAGES.indexOf(current) ? byCount : current;
 }
 
+/** The missions of the window of the mood, for the mood card (design-sezioni.md 6.3). */
+export interface MoodWindow {
+  /** Closed days the window looks at. */
+  readonly days: number;
+  readonly scheduled: number;
+  readonly done: number;
+  /** Share of the missions done, in percent rounded for the text; null when none was due. */
+  readonly percent: number | null;
+}
+
 /**
- * Mood from today's completions and the missions of the last 3 closed days (CLAUDE.md, choice 13):
- * happy if at least one mission is done today; otherwise happy above 70%, sad below 30%, normal in
- * between (borders included) and when no mission was due in the last 3 days.
+ * Sums the missions of the last 3 closed days, the window of the mood.
  *
  * @param lastDays The closed days, oldest first; only the last 3 count.
- * @param todayDoneCount Completions done in the current open day (not yet closed).
  */
-export function moodFor(lastDays: readonly DayCompletion[], todayDoneCount = 0): Mood {
-  if (todayDoneCount >= 1) {
-    return 'happy';
-  }
+export function moodWindowOf(lastDays: readonly DayCompletion[]): MoodWindow {
   let scheduled = 0;
   let done = 0;
   for (const day of lastDays.slice(-MOOD.windowDays)) {
@@ -67,6 +71,27 @@ export function moodFor(lastDays: readonly DayCompletion[], todayDoneCount = 0):
     }
     scheduled += day.scheduledCount;
     done += day.doneCount;
+  }
+  return {
+    days: MOOD.windowDays,
+    scheduled,
+    done,
+    percent: scheduled === 0 ? null : Math.round((done / scheduled) * 100),
+  };
+}
+
+/**
+ * Mood from today's completions and the missions of the last 3 closed days (CLAUDE.md, choice 13):
+ * happy if at least one mission is done today; otherwise happy above 70%, sad below 30%, normal in
+ * between (borders included) and when no mission was due in the last 3 days.
+ *
+ * @param lastDays The closed days, oldest first; only the last 3 count.
+ * @param todayDoneCount Completions done in the current open day (not yet closed).
+ */
+export function moodFor(lastDays: readonly DayCompletion[], todayDoneCount = 0): Mood {
+  const { scheduled, done } = moodWindowOf(lastDays);
+  if (todayDoneCount >= 1) {
+    return 'happy';
   }
   if (scheduled === 0) {
     return 'normal';

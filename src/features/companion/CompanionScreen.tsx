@@ -48,6 +48,7 @@ const JUMP_DOWN_MS = 180;
 /** Phrases of each group in the language files (`companion.lines.<group>.1…3`), used in turn. */
 const LINES_PER_GROUP = 3;
 const FIELD_HEIGHT = 56;
+const MOOD_SPRITE_SIZE = 48;
 
 export interface CompanionScreenProps {
   readonly view: CompanionView;
@@ -57,8 +58,9 @@ export interface CompanionScreenProps {
  * The companion sheet (design-sezioni.md 6.1, 6.2, 6.4, 6.7, 6.9, 6.12; mockup B8, D26): the
  * habitat of the theme with the companion at 6×, which jumps and speaks in a bubble when touched
  * (draft phrases, never about missed missions); the name with a pencil that turns it into a field
- * (up to 20 characters, Invio confirms); the stage; the growth bar with the missions still missing.
- * The mood card comes with T64.
+ * (up to 20 characters, Invio confirms); the stage; the growth bar with the missions still missing;
+ * the mood card with its word and why (6.3, mockup D26B): the share of the last 3 days, today's
+ * completion, and when sad how to make it happy again. The egg has no mood yet, so no card.
  */
 export function CompanionScreen({ view }: CompanionScreenProps) {
   const { t, i18n } = useTranslation();
@@ -75,7 +77,7 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
   const jump = useSharedValue(0);
   const jumping = useAnimatedStyle(() => ({ transform: [{ translateY: jump.get() }] }));
 
-  const { stage, mood, growth } = view;
+  const { stage, mood, growth, moodWindow, doneToday } = view;
   const themeDefault = t('lexicon.companion', { context: family });
   const name = companionName(view.name, themeDefault);
   const description = useCompanionDescription({ stage, mood, name });
@@ -130,6 +132,20 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
         : t('companion.left', { left: growth.left, term: term(growth.left) });
   const growthTitle = t(stage === 'egg' ? 'companion.hatch' : 'companion.growth');
   const barMax = growth.target ?? Math.max(growth.done, 1);
+  const moodReasons = [
+    doneToday > 0 ? t('companion.moodToday', { name }) : null,
+    moodWindow.percent === null
+      ? t('companion.moodNone', { days: moodWindow.days })
+      : t('companion.moodShare', {
+          days: moodWindow.days,
+          done: moodWindow.done,
+          scheduled: moodWindow.scheduled,
+          percent: moodWindow.percent,
+          termDone: term(moodWindow.done),
+          termScheduled: term(moodWindow.scheduled),
+        }),
+    mood === 'sad' ? t('companion.moodSad') : null,
+  ].filter((reason): reason is string => reason !== null);
 
   return (
     <View testID="companion-screen" style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -264,6 +280,26 @@ export function CompanionScreen({ view }: CompanionScreenProps) {
             </ThemedText>
           </View>
         </Card>
+        {stage === 'egg' ? null : (
+          <Card testID="companion-mood" style={styles.card}>
+            <View style={styles.moodRow}>
+              <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <CompanionSprite stage={stage} mood={mood} name={name} size={MOOD_SPRITE_SIZE} />
+              </View>
+              <View style={styles.moodTexts}>
+                <ThemedText variant="caption" color={colors.textMuted}>
+                  {t('companion.moodTitle')}
+                </ThemedText>
+                <ThemedText testID="companion-mood-word" variant="label">
+                  {t(`companion.mood.${mood}`)}
+                </ThemedText>
+                <ThemedText testID="companion-mood-reason" variant="body">
+                  {moodReasons.join(' ')}
+                </ThemedText>
+              </View>
+            </View>
+          </Card>
+        )}
       </ScrollView>
 
       <Pressable
@@ -303,6 +339,8 @@ const styles = StyleSheet.create({
   input: { minHeight: FIELD_HEIGHT, paddingHorizontal: 16, textAlign: 'center' },
   card: { marginHorizontal: 16, marginTop: 16 },
   cardContent: { gap: 12 },
+  moodRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  moodTexts: { flex: 1, gap: 4 },
   growthHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',

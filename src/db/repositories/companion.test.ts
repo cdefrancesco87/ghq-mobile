@@ -3,9 +3,12 @@ import { eq } from 'drizzle-orm';
 import { getCompanionView, renameCompanion } from '@/db/repositories/companion';
 import { completeMission } from '@/db/repositories/completion';
 import { deleteMission } from '@/db/repositories/missions';
-import { companion, events } from '@/db/schema';
+import { getTodayView } from '@/db/repositories/todayView';
+import { companion, daySummaries, events } from '@/db/schema';
+import type { Db } from '@/db/types';
+import type { GameDay } from '@/rules/types';
 
-import { clockAt, expectHeroMatchesLog, FRIDAY, missionId, newGame } from '../../../test/game';
+import { at, clockAt, expectHeroMatchesLog, FRIDAY, missionId, newGame } from '../../../test/game';
 
 const NOW = clockAt(FRIDAY, 10);
 
@@ -21,6 +24,8 @@ describe('getCompanionView', () => {
       name: null,
       mood: 'normal',
       growth: { stageNumber: 1, stageCount: 3, done: 0, target: 1, left: 1 },
+      moodWindow: { days: 3, scheduled: 0, done: 0, percent: null },
+      doneToday: 0,
     });
   });
 
@@ -32,6 +37,8 @@ describe('getCompanionView', () => {
       name: null,
       mood: 'happy',
       growth: { stageNumber: 2, stageCount: 3, done: 1, target: 150, left: 149 },
+      moodWindow: { days: 3, scheduled: 0, done: 0, percent: null },
+      doneToday: 1,
     });
   });
 
@@ -50,6 +57,91 @@ describe('getCompanionView', () => {
       stage: 'adult',
       growth: { stageNumber: 3, done: 160, target: null, left: 0 },
     });
+  });
+});
+
+describe('mood of the companion', () => {
+  function closedDay(db: Db, day: number, scheduledCount: number, doneCount: number) {
+    db.insert(daySummaries)
+      .values({
+        gameDay: `2026-11-${String(day).padStart(2, '0')}` as GameDay,
+        scheduledCount,
+        doneCount,
+        scheduledXp: 0,
+        missedXp: 0,
+        hpLost: 0,
+        isRestDay: false,
+        fullDay: scheduledCount === doneCount,
+        planComplete: false,
+        shieldUsed: false,
+        closedAt: at(day + 1, 6),
+      })
+      .run();
+  }
+
+  /** A puppy with the given closed days before Monday 9 November. */
+  function puppyWith(...days: [scheduled: number, done: number][]) {
+    const db = newGame(['meditation']);
+    db.update(companion).set({ stage: 'baby', completionsTotal: 20 }).run();
+    days.forEach(([scheduled, done], index) => closedDay(db, 6 + index, scheduled, done));
+    return db;
+  }
+
+  const MONDAY = clockAt(FRIDAY + 3, 10);
+
+  it('is happy above 70% of the last 3 days, with the share for the card', () => {
+    expect(getCompanionView(puppyWith([4, 3], [3, 3], [3, 2]), MONDAY)).toMatchObject({
+      mood: 'happy',
+      moodWindow: { days: 3, scheduled: 10, done: 8, percent: 80 },
+      doneToday: 0,
+    });
+  });
+
+  it('is normal between 30% and 70%', () => {
+    expect(getCompanionView(puppyWith([2, 1], [2, 1], [2, 1]), MONDAY)).toMatchObject({
+      mood: 'normal',
+      moodWindow: { scheduled: 6, done: 3, percent: 50 },
+    });
+  });
+
+  it('is sad below 30% and happy again after a completion today', () => {
+    const db = puppyWith([3, 0], [3, 1], [3, 0]);
+    expect(getCompanionView(db, MONDAY)).toMatchObject({
+      mood: 'sad',
+      moodWindow: { scheduled: 9, done: 1, percent: 11 },
+    });
+
+    completeMission(db, { missionId: missionId(db, 'meditation'), source: 'app', ...MONDAY });
+    expect(getCompanionView(db, MONDAY)).toMatchObject({
+      mood: 'happy',
+      moodWindow: { percent: 11 },
+      doneToday: 1,
+    });
+  });
+});
+
+describe('evolution of the companion', () => {
+  it('becomes an adult at the 150th completion, with the moment and the notice in Today', () => {
+    const db = newGame(['meditation']);
+    db.update(companion).set({ stage: 'baby', completionsTotal: 149 }).run();
+    expect(getCompanionView(db, NOW).growth).toMatchObject({ done: 149, target: 150, left: 1 });
+
+    const result = completeMission(db, {
+      missionId: missionId(db, 'meditation'),
+      source: 'app',
+      ...NOW,
+    });
+
+    expect(result.moments.map((event) => [event.type, event.payload])).toEqual([
+      ['companion.stage_up', { from: 'baby', to: 'adult' }],
+    ]);
+    expect(getCompanionView(db, NOW)).toMatchObject({
+      stage: 'adult',
+      growth: { stageNumber: 3, done: 150, target: null, left: 0 },
+    });
+    expect(getTodayView(db, NOW).notices.companionGrewTo).toBe('adult');
+    // The notice stays for the day of the change only.
+    expect(getTodayView(db, clockAt(FRIDAY + 1, 10)).notices.companionGrewTo).toBeNull();
   });
 });
 

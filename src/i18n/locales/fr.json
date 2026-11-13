@@ -795,7 +795,8 @@
     "notices": {
       "shieldUsed": "Le bouclier a protégé ta série hier.",
       "resumed_one": "Pause terminée : « {{names}} » revient dès aujourd'hui.",
-      "resumed_other": "Pause terminée : {{names}} reviennent dès aujourd'hui."
+      "resumed_other": "Pause terminée : {{names}} reviennent dès aujourd'hui.",
+      "grownUp": "{{name}} est devenu adulte."
     },
     "rest": {
       "title": "Jour de repos",
@@ -1053,7 +1054,17 @@
         "2": "Ça fait plaisir de te voir, {{hero}}.",
         "3": "On fait une petite chose ensemble aujourd'hui ?"
       }
-    }
+    },
+    "moodTitle": "Humeur",
+    "mood": {
+      "happy": "Joyeux",
+      "normal": "Normal",
+      "sad": "Triste"
+    },
+    "moodShare": "Ces {{days}} derniers jours, tu as réussi {{done}} {{termScheduled}} sur {{scheduled}} ({{percent}} %).",
+    "moodNone": "Rien n'était prévu ces {{days}} derniers jours.",
+    "moodToday": "Tu as déjà réussi quelque chose aujourd'hui : {{name}} est joyeux.",
+    "moodSad": "Une seule réussite aujourd'hui et il sera de nouveau joyeux."
   },
   "shop": {
     "title": "Boutique",

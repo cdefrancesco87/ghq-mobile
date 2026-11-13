@@ -795,7 +795,8 @@
     "notices": {
       "shieldUsed": "The shield protected your streak yesterday.",
       "resumed_one": "Pause over: “{{names}}” is back from today.",
-      "resumed_other": "Pause over: {{names}} are back from today."
+      "resumed_other": "Pause over: {{names}} are back from today.",
+      "grownUp": "{{name}} is now an adult."
     },
     "rest": {
       "title": "Rest day",
@@ -1053,7 +1054,17 @@
         "2": "So nice to see you, {{hero}}.",
         "3": "Shall we do one small thing together today?"
       }
-    }
+    },
+    "moodTitle": "Mood",
+    "mood": {
+      "happy": "Happy",
+      "normal": "Normal",
+      "sad": "Sad"
+    },
+    "moodShare": "In the last {{days}} days you completed {{done}} of {{scheduled}} {{termScheduled}} ({{percent}}%).",
+    "moodNone": "Nothing was planned in the last {{days}} days.",
+    "moodToday": "You already completed something today: {{name}} is happy.",
+    "moodSad": "One completion today and it will be happy again."
   },
   "shop": {
     "title": "Shop",

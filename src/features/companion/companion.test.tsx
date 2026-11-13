@@ -5,11 +5,12 @@ import type { ComponentType } from 'react';
 
 import { completeMission } from '@/db/repositories/completion';
 import { setSetting } from '@/db/repositories/settings';
-import { companion, events } from '@/db/schema';
+import { companion, daySummaries, events } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
-import { startApp, useAppStore } from '@/stores/app';
+import type { GameDay } from '@/rules/types';
+import { runAction, startApp, useAppStore } from '@/stores/app';
 import { useHeroStore } from '@/stores/hero';
 import { useSettingsStore } from '@/stores/settings';
 import { useThemeStore } from '@/stores/theme';
@@ -189,5 +190,118 @@ describe('Companion sheet', () => {
 
     await fireEvent.press(screen.getByTestId('companion-bubble'));
     expect(screen.queryByTestId('companion-bubble')).toBeNull();
+  });
+});
+
+describe('Companion mood', () => {
+  /** A puppy with the closed days of 3, 4 and 5 November, before the Friday of the test. */
+  function puppyWith(...days: [scheduled: number, done: number][]) {
+    const db = newGame(['meditation']);
+    db.update(companion).set({ stage: 'baby', completionsTotal: 20 }).run();
+    days.forEach(([scheduledCount, doneCount], index) =>
+      db
+        .insert(daySummaries)
+        .values({
+          gameDay: `2026-11-0${3 + index}` as GameDay,
+          scheduledCount,
+          doneCount,
+          scheduledXp: 0,
+          missedXp: 0,
+          hpLost: 0,
+          isRestDay: false,
+          fullDay: false,
+          planComplete: false,
+          shieldUsed: false,
+          closedAt: at(4 + index, 6),
+        })
+        .run(),
+    );
+    return db;
+  }
+
+  it('has no mood card while it is an egg', async () => {
+    await open(newGame(['meditation']));
+    expect(screen.queryByTestId('companion-mood')).toBeNull();
+  });
+
+  it('is happy with the share of the last 3 days', async () => {
+    await open(puppyWith([4, 3], [3, 3], [3, 2]));
+    expect(text('companion-mood-word')).toBe('Felice');
+    expect(text('companion-mood-reason')).toBe(
+      'Negli ultimi 3 giorni hai completato 8 abitudini su 10 (80%).',
+    );
+    expect(screen.getByTestId('companion-pet')).toHaveAccessibleName('Cloudy, cucciolo, felice');
+  });
+
+  it('is normal between 30% and 70%', async () => {
+    await open(puppyWith([2, 1], [2, 1], [2, 1]));
+    expect(text('companion-mood-word')).toBe('Normale');
+    expect(text('companion-mood-reason')).toBe(
+      'Negli ultimi 3 giorni hai completato 3 abitudini su 6 (50%).',
+    );
+  });
+
+  it('says nothing was planned when the last 3 days had no missions', async () => {
+    await open(puppyWith());
+    expect(text('companion-mood-word')).toBe('Normale');
+    expect(text('companion-mood-reason')).toBe(
+      "Negli ultimi 3 giorni non c'era nulla in programma.",
+    );
+  });
+
+  it('is sad below 30%, tells how to cheer it up, and is happy again after a completion', async () => {
+    const db = puppyWith([3, 0], [3, 1], [3, 0]);
+    await open(db);
+    expect(text('companion-mood-word')).toBe('Triste');
+    expect(text('companion-mood-reason')).toBe(
+      'Negli ultimi 3 giorni hai completato 1 abitudine su 9 (11%). ' +
+        'Basta un completamento oggi e tornerà felice.',
+    );
+    expect(screen.getByTestId('companion-pet')).toHaveAccessibleName('Cloudy, cucciolo, triste');
+
+    await act(() =>
+      runAction((database, clock) =>
+        completeMission(database, {
+          missionId: missionId(database, 'meditation'),
+          ...clock,
+          source: 'app',
+        }),
+      ),
+    );
+    expect(text('companion-mood-word')).toBe('Felice');
+    expect(text('companion-mood-reason')).toBe(
+      'Oggi hai già completato qualcosa: Cloudy è felice. ' +
+        'Negli ultimi 3 giorni hai completato 1 abitudine su 9 (11%).',
+    );
+    expect(screen.getByTestId('companion-pet')).toHaveAccessibleName('Cloudy, cucciolo, felice');
+  });
+});
+
+describe('Companion evolution', () => {
+  it('becomes an adult at 150 completions, with the notice in Today that closes', async () => {
+    const db = newGame(['meditation', 'read_pages']);
+    db.update(companion).set({ stage: 'baby', completionsTotal: 149 }).run();
+    completeMission(db, {
+      missionId: missionId(db, 'meditation'),
+      source: 'app',
+      ...clockAt(FRIDAY, 10),
+    });
+    await open(db, '/today');
+
+    expect(await screen.findByText('Cloudy è diventato adulto.')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('today-notice-grown-close'));
+    expect(screen.queryByTestId('today-notice-grown')).toBeNull();
+  });
+
+  it('shows no notice in Today on the day of the hatching', async () => {
+    const db = newGame(['meditation', 'read_pages']);
+    completeMission(db, {
+      missionId: missionId(db, 'meditation'),
+      source: 'app',
+      ...clockAt(FRIDAY, 10),
+    });
+    await open(db, '/today');
+    await screen.findByTestId('today-screen');
+    expect(screen.queryByTestId('today-notice-grown')).toBeNull();
   });
 });

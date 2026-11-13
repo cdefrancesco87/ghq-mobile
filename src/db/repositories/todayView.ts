@@ -1,6 +1,13 @@
 import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
 
-import { COMPANION_STAGES, moodFor, type CompanionStage, type Mood } from '../../rules/companion';
+import {
+  COMPANION_STAGES,
+  moodFor,
+  type CompanionStage,
+  type DayCompletion,
+  type Mood,
+} from '../../rules/companion';
+import { MOOD } from '../../rules/config';
 import { completionDeltas } from '../../rules/completion';
 import { skipsLeft } from '../../rules/day';
 import { addDays, weekday } from '../../rules/gameDay';
@@ -274,15 +281,20 @@ function listOrder(a: TodayMission, b: TodayMission): number {
  * The companion on `day` with `doneCount` missions done that day: its mood follows choice 13 of
  * CLAUDE.md (a completion today, otherwise the last 3 closed days).
  */
-export function companionOn(db: Db, day: GameDay, doneCount: number): TodayView['companion'] {
-  const lastDays = db
+/** The last 3 closed days before `day`, oldest first: the window of the mood. */
+export function moodDaysBefore(db: Db, day: GameDay): DayCompletion[] {
+  return db
     .select({ scheduledCount: daySummaries.scheduledCount, doneCount: daySummaries.doneCount })
     .from(daySummaries)
     .where(lt(daySummaries.gameDay, day))
     .orderBy(desc(daySummaries.gameDay))
-    .limit(3)
+    .limit(MOOD.windowDays)
     .all()
     .reverse();
+}
+
+export function companionOn(db: Db, day: GameDay, doneCount: number): TodayView['companion'] {
+  const lastDays = moodDaysBefore(db, day);
   const pet = db.select().from(companion).get();
   return {
     stage: pet?.stage ?? 'egg',

@@ -1,21 +1,31 @@
 import { and, count, eq } from 'drizzle-orm';
 
-import { growthOf, storedCompanionName, type Growth } from '../../rules/companion';
+import {
+  growthOf,
+  moodWindowOf,
+  storedCompanionName,
+  type Growth,
+  type MoodWindow,
+} from '../../rules/companion';
 import { companion, missionDays, missions } from '../schema';
 import type { Db } from '../types';
 import { appendEvent, notDeleted } from './events';
 import type { ActionClock } from './hero';
 import { gameDayOf, getSetting } from './settings';
-import { companionOn, type TodayView } from './todayView';
+import { companionOn, moodDaysBefore, type TodayView } from './todayView';
 
 // The companion sheet (analisi-funzionale.md section 6, US-COMP-01, US-COMP-03; design-sezioni.md
 // 6.2, 6.7, 6.9): what it shows and the change of name.
 
 export interface CompanionView extends Readonly<TodayView['companion']> {
   readonly growth: Growth;
+  /** The missions of the last 3 closed days, for the mood card (design-sezioni.md 6.3). */
+  readonly moodWindow: MoodWindow;
+  /** Completions of the open day: one is enough to make the companion happy (choice 13). */
+  readonly doneToday: number;
 }
 
-/** The companion on the game day of `clock`: stage, stored name, mood and growth. */
+/** The companion on the game day of `clock`: stage, stored name, mood with its reason, growth. */
 export function getCompanionView(db: Db, clock: { now: number; tzOffset: number }): CompanionView {
   const day = gameDayOf(clock.now, clock.tzOffset, getSetting(db, 'day_change'));
   const doneToday =
@@ -29,7 +39,12 @@ export function getCompanionView(db: Db, clock: { now: number; tzOffset: number 
       .get()?.value ?? 0;
   const current = companionOn(db, day, doneToday);
   const total = db.select().from(companion).get()?.completionsTotal ?? 0;
-  return { ...current, growth: growthOf(current.stage, total) };
+  return {
+    ...current,
+    growth: growthOf(current.stage, total),
+    moodWindow: moodWindowOf(moodDaysBefore(db, day)),
+    doneToday,
+  };
 }
 
 /**

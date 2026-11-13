@@ -795,7 +795,8 @@
     "notices": {
       "shieldUsed": "Lo scudo ha protetto la tua serie ieri.",
       "resumed_one": "Pausa finita: «{{names}}» torna da oggi.",
-      "resumed_other": "Pausa finita: {{names}} tornano da oggi."
+      "resumed_other": "Pausa finita: {{names}} tornano da oggi.",
+      "grownUp": "{{name}} è diventato adulto."
     },
     "rest": {
       "title": "Giorno di riposo",
@@ -1053,7 +1054,17 @@
         "2": "Che bello vederti, {{hero}}.",
         "3": "Facciamo una piccola cosa insieme oggi?"
       }
-    }
+    },
+    "moodTitle": "Umore",
+    "mood": {
+      "happy": "Felice",
+      "normal": "Normale",
+      "sad": "Triste"
+    },
+    "moodShare": "Negli ultimi {{days}} giorni hai completato {{done}} {{termDone}} su {{scheduled}} ({{percent}}%).",
+    "moodNone": "Negli ultimi {{days}} giorni non c'era nulla in programma.",
+    "moodToday": "Oggi hai già completato qualcosa: {{name}} è felice.",
+    "moodSad": "Basta un completamento oggi e tornerà felice."
   },
   "shop": {
     "title": "Negozio",

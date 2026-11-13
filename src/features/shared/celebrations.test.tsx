@@ -363,6 +363,19 @@ describe('MomentQueue', () => {
     expect(screen.getByText('Ora è un adulto')).toBeTruthy();
   });
 
+  it('fades the puppy into the adult, only the adult with «Riduci movimento»', async () => {
+    await renderQueue([STAGE_UP]);
+    expect(screen.getByTestId('moment-grow-from')).toBeTruthy();
+    expect(screen.getByTestId('moment-grow-to')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('moment-continue'));
+
+    setReduceMotion('on');
+    await renderQueue([STAGE_UP]);
+    expect(screen.getByText('Cloudy è cresciuto!')).toBeTruthy();
+    expect(screen.queryByTestId('moment-grow-from')).toBeNull();
+    expect(screen.getByTestId('moment-grow-to')).toBeTruthy();
+  });
+
   it('writes the name chosen for the companion', async () => {
     useHeroStore.setState({ companionName: 'Fiocco' });
     await renderQueue([STAGE_UP]);

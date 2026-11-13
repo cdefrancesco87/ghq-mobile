@@ -795,7 +795,8 @@
     "notices": {
       "shieldUsed": "Der Schild hat gestern deine Serie geschützt.",
       "resumed_one": "Pause vorbei: „{{names}}“ ist ab heute zurück.",
-      "resumed_other": "Pause vorbei: {{names}} sind ab heute zurück."
+      "resumed_other": "Pause vorbei: {{names}} sind ab heute zurück.",
+      "grownUp": "{{name}} ist jetzt erwachsen."
     },
     "rest": {
       "title": "Ruhetag",
@@ -1053,7 +1054,17 @@
         "2": "Schön, dich zu sehen, {{hero}}.",
         "3": "Machen wir heute eine kleine Sache zusammen?"
       }
-    }
+    },
+    "moodTitle": "Stimmung",
+    "mood": {
+      "happy": "Glücklich",
+      "normal": "Normal",
+      "sad": "Traurig"
+    },
+    "moodShare": "In den letzten {{days}} Tagen hast du {{done}} von {{scheduled}} {{termScheduled}} erledigt ({{percent}} %).",
+    "moodNone": "In den letzten {{days}} Tagen war nichts geplant.",
+    "moodToday": "Heute hast du schon etwas erledigt: {{name}} ist glücklich.",
+    "moodSad": "Ein Abschluss heute, und es ist wieder glücklich."
   },
   "shop": {
     "title": "Laden",

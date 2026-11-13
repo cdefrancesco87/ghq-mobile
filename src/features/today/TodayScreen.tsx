@@ -19,6 +19,7 @@ import { Icon } from '@/features/shared/Icon';
 import { useMomentQueue } from '@/features/shared/MomentQueue';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { hitSlopFor } from '@/features/shared/touch';
+import { companionName } from '@/rules/companion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { DayPlan } from './DayPlan';
 import { HeroCard } from './HeroCard';
@@ -31,6 +32,7 @@ import { useMissionMenu } from './useMissionMenu';
 
 const EMPTY_COMPANION_SIZE = 128;
 const CLOSE_ICON = 20;
+const NOTICE_COMPANION_SIZE = 32;
 
 export interface TodayScreenProps {
   readonly view: TodayView;
@@ -39,13 +41,13 @@ export interface TodayScreenProps {
 }
 
 /**
- * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the notices of the shield and of the
- * missions back from a pause (3.6), the hero
+ * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the notices of the shield, of the
+ * missions back from a pause (3.6) and of the companion grown up (6.6), the hero
  * card, the plan of the day, the bosses and the missions of today, or the empty states.
  */
 export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, family } = useTheme();
   const router = useRouter();
   const { top } = useSafeAreaInsets();
   // Bottom edge of the hero card in the scroll: past it the thin bar takes its place.
@@ -53,6 +55,7 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const [sticky, setSticky] = useState(false);
   const [shieldClosed, setShieldClosed] = useState(false);
   const [resumedClosed, setResumedClosed] = useState(false);
+  const [grownClosed, setGrownClosed] = useState(false);
   // The companion's tip goes away at the first completion or at a touch elsewhere (design 1.7).
   const [hintClosed, setHintClosed] = useState(false);
   const hint = view.companion.stage === 'egg' && !hintClosed;
@@ -130,6 +133,32 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
                 accessibilityRole="button"
                 accessibilityLabel={t('shared.close')}
                 onPress={() => setResumedClosed(true)}
+                hitSlop={hitSlopFor(CLOSE_ICON)}
+              >
+                <Icon name="chiudi" size={CLOSE_ICON} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
+        {view.notices.companionGrewTo === 'adult' && !grownClosed ? (
+          <Card testID="today-notice-grown">
+            <View style={styles.notice}>
+              <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <CompanionSprite stage="adult" mood="happy" size={NOTICE_COMPANION_SIZE} />
+              </View>
+              <ThemedText style={styles.flex}>
+                {t('today.notices.grownUp', {
+                  name: companionName(
+                    view.companion.name,
+                    t('lexicon.companion', { context: family }),
+                  ),
+                })}
+              </ThemedText>
+              <Pressable
+                testID="today-notice-grown-close"
+                accessibilityRole="button"
+                accessibilityLabel={t('shared.close')}
+                onPress={() => setGrownClosed(true)}
                 hitSlop={hitSlopFor(CLOSE_ICON)}
               >
                 <Icon name="chiudi" size={CLOSE_ICON} color={colors.textMuted} />

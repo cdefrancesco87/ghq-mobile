@@ -2,6 +2,7 @@ import {
   companionName,
   growthOf,
   moodFor,
+  moodWindowOf,
   stageFor,
   storedCompanionName,
   type CompanionStage,
@@ -82,6 +83,35 @@ describe('moodFor', () => {
     expect(() => moodFor(days([2, 3]))).toThrow(RangeError);
     expect(() => moodFor(days([-1, 0]))).toThrow(RangeError);
     expect(() => moodFor(days([3, 1.5]))).toThrow(RangeError);
+  });
+});
+
+describe('moodWindowOf', () => {
+  it('sums the missions of the last 3 closed days with the share in percent', () => {
+    expect(moodWindowOf(days([5, 0], [4, 1], [3, 1], [3, 0]))).toEqual({
+      days: 3,
+      scheduled: 10,
+      done: 2,
+      percent: 20,
+    });
+  });
+
+  it('rounds the percent for the text, while the mood uses the exact share', () => {
+    // 2 of 3 = 66.7%: shown as 67.
+    expect(moodWindowOf(days([3, 2])).percent).toBe(67);
+    // 29.6%: shown as 30, but still sad.
+    const window = days([250, 74]);
+    expect(moodWindowOf(window).percent).toBe(30);
+    expect(moodFor(window)).toBe('sad');
+  });
+
+  it('has no percent when no mission was due', () => {
+    expect(moodWindowOf([])).toEqual({ days: 3, scheduled: 0, done: 0, percent: null });
+    expect(moodWindowOf(days([0, 0], [0, 0])).percent).toBeNull();
+  });
+
+  it('rejects impossible days', () => {
+    expect(() => moodWindowOf(days([2, 3]))).toThrow(RangeError);
   });
 });
 

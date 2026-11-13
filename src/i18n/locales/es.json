@@ -795,7 +795,8 @@
     "notices": {
       "shieldUsed": "El escudo protegió tu racha ayer.",
       "resumed_one": "Pausa terminada: «{{names}}» vuelve desde hoy.",
-      "resumed_other": "Pausa terminada: {{names}} vuelven desde hoy."
+      "resumed_other": "Pausa terminada: {{names}} vuelven desde hoy.",
+      "grownUp": "{{name}} ya es adulto."
     },
     "rest": {
       "title": "Día de descanso",
@@ -1053,7 +1054,17 @@
         "2": "Qué alegría verte, {{hero}}.",
         "3": "¿Hacemos una cosita juntos hoy?"
       }
-    }
+    },
+    "moodTitle": "Ánimo",
+    "mood": {
+      "happy": "Feliz",
+      "normal": "Normal",
+      "sad": "Triste"
+    },
+    "moodShare": "En los últimos {{days}} días completaste {{done}} de {{scheduled}} {{termScheduled}} ({{percent}} %).",
+    "moodNone": "No había nada previsto en los últimos {{days}} días.",
+    "moodToday": "Hoy ya completaste algo: {{name}} está feliz.",
+    "moodSad": "Basta con completar algo hoy y volverá a estar feliz."
   },
   "shop": {
     "title": "Tienda",
