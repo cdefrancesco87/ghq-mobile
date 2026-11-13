@@ -1005,5 +1005,33 @@
     "empty_lovecraft": "Niente qui: guarda nell'Antiquario.",
     "empty_minimal": "Niente qui: guarda nel Negozio.",
     "emptyImage": "Zaino vuoto"
+  },
+  "statsScreen": {
+    "tabs": "Sezioni delle statistiche",
+    "overview": "Panoramica",
+    "log": "Registro",
+    "logSoon": "Il Registro arriverà presto.",
+    "record": "Record",
+    "recordUnit_one": "giorno di fila",
+    "recordUnit_other": "giorni di fila",
+    "streakChange": "+{{count}} rispetto alla settimana scorsa",
+    "week": "Questa settimana",
+    "weekChange": "+{{count}} {{term}}",
+    "rate": "Ultimi 30 giorni",
+    "percent": "{{rate}}%",
+    "noData": "nessun dato",
+    "rateChange": "+{{count}}% rispetto ai 30 giorni prima",
+    "tileLabel": "{{label}}: {{value}}. {{detail}}",
+    "tileLabel_short": "{{label}}: {{value}}",
+    "trends": "Andamento · {{term}}",
+    "period": "Periodo",
+    "periods": {
+      "week": "Settimana",
+      "month": "Mese",
+      "year": "Anno"
+    },
+    "trendsEmpty": "Completa qualche {{termOne}}: tra qualche giorno vedrai l'andamento.",
+    "trendLabel": "{{name}}, {{streak}}, {{rate}}% nel periodo. Tocca due volte per aprire il dettaglio",
+    "trendLabelNoRate": "{{name}}, {{streak}}, nessun dato nel periodo. Tocca due volte per aprire il dettaglio"
   }
 }

@@ -3,9 +3,10 @@ import { isScheduled, type Frequency } from './frequency';
 import { addDays, weekday, weekStartOf, type Weekday } from './gameDay';
 import type { GameDay } from './types';
 
-// The completion rate of a mission in the last 30 days, shown in Habits (design-sezioni.md 3.2).
-// The documents give no formula: skipped and paused days are excluded (backlog T46), and the rest
-// follows the day closing (src/rules/closeDays.ts).
+// The completion rate of a mission in the last 30 days, shown in Habits (design-sezioni.md 3.2),
+// and over the periods of Statistics (8.2, 8.4). The documents give no formula: skipped and
+// paused days are excluded (backlog T46), and the rest follows the day closing
+// (src/rules/closeDays.ts).
 
 /** Days of a pause: from `from` included to `until` excluded; `until` null is a pause still on. */
 export interface PauseSpan {
@@ -31,6 +32,16 @@ export interface RateInput {
   readonly pauses: readonly PauseSpan[];
   readonly restDays: readonly Weekday[];
   readonly weekStart: Weekday;
+  /** Game days of the window, `lastDay` included: `HABITS_LIST.rateWindowDays` by default. */
+  readonly windowDays?: number;
+  /** `lastDay` is over, so a day not done is a miss: a window of the past (Statistics). */
+  readonly lastDayClosed?: boolean;
+}
+
+/** The expected occurrences of a window and the ones done. */
+export interface RateCounts {
+  readonly expected: number;
+  readonly done: number;
 }
 
 /** The mission events that start and end a pause, in the order of the log. */
@@ -76,44 +87,75 @@ function isPaused(day: GameDay, pauses: readonly PauseSpan[]): boolean {
 
 /**
  * The share of the expected occurrences that were done, from 0 to 100 rounded down, or null when
- * nothing was expected yet. The window is the last 30 game days up to `lastDay`, from the day of
- * creation; `lastDay` is still open, so it counts only when done. A partial measurable mission
- * counts as not done.
+ * nothing was expected yet. The window is the last 30 game days up to `lastDay` (or
+ * `windowDays`), from the day of creation; `lastDay` is still open unless `lastDayClosed`, so it
+ * counts only when done. A partial measurable mission counts as not done.
  *
  * - Habits by day: the days of the frequency, without skipped, paused and rest days (a day done
  *   counts anyway).
  * - `times_per_week`: N per closed week, minus one for every skip and paused day (CLAUDE.md,
  *   choices 17 and 23), at most N completions counted. A week still open, or cut by the window or
  *   by the creation, is never missed: it counts only its completions (choice 16).
- * - Tasks: 100 when done, 0 when the due day has passed, otherwise null.
+ * - Tasks: 100 when done, 0 when the due day has passed, otherwise null, whatever the window.
  */
 export function completionRate(input: RateInput): number | null {
   const { mission, lastDay } = input;
-  const status = new Map(input.days.map((day) => [day.gameDay, day.status]));
   if (mission.kind === 'task') {
     if (input.days.some((day) => day.status === 'done' && day.gameDay <= lastDay)) {
       return 100;
     }
-    return mission.dueDay !== null && mission.dueDay < lastDay ? 0 : null;
+    return mission.dueDay !== null && isPast(mission.dueDay, input) ? 0 : null;
   }
-  const windowStart = addDays(lastDay, 1 - HABITS_LIST.rateWindowDays);
-  const first = mission.createdDay > windowStart ? mission.createdDay : windowStart;
-  if (first > lastDay || mission.frequency === null) {
-    return null;
-  }
-  const { expected, done } =
-    mission.frequency.type === 'times_per_week'
-      ? byWeek(input, mission.frequency.times, first, status)
-      : byDay(input, mission.frequency, first, status);
+  return rateOf(completionCounts(input));
+}
+
+/** `done ÷ expected` from 0 to 100 rounded down, or null when nothing was expected. */
+export function rateOf({ expected, done }: RateCounts): number | null {
   return expected === 0 ? null : Math.floor((done / expected) * 100);
 }
 
+/**
+ * The counts behind `completionRate`, which can be added up over many missions. A task counts
+ * only inside the window: done on a day of it (1 of 1), or due on a day of it that has passed and
+ * never done (0 of 1).
+ */
+export function completionCounts(input: RateInput): RateCounts {
+  const { mission, lastDay } = input;
+  const windowStart = addDays(lastDay, 1 - (input.windowDays ?? HABITS_LIST.rateWindowDays));
+  const first = mission.createdDay > windowStart ? mission.createdDay : windowStart;
+  if (mission.kind === 'task') {
+    const doneDays = input.days.filter((day) => day.status === 'done').map((day) => day.gameDay);
+    if (doneDays.some((day) => day >= windowStart && day <= lastDay)) {
+      return { expected: 1, done: 1 };
+    }
+    const missed =
+      doneDays.length === 0 &&
+      mission.dueDay !== null &&
+      mission.dueDay >= first &&
+      isPast(mission.dueDay, input);
+    return { expected: missed ? 1 : 0, done: 0 };
+  }
+  if (first > lastDay || mission.frequency === null) {
+    return { expected: 0, done: 0 };
+  }
+  const status = new Map(input.days.map((day) => [day.gameDay, day.status]));
+  return mission.frequency.type === 'times_per_week'
+    ? byWeek(input, mission.frequency.times, first, status)
+    : byDay(input, mission.frequency, first, status);
+}
+
+/** The day is over within the window: before `lastDay`, or `lastDay` itself when closed. */
+function isPast(day: GameDay, { lastDay, lastDayClosed = false }: RateInput): boolean {
+  return lastDayClosed ? day <= lastDay : day < lastDay;
+}
+
 function byDay(
-  { lastDay, pauses, restDays, weekStart }: RateInput,
+  input: RateInput,
   frequency: Frequency,
   first: GameDay,
   status: ReadonlyMap<GameDay, string>,
-) {
+): RateCounts {
+  const { lastDay, pauses, restDays, weekStart } = input;
   let expected = 0;
   let done = 0;
   for (let day = first; day <= lastDay; day = addDays(day, 1)) {
@@ -125,7 +167,7 @@ function byDay(
       expected++;
       done++;
     } else if (
-      day !== lastDay &&
+      isPast(day, input) &&
       state !== 'skipped' &&
       !restDays.includes(weekday(day)) &&
       !isPaused(day, pauses)
@@ -137,11 +179,12 @@ function byDay(
 }
 
 function byWeek(
-  { lastDay, pauses, weekStart }: RateInput,
+  input: RateInput,
   times: number,
   first: GameDay,
   status: ReadonlyMap<GameDay, string>,
-) {
+): RateCounts {
+  const { lastDay, pauses, weekStart } = input;
   let expected = 0;
   let done = 0;
   for (let week = weekStartOf(first, weekStart); week <= lastDay; week = addDays(week, 7)) {
@@ -163,7 +206,7 @@ function byWeek(
     const required = Math.max(0, times - excused);
     const counted = Math.min(completed, required);
     // Only a whole week that is over can be missed.
-    const whole = week >= first && weekEnd < lastDay;
+    const whole = week >= first && weekEnd <= lastDay && isPast(weekEnd, input);
     expected += whole ? required : counted;
     done += counted;
   }

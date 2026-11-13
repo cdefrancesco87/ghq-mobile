@@ -181,6 +181,19 @@ export const HABITS_LIST = {
   doneTaskVisibleDays: 7,
 } as const;
 
+/**
+ * Statistics, overview (design-sezioni.md 8.2, 8.4). PROVISIONAL (backlog T52): the documents do
+ * not say which days the periods cover; they are the last game days up to today, included.
+ */
+export const STATS_SCREEN = {
+  /** «Ultimi 30 giorni», compared with the 30 days before. */
+  rateWindowDays: 30,
+  /** The streak is compared with the one of this many days before. */
+  streakCompareDays: 7,
+  /** The mission trends, by period of the selector. */
+  periodDays: { week: 7, month: 30, year: 365 },
+} as const;
+
 /** How the reminders are scheduled in the system (stack-tecnologico.md, point 5). */
 export const REMINDERS = {
   /** Game days scheduled ahead, from today; they are scheduled again at every start. */

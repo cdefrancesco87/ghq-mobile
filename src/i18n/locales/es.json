@@ -1005,5 +1005,33 @@
     "empty_lovecraft": "Nada por aquí: echa un vistazo en el Anticuario.",
     "empty_minimal": "Nada por aquí: echa un vistazo en la Tienda.",
     "emptyImage": "Mochila vacía"
+  },
+  "statsScreen": {
+    "tabs": "Secciones de las estadísticas",
+    "overview": "Resumen",
+    "log": "Registro",
+    "logSoon": "El Registro llegará pronto.",
+    "record": "Récord",
+    "recordUnit_one": "día seguido",
+    "recordUnit_other": "días seguidos",
+    "streakChange": "+{{count}} respecto a la semana pasada",
+    "week": "Esta semana",
+    "weekChange": "+{{count}} {{term}}",
+    "rate": "Últimos 30 días",
+    "percent": "{{rate}} %",
+    "noData": "sin datos",
+    "rateChange": "+{{count}} % respecto a los 30 días anteriores",
+    "tileLabel": "{{label}}: {{value}}. {{detail}}",
+    "tileLabel_short": "{{label}}: {{value}}",
+    "trends": "Evolución · {{term}}",
+    "period": "Periodo",
+    "periods": {
+      "week": "Semana",
+      "month": "Mes",
+      "year": "Año"
+    },
+    "trendsEmpty": "Cuando completes {{term}}, en unos días verás la evolución.",
+    "trendLabel": "{{name}}, {{streak}}, {{rate}} % en el periodo. Toca dos veces para abrir el detalle",
+    "trendLabelNoRate": "{{name}}, {{streak}}, sin datos en el periodo. Toca dos veces para abrir el detalle"
   }
 }

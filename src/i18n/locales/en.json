@@ -1005,5 +1005,33 @@
     "empty_lovecraft": "Nothing here: have a look in the Curio Shop.",
     "empty_minimal": "Nothing here: have a look in the Shop.",
     "emptyImage": "Empty backpack"
+  },
+  "statsScreen": {
+    "tabs": "Statistics sections",
+    "overview": "Overview",
+    "log": "Log",
+    "logSoon": "The Log is coming soon.",
+    "record": "Record",
+    "recordUnit_one": "day in a row",
+    "recordUnit_other": "days in a row",
+    "streakChange": "+{{count}} since last week",
+    "week": "This week",
+    "weekChange": "+{{count}} {{term}}",
+    "rate": "Last 30 days",
+    "percent": "{{rate}}%",
+    "noData": "no data",
+    "rateChange": "+{{count}}% on the 30 days before",
+    "tileLabel": "{{label}}: {{value}}. {{detail}}",
+    "tileLabel_short": "{{label}}: {{value}}",
+    "trends": "Trend · {{term}}",
+    "period": "Period",
+    "periods": {
+      "week": "Week",
+      "month": "Month",
+      "year": "Year"
+    },
+    "trendsEmpty": "Complete a few {{term}}: in a few days you will see the trend.",
+    "trendLabel": "{{name}}, {{streak}}, {{rate}}% in the period. Double tap to open the details",
+    "trendLabelNoRate": "{{name}}, {{streak}}, no data in the period. Double tap to open the details"
   }
 }

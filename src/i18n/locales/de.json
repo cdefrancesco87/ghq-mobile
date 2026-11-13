@@ -1005,5 +1005,33 @@
     "empty_lovecraft": "Hier ist nichts: schau im Antiquariat.",
     "empty_minimal": "Hier ist nichts: schau im Laden.",
     "emptyImage": "Leerer Rucksack"
+  },
+  "statsScreen": {
+    "tabs": "Bereiche der Statistik",
+    "overview": "Übersicht",
+    "log": "Logbuch",
+    "logSoon": "Das Logbuch kommt bald.",
+    "record": "Rekord",
+    "recordUnit_one": "Tag in Folge",
+    "recordUnit_other": "Tage in Folge",
+    "streakChange": "+{{count}} gegenüber letzter Woche",
+    "week": "Diese Woche",
+    "weekChange": "+{{count}} {{term}}",
+    "rate": "Letzte 30 Tage",
+    "percent": "{{rate}} %",
+    "noData": "keine Daten",
+    "rateChange": "+{{count}} % gegenüber den 30 Tagen davor",
+    "tileLabel": "{{label}}: {{value}}. {{detail}}",
+    "tileLabel_short": "{{label}}: {{value}}",
+    "trends": "Verlauf · {{term}}",
+    "period": "Zeitraum",
+    "periods": {
+      "week": "Woche",
+      "month": "Monat",
+      "year": "Jahr"
+    },
+    "trendsEmpty": "Schließe ein paar {{term}} ab: in einigen Tagen siehst du den Verlauf.",
+    "trendLabel": "{{name}}, {{streak}}, {{rate}} % im Zeitraum. Doppelt tippen, um die Details zu öffnen",
+    "trendLabelNoRate": "{{name}}, {{streak}}, keine Daten im Zeitraum. Doppelt tippen, um die Details zu öffnen"
   }
 }

@@ -1005,5 +1005,33 @@
     "empty_lovecraft": "Rien ici : jette un œil chez l’Antiquaire.",
     "empty_minimal": "Rien ici : jette un œil à la Boutique.",
     "emptyImage": "Sac à dos vide"
+  },
+  "statsScreen": {
+    "tabs": "Sections des statistiques",
+    "overview": "Aperçu",
+    "log": "Journal",
+    "logSoon": "Le Journal arrive bientôt.",
+    "record": "Record",
+    "recordUnit_one": "jour d'affilée",
+    "recordUnit_other": "jours d'affilée",
+    "streakChange": "+{{count}} par rapport à la semaine dernière",
+    "week": "Cette semaine",
+    "weekChange": "+{{count}} {{term}}",
+    "rate": "30 derniers jours",
+    "percent": "{{rate}} %",
+    "noData": "aucune donnée",
+    "rateChange": "+{{count}} % par rapport aux 30 jours précédents",
+    "tileLabel": "{{label}} : {{value}}. {{detail}}",
+    "tileLabel_short": "{{label}} : {{value}}",
+    "trends": "Progression · {{term}}",
+    "period": "Période",
+    "periods": {
+      "week": "Semaine",
+      "month": "Mois",
+      "year": "Année"
+    },
+    "trendsEmpty": "Termine quelques {{term}} : dans quelques jours tu verras la progression.",
+    "trendLabel": "{{name}}, {{streak}}, {{rate}} % sur la période. Touche deux fois pour ouvrir le détail",
+    "trendLabelNoRate": "{{name}}, {{streak}}, aucune donnée sur la période. Touche deux fois pour ouvrir le détail"
   }
 }

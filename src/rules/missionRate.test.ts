@@ -1,5 +1,11 @@
 import { addDays } from './gameDay';
-import { completionRate, pauseSpans, type RateInput } from './missionRate';
+import {
+  completionCounts,
+  completionRate,
+  pauseSpans,
+  rateOf,
+  type RateInput,
+} from './missionRate';
 import type { GameDay } from './types';
 
 // Monday 2 November 2026 … Sunday 29 November 2026; Friday 27 is "today" in most tests.
@@ -219,6 +225,69 @@ describe('completionRate of a task', () => {
     expect(completionRate(task({}))).toBe(0);
     expect(completionRate(task({ dueDay: TODAY }))).toBeNull();
     expect(completionRate(task({ dueDay: null }))).toBeNull();
+  });
+});
+
+describe('completionCounts over other windows', () => {
+  it('takes the window length given', () => {
+    // The last 7 days: 6 closed and done, today open.
+    expect(completionCounts(daily({ windowDays: 7, days: before(TODAY, 6) }))).toEqual({
+      expected: 6,
+      done: 6,
+    });
+    expect(completionRate(daily({ windowDays: 365, days: before(TODAY, 29) }))).toBe(
+      // Created on 1 January: 330 closed days, today open.
+      Math.floor((29 / 330) * 100),
+    );
+  });
+
+  it('counts the last day as missed when it is closed', () => {
+    const lastDay = addDays(TODAY, -30);
+    expect(completionCounts(daily({ lastDay, days: before(lastDay, 29) }))).toEqual({
+      expected: 29,
+      done: 29,
+    });
+    expect(
+      completionCounts(daily({ lastDay, lastDayClosed: true, days: before(lastDay, 29) })),
+    ).toEqual({ expected: 30, done: 29 });
+  });
+
+  it('misses a week per N that ends on the closed last day', () => {
+    const mission = {
+      ...daily().mission,
+      frequency: { type: 'times_per_week', times: 3 },
+    } as const;
+    // Sunday 22 closes the week of Monday 16.
+    const input = daily({ mission, lastDay: '2026-11-22', windowDays: 7 });
+    expect(completionCounts(input)).toEqual({ expected: 0, done: 0 });
+    expect(completionCounts({ ...input, lastDayClosed: true })).toEqual({ expected: 3, done: 0 });
+  });
+
+  it('counts a task only inside the window', () => {
+    const task = (dueDay: GameDay | null, days: RateInput['days'] = []) =>
+      daily({
+        mission: { kind: 'task', frequency: null, dueDay, createdDay: '2026-11-01' },
+        windowDays: 7,
+        days,
+      });
+    expect(
+      completionCounts(task('2026-11-25', [{ gameDay: '2026-11-24', status: 'done' }])),
+    ).toEqual({ expected: 1, done: 1 });
+    // Done before the window: it belongs to another window.
+    expect(
+      completionCounts(task('2026-11-25', [{ gameDay: '2026-11-10', status: 'done' }])),
+    ).toEqual({ expected: 0, done: 0 });
+    // Due in the window and passed, never done.
+    expect(completionCounts(task('2026-11-25'))).toEqual({ expected: 1, done: 0 });
+    // Due before the window, today, or never.
+    expect(completionCounts(task('2026-11-12'))).toEqual({ expected: 0, done: 0 });
+    expect(completionCounts(task(TODAY))).toEqual({ expected: 0, done: 0 });
+    expect(completionCounts(task(null))).toEqual({ expected: 0, done: 0 });
+  });
+
+  it('turns counts into a rate rounded down', () => {
+    expect(rateOf({ expected: 3, done: 2 })).toBe(66);
+    expect(rateOf({ expected: 0, done: 0 })).toBeNull();
   });
 });
 
