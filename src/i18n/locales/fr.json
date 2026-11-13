@@ -1033,5 +1033,64 @@
     "trendsEmpty": "Termine quelques {{term}} : dans quelques jours tu verras la progression.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}} % sur la période. Touche deux fois pour ouvrir le détail",
     "trendLabelNoRate": "{{name}}, {{streak}}, aucune donnée sur la période. Touche deux fois pour ouvrir le détail"
+  },
+  "missionDetail": {
+    "title": "Évolution",
+    "gone": "Il n'y a plus rien à voir ici.",
+    "edit": "Modifier",
+    "editLabel": "Modifier {{name}}",
+    "weeksUnit_one": "semaine d'affilée",
+    "weeksUnit_other": "semaines d'affilée",
+    "rate": {
+      "week": "7 derniers jours",
+      "month": "30 derniers jours",
+      "year": "Dernière année"
+    },
+    "chart": {
+      "week": "Jour par jour",
+      "month": "Taux par semaine",
+      "year": "Taux par mois"
+    },
+    "values": {
+      "week": "Valeur de chaque jour",
+      "month": "Valeur de chaque jour",
+      "year": "Moyenne de chaque mois"
+    },
+    "marks": {
+      "done": "fait",
+      "missed": "manqué",
+      "skipped": "sauté",
+      "open": "à faire",
+      "off": "non prévu"
+    },
+    "weekOf": "semaine du {{day}}",
+    "columnValue": "{{label}} : {{value}}",
+    "chartSummary": "{{title}}. Du premier au dernier : de {{first}} à {{last}} ; minimum {{min}}, maximum {{max}}.",
+    "chartEmpty": "{{title}} : pas encore de données.",
+    "showTable": "Afficher les valeurs",
+    "hideTable": "Masquer les valeurs",
+    "amount": "{{value}} {{unit}}",
+    "units": {
+      "liter": "L",
+      "page": "pages",
+      "step": "pas",
+      "minute": "min"
+    },
+    "goal": "Objectif : {{target}}.",
+    "average": "Moyenne : {{value}} par jour · objectif {{target}}",
+    "historyTitle": "Historique",
+    "historyEmpty": "Rien ici pour l'instant : chaque réussite apparaîtra dans cette liste.",
+    "history": {
+      "completed": "Réussite",
+      "progressed": "Progression",
+      "skipped": "Saut",
+      "backfilled": "Réussite oubliée"
+    },
+    "progressed": "{{kind}} : {{value}}",
+    "xp": "+{{xp}} {{xpTerm}}",
+    "coins": "+{{coins}} {{coinsTerm}}",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "notes": "Notes"
   }
 }

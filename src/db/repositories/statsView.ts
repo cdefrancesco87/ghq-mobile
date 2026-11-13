@@ -1,8 +1,10 @@
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
 import { STATS_SCREEN } from '../../rules/config';
-import { addDays, diffDays, weekStartOf } from '../../rules/gameDay';
+import { addDays, weekStartOf } from '../../rules/gameDay';
+import type { DetailDay } from '../../rules/missionDetail';
 import {
+  archivedWindow,
   completionCounts,
   completionRate,
   pauseSpans,
@@ -64,33 +66,30 @@ const RATE_EVENTS: EventType[] = [
   'mission.deleted',
 ];
 
-const NO_COUNTS: RateCounts = { expected: 0, done: 0 };
-
-function add(a: RateCounts, b: RateCounts): RateCounts {
-  return { expected: a.expected + b.expected, done: a.done + b.done };
+/** What the rate of a mission needs, but the window; the days carry their values for the charts. */
+export interface MissionRateInput {
+  readonly mission: Mission;
+  /** The game day of the archive, for an archived mission. */
+  readonly archivedDay: GameDay | null;
+  readonly input: Omit<RateInput, 'lastDay' | 'days'> & { readonly days: readonly DetailDay[] };
 }
 
-/** The overview of Statistics, read in a few queries. */
-export function getStatsView(db: Db, clock: ActionClock): StatsView {
+/** The days, the pauses and the day of creation of the missions, read in two queries. */
+export function rateInputsOf(
+  db: Db,
+  rows: readonly Mission[],
+  tzOffset: number,
+): MissionRateInput[] {
   const dayChange = getSetting(db, 'day_change');
-  const today = gameDayOf(clock.now, clock.tzOffset, dayChange);
   const weekStart = getSetting(db, 'week_start');
   const restDays = getSetting(db, 'rest_days');
-  const hero = loadHero(db);
-  const heroDay = gameDayOf(hero.createdAt, clock.tzOffset, dayChange);
-
-  const rows = db
-    .select()
-    .from(missions)
-    .where(notDeleted(missions))
-    .orderBy(asc(missions.sortOrder))
-    .all();
   const ids = rows.map((row) => row.id);
   const days = db
     .select({
       missionId: missionDays.missionId,
       gameDay: missionDays.gameDay,
       status: missionDays.status,
+      value: missionDays.value,
     })
     .from(missionDays)
     .where(inArray(missionDays.missionId, ids))
@@ -107,38 +106,64 @@ export function getStatsView(db: Db, clock: ActionClock): StatsView {
     .orderBy(asc(events.seq))
     .all();
 
-  /** What the rate of a mission needs, but the window. */
-  const inputs = rows.map((mission) => {
+  return rows.map((mission) => {
     const ownLog = log.filter((event) => event.missionId === mission.id);
     const createdDay =
       ownLog.find((event) => event.type === 'mission.created')?.gameDay ??
-      gameDayOf(mission.createdAt, clock.tzOffset, dayChange);
+      gameDayOf(mission.createdAt, tzOffset, dayChange);
     const archivedDay =
       mission.status === 'archived' && mission.archivedAt !== null
-        ? gameDayOf(mission.archivedAt, clock.tzOffset, dayChange)
+        ? gameDayOf(mission.archivedAt, tzOffset, dayChange)
         : null;
-    const input: Omit<RateInput, 'lastDay'> = {
-      mission: { ...mission, createdDay },
-      days: days.filter((day) => day.missionId === mission.id),
-      pauses: pauseSpans(
-        ownLog.map((event): PauseEvent => ({
-          type: event.type,
-          gameDay: event.gameDay,
-          until: (event.payload.until as GameDay | null | undefined) ?? null,
-        })),
-      ),
-      restDays,
-      weekStart,
+    return {
+      mission,
+      archivedDay,
+      input: {
+        mission: { ...mission, createdDay },
+        days: days.filter((day) => day.missionId === mission.id),
+        pauses: pauseSpans(
+          ownLog.map((event): PauseEvent => ({
+            type: event.type,
+            gameDay: event.gameDay,
+            until: (event.payload.until as GameDay | null | undefined) ?? null,
+          })),
+        ),
+        restDays,
+        weekStart,
+      },
     };
-    return { mission, archivedDay, input };
   });
+}
+
+const NO_COUNTS: RateCounts = { expected: 0, done: 0 };
+
+function add(a: RateCounts, b: RateCounts): RateCounts {
+  return { expected: a.expected + b.expected, done: a.done + b.done };
+}
+
+/** The overview of Statistics, read in a few queries. */
+export function getStatsView(db: Db, clock: ActionClock): StatsView {
+  const dayChange = getSetting(db, 'day_change');
+  const today = gameDayOf(clock.now, clock.tzOffset, dayChange);
+  const weekStart = getSetting(db, 'week_start');
+  const hero = loadHero(db);
+  const heroDay = gameDayOf(hero.createdAt, clock.tzOffset, dayChange);
+
+  const rows = db
+    .select()
+    .from(missions)
+    .where(notDeleted(missions))
+    .orderBy(asc(missions.sortOrder))
+    .all();
+  const inputs = rateInputsOf(db, rows, clock.tzOffset);
+  const days = inputs.flatMap(({ input }) => input.days);
 
   /** All the missions together, over the 30 days ending on `lastDay`. */
   const totalRate = (lastDay: GameDay, lastDayClosed: boolean) => {
     let sum = NO_COUNTS;
     for (const { archivedDay, input } of inputs) {
       const window = { lastDay, lastDayClosed, windowDays: STATS_SCREEN.rateWindowDays };
-      sum = add(sum, completionCounts({ ...input, ...archivedCut(window, archivedDay) }));
+      sum = add(sum, completionCounts({ ...input, ...archivedWindow(window, archivedDay) }));
     }
     return rateOf(sum);
   };
@@ -181,27 +206,6 @@ export function getStatsView(db: Db, clock: ActionClock): StatsView {
     trends: Object.fromEntries(
       STATS_PERIODS.map((period) => [period, trendsFor(period)]),
     ) as Record<StatsPeriod, MissionTrend[]>,
-  };
-}
-
-interface RateWindow {
-  readonly lastDay: GameDay;
-  readonly lastDayClosed: boolean;
-  readonly windowDays: number;
-}
-
-/**
- * The same window ending on the day of the archive, still open like in Habits: an archived
- * mission is never missed after it. Archived before the window, the window is empty.
- */
-function archivedCut(window: RateWindow, archivedDay: GameDay | null): RateWindow {
-  if (archivedDay === null || archivedDay > window.lastDay) {
-    return window;
-  }
-  return {
-    lastDay: archivedDay,
-    lastDayClosed: false,
-    windowDays: window.windowDays - diffDays(archivedDay, window.lastDay),
   };
 }
 

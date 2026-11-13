@@ -1033,5 +1033,64 @@
     "trendsEmpty": "Schließe ein paar {{term}} ab: in einigen Tagen siehst du den Verlauf.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}} % im Zeitraum. Doppelt tippen, um die Details zu öffnen",
     "trendLabelNoRate": "{{name}}, {{streak}}, keine Daten im Zeitraum. Doppelt tippen, um die Details zu öffnen"
+  },
+  "missionDetail": {
+    "title": "Verlauf",
+    "gone": "Hier gibt es nichts mehr zu sehen.",
+    "edit": "Bearbeiten",
+    "editLabel": "{{name}} bearbeiten",
+    "weeksUnit_one": "Woche in Folge",
+    "weeksUnit_other": "Wochen in Folge",
+    "rate": {
+      "week": "Letzte 7 Tage",
+      "month": "Letzte 30 Tage",
+      "year": "Letztes Jahr"
+    },
+    "chart": {
+      "week": "Tag für Tag",
+      "month": "Quote pro Woche",
+      "year": "Quote pro Monat"
+    },
+    "values": {
+      "week": "Wert jedes Tages",
+      "month": "Wert jedes Tages",
+      "year": "Durchschnitt jedes Monats"
+    },
+    "marks": {
+      "done": "erledigt",
+      "missed": "verpasst",
+      "skipped": "übersprungen",
+      "open": "offen",
+      "off": "nicht geplant"
+    },
+    "weekOf": "Woche vom {{day}}",
+    "columnValue": "{{label}}: {{value}}",
+    "chartSummary": "{{title}}. Vom ersten zum letzten: {{first}} bis {{last}}; niedrigster {{min}}, höchster {{max}}.",
+    "chartEmpty": "{{title}}: noch keine Daten.",
+    "showTable": "Werte anzeigen",
+    "hideTable": "Werte ausblenden",
+    "amount": "{{value}} {{unit}}",
+    "units": {
+      "liter": "l",
+      "page": "Seiten",
+      "step": "Schritte",
+      "minute": "Min."
+    },
+    "goal": "Ziel: {{target}}.",
+    "average": "Durchschnitt: {{value}} pro Tag · Ziel {{target}}",
+    "historyTitle": "Verlauf",
+    "historyEmpty": "Noch nichts hier: Jede Erledigung erscheint in dieser Liste.",
+    "history": {
+      "completed": "Erledigt",
+      "progressed": "Fortschritt",
+      "skipped": "Übersprungen",
+      "backfilled": "Nachgetragen"
+    },
+    "progressed": "{{kind}}: {{value}}",
+    "xp": "+{{xp}} {{xpTerm}}",
+    "coins": "+{{coins}} {{coinsTerm}}",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "notes": "Notizen"
   }
 }

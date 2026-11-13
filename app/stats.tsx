@@ -1,18 +1,27 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { ScreenPlaceholder } from '@/features/shell/ScreenPlaceholder';
+import { MissionDetailScreen } from '@/features/stats/MissionDetailScreen';
 import { StatsScreen } from '@/features/stats/StatsScreen';
+import { useMissionDetail } from '@/features/stats/useMissionDetail';
 import { useStatsView } from '@/features/stats/useStatsView';
+import { useHeroStore } from '@/stores/hero';
 
 /**
  * Statistics, a route of the stack opened from the Profile and from the hero card in Today
- * (decision of 08/11). With `missionId` it is the detail of a mission, still a placeholder (T53).
+ * (decision of 08/11). With `missionId` it is the detail of a mission (design-sezioni.md 8.5).
  */
 export default function Stats() {
   const { missionId } = useLocalSearchParams<{ missionId?: string }>();
+  return missionId === undefined ? <Overview /> : <Detail missionId={missionId} />;
+}
+
+function Overview() {
   const view = useStatsView();
-  if (missionId !== undefined) {
-    return <ScreenPlaceholder titleKey="stats" />;
-  }
   return view === null ? null : <StatsScreen view={view} />;
+}
+
+function Detail({ missionId }: { readonly missionId: string }) {
+  const ready = useHeroStore((state) => state.hero !== null);
+  const detail = useMissionDetail(missionId);
+  return ready ? <MissionDetailScreen detail={detail} /> : null;
 }

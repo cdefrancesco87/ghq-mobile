@@ -1033,5 +1033,64 @@
     "trendsEmpty": "Complete a few {{term}}: in a few days you will see the trend.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}}% in the period. Double tap to open the details",
     "trendLabelNoRate": "{{name}}, {{streak}}, no data in the period. Double tap to open the details"
+  },
+  "missionDetail": {
+    "title": "Progress",
+    "gone": "There is nothing left to see here.",
+    "edit": "Edit",
+    "editLabel": "Edit {{name}}",
+    "weeksUnit_one": "week in a row",
+    "weeksUnit_other": "weeks in a row",
+    "rate": {
+      "week": "Last 7 days",
+      "month": "Last 30 days",
+      "year": "Last year"
+    },
+    "chart": {
+      "week": "Day by day",
+      "month": "Rate by week",
+      "year": "Rate by month"
+    },
+    "values": {
+      "week": "Value of each day",
+      "month": "Value of each day",
+      "year": "Average of each month"
+    },
+    "marks": {
+      "done": "done",
+      "missed": "missed",
+      "skipped": "skipped",
+      "open": "to do",
+      "off": "not expected"
+    },
+    "weekOf": "week of {{day}}",
+    "columnValue": "{{label}}: {{value}}",
+    "chartSummary": "{{title}}. From first to last: {{first}} to {{last}}; lowest {{min}}, highest {{max}}.",
+    "chartEmpty": "{{title}}: no data yet.",
+    "showTable": "Show the values",
+    "hideTable": "Hide the values",
+    "amount": "{{value}} {{unit}}",
+    "units": {
+      "liter": "L",
+      "page": "pages",
+      "step": "steps",
+      "minute": "min"
+    },
+    "goal": "Goal: {{target}}.",
+    "average": "Average: {{value}} a day · goal {{target}}",
+    "historyTitle": "History",
+    "historyEmpty": "Nothing here yet: every completion will show up in this list.",
+    "history": {
+      "completed": "Completion",
+      "progressed": "Progress",
+      "skipped": "Skip",
+      "backfilled": "Forgotten completion"
+    },
+    "progressed": "{{kind}}: {{value}}",
+    "xp": "+{{xp}} {{xpTerm}}",
+    "coins": "+{{coins}} {{coinsTerm}}",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "notes": "Notes"
   }
 }

@@ -1033,5 +1033,64 @@
     "trendsEmpty": "Cuando completes {{term}}, en unos días verás la evolución.",
     "trendLabel": "{{name}}, {{streak}}, {{rate}} % en el periodo. Toca dos veces para abrir el detalle",
     "trendLabelNoRate": "{{name}}, {{streak}}, sin datos en el periodo. Toca dos veces para abrir el detalle"
+  },
+  "missionDetail": {
+    "title": "Evolución",
+    "gone": "Aquí ya no hay nada que ver.",
+    "edit": "Editar",
+    "editLabel": "Editar {{name}}",
+    "weeksUnit_one": "semana seguida",
+    "weeksUnit_other": "semanas seguidas",
+    "rate": {
+      "week": "Últimos 7 días",
+      "month": "Últimos 30 días",
+      "year": "Último año"
+    },
+    "chart": {
+      "week": "Día a día",
+      "month": "Porcentaje por semana",
+      "year": "Porcentaje por mes"
+    },
+    "values": {
+      "week": "Valor de cada día",
+      "month": "Valor de cada día",
+      "year": "Media de cada mes"
+    },
+    "marks": {
+      "done": "hecho",
+      "missed": "fallado",
+      "skipped": "saltado",
+      "open": "por hacer",
+      "off": "no previsto"
+    },
+    "weekOf": "semana del {{day}}",
+    "columnValue": "{{label}}: {{value}}",
+    "chartSummary": "{{title}}. Del primero al último: de {{first}} a {{last}}; mínimo {{min}}, máximo {{max}}.",
+    "chartEmpty": "{{title}}: todavía no hay datos.",
+    "showTable": "Mostrar los valores",
+    "hideTable": "Ocultar los valores",
+    "amount": "{{value}} {{unit}}",
+    "units": {
+      "liter": "L",
+      "page": "páginas",
+      "step": "pasos",
+      "minute": "min"
+    },
+    "goal": "Objetivo: {{target}}.",
+    "average": "Media: {{value}} al día · objetivo {{target}}",
+    "historyTitle": "Historial",
+    "historyEmpty": "Todavía no hay nada: cada completado aparecerá en esta lista.",
+    "history": {
+      "completed": "Completado",
+      "progressed": "Avance",
+      "skipped": "Salto",
+      "backfilled": "Completado olvidado"
+    },
+    "progressed": "{{kind}}: {{value}}",
+    "xp": "+{{xp}} {{xpTerm}}",
+    "coins": "+{{coins}} {{coinsTerm}}",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "notes": "Notas"
   }
 }

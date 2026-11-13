@@ -1,6 +1,6 @@
 import { HABITS_LIST } from './config';
 import { isScheduled, type Frequency } from './frequency';
-import { addDays, weekday, weekStartOf, type Weekday } from './gameDay';
+import { addDays, diffDays, weekday, weekStartOf, type Weekday } from './gameDay';
 import type { GameDay } from './types';
 
 // The completion rate of a mission in the last 30 days, shown in Habits (design-sezioni.md 3.2),
@@ -81,8 +81,30 @@ export function pauseSpans(events: readonly PauseEvent[]): PauseSpan[] {
   return spans;
 }
 
-function isPaused(day: GameDay, pauses: readonly PauseSpan[]): boolean {
+export function isPaused(day: GameDay, pauses: readonly PauseSpan[]): boolean {
   return pauses.some((span) => day >= span.from && (span.until === null || day < span.until));
+}
+
+/** The window of a rate: `windowDays` game days ending on `lastDay`. */
+export interface RateWindow {
+  readonly lastDay: GameDay;
+  readonly lastDayClosed: boolean;
+  readonly windowDays: number;
+}
+
+/**
+ * The same window ending on the day of the archive, still open like in Habits: an archived
+ * mission is never missed after it. Archived before the window, the window is empty.
+ */
+export function archivedWindow(window: RateWindow, archivedDay: GameDay | null): RateWindow {
+  if (archivedDay === null || archivedDay > window.lastDay) {
+    return window;
+  }
+  return {
+    lastDay: archivedDay,
+    lastDayClosed: false,
+    windowDays: window.windowDays - diffDays(archivedDay, window.lastDay),
+  };
 }
 
 /**

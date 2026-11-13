@@ -194,6 +194,19 @@ export const STATS_SCREEN = {
   periodDays: { week: 7, month: 30, year: 365 },
 } as const;
 
+/**
+ * The detail of a mission (design-sezioni.md 8.5). PROVISIONAL (backlog T53): the documents do
+ * not say how many columns the charts have nor how long the history is.
+ */
+export const MISSION_DETAIL = {
+  /** Period Mese: the rate of the current week and of the weeks before it. */
+  monthWeeks: 5,
+  /** Period Anno: the rate of the current calendar month and of the months before it. */
+  yearMonths: 12,
+  /** The latest entries of the log shown in the history. */
+  historyMax: 20,
+} as const;
+
 /** How the reminders are scheduled in the system (stack-tecnologico.md, point 5). */
 export const REMINDERS = {
   /** Game days scheduled ahead, from today; they are scheduled again at every start. */

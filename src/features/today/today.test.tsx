@@ -8,7 +8,7 @@ import { archiveBoss, completeBossStep, createBoss } from '@/db/repositories/bos
 import { setDayPlan } from '@/db/repositories/completion';
 import { appendEvent } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
-import { createMission, deleteMission } from '@/db/repositories/missions';
+import { createMission, deleteMission, getMission } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
 import { buyItem } from '@/db/repositories/shop';
 import {
@@ -471,7 +471,8 @@ describe('Today: missions and completion', () => {
     await openToday(db);
 
     await fireEvent.press(screen.getByTestId(`${row(pages)}-body`));
-    expect(await screen.findByRole('header', { name: 'Statistiche' })).toBeOnTheScreen();
+    expect(await screen.findByTestId('mission-detail')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: getMission(db, pages)!.name })).toBeOnTheScreen();
   });
 
   it('opens the editor from the menu of the row', async () => {
