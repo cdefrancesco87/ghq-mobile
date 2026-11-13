@@ -252,7 +252,7 @@ describe('the Snooze action', () => {
     const name = db.select().from(missions).where(eq(missions.id, journal)).get()?.name;
     expect(scheduler.scheduled[0]).toMatchObject({
       title: name,
-      body: 'Il rito ti chiama.',
+      body: 'Il rito ti chiama.\n— Lumin',
       snoozeLabel: 'Tra 10 min',
     });
   });

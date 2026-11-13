@@ -17,17 +17,37 @@ const summaryWith = (left: number) =>
   ]);
 
 describe('notificationTexts', () => {
-  it('writes the reminder in the tone of each theme (design 11.2)', () => {
+  it('writes the reminder in the tone of each theme, signed by the companion (design 11.2)', () => {
     const body = (theme: string) => notificationTexts({ ...IT, theme }).reminderBody;
-    expect(body('arcade')).toBe('Stage pronto! Premi START.');
-    expect(body('fantasy')).toBe("L'impresa ti attende.");
-    expect(body('cyberpunk')).toBe('Contratto attivo, esegui.');
-    expect(body('lovecraft')).toBe('Il rito ti chiama.');
-    expect(body('minimal')).toBe("È l'ora che hai scelto.");
-    expect(body('minimal-scuro')).toBe("È l'ora che hai scelto.");
+    expect(body('arcade')).toBe('Stage pronto! Premi START.\n— Pixel');
+    expect(body('fantasy')).toBe("L'impresa ti attende.\n— Rocky");
+    expect(body('cyberpunk')).toBe('Contratto attivo, esegui.\n— Glitchy');
+    expect(body('lovecraft')).toBe('Il rito ti chiama.\n— Lumin');
+    expect(body('minimal')).toBe("È l'ora che hai scelto.\n— Cloudy");
+    expect(body('minimal-scuro')).toBe("È l'ora che hai scelto.\n— Cloudy");
     expect(notificationTexts({ ...IT, language: 'en', theme: 'fantasy' }).reminderBody).toBe(
-      'The quest awaits you.',
+      'The quest awaits you.\n— Rocky',
     );
+  });
+
+  it('signs with the name chosen for the companion, or the one of the theme (T80)', () => {
+    expect(notificationTexts(IT).sign('Ciao')).toBe('Ciao\n— Cloudy');
+    expect(notificationTexts({ ...IT, companionName: null }).sign('Ciao')).toBe('Ciao\n— Cloudy');
+    const chosen = notificationTexts({ ...IT, theme: 'arcade', companionName: 'Bit' });
+    expect(chosen.sign('Ciao')).toBe('Ciao\n— Bit');
+    expect(chosen.reminderBody).toBe('Stage pronto! Premi START.\n— Bit');
+    expect(chosen.sign('')).toBe('— Bit');
+  });
+
+  it('writes the check-in after 3 days with the name of the companion (design 11.6)', () => {
+    expect(notificationTexts(IT).recall).toEqual({
+      title: 'Cloudy ti aspetta',
+      body: 'Bastano due minuti per ripartire.',
+    });
+    expect(notificationTexts({ ...IT, language: 'en', companionName: 'Bit' }).recall).toEqual({
+      title: 'Bit is waiting for you',
+      body: 'Two minutes are enough to start again.',
+    });
   });
 
   it('labels the buttons Completa and «Tra 10 min»', () => {
@@ -38,7 +58,7 @@ describe('notificationTexts', () => {
   it('titles a group with the number and the term of the theme', () => {
     expect(notificationTexts(IT).group(['Medita', 'Leggi', 'Bevi'])).toEqual({
       title: '3 abitudini per adesso',
-      body: 'Medita, Leggi, Bevi',
+      body: 'Medita, Leggi, Bevi\n— Cloudy',
     });
     expect(notificationTexts({ ...IT, theme: 'fantasy' }).group(names(4)).title).toBe(
       '4 imprese per adesso',

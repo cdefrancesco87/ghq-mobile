@@ -78,7 +78,7 @@ describe('syncHealth', () => {
     const xp = first[0].result.completion?.xp;
     expect(sent[0].text).toEqual({
       title: 'Cammina',
-      body: `Obiettivo raggiunto: ${formatAmount(8000, 'step', 'it')} · +${xp} XP`,
+      body: `Obiettivo raggiunto: ${formatAmount(8000, 'step', 'it')} · +${xp} XP\n— Cloudy`,
     });
     expect(sent[0].fireAt).toBe(at(15));
   });

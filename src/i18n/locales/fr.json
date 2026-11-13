@@ -1563,6 +1563,7 @@
     "openSystemSettings": "Ouvrir les réglages du téléphone",
     "eveningSummary": "Bilan du soir",
     "eveningTime": "Heure du bilan du soir",
+    "recall": "Check-in after 3 days",
     "confirmTime": "Choisir {{time}}",
     "quietHours": "Ne pas déranger",
     "quietNone": "Aucun",
@@ -1779,6 +1780,11 @@
     "healthGoal": {
       "body": "Objectif atteint : {{target}}",
       "gain": "{{goal}} · +{{xp}} {{xpTerm}}"
+    },
+    "signature": "— {{name}}",
+    "recall": {
+      "title": "{{name}} is waiting for you",
+      "body": "Two minutes are enough to start again."
     }
   },
   "widgets": {

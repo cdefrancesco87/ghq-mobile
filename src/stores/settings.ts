@@ -43,6 +43,7 @@ const KEYS: readonly StoredKey[] = [
   'colorblind',
   'backup',
   'reminders_enabled',
+  'recall_enabled',
 ];
 
 function readAll(read: <K extends StoredKey>(key: K) => SettingValue<K>): AppSettings {

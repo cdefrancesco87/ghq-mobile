@@ -6,12 +6,14 @@ import type { Db } from '../../db/types';
 import { syncWidgets } from '../widgets/sync';
 import { systemWidgetHost } from '../widgets/system';
 import { syncEveningSummary } from './evening';
+import { syncRecall } from './recall';
 import { handleReminderAction, type ReminderOutcome } from './reminders';
 import { syncReminders } from './scheduler';
 import {
   notificationPermission,
   setUpNotifications,
   showConfirmation,
+  systemRecall,
   systemScheduler,
   systemSummary,
 } from './system';
@@ -47,6 +49,23 @@ export async function syncSystemReminders(db: Db, now = Date.now()): Promise<voi
     await syncEveningSummary(db, systemSummary, input);
   } catch {
     // Nothing to show: the reminders are aligned again at the next start or action.
+  }
+}
+
+/**
+ * Moves the check-in after 3 days (design 11.6) to 3 days from now, only with the permission
+ * granted. Call it when the app opens or comes back to the front and after a change of the
+ * settings, never from the background task: an action from a notification is not an opening.
+ * It never throws.
+ */
+export async function syncSystemRecall(db: Db, now = Date.now()): Promise<void> {
+  try {
+    if ((await notificationPermission()) !== 'granted') {
+      return;
+    }
+    await syncRecall(db, systemRecall, { now, tzOffset: tzOffsetAt(now) });
+  } catch {
+    // The check-in is scheduled again at the next opening.
   }
 }
 

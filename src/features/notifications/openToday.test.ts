@@ -31,12 +31,13 @@ describe('openTodayFrom (design 11.3, 11.5)', () => {
     expect(useHighlightStore.getState().missionId).toBe('m1');
   });
 
-  it('opens Today from a group and from the evening summary, without a highlight', () => {
+  it('opens Today from a group, the evening summary and the check-in, without a highlight', () => {
     expect(openTodayFrom(response('g1', { kind: 'group', missionIds: ['a', 'b', 'c'] }))).toBe(
       true,
     );
     expect(openTodayFrom(response('s1', { kind: 'summary' }))).toBe(true);
-    expect(router.navigate).toHaveBeenCalledTimes(2);
+    expect(openTodayFrom(response('recall', { kind: 'recall' }))).toBe(true);
+    expect(router.navigate).toHaveBeenCalledTimes(3);
     expect(useHighlightStore.getState().missionId).toBeNull();
   });
 

@@ -287,7 +287,7 @@ describe('syncReminders with reminders of the same minute (design 11.4)', () => 
     expect(first).toMatchObject({
       fireAt: at(7, 8),
       title: '3 abitudini per adesso',
-      body: 'Journal, Meal, Bed',
+      body: 'Journal, Meal, Bed\n— Cloudy',
     });
     expect(rows(db)).toHaveLength(18);
     expect(rows(db)[0].osId).toMatch(/^group-\d+#3#/);

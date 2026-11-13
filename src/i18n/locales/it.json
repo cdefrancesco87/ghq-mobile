@@ -1563,6 +1563,7 @@
     "openSystemSettings": "Apri le impostazioni del telefono",
     "eveningSummary": "Riepilogo serale",
     "eveningTime": "Orario del riepilogo serale",
+    "recall": "Richiamo dopo 3 giorni",
     "confirmTime": "Usa le {{time}}",
     "quietHours": "Non disturbare",
     "quietNone": "Nessuno",
@@ -1779,6 +1780,11 @@
     "healthGoal": {
       "body": "Obiettivo raggiunto: {{target}}",
       "gain": "{{goal}} · +{{xp}} {{xpTerm}}"
+    },
+    "signature": "— {{name}}",
+    "recall": {
+      "title": "{{name}} ti aspetta",
+      "body": "Bastano due minuti per ripartire."
     }
   },
   "widgets": {

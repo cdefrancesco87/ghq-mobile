@@ -20,6 +20,7 @@ import { useMomentQueue } from '@/features/shared/MomentQueue';
 import { useEssential } from '@/features/shared/useGameMode';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { systemScheduler, systemTimers } from '@/features/notifications/system';
+import { notificationTextsOf } from '@/features/notifications/texts';
 import { DAY_PLAN } from '@/rules/config';
 import { runAction } from '@/stores/app';
 import { useSettingsStore } from '@/stores/settings';
@@ -194,9 +195,13 @@ export function useMissionActions(): MissionActions {
       }
       return;
     }
-    let endsAt;
+    let started;
     try {
-      endsAt = runAction((db, clock) => startTimer(db, { missionId: mission.id, ...clock })).endsAt;
+      started = runAction((db, clock) => ({
+        endsAt: startTimer(db, { missionId: mission.id, ...clock }).endsAt,
+        // Signed by the companion, like the other notifications (design 11.2; T80).
+        sign: notificationTextsOf(db).sign,
+      }));
     } catch {
       tell(t('today.missions.errors.failed'));
       return;
@@ -206,8 +211,8 @@ export function useMissionActions(): MissionActions {
       .schedule({
         missionId: mission.id,
         title: t('today.timer.notificationTitle', { name: mission.name }),
-        body: t('today.timer.notificationBody'),
-        fireAt: endsAt,
+        body: started.sign(t('today.timer.notificationBody')),
+        fireAt: started.endsAt,
       })
       .catch(() => undefined);
   };

@@ -299,6 +299,18 @@ describe('Settings', () => {
     expect(text('settings-evening-time-value')).toBe('20:30');
   });
 
+  it('switches off and on «Richiamo dopo 3 giorni», on by default (design 10.6)', async () => {
+    const db = newGame(['meditation']);
+    await open(db);
+    expect(screen.getByText('Richiamo dopo 3 giorni')).toBeOnTheScreen();
+    expect(screen.getByTestId('settings-recall')).toHaveProp('value', true);
+    await fireEvent(screen.getByTestId('settings-recall'), 'valueChange', false);
+    expect(getSetting(db, 'recall_enabled')).toBe(false);
+    expect(screen.getByTestId('settings-recall')).toHaveProp('value', false);
+    await fireEvent(screen.getByTestId('settings-recall'), 'valueChange', true);
+    expect(getSetting(db, 'recall_enabled')).toBe(true);
+  });
+
   it('chooses «Riduci movimento» among Come il telefono, Sì and No', async () => {
     const db = newGame(['meditation']);
     await open(db);

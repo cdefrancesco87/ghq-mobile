@@ -12,6 +12,7 @@ import { onActionDone, useAppStore } from '@/stores/app';
 
 import { syncBossWarnings, type BossWarningText } from './bossWarnings';
 import { notificationPermission, systemBossWarnings } from './system';
+import { notificationTextsOf } from './texts';
 
 // The responses already handled: the one that started the app is also read at the start.
 const opened = new Set<string>();
@@ -22,11 +23,16 @@ async function syncSystemBossWarnings(db: Db, textOf: (target: Boss) => BossWarn
       return;
     }
     const now = Date.now();
+    // Signed by the companion, like the other notifications (design 11.2; T80).
+    const { sign } = notificationTextsOf(db);
     await syncBossWarnings(
       db,
       systemBossWarnings,
       { now, tzOffset: -new Date(now).getTimezoneOffset() },
-      textOf,
+      (target) => {
+        const text = textOf(target);
+        return { title: text.title, body: sign(text.body) };
+      },
     );
   } catch {
     // Nothing to show: the warnings are aligned again at the next start or action.

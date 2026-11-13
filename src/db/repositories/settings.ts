@@ -94,6 +94,8 @@ export const settingSchemas = {
   /** «Non disturbare» intervals; an interval can cross midnight (22:00–07:00). */
   quiet_hours: z.array(z.strictObject({ start: time, end: time })),
   evening_summary: z.strictObject({ enabled: z.boolean(), time }),
+  /** The check-in after 3 days without opening the app (design 10.6, 11.6): on by default. */
+  recall_enabled: z.boolean(),
   /** «Come il telefono», «Sì», «No». */
   reduce_motion: z.enum(['system', 'on', 'off']),
   /** The light vibration of the celebrations (design 10.7, A7): on by default. */
@@ -180,6 +182,7 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   general_pause: null,
   quiet_hours: [],
   evening_summary: { enabled: true, time: '21:00' },
+  recall_enabled: true,
   reduce_motion: 'system',
   vibrations: true,
   colorblind: false,

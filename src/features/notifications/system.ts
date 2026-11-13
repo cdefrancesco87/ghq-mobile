@@ -4,6 +4,7 @@ import { AndroidImportance } from 'expo-notifications';
 import { NOTIFICATIONS } from '../../rules/config';
 import { BOSS_WARNING_PREFIX, type BossWarningScheduler } from './bossWarnings';
 import type { SummaryScheduler } from './evening';
+import type { RecallScheduler } from './recall';
 import {
   ACTION_COMPLETE,
   ACTION_SNOOZE,
@@ -33,7 +34,7 @@ export const CATEGORY_REMINDER = 'reminder';
 export const CATEGORY_REMINDER_LAST = 'reminder_last';
 
 /** What a touch on a notification of this app opens: `kind` in its data. */
-export type NotificationKind = 'reminder' | 'group' | 'summary' | 'timer';
+export type NotificationKind = 'reminder' | 'group' | 'summary' | 'timer' | 'recall';
 
 /** The identifier of the notification at the end of the timer of a mission (T79). */
 export const TIMER_PREFIX = 'timer:';
@@ -122,6 +123,22 @@ export const systemSummary: SummaryScheduler = {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: request.fireAt,
         channelId: SUMMARY_CHANNEL,
+      },
+    });
+  },
+  cancel: (id) => Notifications.cancelScheduledNotificationAsync(id),
+};
+
+/** `RecallScheduler` on top of expo-notifications, on the Richiamo channel (design 11.1, 11.6). */
+export const systemRecall: RecallScheduler = {
+  schedule: async (request) => {
+    await Notifications.scheduleNotificationAsync({
+      identifier: request.id,
+      content: { title: request.title, body: request.body, data: { kind: 'recall' } },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: request.fireAt,
+        channelId: RECALL_CHANNEL,
       },
     });
   },

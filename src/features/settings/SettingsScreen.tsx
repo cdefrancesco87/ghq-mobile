@@ -365,6 +365,23 @@ export function SettingsScreen() {
       ),
     },
     {
+      key: 'recall',
+      group: 'notifications',
+      label: t('settings.recall'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-recall"
+          icon="compagno"
+          label={t('settings.recall')}
+          switchValue={settings.recall_enabled}
+          onSwitch={(enabled) =>
+            runAction((db, clock) => setSetting(db, 'recall_enabled', enabled, clock.now))
+          }
+          last={last}
+        />
+      ),
+    },
+    {
       key: 'quietHours',
       group: 'notifications',
       label: t('settings.quietHours'),

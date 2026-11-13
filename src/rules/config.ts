@@ -457,3 +457,9 @@ export const TIMER = {
   /** How often the countdown of Today is drawn again, in milliseconds. */
   tickMs: 1000,
 } as const;
+
+/** The single check-in after days without opening the app (design-sezioni.md 11.6; T80). */
+export const RECALL = {
+  /** It fires this many days after the last opening, at the same time of day. */
+  afterDays: 3,
+} as const;

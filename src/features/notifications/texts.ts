@@ -57,6 +57,16 @@ export interface NotificationTexts {
     readonly unit: string;
     readonly xp: number;
   }): NotificationText;
+  /**
+   * The check-in after 3 days without opening the app (design 11.6): «Cloudy ti aspetta» and a
+   * gentle line. The name of the companion is in the title, so the text is not signed.
+   */
+  readonly recall: NotificationText;
+  /**
+   * A text signed by the companion (design 11.2, 6.7; backlog T80): the text, then «— Cloudy» on
+   * its own line, with the name given to the companion or the one of the theme.
+   */
+  sign(body: string): string;
   readonly channels: Readonly<Record<Channel, string>>;
 }
 
@@ -100,14 +110,20 @@ export function notificationTexts(settings: TextSettings): NotificationTexts {
   const context = familyOf(settings.theme);
   const term = (key: string) => termInSentence(t(`lexicon.${key}`, { context }), language);
   const missions = (count: number) => term(count === 1 ? 'missions' : 'missions_pl');
+  const companion = companionName(
+    settings.companionName ?? null,
+    t('lexicon.companion', { context }),
+  );
+  const sign = (body: string) =>
+    `${body}${body === '' ? '' : '\n'}${t('notifications.signature', { name: companion })}`;
 
   return {
-    reminderBody: t('notifications.reminder.body', { context }),
+    reminderBody: sign(t('notifications.reminder.body', { context })),
     completeLabel: t('notifications.reminder.complete'),
     snoozeLabel: t('notifications.reminder.snooze'),
     group: (names) => ({
       title: t('notifications.group.title', { count: names.length, term: missions(names.length) }),
-      body: names.join(', '),
+      body: sign(names.join(', ')),
     }),
     evening: (summary, { day, done }) => {
       const gender = t('lexicon.missions_g', { context });
@@ -125,7 +141,7 @@ export function notificationTexts(settings: TextSettings): NotificationTexts {
         dailyVariant(taleVariants(language)(`tale.${voice}.${situation}`), day) ??
         `tale.${voice}.${situation}.1`;
       return {
-        title: companionName(settings.companionName ?? null, t('lexicon.companion', { context })),
+        title: companion,
         body: plainTale(
           t(key, {
             hero: settings.heroName,
@@ -155,12 +171,18 @@ export function notificationTexts(settings: TextSettings): NotificationTexts {
       });
       return {
         title: name,
-        body:
+        body: sign(
           settings.gameMode === 'essential' || xp <= 0
             ? goal
             : t('notifications.healthGoal.gain', { goal, xp, xpTerm: term('xp_pl') }),
+        ),
       };
     },
+    recall: {
+      title: t('notifications.recall.title', { name: companion }),
+      body: t('notifications.recall.body'),
+    },
+    sign,
     channels: Object.fromEntries(
       CHANNELS.map((channel) => [channel, t(`notifications.channels.${channel}`)]),
     ) as Record<Channel, string>,

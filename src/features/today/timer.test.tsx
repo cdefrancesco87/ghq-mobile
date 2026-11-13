@@ -149,7 +149,10 @@ describe('Today: the timer of a duration mission', () => {
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         identifier: `timer:${id}`,
-        content: expect.objectContaining({ title: `Tempo finito: ${name(db, id)}` }),
+        content: expect.objectContaining({
+          title: `Tempo finito: ${name(db, id)}`,
+          body: "Apri l'app per raccogliere la ricompensa.\n— Cloudy",
+        }),
         trigger: expect.objectContaining({ date: START + 10 * MINUTE }),
       }),
     );
