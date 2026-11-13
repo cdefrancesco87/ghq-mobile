@@ -1187,7 +1187,44 @@
     "empty_cyberpunk": "Nothing here: have a look in the Black Market.",
     "empty_lovecraft": "Nothing here: have a look in the Curio Shop.",
     "empty_minimal": "Nothing here: have a look in the Shop.",
-    "emptyImage": "Empty backpack"
+    "emptyImage": "Empty backpack",
+    "rewards": {
+      "title": "Your rewards",
+      "new": "New reward",
+      "example": "E.g. An episode of your show",
+      "sizes": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "epic": "Epic"
+      },
+      "kinds": {
+        "small": "small reward",
+        "medium": "medium reward",
+        "large": "large reward",
+        "epic": "epic reward"
+      },
+      "more": "More actions: {{name}}",
+      "edit": "Edit",
+      "delete": "Delete",
+      "createTitle": "New reward",
+      "editTitle": "Edit the reward",
+      "nameLabel": "Reward name",
+      "nameHint": "Up to {{max}} characters",
+      "sizeTitle": "Size",
+      "sizeChip": "{{size}} · {{price}}",
+      "sizeChipLabel": "{{size}}, {{count}} {{term}}",
+      "create": "Create",
+      "save": "Save",
+      "redeem": "Redeem for {{price}}",
+      "chip": "Enjoy!",
+      "enjoy": "Enjoy: {{name}}. You now have {{count}} {{term}}",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteMessage": "It disappears from here. Past redemptions stay in the Log.",
+      "created": "Reward created: {{name}}",
+      "saved": "Reward changed: {{name}}",
+      "deleted": "Reward deleted: {{name}}"
+    }
   },
   "statsScreen": {
     "tabs": "Statistics sections",

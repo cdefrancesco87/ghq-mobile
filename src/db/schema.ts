@@ -11,14 +11,14 @@ import {
 } from 'drizzle-orm/sqlite-core';
 
 import { COMPANION_STAGES } from '../rules/companion';
-import { DAY_PLAN, HP, SHOP } from '../rules/config';
+import { DAY_PLAN, HP, REWARD_SIZES, SHOP } from '../rules/config';
 import type { Frequency } from '../rules/frequency';
 import type { EventType } from './repositories/events';
 import { DIFFICULTIES, STAT_KEYS, type GameDay, type StatPoints } from '../rules/types';
 
 // The tables of the data model (modello-dati.md, sections 3 and 4). Names are snake_case in the
 // database and camelCase in TypeScript; instants are UTC milliseconds and game days are
-// `YYYY-MM-DD` text. The `rewards` table (Could) comes in a later version.
+// `YYYY-MM-DD` text.
 //
 // Some constraints repeat values of src/rules/config.ts: changing those values needs a new
 // migration (`npx drizzle-kit generate`).
@@ -266,6 +266,31 @@ export const inventory = sqliteTable(
       'inventory_shields_max',
       sql`${t.itemKey} <> 'shield' OR ${t.quantity} <= ${sql.raw(String(SHOP.shield.maxOwned))}`,
     ),
+  ],
+);
+
+/**
+ * Personal rewards (modello-dati.md 3.9, Should from 12/11): the price comes from the size, the
+ * redemptions are `reward.redeemed` events with the name and the price copied. Deleting a reward
+ * archives it, so the log keeps its history.
+ */
+export const rewards = sqliteTable(
+  'rewards',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    size: text('size', { enum: REWARD_SIZES }).notNull(),
+    createdAt: integer('created_at').notNull(),
+    archivedAt: integer('archived_at'),
+  },
+  (t) => [
+    check(
+      'rewards_size_known',
+      sql`${t.size} IN (${sql.raw(REWARD_SIZES.map((size) => `'${size}'`).join(', '))})`,
+    ),
+    index('rewards_active_idx')
+      .on(t.createdAt)
+      .where(sql`${t.archivedAt} IS NULL`),
   ],
 );
 

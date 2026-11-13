@@ -30,7 +30,7 @@ function checkNames(table: SQLiteTable): string[] {
 }
 
 describe('schema', () => {
-  it('has every table of the data model, without the rewards of a later version', () => {
+  it('has every table of the data model', () => {
     expect(tableNames()).toEqual(
       [
         'hero',
@@ -45,6 +45,7 @@ describe('schema', () => {
         'day_plan',
         'day_summaries',
         'inventory',
+        'rewards',
         'badges',
         'app_notifications',
         'scheduled_reminders',

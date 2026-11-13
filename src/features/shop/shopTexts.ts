@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { ItemKey } from '@/content/shop';
 import { termInSentence } from '@/i18n/lexicon';
 import { SHOP } from '@/rules/config';
+import type { RewardSize } from '@/rules/rewards';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /** The names and sentences of the shop in the lexicon of the theme (design-sezioni.md 7.3, 7.7). */
@@ -27,6 +28,18 @@ export function useShopTexts() {
     hpTerm,
     /** «Vita già al massimo» (mockup D28B): no article, which changes with the term of the theme. */
     hpFull: t('shop.hpFull', { hp: hpTerm }),
+    /** «Media», the size on the card and in the chips of the sheet. */
+    size: (size: RewardSize) => t(`shop.rewards.sizes.${size}`),
+    /** What the screen reader hears of a reward: «Pizza, ricompensa media, 250 monete» (7.6). */
+    rewardLabel: (reward: { name: string; size: RewardSize; price: number }, missing: number) =>
+      [
+        reward.name,
+        t(`shop.rewards.kinds.${reward.size}`),
+        t('shop.price', withCoins(reward.price)),
+        missing > 0 ? t('shop.missing', withCoins(missing)) : null,
+      ]
+        .filter((part) => part !== null)
+        .join(', '),
     name: (key: ItemKey) => t(`lexicon.${key}`, { context: family }),
     description: (key: ItemKey) =>
       key === 'potion'

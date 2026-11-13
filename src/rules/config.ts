@@ -132,6 +132,24 @@ export const SHOP = {
   shield: { price: 100, maxOwned: 2 },
 } as const;
 
+/** The sizes of a personal reward (US-NEG-03), from the smallest. */
+export const REWARD_SIZES = ['small', 'medium', 'large', 'epic'] as const;
+
+/**
+ * Personal rewards (US-NEG-03, design-sezioni.md 7.6): the price comes from the size (CLAUDE.md,
+ * choice 22) and is never typed by hand; no limit on their number.
+ */
+export const REWARDS = {
+  prices: { small: 100, medium: 250, large: 600, epic: 1500 },
+  /** The name of a reward, up to this many characters (7.6). */
+  nameMaxLength: 40,
+  /**
+   * PROVISIONAL (T92): the rewards read at a time; the next ones come while scrolling (Claudio,
+   * 12/11: no limit, a list loaded in pieces).
+   */
+  pageSize: 20,
+} as const;
+
 /** Multiplier of the victory reward, by boss difficulty. */
 const BOSS_DIFFICULTY_MULTIPLIER: Readonly<Record<Difficulty, number>> = {
   easy: 1,

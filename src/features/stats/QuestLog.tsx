@@ -149,6 +149,8 @@ export function QuestLog() {
       }
       case 'hero.level_up':
         return t('questLog.level', { term: lexicon('level'), level: entry.level ?? '' });
+      case 'reward.redeemed':
+        return entry.rewardName ?? t('questLog.titles.reward_redeemed');
       case 'bonus.full_day':
         return lexicon('fullDay');
       case 'bonus.plan':

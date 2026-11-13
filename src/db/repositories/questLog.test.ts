@@ -5,6 +5,7 @@ import { closePendingDays } from '@/db/repositories/closing';
 import { completeMission, skipMission } from '@/db/repositories/completion';
 import { deleteMission } from '@/db/repositories/missions';
 import { getQuestLog, type QuestLogEntry, type QuestLogView } from '@/db/repositories/questLog';
+import { createReward, redeemReward, updateReward } from '@/db/repositories/rewards';
 import { buyItem } from '@/db/repositories/shop';
 import { undoEvent } from '@/db/repositories/undo';
 import { bossSteps, hero } from '@/db/schema';
@@ -50,6 +51,16 @@ describe('getQuestLog', () => {
     expect(first).toMatchObject({ type: 'mission.completed', gameDay: '2026-11-08' });
     expect(first.xp).toBeGreaterThan(0);
     expect(first.time).toBe('10:00');
+  });
+
+  it('names a redeemed reward as it was at the redemption, among the items', () => {
+    const db = newGame(DAILY);
+    giveCoins(db, 300);
+    const id = createReward(db, { name: 'Pizza', size: 'small' }, clockAt(6, 10));
+    redeemReward(db, id, clockAt(6, 11));
+    updateReward(db, id, { name: 'Cinema', size: 'small' });
+    const [entry] = entries(getQuestLog(db, clockAt(6, 12), { filter: 'items' }));
+    expect(entry).toMatchObject({ type: 'reward.redeemed', rewardName: 'Pizza', coins: -100 });
   });
 
   it('filters by kind', () => {

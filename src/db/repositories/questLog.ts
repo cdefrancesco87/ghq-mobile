@@ -94,6 +94,8 @@ export interface QuestLogEntry {
   readonly level: number | null;
   /** The reason of a skip. */
   readonly reason: string | null;
+  /** The name of a redeemed reward, as it was at the redemption. */
+  readonly rewardName: string | null;
   /** «Annulla» in the menu of the entry: a completion, a skip or a step of today. */
   readonly undoable: boolean;
 }
@@ -253,6 +255,10 @@ export function getQuestLog(db: Db, clock: ActionClock, query: QuestLogQuery): Q
       value: numberOr(row.payload.value),
       level: type === 'hero.level_up' ? numberOr(row.payload.to) : null,
       reason: typeof row.payload.reason === 'string' ? row.payload.reason : null,
+      rewardName:
+        type === 'reward.redeemed' && typeof row.payload.name === 'string'
+          ? row.payload.name
+          : null,
       undoable:
         UNDOABLE_TYPES.includes(type) &&
         row.gameDay === today &&

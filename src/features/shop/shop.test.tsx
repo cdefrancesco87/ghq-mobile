@@ -6,10 +6,12 @@ import { Dimensions } from 'react-native';
 
 import { appendEvent } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
+import { createReward } from '@/db/repositories/rewards';
 import { buyItem } from '@/db/repositories/shop';
 import { setSetting } from '@/db/repositories/settings';
-import { events, hero, inventory } from '@/db/schema';
+import { events, hero, inventory, rewards } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
 import { startApp, useAppStore } from '@/stores/app';
@@ -24,7 +26,7 @@ import Profile from '../../../app/(tabs)/profile';
 import Today from '../../../app/(tabs)/today';
 import Index from '../../../app/index';
 import ShopRoute from '../../../app/shop';
-import { at, clockAt, FRIDAY, newGame, TZ } from '../../../test/game';
+import { at, clockAt, expectHeroMatchesLog, FRIDAY, newGame, TZ } from '../../../test/game';
 
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
@@ -302,5 +304,193 @@ describe('Inventory', () => {
     expect(screen.getByTestId('shop-inventory-use-potion')).toBeDisabled();
     await fireEvent.press(screen.getByTestId('shop-inventory-use-potion'));
     expect(owned(db, 'potion')).toBe(1);
+  });
+});
+
+describe('Personal rewards', () => {
+  const redemptions = (db: Db) =>
+    db.select().from(events).where(eq(events.type, 'reward.redeemed')).all();
+
+  async function afterMenu() {
+    await act(async () => {
+      jest.advanceTimersByTime(SHEET_DURATION_MS);
+    });
+  }
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('shows only «+ Nuova ricompensa» with the example after the helps, and creates a reward', async () => {
+    const db = newGame(['meditation']);
+    await open(db);
+
+    expect(screen.getByTestId('shop-rewards-title')).toHaveTextContent('Le tue ricompense');
+    expect(screen.getByTestId('shop-reward-example')).toHaveTextContent(
+      'Es. Un episodio della tua serie',
+    );
+    await fireEvent.press(screen.getByTestId('shop-reward-new'));
+    expect(await screen.findByRole('header', { name: 'Nuova ricompensa' })).toBeOnTheScreen();
+    expect(screen.getByTestId('shop-reward-save')).toBeDisabled();
+    expect(screen.getByTestId('shop-reward-size-small')).toHaveTextContent('Piccola · 100');
+    expect(screen.getByTestId('shop-reward-size-epic')).toHaveAccessibleName('Epica, 1500 monete');
+    await fireEvent.changeText(
+      screen.getByTestId('shop-reward-name'),
+      'Un episodio della tua serie',
+    );
+    await fireEvent.press(screen.getByTestId('shop-reward-size-medium'));
+    await fireEvent.press(screen.getByTestId('shop-reward-save'));
+
+    const [row] = db.select().from(rewards).all();
+    expect(row).toMatchObject({ name: 'Un episodio della tua serie', size: 'medium' });
+    expect(
+      await screen.findByText('Ricompensa creata: Un episodio della tua serie'),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId(`shop-reward-${row.id}`)).toHaveAccessibleName(
+      'Un episodio della tua serie, ricompensa media, 250 monete, Ti mancano 250 monete',
+    );
+    expect(text(`shop-reward-${row.id}-price`)).toBe(250);
+    expect(screen.queryByTestId('shop-reward-example')).toBeNull();
+    expect(screen.getByTestId('shop-reward-new')).toBeOnTheScreen();
+  });
+
+  it('redeems a reward: coins down, a short celebration, «Goditi» and the log', async () => {
+    const db = newGame(['meditation']);
+    adjustHero(db, { coins: 300 });
+    const id = createReward(
+      db,
+      { name: 'Un episodio della tua serie', size: 'medium' },
+      clockAt(FRIDAY, 9),
+    );
+    await open(db);
+
+    await fireEvent.press(screen.getByTestId(`shop-reward-${id}`));
+    expect(await screen.findByRole('header', { name: 'Riscatta per 250' })).toBeOnTheScreen();
+    expect(screen.getByTestId('shop-redeem-caption')).toHaveTextContent('Ti restano 50 monete');
+    await fireEvent.press(screen.getByTestId('shop-redeem-confirm'));
+
+    expect(
+      await screen.findByText('Goditi: Un episodio della tua serie. Ora hai 50 monete'),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByTestId('celebration-chip', { includeHiddenElements: true }),
+    ).toHaveTextContent('Goditi!');
+    expect(text('shop-balance-coins')).toBe(50);
+    expect(redemptions(db)).toHaveLength(1);
+    expect(redemptions(db)[0]).toMatchObject({
+      dCoins: -250,
+      payload: { name: 'Un episodio della tua serie', price: 250 },
+    });
+    // The reward stays for the next redemptions.
+    expect(screen.getByTestId(`shop-reward-${id}`)).toBeOnTheScreen();
+    expectHeroMatchesLog(db);
+  });
+
+  it('does not redeem without enough coins', async () => {
+    const db = newGame(['meditation']);
+    adjustHero(db, { coins: 40 });
+    const id = createReward(db, { name: 'Pizza', size: 'small' }, clockAt(FRIDAY, 9));
+    await open(db);
+
+    expect(screen.getByTestId(`shop-reward-${id}-missing`)).toHaveTextContent(
+      'Ti mancano 60 monete',
+    );
+    await fireEvent.press(screen.getByTestId(`shop-reward-${id}`));
+    expect(await screen.findByTestId('shop-redeem-reason')).toHaveTextContent(
+      'Ti mancano 60 monete',
+    );
+    expect(screen.getByTestId('shop-redeem-confirm')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('shop-redeem-confirm'));
+    expect(redemptions(db)).toEqual([]);
+    expect(text('shop-balance-coins')).toBe(40);
+  });
+
+  it('changes name and size from the menu: the new price is shown', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['meditation']);
+    const id = createReward(db, { name: 'Pizza', size: 'small' }, clockAt(FRIDAY, 9));
+    await open(db);
+
+    await fireEvent.press(screen.getByTestId(`shop-reward-${id}-menu`));
+    await fireEvent.press(screen.getByTestId('shop-reward-actions-edit'));
+    await afterMenu();
+    expect(screen.getByTestId('shop-reward-name').props.value).toBe('Pizza');
+    expect(screen.getByTestId('shop-reward-size-small')).toBeSelected();
+    await fireEvent.changeText(screen.getByTestId('shop-reward-name'), 'Pizza fuori');
+    await fireEvent.press(screen.getByTestId('shop-reward-size-large'));
+    await fireEvent.press(screen.getByTestId('shop-reward-save'));
+
+    expect(text(`shop-reward-${id}-price`)).toBe(600);
+    expect(text(`shop-reward-${id}-name`)).toBe('Pizza fuori');
+    expect(db.select().from(rewards).all()).toHaveLength(1);
+  });
+
+  it('deletes a reward with a long press and a dialog, keeping the past redemptions', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['meditation']);
+    adjustHero(db, { coins: 300 });
+    const id = createReward(db, { name: 'Pizza', size: 'small' }, clockAt(FRIDAY, 9));
+    await open(db);
+    await fireEvent.press(screen.getByTestId(`shop-reward-${id}`));
+    await fireEvent.press(screen.getByTestId('shop-redeem-confirm'));
+
+    await fireEvent(screen.getByTestId(`shop-reward-${id}`), 'longPress');
+    await fireEvent.press(screen.getByTestId('shop-reward-actions-delete'));
+    await afterMenu();
+    expect(screen.getByTestId('shop-reward-delete')).toHaveTextContent(/Eliminare «Pizza»\?/);
+    await fireEvent.press(screen.getByTestId('shop-reward-delete-confirm'));
+
+    expect(screen.queryByTestId(`shop-reward-${id}`)).toBeNull();
+    expect(db.select().from(rewards).get()?.archivedAt).not.toBeNull();
+    expect(redemptions(db)).toHaveLength(1);
+    expect(text('shop-balance-coins')).toBe(200);
+    expectHeroMatchesLog(db);
+  });
+
+  it('loads 50 rewards in a virtualized list while scrolling', async () => {
+    const db = newGame(['meditation']);
+    for (let index = 0; index < 50; index += 1) {
+      createReward(db, { name: `Premio ${index}`, size: 'small' }, clockAt(FRIDAY, 9));
+    }
+    await open(db);
+
+    const shown = () => screen.queryAllByTestId(/^shop-reward-[0-9a-f-]+-price$/).length;
+    // The rows of the list: two cards each.
+    const rows = () => (screen.getByTestId('shop-list').props.data as unknown[]).length;
+    expect(rows()).toBe(10);
+    // Virtualized: only the first cards are drawn.
+    expect(shown()).toBeGreaterThan(0);
+    expect(shown()).toBeLessThan(20);
+    for (let page = 0; page < 3; page += 1) {
+      await act(async () => {
+        screen.getByTestId('shop-list').props.onEndReached({ distanceFromEnd: 0 });
+      });
+    }
+    // 50 rewards and, after the last page, «+ Nuova ricompensa».
+    expect(rows()).toBe(26);
+    expect(shown()).toBeLessThan(50);
+  });
+
+  it('puts the rewards in one column with very large text', async () => {
+    const db = newGame(['meditation']);
+    createReward(db, { name: 'Pizza', size: 'small' }, clockAt(FRIDAY, 9));
+    await setFontScale(1.3);
+    await open(db);
+
+    // The reward and «+ Nuova ricompensa» on two rows, then side by side.
+    const rows = () => (screen.getByTestId('shop-list').props.data as unknown[]).length;
+    expect(rows()).toBe(2);
+    await setFontScale(1);
+    expect(rows()).toBe(1);
+  });
+
+  it('hides the rewards in the Essential mode', async () => {
+    const db = newGame(['meditation']);
+    setSetting(db, 'game_mode', 'essential', at(FRIDAY, 9));
+    createReward(db, { name: 'Pizza', size: 'small' }, clockAt(FRIDAY, 9));
+    await open(db);
+
+    expect(screen.queryByTestId('shop-rewards-title')).toBeNull();
+    expect(screen.queryByTestId('shop-reward-new')).toBeNull();
   });
 });

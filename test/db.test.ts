@@ -13,8 +13,8 @@ describe('createTestDb', () => {
         sql`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> '__drizzle_migrations'`,
       )
       .map((row) => row.name);
-    expect(tables).toHaveLength(16);
-    expect(tables).toEqual(expect.arrayContaining(['hero', 'missions', 'events']));
+    expect(tables).toHaveLength(17);
+    expect(tables).toEqual(expect.arrayContaining(['hero', 'missions', 'events', 'rewards']));
     expect(db.all(sql`SELECT hash FROM __drizzle_migrations`)).toHaveLength(journal.entries.length);
   });
 

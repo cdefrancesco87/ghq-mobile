@@ -1187,7 +1187,44 @@
     "empty_cyberpunk": "Niente qui: guarda nel Mercato nero.",
     "empty_lovecraft": "Niente qui: guarda nell'Antiquario.",
     "empty_minimal": "Niente qui: guarda nel Negozio.",
-    "emptyImage": "Zaino vuoto"
+    "emptyImage": "Zaino vuoto",
+    "rewards": {
+      "title": "Le tue ricompense",
+      "new": "Nuova ricompensa",
+      "example": "Es. Un episodio della tua serie",
+      "sizes": {
+        "small": "Piccola",
+        "medium": "Media",
+        "large": "Grande",
+        "epic": "Epica"
+      },
+      "kinds": {
+        "small": "ricompensa piccola",
+        "medium": "ricompensa media",
+        "large": "ricompensa grande",
+        "epic": "ricompensa epica"
+      },
+      "more": "Altre azioni: {{name}}",
+      "edit": "Modifica",
+      "delete": "Elimina",
+      "createTitle": "Nuova ricompensa",
+      "editTitle": "Modifica la ricompensa",
+      "nameLabel": "Nome della ricompensa",
+      "nameHint": "Fino a {{max}} caratteri",
+      "sizeTitle": "Entità",
+      "sizeChip": "{{size}} · {{price}}",
+      "sizeChipLabel": "{{size}}, {{count}} {{term}}",
+      "create": "Crea",
+      "save": "Salva",
+      "redeem": "Riscatta per {{price}}",
+      "chip": "Goditi!",
+      "enjoy": "Goditi: {{name}}. Ora hai {{count}} {{term}}",
+      "deleteTitle": "Eliminare «{{name}}»?",
+      "deleteMessage": "Sparisce da qui. I riscatti passati restano nel Registro.",
+      "created": "Ricompensa creata: {{name}}",
+      "saved": "Ricompensa modificata: {{name}}",
+      "deleted": "Ricompensa eliminata: {{name}}"
+    }
   },
   "statsScreen": {
     "tabs": "Sezioni delle statistiche",

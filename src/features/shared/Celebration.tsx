@@ -82,6 +82,10 @@ export interface CelebrationRequest {
   readonly target?: Point;
   /** What the screen reader says (design 2.11); the gains when missing. */
   readonly label?: string;
+  /** The text of the chip in place of the gains, e.g. «Goditi!» for a reward (design 7.6). */
+  readonly chipText?: string;
+  /** The screen reader hears it from another element (a toast): the chip says nothing. */
+  readonly silent?: boolean;
 }
 
 interface CelebrationApi {
@@ -395,7 +399,12 @@ function GainChip({
         })
       : gain);
 
-  useEffect(() => announceOnIos(label), [label]);
+  const silent = burst.silent === true;
+  useEffect(() => {
+    if (!silent) {
+      announceOnIos(label);
+    }
+  }, [label, silent]);
 
   useEffect(() => {
     const fadeIn = withTiming(1, { duration: FADE_MS });
@@ -415,10 +424,12 @@ function GainChip({
   return (
     <Animated.View
       testID="celebration-chip"
-      accessible
-      accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
-      accessibilityLabel={label}
+      accessible={!silent}
+      accessibilityRole={silent ? undefined : 'alert'}
+      accessibilityLiveRegion={silent ? 'none' : 'polite'}
+      importantForAccessibility={silent ? 'no-hide-descendants' : 'auto'}
+      accessibilityElementsHidden={silent}
+      accessibilityLabel={silent ? undefined : label}
       style={[
         styles.chip,
         { top: origin.y, right: Math.max(EDGE, width - origin.x + SEAL_SIZE / 2) },
@@ -427,7 +438,7 @@ function GainChip({
     >
       <Frame shape={SHAPES[family].control} fill={colors.surfaceHigh} stroke={colors.border} />
       <ThemedText variant="label" color={colors.doneText} numberOfLines={1}>
-        {coins > 0 ? `${gain} · ${coinGain}` : gain}
+        {burst.chipText ?? (coins > 0 ? `${gain} · ${coinGain}` : gain)}
       </ThemedText>
       {coins > 0 ? <Icon name="moneta" size={16} color={colors.coinsText} /> : null}
     </Animated.View>

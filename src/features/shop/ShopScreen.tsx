@@ -1,16 +1,29 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { ItemKey } from '@/content/shop';
+import {
+  archiveReward,
+  createReward,
+  redeemReward,
+  updateReward,
+  type RewardInput,
+  type RewardView,
+} from '@/db/repositories/rewards';
 // `usePotion` is an action of the repository, not a hook.
 import { buyItem, usePotion as drinkPotion, type ShopView } from '@/db/repositories/shop';
 import { announceOnIos } from '@/features/shared/announce';
+import { ActionSheet } from '@/features/shared/ActionSheet';
 import { Card } from '@/features/shared/Card';
+import { useCelebration } from '@/features/shared/Celebration';
+import { ConfirmDialog } from '@/features/shared/ConfirmDialog';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
+import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { SegmentedControl } from '@/features/shared/SegmentedControl';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useLargeText } from '@/features/shared/useLargeText';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { HP } from '@/rules/config';
@@ -22,21 +35,36 @@ import { BuySheet } from './BuySheet';
 import { InventoryList } from './InventoryList';
 import { ItemCard } from './ItemCard';
 import { ItemSprite } from './ItemSprite';
+import { RedeemSheet } from './RedeemSheet';
+import { NewRewardCard, RewardCard } from './RewardCard';
+import { RewardSheet } from './RewardSheet';
 import { useShopTexts } from './shopTexts';
+import { useRewards } from './useShopView';
 
 const COIN_SIZE = 48;
 
 type Tab = 'shop' | 'inventory';
+
+/** A card of the group «Le tue ricompense»: a reward or, last, «+ Nuova ricompensa». */
+type RewardCell =
+  { readonly kind: 'reward'; readonly reward: RewardView } | { readonly kind: 'new' };
+
+/** A choice of the menu of a reward, done once the menu has slid away. */
+interface Queued {
+  readonly action: 'edit' | 'delete';
+  readonly reward: RewardView;
+}
 
 export interface ShopScreenProps {
   readonly view: ShopView;
 }
 
 /**
- * Negozio e inventario (design-sezioni.md 7.1–7.5, mockup B6, D27, D28): the large balance with
+ * Negozio e inventario (design-sezioni.md 7.1–7.6, mockup B6, D27, D28): the large balance with
  * the welcome of the theme, the two tabs with the names of the theme, the cards of the helps in 2
- * columns (1 with very large text) and the objects owned. The balance is said after every purchase
- * or use (7.10).
+ * columns (1 with very large text), the personal rewards right after them (a virtualized list that
+ * reads more while scrolling) and the objects owned. The balance is said after every purchase,
+ * use or redemption (7.10). No rewards in the Essential mode (7.6), where the shop is hidden.
  */
 export function ShopScreen({ view }: ShopScreenProps) {
   const { t } = useTranslation();
@@ -49,6 +77,36 @@ export function ShopScreen({ view }: ShopScreenProps) {
   const [tab, setTab] = useState<Tab>('shop');
   const [selected, setSelected] = useState<ItemKey | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const essential = useEssential();
+  const { width, height } = useWindowDimensions();
+  const { celebrate } = useCelebration();
+  const rewardsPage = useRewards();
+  const [redeeming, setRedeeming] = useState<RewardView | null>(null);
+  const [redeemOpen, setRedeemOpen] = useState(false);
+  const [editing, setEditing] = useState<RewardView | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [menuFor, setMenuFor] = useState<RewardView | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [queued, setQueued] = useState<Queued | null>(null);
+  const [deleting, setDeleting] = useState<RewardView | null>(null);
+
+  // The editor or the dialog opens once the menu has slid away: two modals at once do not open
+  // on iOS (as in the Registro).
+  useEffect(() => {
+    if (queued === null || menuOpen) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setQueued(null);
+      if (queued.action === 'edit') {
+        setEditing(queued.reward);
+        setEditorOpen(true);
+      } else {
+        setDeleting(queued.reward);
+      }
+    }, SHEET_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [queued, menuOpen]);
 
   const offerOf = (key: ItemKey) => {
     const item = view.items.find((candidate) => candidate.key === key);
@@ -79,6 +137,56 @@ export function ShopScreen({ view }: ShopScreenProps) {
     );
   };
 
+  const rewardOffer = (reward: RewardView) =>
+    shopOffer({ price: reward.price, maxOwned: null }, view.coins, 0);
+
+  const redeem = () => {
+    // A second tap while the sheet slides away redeems nothing more.
+    if (redeeming === null || !redeemOpen) {
+      return;
+    }
+    const reward = redeeming;
+    const { coins } = runAction((db, clock) => redeemReward(db, reward.id, clock));
+    setRedeemOpen(false);
+    // The short celebration of the theme (7.6); the toast says the reward and the balance.
+    celebrate({
+      xp: 0,
+      coins: 0,
+      origin: { x: width / 2, y: height / 2 },
+      chipText: t('shop.rewards.chip'),
+      silent: true,
+    });
+    tell(t('shop.rewards.enjoy', { name: reward.name, ...texts.withCoins(coins) }));
+  };
+
+  const saveReward = (input: RewardInput) => {
+    if (!editorOpen) {
+      return;
+    }
+    const reward = editing;
+    runAction((db, clock) =>
+      reward === null ? createReward(db, input, clock) : updateReward(db, reward.id, input),
+    );
+    setEditorOpen(false);
+    const name = input.name.trim();
+    tell(t(reward === null ? 'shop.rewards.created' : 'shop.rewards.saved', { name }));
+  };
+
+  const deleteReward = () => {
+    const reward = deleting;
+    setDeleting(null);
+    if (reward === null) {
+      return;
+    }
+    runAction((db, clock) => archiveReward(db, reward.id, clock));
+    tell(t('shop.rewards.deleted', { name: reward.name }));
+  };
+
+  const openMenu = (reward: RewardView) => {
+    setMenuFor(reward);
+    setMenuOpen(true);
+  };
+
   const drink = () => {
     const { hp } = runAction((db, clock) => drinkPotion(db, clock));
     tell(t('shop.used', { name: texts.name('potion'), ...hpValues(hp) }));
@@ -90,6 +198,81 @@ export function ShopScreen({ view }: ShopScreenProps) {
     { value: 'inventory' as const, label: t('shop.inventory', { context: family }) },
   ];
 
+  const columns = largeText ? 1 : 2;
+  const top = (
+    <>
+      <Card testID="shop-balance">
+        <View style={[styles.balance, largeText ? styles.balanceColumn : null]}>
+          <View
+            accessible
+            accessibilityLabel={balanceLabel}
+            accessibilityLiveRegion="polite"
+            style={styles.coins}
+          >
+            <ItemSprite object="coin" size={COIN_SIZE} />
+            <View>
+              <ThemedText testID="shop-balance-coins" variant="display">
+                {view.coins}
+              </ThemedText>
+              <ThemedText variant="caption" color={colors.textMuted}>
+                {t('lexicon.coins_pl', { context: family })}
+              </ThemedText>
+            </View>
+          </View>
+          <ThemedText
+            testID="shop-welcome"
+            color={colors.textMuted}
+            style={largeText ? null : styles.welcome}
+          >
+            {t('shop.welcome', { context: family, hero: heroName })}
+          </ThemedText>
+        </View>
+      </Card>
+      <SegmentedControl
+        testID="shop-tabs"
+        accessibilityLabel={t('shop.tabs')}
+        options={tabs}
+        value={tab}
+        onChange={setTab}
+      />
+    </>
+  );
+
+  const helps = (
+    <View style={styles.group}>
+      <ThemedText variant="label" accessibilityRole="header" color={colors.textMuted}>
+        {t('shop.helps')}
+      </ThemedText>
+      <View testID="shop-grid" style={styles.column}>
+        {rowsOf(view.items, columns).map((row) => (
+          <GridRow key={row.map((item) => item.key).join()} columns={columns} count={row.length}>
+            {row.map((item) => (
+              <ItemCard
+                key={item.key}
+                item={item}
+                offer={shopOffer(item, view.coins, item.owned)}
+                onPress={() => {
+                  setSelected(item.key);
+                  setSheetOpen(true);
+                }}
+              />
+            ))}
+          </GridRow>
+        ))}
+      </View>
+    </View>
+  );
+
+  // The cards of the rewards; «+ Nuova ricompensa» comes last, once every reward is read.
+  const cells: RewardCell[] = essential
+    ? []
+    : [
+        ...rewardsPage.rewards.map((reward) => ({ kind: 'reward' as const, reward })),
+        ...(rewardsPage.hasMore ? [] : [{ kind: 'new' as const }]),
+      ];
+  const rewardRows = rowsOf(cells, columns);
+  const cellKey = (cell: RewardCell) => (cell.kind === 'new' ? 'new' : cell.reward.id);
+
   return (
     <View testID="shop-screen" style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader
@@ -98,70 +281,68 @@ export function ShopScreen({ view }: ShopScreenProps) {
         compact
         onBack={() => router.back()}
       />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Card testID="shop-balance">
-          <View style={[styles.balance, largeText ? styles.balanceColumn : null]}>
-            <View
-              accessible
-              accessibilityLabel={balanceLabel}
-              accessibilityLiveRegion="polite"
-              style={styles.coins}
-            >
-              <ItemSprite object="coin" size={COIN_SIZE} />
-              <View>
-                <ThemedText testID="shop-balance-coins" variant="display">
-                  {view.coins}
+      {tab === 'shop' ? (
+        <FlatList
+          testID="shop-list"
+          data={rewardRows}
+          keyExtractor={(row) => row.map(cellKey).join()}
+          contentContainerStyle={styles.content}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              {top}
+              {helps}
+              {essential ? null : (
+                <ThemedText
+                  testID="shop-rewards-title"
+                  variant="label"
+                  accessibilityRole="header"
+                  color={colors.textMuted}
+                >
+                  {t('shop.rewards.title')}
                 </ThemedText>
-                <ThemedText variant="caption" color={colors.textMuted}>
-                  {t('lexicon.coins_pl', { context: family })}
-                </ThemedText>
-              </View>
+              )}
             </View>
-            <ThemedText
-              testID="shop-welcome"
-              color={colors.textMuted}
-              style={largeText ? null : styles.welcome}
-            >
-              {t('shop.welcome', { context: family, hero: heroName })}
-            </ThemedText>
-          </View>
-        </Card>
-        <SegmentedControl
-          testID="shop-tabs"
-          accessibilityLabel={t('shop.tabs')}
-          options={tabs}
-          value={tab}
-          onChange={setTab}
+          }
+          ItemSeparatorComponent={RowGap}
+          renderItem={({ item: row }) => (
+            <GridRow columns={columns} count={row.length}>
+              {row.map((cell) =>
+                cell.kind === 'new' ? (
+                  <NewRewardCard
+                    key="new"
+                    showExample={rewardsPage.rewards.length === 0}
+                    onPress={() => {
+                      setEditing(null);
+                      setEditorOpen(true);
+                    }}
+                  />
+                ) : (
+                  <RewardCard
+                    key={cell.reward.id}
+                    reward={cell.reward}
+                    offer={rewardOffer(cell.reward)}
+                    onPress={() => {
+                      setRedeeming(cell.reward);
+                      setRedeemOpen(true);
+                    }}
+                    onMenu={() => openMenu(cell.reward)}
+                  />
+                ),
+              )}
+            </GridRow>
+          )}
+          onEndReached={rewardsPage.loadMore}
+          onEndReachedThreshold={0.5}
+          initialNumToRender={6}
         />
-        {tab === 'shop' ? (
-          <View style={styles.group}>
-            <ThemedText variant="label" accessibilityRole="header" color={colors.textMuted}>
-              {t('shop.helps')}
-            </ThemedText>
-            <View testID="shop-grid" style={styles.column}>
-              {rowsOf(view.items, largeText ? 1 : 2).map((row) => (
-                <View key={row.map((item) => item.key).join()} style={styles.row}>
-                  {row.map((item) => (
-                    <ItemCard
-                      key={item.key}
-                      item={item}
-                      offer={shopOffer(item, view.coins, item.owned)}
-                      onPress={() => {
-                        setSelected(item.key);
-                        setSheetOpen(true);
-                      }}
-                    />
-                  ))}
-                  {/* The last card of an odd row keeps the width of a column. */}
-                  {row.length < (largeText ? 1 : 2) ? <View style={styles.spacer} /> : null}
-                </View>
-              ))}
-            </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.header}>
+            {top}
+            <InventoryList view={view} onUsePotion={drink} />
           </View>
-        ) : (
-          <InventoryList view={view} onUsePotion={drink} />
-        )}
-      </ScrollView>
+        </ScrollView>
+      )}
       <BuySheet
         visible={sheetOpen}
         item={chosen?.item ?? null}
@@ -171,13 +352,80 @@ export function ShopScreen({ view }: ShopScreenProps) {
         onBuy={buy}
         onClose={() => setSheetOpen(false)}
       />
+      <RedeemSheet
+        visible={redeemOpen}
+        reward={redeeming}
+        offer={redeeming === null ? null : rewardOffer(redeeming)}
+        coins={view.coins}
+        onRedeem={redeem}
+        onClose={() => setRedeemOpen(false)}
+      />
+      <RewardSheet
+        visible={editorOpen}
+        reward={editing}
+        onSave={saveReward}
+        onClose={() => setEditorOpen(false)}
+      />
+      <ActionSheet
+        testID="shop-reward-actions"
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        title={menuFor?.name}
+        items={[
+          {
+            key: 'edit',
+            label: t('shop.rewards.edit'),
+            onPress: () => setQueued(menuFor === null ? null : { action: 'edit', reward: menuFor }),
+          },
+          {
+            key: 'delete',
+            label: t('shop.rewards.delete'),
+            destructive: true,
+            onPress: () =>
+              setQueued(menuFor === null ? null : { action: 'delete', reward: menuFor }),
+          },
+        ]}
+      />
+      <ConfirmDialog
+        testID="shop-reward-delete"
+        visible={deleting !== null}
+        title={t('shop.rewards.deleteTitle', { name: deleting?.name ?? '' })}
+        message={t('shop.rewards.deleteMessage')}
+        confirmLabel={t('shop.rewards.delete')}
+        onConfirm={deleteReward}
+        onCancel={() => setDeleting(null)}
+      />
+    </View>
+  );
+}
+
+function RowGap() {
+  return <View style={styles.rowGap} />;
+}
+
+/** A row of the grid; the last card of an odd row keeps the width of a column. */
+function GridRow({
+  columns,
+  count,
+  children,
+}: {
+  readonly columns: number;
+  readonly count: number;
+  readonly children: ReactNode;
+}) {
+  return (
+    <View style={styles.row}>
+      {children}
+      {count < columns ? <View style={styles.spacer} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  content: { gap: 16, padding: 16 },
+  content: { padding: 16 },
+  header: { gap: 16, paddingBottom: 8 },
+  rowGap: { height: 12 },
   balance: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   balanceColumn: { flexDirection: 'column', alignItems: 'flex-start' },
   coins: { flexDirection: 'row', alignItems: 'center', gap: 12 },
