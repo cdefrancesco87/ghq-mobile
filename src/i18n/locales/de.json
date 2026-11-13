@@ -1662,6 +1662,13 @@
       "off": "Nein"
     },
     "vibrations": "Vibration",
+    "colorblind": "Colour-blind colours",
+    "colorblindCaption": "Heatmap, bars and states on a blue–orange scale",
+    "colorblindAlso": "Also in Appearance",
+    "exportCsv": "Export to CSV",
+    "exportCsvCaption": "Missions and full log",
+    "exportCsvTitle": "Export GHQ data",
+    "exportCsvError": "Export failed. Try again.",
     "generalPause": "Allgemeine Pause",
     "weeklyRecap": "Weekly recap",
     "weeklyRecapDay": "Recap day",

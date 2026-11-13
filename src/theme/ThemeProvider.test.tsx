@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
+import { COLORBLIND } from '@/theme/colorblind';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { THEMES } from '@/theme/themes';
 
 function ThemeName() {
   const theme = useTheme();
@@ -37,6 +39,39 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
     expect(screen.getByTestId('theme')).toHaveTextContent('minimal-scuro #111214');
+  });
+
+  it('moves heatmap, bars and states to the colour-blind scale, also in nested themes', async () => {
+    function Colours() {
+      const { colors } = useTheme();
+      return (
+        <Text testID="colours">{`${colors.done} ${colors.hp} ${colors.heatmap.join(' ')}`}</Text>
+      );
+    }
+    const plain = THEMES.arcade.colors;
+    const { rerender } = await render(
+      <ThemeProvider theme="arcade" colorblind={false}>
+        <Colours />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId('colours')).toHaveTextContent(
+      `${plain.done} ${plain.hp} ${plain.heatmap.join(' ')}`,
+    );
+    await rerender(
+      <ThemeProvider theme="arcade" colorblind>
+        <ThemeProvider theme="fantasy">
+          <Colours />
+        </ThemeProvider>
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId('colours')).toHaveTextContent(
+      [
+        COLORBLIND.blue,
+        COLORBLIND.orange,
+        THEMES.fantasy.colors.heatmap[0],
+        ...COLORBLIND.heatmap,
+      ].join(' '),
+    );
   });
 
   it('reads the mode of the phone when it is not given', async () => {

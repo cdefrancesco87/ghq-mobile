@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CelebrationProvider } from '@/features/shared/Celebration';
 import { MomentQueueProvider } from '@/features/shared/MomentQueue';
 import { UndoToastProvider } from '@/features/shared/UndoToast';
+import { useSettingsStore } from '@/stores/settings';
 import { useThemeStore } from '@/stores/theme';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { SystemBars } from './SystemBars';
@@ -18,14 +19,15 @@ export interface AppProvidersProps {
 
 /**
  * Gestures, language, theme with its system bars, undo notice and game feedback for every screen;
- * the theme is the `theme` setting.
+ * the theme is the `theme` setting, with «Colori per daltonici» from `colorblind`.
  */
 export function AppProviders({ i18n, children }: AppProvidersProps) {
   const theme = useThemeStore((state) => state.theme);
+  const colorblind = useSettingsStore((state) => state.settings.colorblind);
   return (
     <GestureHandlerRootView style={styles.root}>
       <I18nextProvider i18n={i18n}>
-        <ThemeProvider theme={theme}>
+        <ThemeProvider theme={theme} colorblind={colorblind}>
           <SystemBars />
           <UndoToastProvider>
             <CelebrationProvider>

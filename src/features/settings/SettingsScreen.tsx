@@ -4,6 +4,7 @@ import { useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { exportCsv } from '@/db/repositories/exportCsv';
 import { setDayChange, setSetting, setWeekRules } from '@/db/repositories/settings';
 import { cloudProviderOf } from '@/features/backup/cloudStore';
 import { backupWhen, CLOUD_NAMES } from '@/features/backup/format';
@@ -32,6 +33,7 @@ import { GameModeSheet } from './GameModeSheet';
 import { GeneralPauseSheet } from './GeneralPauseSheet';
 import { DAY_CHANGE_TIMES, dayAndMonth, quietTimes, restDaysText, weekdayName } from './format';
 import { RestDaysSheet } from './RestDaysSheet';
+import { csvFileName, shareCsv } from './shareCsv';
 import { SettingsRow } from './SettingsRow';
 import { TimeSheet } from './TimeSheet';
 import { useNotificationPermission, useSettingsView } from './useSettingsView';
@@ -89,7 +91,9 @@ interface RowSpec {
  * sheet. Gioco holds «Livello di gioco», Completo or Essenziale, changed
  * through a sheet that says what goes away (10.4, 10.11; mockup D37A). Accessibilità (10.7) holds
  * «Riduci movimento» (Come il telefono, Sì, No, read by `useReduceMotion`) and «Vibrazioni» (read by
- * the celebrations); the row that leads to «Colori per daltonici» waits for T82.
+ * the celebrations). «Colori per daltonici» (10.2) sits in Aspetto under the theme; Accessibilità
+ * repeats the same switch for who looks for it there (10.7). Dati ends with «Esporta in CSV» (10.8),
+ * which writes missions and log and opens the share sheet of the system.
  */
 export function SettingsScreen() {
   const { t, i18n } = useTranslation();
@@ -99,6 +103,8 @@ export function SettingsScreen() {
   const { permission, ask } = useNotificationPermission();
   const [query, setQuery] = useState('');
   const [sheet, setSheet] = useState<OpenSheet>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportFailed, setExportFailed] = useState(false);
   const language = i18n.language;
 
   const from = (fromDay: GameDay) => t('settings.from', { date: dayAndMonth(fromDay, language) });
@@ -158,6 +164,24 @@ export function SettingsScreen() {
     }
   };
 
+  const setColorblind = (enabled: boolean) =>
+    useSettingsStore.getState().update('colorblind', enabled);
+  const exportData = async () => {
+    if (exporting) {
+      return;
+    }
+    setExporting(true);
+    setExportFailed(false);
+    try {
+      const csv = exportCsv(getSession().db);
+      await shareCsv(csvFileName(day.today), csv, t('settings.exportCsvTitle'));
+    } catch {
+      setExportFailed(true);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const rows: RowSpec[] = [
     {
       key: 'theme',
@@ -170,6 +194,23 @@ export function SettingsScreen() {
           label={t('settings.theme')}
           value={themeValue}
           onPress={() => router.push('/settings/theme')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'colorblind',
+      group: 'appearance',
+      label: t('settings.colorblind'),
+      keywords: [t('settings.colorblindCaption')],
+      render: (last) => (
+        <SettingsRow
+          testID="settings-colorblind"
+          icon="tema"
+          label={t('settings.colorblind')}
+          caption={t('settings.colorblindCaption')}
+          switchValue={settings.colorblind}
+          onSwitch={setColorblind}
           last={last}
         />
       ),
@@ -491,6 +532,23 @@ export function SettingsScreen() {
       ),
     },
     {
+      key: 'colorblindAlso',
+      group: 'accessibility',
+      label: t('settings.colorblind'),
+      keywords: [t('settings.colorblindCaption')],
+      render: (last) => (
+        <SettingsRow
+          testID="settings-colorblind-accessibility"
+          icon="tema"
+          label={t('settings.colorblind')}
+          caption={t('settings.colorblindAlso')}
+          switchValue={settings.colorblind}
+          onSwitch={setColorblind}
+          last={last}
+        />
+      ),
+    },
+    {
       key: 'backup',
       group: 'data',
       label: t('settings.backup'),
@@ -507,6 +565,22 @@ export function SettingsScreen() {
           }
           caption={CLOUD_NAMES[cloudProviderOf()]}
           onPress={() => router.push('/settings/backup')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'exportCsv',
+      group: 'data',
+      label: t('settings.exportCsv'),
+      keywords: ['CSV', t('settings.exportCsvCaption')],
+      render: (last) => (
+        <SettingsRow
+          testID="settings-export"
+          icon="esporta"
+          label={t('settings.exportCsv')}
+          caption={exportFailed ? t('settings.exportCsvError') : t('settings.exportCsvCaption')}
+          onPress={() => void exportData()}
           last={last}
         />
       ),

@@ -1662,6 +1662,13 @@
       "off": "No"
     },
     "vibrations": "Vibrazioni",
+    "colorblind": "Colori per daltonici",
+    "colorblindCaption": "Heatmap, barre e stati in una scala blu–arancio",
+    "colorblindAlso": "Si trova anche in Aspetto",
+    "exportCsv": "Esporta in CSV",
+    "exportCsvCaption": "Missioni e registro completo",
+    "exportCsvTitle": "Esporta i dati di GHQ",
+    "exportCsvError": "Esportazione non riuscita. Riprova.",
     "generalPause": "Pausa generale",
     "weeklyRecap": "Riepilogo settimanale",
     "weeklyRecapDay": "Giorno del riepilogo",

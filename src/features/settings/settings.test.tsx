@@ -32,6 +32,12 @@ jest.mock('expo-notifications', () => ({
   requestPermissionsAsync: () => mockRequestPermissions(),
 }));
 
+const mockShareCsv = jest.fn();
+jest.mock('@/features/settings/shareCsv', () => ({
+  ...jest.requireActual('@/features/settings/shareCsv'),
+  shareCsv: (...args: unknown[]) => mockShareCsv(...args),
+}));
+
 const ROUTES: Record<string, ComponentType> = {
   index: Index,
   'settings/index': SettingsRoute,
@@ -354,6 +360,47 @@ describe('Settings', () => {
     expect(screen.getByTestId('settings-vibrations').props.value).toBe(false);
     await fireEvent(screen.getByTestId('settings-vibrations'), 'valueChange', true);
     expect(getSetting(db, 'vibrations')).toBe(true);
+  });
+
+  it('turns «Colori per daltonici» on from Aspetto and off from Accessibilità (T82)', async () => {
+    const db = newGame(['meditation']);
+    await open(db);
+    expect(screen.getByTestId('settings-colorblind').props.value).toBe(false);
+    expect(text('settings-colorblind-caption')).toBe(
+      'Heatmap, barre e stati in una scala blu–arancio',
+    );
+    await fireEvent(screen.getByTestId('settings-colorblind'), 'valueChange', true);
+    expect(getSetting(db, 'colorblind')).toBe(true);
+    expect(screen.getByTestId('settings-colorblind-accessibility').props.value).toBe(true);
+    expect(text('settings-colorblind-accessibility-caption')).toBe('Si trova anche in Aspetto');
+
+    await fireEvent(screen.getByTestId('settings-colorblind-accessibility'), 'valueChange', false);
+    expect(getSetting(db, 'colorblind')).toBe(false);
+    expect(screen.getByTestId('settings-colorblind').props.value).toBe(false);
+  });
+
+  it('exports missions and log as CSV through the share sheet (T82)', async () => {
+    mockShareCsv.mockReset().mockResolvedValue(undefined);
+    await open(newGame(['meditation']));
+    await fireEvent.changeText(screen.getByTestId('settings-search'), 'csv');
+    expect(screen.getByTestId('settings-group-data')).toBeOnTheScreen();
+    await press('settings-export');
+
+    expect(mockShareCsv).toHaveBeenCalledTimes(1);
+    const [fileName, csv, title] = mockShareCsv.mock.calls[0] as [string, string, string];
+    expect(fileName).toBe('ghq-export-2026-11-06.csv');
+    expect(csv.split('\r\n')[0]).toBe('missions');
+    expect(csv).toContain(',meditation,');
+    expect(csv).toContain('\r\nevents\r\n');
+    expect(title).toBe('Esporta i dati di GHQ');
+    expect(text('settings-export-caption')).toBe('Missioni e registro completo');
+  });
+
+  it('says when the export failed', async () => {
+    mockShareCsv.mockReset().mockRejectedValue(new Error('no space'));
+    await open(newGame(['meditation']));
+    await press('settings-export');
+    expect(text('settings-export-caption')).toBe('Esportazione non riuscita. Riprova.');
   });
 
   it('filters the rows while typing in Cerca, without minding accents', async () => {

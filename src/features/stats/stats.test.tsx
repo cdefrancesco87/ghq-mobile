@@ -19,6 +19,7 @@ import { startApp, useAppStore } from '@/stores/app';
 import { useHeroStore } from '@/stores/hero';
 import { useSettingsStore } from '@/stores/settings';
 import { useThemeStore } from '@/stores/theme';
+import { COLORBLIND } from '@/theme/colorblind';
 import TabsLayoutRoute from '../../../app/(tabs)/_layout';
 import Goals from '../../../app/(tabs)/goals';
 import Habits from '../../../app/(tabs)/habits';
@@ -251,6 +252,32 @@ describe('Statistics: heatmap', () => {
     has('stats-heatmap-2026-11-11-0');
     has('stats-heatmap-2026-11-05-out');
     expect(text('stats-heatmap-caption')).toBe('Ultimi 12 mesi');
+  });
+
+  it('moves the heatmap to the blue–orange scale with «Colori per daltonici»', async () => {
+    const db = newGame(['journal', 'meditation']);
+    const [journal, meditation] = ['journal', 'meditation'].map((key) => missionId(db, key));
+    // Saturday 7: 1 of 2 (level 2); Sunday 8: all (level 3); Friday 6: nothing.
+    markDays(db, journal, ['2026-11-07', '2026-11-08']);
+    markDays(db, meditation, ['2026-11-08']);
+    await open(db, 9);
+    const plain = (id: string) => screen.getByTestId(id);
+    expect(plain('stats-heatmap-2026-11-08-3')).not.toHaveStyle({
+      backgroundColor: COLORBLIND.heatmap[2],
+    });
+
+    await act(() => useSettingsStore.getState().update('colorblind', true));
+    expect(plain('stats-heatmap-2026-11-08-3')).toHaveStyle({
+      backgroundColor: COLORBLIND.heatmap[2],
+    });
+    expect(plain('stats-heatmap-2026-11-07-2')).toHaveStyle({
+      backgroundColor: COLORBLIND.heatmap[1],
+    });
+
+    await act(() => useSettingsStore.getState().update('colorblind', false));
+    expect(plain('stats-heatmap-2026-11-08-3')).not.toHaveStyle({
+      backgroundColor: COLORBLIND.heatmap[2],
+    });
   });
 
   it('says that the days will come in the first days', async () => {
