@@ -1,7 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { TITLE_KEYS } from '@/content/titles';
 import type { TodayView } from '@/db/repositories/todayView';
@@ -12,11 +18,16 @@ import { CompanionSprite } from '@/features/shared/CompanionSprite';
 import { Icon } from '@/features/shared/Icon';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useLargeText } from '@/features/shared/useLargeText';
+import { useReduceMotion } from '@/features/shared/useReduceMotion';
 import { termInSentence } from '@/i18n/lexicon';
 import { companionName as nameOf } from '@/rules/companion';
 import { HP } from '@/rules/config';
 import { titleIndex } from '@/rules/level';
 import { useTheme } from '@/theme/ThemeProvider';
+
+/** The link to Statistiche pulses once when it is the next step of the starter quest (1.8). */
+const PULSE_SCALE = 1.15;
+const PULSE_MS = 250;
 
 /** The companion is smaller in Minimal, where the game stays in the background (design 2.2). */
 const COMPANION_SIZE = 64;
@@ -38,20 +49,41 @@ export function HeroCard({ view }: HeroCardProps) {
   const router = useRouter();
   const largeText = useLargeText();
   const [streakWidth, setStreakWidth] = useState(0);
-  const { hero, xpToNext, companion, notices } = view;
+  const { hero, xpToNext, companion, notices, starterQuest } = view;
+  const reduceMotion = useReduceMotion();
+  // Only the last step of the quest is left: opening the statistics.
+  const statsNext =
+    starterQuest !== null &&
+    starterQuest.steps.at(-1)?.done === false &&
+    starterQuest.steps.slice(0, -1).every((step) => step.done);
+  const pulse = useSharedValue(1);
+  useEffect(() => {
+    if (statsNext && !reduceMotion) {
+      pulse.set(
+        withSequence(
+          withTiming(PULSE_SCALE, { duration: PULSE_MS }),
+          withTiming(1, { duration: PULSE_MS }),
+        ),
+      );
+    }
+  }, [pulse, reduceMotion, statsNext]);
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.get() }] }));
   const xpTerm = t('lexicon.xp', { context: family });
   const streakTerm = t('lexicon.streak', { context: family });
   const coinsTerm = t('lexicon.coins_pl', { context: family });
   const companionName = nameOf(companion.name, t('lexicon.companion', { context: family }));
 
+  // The streak opens Statistiche: the step «Apri le statistiche» of the starter quest (1.8).
   const streak = (
-    <Chip
-      testID="today-hero-streak"
-      icon="serie"
-      label={t('today.hero.streak', { count: hero.streak, term: streakTerm })}
-      accessibilityLabel={t('today.hero.streakLabel', { count: hero.streak, term: streakTerm })}
-      onPress={() => router.push('/stats')}
-    />
+    <Animated.View testID={statsNext ? 'today-hero-stats-pulse' : undefined} style={pulseStyle}>
+      <Chip
+        testID="today-hero-streak"
+        icon="serie"
+        label={t('today.hero.streak', { count: hero.streak, term: streakTerm })}
+        accessibilityLabel={t('today.hero.streakLabel', { count: hero.streak, term: streakTerm })}
+        onPress={() => router.push('/stats')}
+      />
+    </Animated.View>
   );
 
   return (

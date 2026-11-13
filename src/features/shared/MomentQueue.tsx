@@ -1,5 +1,13 @@
 import { router } from 'expo-router';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Modal, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -10,6 +18,7 @@ import Animated, {
 
 import type { EventRow } from '@/db/repositories/events';
 import { useTheme } from '@/theme/ThemeProvider';
+import { HatchMoment } from './HatchMoment';
 import { MomentScreen } from './MomentScreen';
 import { addMoments, momentsFromEvents, waitsForTouch, type Moment } from './moments';
 import { useReduceMotion } from './useReduceMotion';
@@ -25,6 +34,13 @@ const REDUCED_FADE_MS = 150;
 interface MomentQueueApi {
   /** Queues the moments among the events returned by an action of the repositories. */
   readonly enqueue: (events: readonly EventRow[]) => void;
+  /**
+   * Keeps the moments of the events until `showWaiting`: the victory of the quest of the first
+   * launch, won by opening the statistics, shows when the hero is back on Today (design 1.8).
+   */
+  readonly enqueueLater: (events: readonly EventRow[]) => void;
+  /** Shows the moments kept by `enqueueLater`. */
+  readonly showWaiting: () => void;
 }
 
 const MomentQueueContext = createContext<MomentQueueApi | null>(null);
@@ -33,6 +49,8 @@ const MomentQueueContext = createContext<MomentQueueApi | null>(null);
 export function MomentQueueProvider({ children }: { readonly children: ReactNode }) {
   const reduceMotion = useReduceMotion();
   const [queue, setQueue] = useState<readonly Moment[]>([]);
+  // Not state: nothing on screen changes until they are shown.
+  const later = useRef<Moment[]>([]);
   const current = queue[0];
   const currentId = current !== undefined && !waitsForTouch(current) ? current.id : undefined;
 
@@ -42,6 +60,16 @@ export function MomentQueueProvider({ children }: { readonly children: ReactNode
         const moments = momentsFromEvents(events);
         if (moments.length > 0) {
           setQueue((waiting) => addMoments(waiting, moments));
+        }
+      },
+      enqueueLater: (events) => {
+        later.current.push(...momentsFromEvents(events));
+      },
+      showWaiting: () => {
+        const waiting = later.current;
+        if (waiting.length > 0) {
+          later.current = [];
+          setQueue((shown) => addMoments(shown, waiting));
         }
       },
     }),
@@ -76,13 +104,17 @@ export function MomentQueueProvider({ children }: { readonly children: ReactNode
           onRequestClose={next}
         >
           <MomentBackground reduceMotion={reduceMotion}>
-            <MomentScreen
-              key={current.id}
-              moment={current}
-              reduceMotion={reduceMotion}
-              onSkip={next}
-              onSeeTrophy={seeTrophy}
-            />
+            {current.kind === 'hatch' ? (
+              <HatchMoment key={current.id} reduceMotion={reduceMotion} onDone={next} />
+            ) : (
+              <MomentScreen
+                key={current.id}
+                moment={current}
+                reduceMotion={reduceMotion}
+                onSkip={next}
+                onSeeTrophy={seeTrophy}
+              />
+            )}
           </MomentBackground>
         </Modal>
       )}

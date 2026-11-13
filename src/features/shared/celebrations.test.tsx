@@ -10,7 +10,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { renderThemed } from '../../../test/render';
 import { CELEBRATION_MS, CelebrationProvider, useCelebration } from './Celebration';
 import { MOMENT_MAX_MS, MomentQueueProvider, useMomentQueue } from './MomentQueue';
-import { addMoments, momentsFromEvents, type Moment } from './moments';
+import { addMoments, momentsFromEvents, waitsForTouch, type Moment } from './moments';
 import { useReduceMotion } from './useReduceMotion';
 
 jest.mock('expo-haptics', () => ({
@@ -61,10 +61,21 @@ describe('momentsFromEvents', () => {
       BADGE,
     ]);
     expect(moments).toEqual([
-      { kind: 'boss_defeated', id: 'boss', xp: 120, coins: 24 },
+      { kind: 'boss_defeated', id: 'boss', xp: 120, coins: 24, starter: false },
       { kind: 'companion_stage', id: 'stage', stage: 'adult' },
       { kind: 'badge', id: 'badge' },
     ]);
+  });
+
+  it('turns the first stage into the hatching and marks the victory of the starter quest', () => {
+    const hatch = event('companion.stage_up', 'hatch', { payload: { from: 'egg', to: 'baby' } });
+    const starter = event('boss.defeated', 'quest', { payload: { starter: true } });
+    const moments = momentsFromEvents([hatch, starter]);
+    expect(moments).toEqual([
+      { kind: 'hatch', id: 'hatch' },
+      { kind: 'boss_defeated', id: 'quest', xp: 0, coins: 0, starter: true, bossId: undefined },
+    ]);
+    expect(moments.map(waitsForTouch)).toEqual([true, true]);
   });
 
   it('gives a new title only when the level earns one', () => {

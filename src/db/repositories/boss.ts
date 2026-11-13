@@ -162,7 +162,8 @@ export function markStepDone(tx: Db, stepId: string, clock: ActionClock): StepRe
       ...eventBase(clock, target.id),
       type: 'boss.defeated',
       deltas: change.deltas,
-      payload: { steps },
+      // The victory of the quest of the first launch is a smaller moment (design 1.8).
+      payload: { steps, starter: target.kind === 'starter' },
     });
     recordLevelUp(tx, change, clock);
   }
@@ -301,6 +302,48 @@ export function completeBossStep(
   clock: ActionClock,
 ): StepResult & WithMoments {
   return db.transaction((tx) => withMoments(tx, () => markStepDone(tx, stepId, clock)));
+}
+
+/** The step of the quest of the first launch that opening the statistics does (design 1.8). */
+const STARTER_STATS_STEP = 2;
+
+/** The step of the quest of the first launch that opening the statistics would do, if any. */
+export function starterStatsStepId(db: Db): string | null {
+  const quest = db
+    .select({ id: boss.id })
+    .from(boss)
+    .where(and(eq(boss.kind, 'starter'), eq(boss.status, 'active')))
+    .get();
+  if (quest === undefined) {
+    return null;
+  }
+  const steps = db.select().from(bossSteps).where(eq(bossSteps.bossId, quest.id)).all();
+  const before = steps.find((step) => step.position === STARTER_STATS_STEP - 1);
+  const target = steps.find((step) => step.position === STARTER_STATS_STEP);
+  return target === undefined || target.doneAt !== null || before?.doneAt == null
+    ? null
+    : target.id;
+}
+
+/**
+ * Opening the statistics does the third step of the quest of the first launch, and so wins it
+ * (design-sezioni.md 1.8), once its second step (the first completion) is done. Otherwise, or
+ * without an active quest, nothing changes.
+ */
+export function completeStarterStatsStep(
+  db: Db,
+  clock: ActionClock,
+): { readonly done: boolean } & WithMoments {
+  return db.transaction((tx) =>
+    withMoments(tx, () => {
+      const stepId = starterStatsStepId(tx);
+      if (stepId === null) {
+        return { done: false };
+      }
+      markStepDone(tx, stepId, clock);
+      return { done: true };
+    }),
+  );
 }
 
 /** Archives an active boss: it leaves the list, its steps stay (US-BOSS-03). */

@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { MissionDetailScreen } from '@/features/stats/MissionDetailScreen';
 import { StatsScreen } from '@/features/stats/StatsScreen';
 import { useMissionDetail } from '@/features/stats/useMissionDetail';
+import { useStarterStatsStep } from '@/features/stats/useStarterStatsStep';
 import { useStatsView } from '@/features/stats/useStatsView';
 import { useHeroStore } from '@/stores/hero';
 
@@ -16,6 +17,7 @@ export default function Stats() {
 }
 
 function Overview() {
+  useStarterStatsStep();
   const view = useStatsView();
   return view === null ? null : <StatsScreen view={view} />;
 }

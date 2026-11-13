@@ -35,6 +35,9 @@ const REDUCED_FADE_MS = 150;
 
 const EMBLEM_SIZE = 140;
 const EMBLEM_ICON_SIZE = 64;
+/** The victory of the quest of the first launch is smaller than that of a boss (design 1.8). */
+const EMBLEM_SIZE_SMALL = 96;
+const EMBLEM_ICON_SIZE_SMALL = 44;
 const LEVEL_FONT_SIZE = 96;
 const SPRITE_SIZE = 160;
 const EDGE = 16;
@@ -117,6 +120,8 @@ function useMomentTexts(moment: Moment): MomentTexts {
         spokenDetail: t('shared.moments.rewardLabel', values),
       };
     }
+    case 'hatch':
+      return { title: t('shared.moments.hatched') };
     case 'companion_stage':
       return {
         title: t('shared.moments.companionGrown', {
@@ -129,20 +134,27 @@ function useMomentTexts(moment: Moment): MomentTexts {
   }
 }
 
-/** A circle in every theme (mockup D35B, storyboard C2c). */
-function IconEmblem({ name }: { readonly name: IconName }) {
+/** A circle in every theme (mockup D35B, storyboard C2c); smaller for the starter quest (1.8). */
+function IconEmblem({
+  name,
+  small = false,
+}: {
+  readonly name: IconName;
+  readonly small?: boolean;
+}) {
   const { colors, family } = useTheme();
+  const size = small ? EMBLEM_SIZE_SMALL : EMBLEM_SIZE;
+  const icon = small ? EMBLEM_ICON_SIZE_SMALL : EMBLEM_ICON_SIZE;
   return (
     <View
       testID="moment-icon-emblem"
-      style={[styles.iconEmblem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      style={[
+        styles.iconEmblem,
+        { width: size, height: size, borderRadius: size / 2 },
+        { backgroundColor: colors.surface, borderColor: colors.border },
+      ]}
     >
-      <SvgXml
-        xml={iconXml(name, family)}
-        width={EMBLEM_ICON_SIZE}
-        height={EMBLEM_ICON_SIZE}
-        color={colors.coinsText}
-      />
+      <SvgXml xml={iconXml(name, family)} width={icon} height={icon} color={colors.coinsText} />
     </View>
   );
 }
@@ -162,7 +174,9 @@ function Emblem({ moment }: { readonly moment: Moment }) {
         </ThemedText>
       );
     case 'boss_defeated':
-      return <IconEmblem name="trofeo" />;
+      return <IconEmblem name="trofeo" small={moment.starter} />;
+    case 'hatch':
+      return <CompanionSprite stage="baby" mood="happy" size={SPRITE_SIZE} />;
     case 'companion_stage':
       return <CompanionSprite stage={moment.stage} mood="happy" size={SPRITE_SIZE} />;
     case 'badge':
@@ -233,7 +247,9 @@ export function MomentScreen({ moment, reduceMotion, onSkip, onSeeTrophy }: Mome
   const { detail } = useMomentTexts(victory === null ? moment : { ...victory, xp, coins });
   const spoken = spokenDetail ?? finalDetail;
   const label = spoken === undefined ? title : `${title}. ${spoken}`;
-  const trophyBossId = victory?.bossId ?? null;
+  // The small victory of the quest of the first launch: no confetti and no trophy (design 1.8).
+  const small = victory?.starter === true;
+  const trophyBossId = small ? null : (victory?.bossId ?? null);
   const emblemOpacity = useSharedValue(0);
   const emblemScale = useSharedValue(reduceMotion ? 1 : 0.6);
   const detailOpacity = useSharedValue(0);
@@ -280,7 +296,7 @@ export function MomentScreen({ moment, reduceMotion, onSkip, onSeeTrophy }: Mome
         importantForAccessibility="no"
         style={StyleSheet.absoluteFill}
       />
-      {moment.kind === 'boss_defeated' && !reduceMotion
+      {moment.kind === 'boss_defeated' && !small && !reduceMotion
         ? CONFETTI.map((fraction, index) => (
             <Confetto key={fraction} index={index} fraction={fraction} />
           ))
@@ -305,7 +321,7 @@ export function MomentScreen({ moment, reduceMotion, onSkip, onSeeTrophy }: Mome
           accessibilityLabel={label}
           style={[styles.texts, titleStyle]}
         >
-          <ThemedText variant="display" style={styles.centered}>
+          <ThemedText variant={small ? 'screenTitle' : 'display'} style={styles.centered}>
             {title}
           </ThemedText>
           {detail === undefined ? null : (
@@ -369,9 +385,6 @@ const styles = StyleSheet.create({
   centered: { textAlign: 'center' },
   levelNumber: { fontSize: LEVEL_FONT_SIZE, lineHeight: LEVEL_FONT_SIZE * 1.2 },
   iconEmblem: {
-    width: EMBLEM_SIZE,
-    height: EMBLEM_SIZE,
-    borderRadius: EMBLEM_SIZE / 2,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

@@ -4,6 +4,8 @@ import {
   archiveBoss,
   checkBossDeadlines,
   completeBossStep,
+  completeStarterStatsStep,
+  starterStatsStepId,
   createBoss,
   deleteBoss,
   listActiveBosses,
@@ -628,5 +630,47 @@ describe('deleteBoss', () => {
     );
     expect(() => deleteBoss(db, thesis.id, NOW)).toThrow(RangeError);
     expect(() => deleteBoss(db, 'missing', NOW)).toThrow(RangeError);
+  });
+});
+
+describe('completeStarterStatsStep', () => {
+  it('wins the quest of the first launch when the statistics open after the first completion', () => {
+    const db = newGame(['journal']);
+    expect(starterStatsStepId(db)).toBeNull();
+    completeMission(db, { missionId: missionId(db, 'journal'), source: 'app', ...NOW });
+    expect(starterStatsStepId(db)).toBe(stepIds(db, starterQuest(db).id)[2]);
+    const result = completeStarterStatsStep(db, NOW);
+    expect(result.done).toBe(true);
+    expect(result.moments.map((event) => event.type)).toEqual(['boss.defeated', 'hero.level_up']);
+    expect(result.moments[0].payload).toMatchObject({ starter: true });
+    expect(starterQuest(db).status).toBe('defeated');
+    expect(result.moments[0]).toMatchObject({ dCoins: 50 });
+    expect(starterStatsStepId(db)).toBeNull();
+    expect(db.select().from(hero).get()).toMatchObject({ level: 2 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('does nothing before the first completion, or once the quest is won or archived', () => {
+    const db = newGame(['journal']);
+    expect(completeStarterStatsStep(db, NOW)).toEqual({ done: false, moments: [] });
+    expect(eventsOf(db, 'boss.step_done')).toHaveLength(1);
+
+    completeMission(db, { missionId: missionId(db, 'journal'), source: 'app', ...NOW });
+    completeStarterStatsStep(db, NOW);
+    expect(completeStarterStatsStep(db, NOW)).toEqual({ done: false, moments: [] });
+
+    const other = newGame(['journal']);
+    completeMission(other, { missionId: missionId(other, 'journal'), source: 'app', ...NOW });
+    archiveBoss(other, starterQuest(other).id, NOW);
+    expect(completeStarterStatsStep(other, NOW)).toEqual({ done: false, moments: [] });
+  });
+
+  it('marks a normal boss victory as not starter', () => {
+    const db = newGame(['journal']);
+    const thesis = createBoss(db, { ...THESIS, steps: ['A', 'B'] }, NOW);
+    const [first, second] = stepIds(db, thesis.id);
+    completeBossStep(db, first, NOW);
+    const result = completeBossStep(db, second, NOW);
+    expect(result.moments[0].payload).toMatchObject({ starter: false });
   });
 });

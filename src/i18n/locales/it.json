@@ -552,7 +552,10 @@
       },
       "badge": "Badge sbloccato",
       "seeTrophy": "Vedi il trofeo",
-      "rewardLabel": "Più {{xp}} {{xpTerm}}, più {{coins}} {{coinsTerm}}"
+      "rewardLabel": "Più {{xp}} {{xpTerm}}, più {{coins}} {{coinsTerm}}",
+      "hatched": "È nato!",
+      "hatchName": "Dagli un nome",
+      "hatchConfirm": "Conferma"
     },
     "appName": "Good Habits Quest",
     "companionSprite": {
@@ -875,6 +878,11 @@
       "amount": "Quanto aggiungi ({{unit}})",
       "add": "Aggiungi",
       "invalid": "Scrivi un numero maggiore di zero."
+    },
+    "starter": {
+      "reward": "Ricompensa: {{levelTerm}} {{level}} e {{coins}} {{coinsTerm}}",
+      "stepDone": "{{step}}, fatto",
+      "hint": "Tocca il cerchio quando l'hai fatta"
     }
   },
   "habits": {

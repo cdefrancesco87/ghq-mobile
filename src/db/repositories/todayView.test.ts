@@ -1,4 +1,4 @@
-import { createBoss, checkBossDeadlines } from '@/db/repositories/boss';
+import { createBoss, checkBossDeadlines, completeStarterStatsStep } from '@/db/repositories/boss';
 import {
   completeMission,
   progressMission,
@@ -344,5 +344,28 @@ describe('getTodayView', () => {
     const names = getTodayView(db, clockAt(FRIDAY, 12)).bosses.map((item) => item.boss.id);
 
     expect(names.slice(0, 2)).toEqual([sooner.id, later.id]);
+  });
+
+  it('gives the steps of the quest of the first launch while it is active', () => {
+    const db = newGame(['journal']);
+    expect(getTodayView(db, clockAt(FRIDAY, 10)).starterQuest).toEqual({
+      bossId: expect.any(String),
+      steps: [
+        { title: 'starter_quest.steps.create_habit', done: true },
+        { title: 'starter_quest.steps.complete_habit', done: false },
+        { title: 'starter_quest.steps.open_stats', done: false },
+      ],
+    });
+
+    completeMission(db, {
+      missionId: missionId(db, 'journal'),
+      source: 'app',
+      ...clockAt(FRIDAY, 10),
+    });
+    const after = getTodayView(db, clockAt(FRIDAY, 11)).starterQuest;
+    expect(after?.steps.map((step) => step.done)).toEqual([true, true, false]);
+
+    completeStarterStatsStep(db, clockAt(FRIDAY, 11));
+    expect(getTodayView(db, clockAt(FRIDAY, 12)).starterQuest).toBeNull();
   });
 });

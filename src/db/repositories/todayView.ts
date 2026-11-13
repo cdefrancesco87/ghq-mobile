@@ -8,6 +8,7 @@ import { xpToNext } from '../../rules/level';
 import type { GameDay } from '../../rules/types';
 import {
   boss,
+  bossSteps,
   companion,
   daySummaries,
   dayPlan,
@@ -72,6 +73,13 @@ export interface TodayNotices {
   readonly resumedMissions: readonly { readonly id: string; readonly name: string }[];
 }
 
+/** The quest of the first launch while it is active, with its steps in order (design 1.7). */
+export interface StarterQuestView {
+  readonly bossId: string;
+  /** Titles are i18n keys (`starter_quest.steps.*`). */
+  readonly steps: readonly { readonly title: string; readonly done: boolean }[];
+}
+
 export interface TodayView {
   readonly day: GameDay;
   readonly restDay: boolean;
@@ -95,12 +103,35 @@ export interface TodayView {
   readonly planBonus: boolean;
   /** Active bosses, the nearest deadline first and those without one last. */
   readonly bosses: readonly TodayBoss[];
+  /** The quest of the first launch, shown in its own card instead of the bosses (design 1.7). */
+  readonly starterQuest: StarterQuestView | null;
   /** The full-day bonus was given today and no undo took it back (design-sezioni.md 2.7). */
   readonly fullDay: boolean;
   readonly doneCount: number;
   /** Missions of today without the skipped ones, which do not count in the day (design 8.3). */
   readonly totalCount: number;
   readonly notices: TodayNotices;
+}
+
+function starterQuestOf(db: Db): StarterQuestView | null {
+  const quest = db
+    .select({ id: boss.id })
+    .from(boss)
+    .where(and(eq(boss.kind, 'starter'), eq(boss.status, 'active')))
+    .get();
+  if (quest === undefined) {
+    return null;
+  }
+  const steps = db
+    .select()
+    .from(bossSteps)
+    .where(eq(bossSteps.bossId, quest.id))
+    .orderBy(asc(bossSteps.position))
+    .all();
+  return {
+    bossId: quest.id,
+    steps: steps.map((step) => ({ title: step.title, done: step.doneAt !== null })),
+  };
 }
 
 function activeBosses(db: Db): TodayBoss[] {
@@ -343,6 +374,7 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
     planBonus: bonusGiven(db, 'bonus.plan', day),
     fullDay: bonusGiven(db, 'bonus.full_day', day),
     bosses: activeBosses(db),
+    starterQuest: starterQuestOf(db),
     doneCount,
     totalCount: today.filter((item) => item.state !== 'skipped').length,
     notices: notices(db, day, current.exhaustedDay),

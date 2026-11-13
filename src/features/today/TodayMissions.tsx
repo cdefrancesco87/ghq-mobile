@@ -7,6 +7,7 @@ import { Card } from '@/features/shared/Card';
 import { Icon } from '@/features/shared/Icon';
 import { MissionRow } from '@/features/shared/MissionRow';
 import { ThemedText } from '@/features/shared/ThemedText';
+import { companionName } from '@/rules/companion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { FullDayCard } from './FullDayCard';
 import { missionIcon, originOf, useMissionTexts } from './missionText';
@@ -21,6 +22,8 @@ export interface TodayMissionsProps {
   readonly tzOffset: number;
   readonly actions: MissionActions;
   readonly menu: MissionMenu;
+  /** The companion's tip on the first mission, before the first completion (design 1.7). */
+  readonly hint?: boolean;
 }
 
 /**
@@ -30,7 +33,7 @@ export interface TodayMissionsProps {
  * priorities are only in the Plan (2.3), but the counter counts them. Once the day is full, the
  * card «Giornata completa» takes the place of the counter.
  */
-export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsProps) {
+export function TodayMissions({ view, tzOffset, actions, menu, hint = false }: TodayMissionsProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
   const { detailOf, warningOf, doneTimeOf, reasonOf } = useMissionTexts(view.day, tzOffset);
@@ -66,6 +69,7 @@ export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsPr
           )}
         </View>
       )}
+      {hint && todo.length > 0 ? <CompanionHint companion={view.companion.name} /> : null}
       {todo.length === 0 ? null : (
         <Card>
           {todo.map((item, index) => {
@@ -158,7 +162,42 @@ export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsPr
   );
 }
 
+const POINTER = 8;
+
+/** «Tocca il cerchio quando l'hai fatta», pointing at the control of the first mission (D06). */
+function CompanionHint({ companion }: { readonly companion: string | null }) {
+  const { t } = useTranslation();
+  const { colors, family } = useTheme();
+  const text = t('today.starter.hint');
+  const name = companionName(companion, t('lexicon.companion', { context: family }));
+  return (
+    <View
+      testID="today-starter-hint"
+      accessible
+      accessibilityLabel={t('companion.says', { name, text })}
+      style={styles.hint}
+    >
+      <View style={[styles.bubble, { backgroundColor: colors.text }]}>
+        <ThemedText color={colors.background}>{text}</ThemedText>
+      </View>
+      <View style={[styles.pointer, { borderTopColor: colors.text }]} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  hint: { alignItems: 'flex-end', marginBottom: -4 },
+  bubble: { maxWidth: 280, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  pointer: {
+    marginRight: 32,
+    width: 0,
+    height: 0,
+    borderLeftWidth: POINTER,
+    borderRightWidth: POINTER,
+    borderTopWidth: POINTER,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
   section: { gap: 8 },
   heading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   flex: { flex: 1 },

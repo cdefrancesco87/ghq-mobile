@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -16,6 +16,7 @@ import { Card } from '@/features/shared/Card';
 import { CompanionSprite } from '@/features/shared/CompanionSprite';
 import { EmptyState } from '@/features/shared/EmptyState';
 import { Icon } from '@/features/shared/Icon';
+import { useMomentQueue } from '@/features/shared/MomentQueue';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { hitSlopFor } from '@/features/shared/touch';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -52,8 +53,14 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const [sticky, setSticky] = useState(false);
   const [shieldClosed, setShieldClosed] = useState(false);
   const [resumedClosed, setResumedClosed] = useState(false);
+  // The companion's tip goes away at the first completion or at a touch elsewhere (design 1.7).
+  const [hintClosed, setHintClosed] = useState(false);
+  const hint = view.companion.stage === 'egg' && !hintClosed;
   const resumed = view.notices.resumedMissions;
   const actions = useMissionActions();
+  // The victory of the quest of the first launch, won in Statistiche, shows back here (1.8).
+  const { showWaiting } = useMomentQueue();
+  useFocusEffect(showWaiting);
   const menu = useMissionMenu(view, actions);
   // Skipped missions are out of the counters but still listed among the done ones.
   const working = !view.restDay && view.missions.length > 0;
@@ -74,7 +81,11 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   );
 
   return (
-    <View testID="today-screen" style={[styles.screen, { backgroundColor: colors.background }]}>
+    <View
+      testID="today-screen"
+      onTouchStart={hint ? () => setHintClosed(true) : undefined}
+      style={[styles.screen, { backgroundColor: colors.background }]}
+    >
       <ScrollView
         testID="today-scroll"
         onScroll={onScroll}
@@ -154,7 +165,13 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
             onAction={() => router.push('/editor')}
           />
         ) : (
-          <TodayMissions view={view} tzOffset={tzOffset} actions={actions} menu={menu} />
+          <TodayMissions
+            view={view}
+            tzOffset={tzOffset}
+            actions={actions}
+            menu={menu}
+            hint={hint}
+          />
         )}
       </ScrollView>
       {menu.sheets}

@@ -2,7 +2,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import { Stack } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
-import { Dimensions } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 import { archiveBoss, completeBossStep, createBoss } from '@/db/repositories/boss';
 import { setDayPlan } from '@/db/repositories/completion';
@@ -14,6 +14,7 @@ import { buyItem } from '@/db/repositories/shop';
 import {
   boss,
   bossSteps,
+  companion,
   dayPlan,
   daySummaries,
   events,
@@ -22,6 +23,7 @@ import {
   missionReminders,
 } from '@/db/schema';
 import type { Db } from '@/db/types';
+import { MOMENT_MAX_MS } from '@/features/shared/MomentQueue';
 import { UNDO_TOAST_MS } from '@/features/shared/UndoToast';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
@@ -639,7 +641,7 @@ describe('Today: bosses', () => {
     expect(screen.queryByTestId('today-bosses-scroll')).toBeNull();
   });
 
-  it('scrolls three bosses from the nearest deadline, with the dots and the near deadline in danger', async () => {
+  it('scrolls the bosses from the nearest deadline, with the dots and the near deadline in danger', async () => {
     const db = newGame(['journal']);
     const later = createBoss(
       db,
@@ -656,17 +658,12 @@ describe('Today: bosses', () => {
 
     expect(screen.getByRole('header', { name: 'Grandi obiettivi' })).toBeOnTheScreen();
     expect(screen.getByTestId('today-bosses-scroll')).toBeOnTheScreen();
-    expect(treeOrder([card(later.id), card(sooner.id), card(quest.id)])).toEqual([
-      card(sooner.id),
-      card(later.id),
-      card(quest.id),
-    ]);
-    expect(screen.getByTestId('today-bosses-dot-2', { includeHiddenElements: true })).toBeTruthy();
+    expect(treeOrder([card(later.id), card(sooner.id)])).toEqual([card(sooner.id), card(later.id)]);
+    expect(screen.getByTestId('today-bosses-dot-1', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByTestId(`${card(sooner.id)}-deadline`)).toHaveTextContent('2 giorni');
-    // The quest of the first launch is a boss like the others, with its name of the theme.
-    expect(screen.getByTestId(`${card(quest.id)}-name`)).toHaveTextContent('Primi passi');
-    // Its first step («Crea la prima abitudine») is done with the profile.
-    expect(screen.getByTestId(`${card(quest.id)}-next`)).toHaveTextContent('Completala');
+    // The quest of the first launch has its own card above the bosses (design 1.7).
+    expect(screen.queryByTestId(card(quest.id))).toBeNull();
+    expect(treeOrder(['today-starter', 'today-bosses'])).toEqual(['today-starter', 'today-bosses']);
   });
 
   it('completes a step from the card and undoes it from the notice', async () => {
@@ -1006,5 +1003,111 @@ describe('Today: measurable missions', () => {
       1,
     );
     expectHeroMatchesLog(db);
+  });
+});
+
+describe('Today: quest of the first launch', () => {
+  const control = (db: Db) => `today-mission-${missionId(db, 'journal')}-control`;
+  const companionName = (db: Db) => db.select().from(companion).get()?.name ?? null;
+
+  it('plays the quest from the arrival on Today to the small victory', async () => {
+    const db = newGame(['journal']);
+    await openToday(db);
+
+    // Arrival (design 1.7): its own card, the first step already done, the companion's tip.
+    expect(screen.getByTestId('today-starter-name')).toHaveTextContent('Primi passi');
+    expect(screen.getByTestId('today-starter-count')).toHaveTextContent('1 di 3');
+    expect(
+      screen.getByTestId('today-starter-step-0-done', { includeHiddenElements: true }),
+    ).toBeTruthy();
+    expect(screen.getByLabelText('Completala, da fare')).toBeOnTheScreen();
+    expect(screen.getByTestId('today-starter-reward')).toHaveTextContent(
+      'Ricompensa: livello 2 e 50 monete',
+    );
+    expect(screen.getByTestId('today-starter-hint')).toHaveTextContent(
+      "Tocca il cerchio quando l'hai fatta",
+    );
+    expect(screen.queryByTestId('today-bosses-empty')).toBeNull();
+    expect(screen.queryByTestId('today-hero-stats-pulse')).toBeNull();
+
+    // First completion: the egg hatches with the choice of the name, the second step is done.
+    await fireEvent.press(screen.getByTestId(control(db)));
+    expect(await screen.findByTestId('moment-hatch')).toBeOnTheScreen();
+    expect(screen.getByText('È nato!')).toBeOnTheScreen();
+    expect(screen.getByTestId('moment-hatch-name')).toHaveProp('value', 'Cloudy');
+    // It waits for the name instead of going away after 2.5 seconds.
+    jest.useFakeTimers();
+    try {
+      await act(async () => jest.advanceTimersByTime(MOMENT_MAX_MS * 2));
+    } finally {
+      jest.useRealTimers();
+    }
+    expect(screen.getByTestId('moment-hatch')).toBeOnTheScreen();
+    await fireEvent.changeText(screen.getByTestId('moment-hatch-name'), 'Fiocco');
+    await fireEvent.press(screen.getByTestId('moment-continue'));
+    expect(screen.queryByTestId('moment-hatch')).toBeNull();
+    expect(companionName(db)).toBe('Fiocco');
+    expect(screen.queryByTestId('today-starter-hint')).toBeNull();
+    expect(screen.getByTestId('today-starter-count')).toHaveTextContent('2 di 3');
+    expect(screen.getByTestId('today-hero-stats-pulse')).toBeOnTheScreen();
+
+    // Statistiche wins the quest; the victory shows back on Today (design 1.8).
+    await fireEvent.press(screen.getByTestId('today-hero-streak'));
+    expect(await screen.findByTestId('stats-screen')).toBeOnTheScreen();
+    expect(db.select().from(boss).where(eq(boss.kind, 'starter')).get()?.status).toBe('defeated');
+    expect(screen.queryByTestId('moment-boss_defeated')).toBeNull();
+    expect(screen.queryByTestId('moment-level_up')).toBeNull();
+    await fireEvent.press(screen.getByTestId('stats-header-back'));
+
+    expect(await screen.findByTestId('moment-level_up')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('moment-backdrop'));
+    expect(screen.getByTestId('moment-boss_defeated')).toBeOnTheScreen();
+    // Smaller than the victory over a boss: a small emblem, no confetti, no trophy.
+    expect(StyleSheet.flatten(screen.getByTestId('moment-icon-emblem').props.style).width).toBe(96);
+    expect(screen.queryByTestId('moment-particle')).toBeNull();
+    expect(screen.queryByTestId('moment-trophy')).toBeNull();
+    const victory = db.select().from(events).where(eq(events.type, 'boss.defeated')).get();
+    expect(victory).toMatchObject({ dCoins: 50 });
+    expect(db.select().from(hero).get()?.level).toBe(2);
+    expectHeroMatchesLog(db);
+    await fireEvent.press(screen.getByTestId('moment-continue'));
+
+    // Then the row «Trasforma un obiettivo in un boss» takes the place of the quest.
+    expect(screen.queryByTestId('today-starter')).toBeNull();
+    expect(screen.getByTestId('today-bosses-empty')).toHaveTextContent(
+      'Dividi un grande obiettivo in passi',
+    );
+  });
+
+  it('closes the companion tip at a touch elsewhere', async () => {
+    const db = newGame(['journal']);
+    await openToday(db);
+    expect(screen.getByTestId('today-starter-hint')).toBeOnTheScreen();
+    await fireEvent(screen.getByTestId('today-screen'), 'touchStart');
+    expect(screen.queryByTestId('today-starter-hint')).toBeNull();
+  });
+
+  it('hatches with only a fade under «Riduci movimento» and keeps the name with «Salta»', async () => {
+    const db = newGame(['journal']);
+    setSetting(db, 'reduce_motion', 'on', at(FRIDAY, 9));
+    await openToday(db);
+
+    await fireEvent.press(screen.getByTestId(control(db)));
+    expect(await screen.findByTestId('moment-hatch')).toBeOnTheScreen();
+    expect(screen.getByTestId('moment-hatch-puppy')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('moment-skip'));
+    expect(screen.queryByTestId('moment-hatch')).toBeNull();
+    expect(companionName(db)).toBeNull();
+  });
+
+  it('does not win the quest when Statistiche opens before the first completion', async () => {
+    const db = newGame(['journal']);
+    await openToday(db);
+    await fireEvent.press(screen.getByTestId('today-hero-streak'));
+    expect(await screen.findByTestId('stats-screen')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('stats-header-back'));
+    expect(await screen.findByTestId('today-starter')).toBeOnTheScreen();
+    expect(screen.getByTestId('today-starter-count')).toHaveTextContent('1 di 3');
+    expect(screen.queryByTestId('moment-boss_defeated')).toBeNull();
   });
 });

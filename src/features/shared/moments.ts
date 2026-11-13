@@ -20,13 +20,18 @@ export type Moment =
       readonly bossId: string | null;
       readonly xp: number;
       readonly coins: number;
+      /** The quest of the first launch: a smaller victory than a boss (design 1.8). */
+      readonly starter: boolean;
     }
+  /** The egg hatches at the first completion, with the choice of the name (design 1.8, 6.5). */
+  | { readonly kind: 'hatch'; readonly id: string }
   | { readonly kind: 'companion_stage'; readonly id: string; readonly stage: CompanionStage }
   | { readonly kind: 'badge'; readonly id: string };
 
 const MOMENT_ORDER: readonly Moment['kind'][] = [
   'level_up',
   'boss_defeated',
+  'hatch',
   'companion_stage',
   'badge',
 ];
@@ -51,9 +56,12 @@ function momentOf(event: EventRow): Moment | null {
         bossId: event.bossId,
         xp: event.dXp,
         coins: event.dCoins,
+        starter: (payload as { starter?: boolean }).starter === true,
       };
-    case 'companion.stage_up':
-      return { kind: 'companion_stage', id, stage: (payload as { to: CompanionStage }).to };
+    case 'companion.stage_up': {
+      const { to } = payload as { to: CompanionStage };
+      return to === 'baby' ? { kind: 'hatch', id } : { kind: 'companion_stage', id, stage: to };
+    }
     case 'badge.unlocked':
       return { kind: 'badge', id };
     default:
@@ -63,10 +71,11 @@ function momentOf(event: EventRow): Moment | null {
 
 /**
  * Whether the moment waits for a touch instead of going away after 2.5 seconds: the victory has
- * «Vedi il trofeo» and «Continua» (design-sezioni.md 5.5), which must stay in reach.
+ * «Vedi il trofeo» and «Continua» (design-sezioni.md 5.5), which must stay in reach, and the
+ * hatching asks for the name of the companion (1.8).
  */
 export function waitsForTouch(moment: Moment): boolean {
-  return moment.kind === 'boss_defeated';
+  return moment.kind === 'boss_defeated' || moment.kind === 'hatch';
 }
 
 /** The moments of the events returned by an action; the other events bring none. */
