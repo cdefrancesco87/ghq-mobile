@@ -6,6 +6,8 @@ import {
   progressMission,
   removeFromDayPlan,
   setDayPlan,
+  skipMission,
+  type SkipReason,
 } from '@/db/repositories/completion';
 import { completeBossStep } from '@/db/repositories/boss';
 import type { TodayBoss, TodayMission } from '@/db/repositories/todayView';
@@ -23,6 +25,10 @@ export interface MissionActions {
   readonly complete: (item: TodayMission, origin: Point) => void;
   /** Undoes a completion of today (US-OGGI-04); a refusal is told in words. */
   readonly undo: (eventId: string) => void;
+  /** «Salta oggi» (US-OGGI-06), with «Annulla» for 5 seconds (design-sezioni.md A7). */
+  readonly skip: (item: TodayMission, reason: SkipReason) => void;
+  /** Undoes a skip of today; a refusal is told in words. */
+  readonly undoSkip: (eventId: string) => void;
   readonly addToPlan: (item: TodayMission) => void;
   readonly removeFromPlan: (item: TodayMission) => void;
   /**
@@ -43,7 +49,7 @@ export function useMissionActions(): MissionActions {
 
   const tell = (message: string) => toast.show({ message });
 
-  const undo = (eventId: string) => {
+  const undoOf = (texts: 'missions' | 'skip') => (eventId: string) => {
     try {
       runAction((db, clock) => undoEvent(db, eventId, clock));
     } catch (error) {
@@ -57,8 +63,29 @@ export function useMissionActions(): MissionActions {
         already_undone: 'alreadyUndone',
         boss_not_active: 'bossNotActive',
       } as const;
-      tell(t(`today.missions.errors.${reasons[error.reason]}`));
+      tell(t(`today.${texts}.errors.${reasons[error.reason]}`));
     }
+  };
+  const undo = undoOf('missions');
+  const undoSkip = undoOf('skip');
+
+  const skip = (item: TodayMission, reason: SkipReason) => {
+    let result;
+    try {
+      result = runAction((db, { now, tzOffset }) =>
+        skipMission(db, { missionId: item.mission.id, reason, now, tzOffset }),
+      );
+    } catch {
+      // The sheet offers it only with skips left: the refusal left is a day that changed.
+      tell(t('today.missions.errors.failed'));
+      return;
+    }
+    if (result.cancelledNotificationIds.length > 0) {
+      void systemScheduler.cancel(result.cancelledNotificationIds).catch(() => undefined);
+    }
+    enqueue(result.moments);
+    const { eventId } = result;
+    toast.show({ message: t('today.skip.toast'), onUndo: () => undoSkip(eventId) });
   };
 
   const complete = (item: TodayMission, origin: Point) => {
@@ -154,5 +181,5 @@ export function useMissionActions(): MissionActions {
     return result.dealt;
   };
 
-  return { complete, undo, addToPlan, removeFromPlan, completeStep };
+  return { complete, undo, skip, undoSkip, addToPlan, removeFromPlan, completeStep };
 }

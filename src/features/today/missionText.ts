@@ -5,6 +5,7 @@ import type { TodayMission } from '@/db/repositories/todayView';
 import { describeFrequency } from '@/features/shared/describeFrequency';
 import { formatClock } from '@/features/shared/formatClock';
 import { categoryIcon, ICON_NAMES, type IconName } from '@/features/shared/icons';
+import { termInSentence } from '@/i18n/lexicon';
 import { addDays } from '@/rules/gameDay';
 import type { GameDay } from '@/rules/types';
 
@@ -30,7 +31,7 @@ export function originOf(event: GestureResponderEvent | undefined) {
   return { x: event?.nativeEvent?.pageX ?? 0, y: event?.nativeEvent?.pageY ?? 0 };
 }
 
-/** The texts under the name of a mission of Today: frequency and time, overdue, done at. */
+/** The texts under the name of a mission of Today: frequency and time, overdue, done at, skip. */
 export function useMissionTexts(day: GameDay, tzOffset: number) {
   const { t, i18n } = useTranslation();
 
@@ -63,5 +64,11 @@ export function useMissionTexts(day: GameDay, tzOffset: number) {
   const doneTimeOf = (item: TodayMission): string =>
     item.doneAt === null ? '' : formatInstant(item.doneAt, tzOffset, i18n.language);
 
-  return { detailOf, warningOf, doneTimeOf };
+  /** The reason of a skipped mission, inside the sentence «saltata · malattia». */
+  const reasonOf = (item: TodayMission): string =>
+    item.skipReason === null
+      ? ''
+      : termInSentence(t(`today.skip.reasons.${item.skipReason}`), i18n.language);
+
+  return { detailOf, warningOf, doneTimeOf, reasonOf };
 }

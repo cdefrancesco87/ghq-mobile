@@ -385,6 +385,102 @@ describe('skipMission', () => {
     expect(() => skipOn(9)).not.toThrow();
     expectHeroMatchesLog(db);
   });
+
+  it('gives the skips left, the event and the reminders of today to cancel', () => {
+    const db = newGame(['journal', 'healthy_meal'], MONDAY);
+    const journal = missionId(db, 'journal');
+    db.insert(scheduledReminders)
+      .values([
+        { osId: 'os-today', missionId: journal, gameDay: '2026-11-02', fireAt: at(MONDAY, 20) },
+        { osId: 'os-tomorrow', missionId: journal, gameDay: '2026-11-03', fireAt: at(3, 20) },
+      ])
+      .run();
+    const result = skipMission(db, {
+      missionId: journal,
+      reason: 'travel',
+      now: at(MONDAY, 10),
+      tzOffset: 60,
+    });
+    expect(result).toEqual({
+      skipsLeft: 2,
+      eventId: db.select().from(events).where(eq(events.type, 'mission.skipped')).get()?.id,
+      bonuses: [],
+      cancelledNotificationIds: ['os-today'],
+      moments: [],
+    });
+    expect(db.select({ osId: scheduledReminders.osId }).from(scheduledReminders).all()).toEqual([
+      { osId: 'os-tomorrow' },
+    ]);
+  });
+
+  it('gives the full-day bonus when the skip leaves every other mission done', () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    loseHp(db, 10);
+    complete(db, missionId(db, 'journal'));
+    const result = skipMission(db, {
+      missionId: missionId(db, 'healthy_meal'),
+      reason: 'illness',
+      now: at(FRIDAY, 11),
+      tzOffset: 60,
+    });
+    expect(result.bonuses).toEqual(['bonus.full_day']);
+    expect(db.select().from(hero).get()).toMatchObject({ coins: 12, hp: 46 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('gives the plan bonus when the skip leaves every other priority done', () => {
+    const db = newGame(['journal', 'healthy_meal', 'track_expenses']);
+    const context = { now: at(FRIDAY, 9, 30), tzOffset: 60 };
+    setDayPlan(db, missionId(db, 'journal'), context);
+    setDayPlan(db, missionId(db, 'healthy_meal'), context);
+    complete(db, missionId(db, 'journal'));
+    const result = skipMission(db, {
+      missionId: missionId(db, 'healthy_meal'),
+      reason: 'other',
+      now: at(FRIDAY, 11),
+      tzOffset: 60,
+    });
+    expect(result.bonuses).toEqual(['bonus.plan']);
+    expect(db.select().from(dayPlan).all()).toHaveLength(1);
+    expectHeroMatchesLog(db);
+  });
+
+  it('gives the moment of a new level reached with the plan bonus of a skip', () => {
+    const db = newGame(['journal', 'healthy_meal', 'track_expenses']);
+    const change = changeHero(db, { xp: 170 }, at(FRIDAY, 9));
+    appendEvent(db, {
+      type: 'bonus.plan',
+      occurredAt: at(FRIDAY, 9),
+      tzOffset: 60,
+      source: 'system',
+      gameDay: '2026-11-05',
+      deltas: change.deltas,
+    });
+    const context = { now: at(FRIDAY, 9, 30), tzOffset: 60 };
+    setDayPlan(db, missionId(db, 'journal'), context);
+    setDayPlan(db, missionId(db, 'healthy_meal'), context);
+    complete(db, missionId(db, 'journal'));
+    const result = skipMission(db, {
+      missionId: missionId(db, 'healthy_meal'),
+      reason: 'other',
+      now: at(FRIDAY, 11),
+      tzOffset: 60,
+    });
+    expect(result.moments.map((event) => event.type)).toEqual(['hero.level_up']);
+    expectHeroMatchesLog(db);
+  });
+
+  it('gives no full-day bonus when every mission of the day is skipped', () => {
+    const db = newGame(['journal']);
+    const result = skipMission(db, {
+      missionId: missionId(db, 'journal'),
+      reason: 'rest',
+      now: at(FRIDAY, 11),
+      tzOffset: 60,
+    });
+    expect(result.bonuses).toEqual([]);
+    expectHeroMatchesLog(db);
+  });
 });
 
 describe('day plan', () => {

@@ -76,6 +76,71 @@ describe('getTodayView', () => {
     expect(view.doneCount).toBe(0);
   });
 
+  it('gives skips left, reason and event of a skip, and leaves skipped missions out of the total', () => {
+    const db = newGame(['meditation', 'journal']);
+    const meditation = missionId(db, 'meditation');
+    const journal = missionId(db, 'journal');
+    // Friday 6 is the first skip of the week from Monday 2 November.
+    const { eventId } = skipMission(db, {
+      missionId: meditation,
+      reason: 'illness',
+      ...clockAt(FRIDAY, 10),
+    });
+
+    const view = getTodayView(db, clockAt(FRIDAY, 12));
+
+    expect(missionOf(view, meditation)).toMatchObject({
+      state: 'skipped',
+      skipsLeft: 2,
+      skipReason: 'illness',
+      skipEventId: eventId,
+      completionEventId: null,
+    });
+    expect(missionOf(view, journal)).toMatchObject({
+      state: 'todo',
+      skipsLeft: 3,
+      skipReason: null,
+      skipEventId: null,
+    });
+    expect(view.totalCount).toBe(1);
+    expect(view.fullDay).toBe(false);
+  });
+
+  it('counts the skips of the week from the week start of the settings', () => {
+    const db = newGame(['meditation'], 3);
+    const meditation = missionId(db, 'meditation');
+    for (const day of [3, 4]) {
+      skipMission(db, { missionId: meditation, reason: 'travel', ...clockAt(day, 10) });
+    }
+    // Sunday 8 closes the week from Monday 2…
+    expect(missionOf(getTodayView(db, clockAt(8, 12)), meditation).skipsLeft).toBe(1);
+    // …and starts a new one with the week from Sunday.
+    setWeekRules(db, { weekStart: 7 }, { today: '2026-11-03', now: at(3, 11) });
+    expect(missionOf(getTodayView(db, clockAt(8, 12)), meditation).skipsLeft).toBe(3);
+  });
+
+  it('says when the day is full until an undo opens it again', () => {
+    const db = newGame(['meditation', 'journal']);
+    const meditation = missionId(db, 'meditation');
+    completeMission(db, { missionId: meditation, source: 'app', ...clockAt(FRIDAY, 10) });
+    const { eventId } = skipMission(db, {
+      missionId: missionId(db, 'journal'),
+      reason: 'rest',
+      ...clockAt(FRIDAY, 11),
+    });
+    expect(getTodayView(db, clockAt(FRIDAY, 12))).toMatchObject({
+      fullDay: true,
+      doneCount: 1,
+      totalCount: 1,
+    });
+    undoEvent(db, eventId, clockAt(FRIDAY, 12));
+    expect(getTodayView(db, clockAt(FRIDAY, 12))).toMatchObject({
+      fullDay: false,
+      doneCount: 1,
+      totalCount: 2,
+    });
+  });
+
   it('has no missions on a rest day', () => {
     const db = newGame(['meditation']);
     // 6 November 2026 is a Friday (5 with Monday = 1).

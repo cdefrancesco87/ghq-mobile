@@ -10,6 +10,7 @@ import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { canAddToPlan } from '@/rules/day';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PlanPicker } from './PlanPicker';
+import { SkipSheet } from './SkipSheet';
 import type { MissionActions } from './useMissionActions';
 
 export interface MissionMenu {
@@ -19,6 +20,8 @@ export interface MissionMenu {
   readonly rowActions: (item: TodayMission) => MissionRowAction[];
   /** The sheet «Scegli una priorità» (design-sezioni.md 2.3). */
   readonly openPicker: () => void;
+  /** The sheet «Salta oggi» with the reasons (design-sezioni.md 2.5), e.g. from the swipe. */
+  readonly openSkip: (item: TodayMission) => void;
   readonly openDetail: (item: TodayMission) => void;
   /** The menu and the picker, to put once in the screen. */
   readonly sheets: ReactNode;
@@ -27,24 +30,31 @@ export interface MissionMenu {
 /** The menu of the rows of Today, shared by the Plan and the list of the missions. */
 export function useMissionMenu(view: TodayView, actions: MissionActions): MissionMenu {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, family } = useTheme();
   const router = useRouter();
   const [menuFor, setMenuFor] = useState<TodayMission | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  // The picker asked from the menu waits for the menu to slide away: on iOS a modal shown while
+  const [skipFor, setSkipFor] = useState<TodayMission | null>(null);
+  // The sheets asked from the menu wait for the menu to slide away: on iOS a modal shown while
   // another one is still closing may never appear.
-  const [pickerQueued, setPickerQueued] = useState(false);
+  const [queued, setQueued] = useState<
+    { sheet: 'picker' } | { sheet: 'skip'; item: TodayMission } | null
+  >(null);
 
   useEffect(() => {
-    if (!pickerQueued || menuFor !== null) {
+    if (queued === null || menuFor !== null) {
       return undefined;
     }
     const timer = setTimeout(() => {
-      setPickerQueued(false);
-      setPickerOpen(true);
+      setQueued(null);
+      if (queued.sheet === 'picker') {
+        setPickerOpen(true);
+      } else {
+        setSkipFor(queued.item);
+      }
     }, SHEET_DURATION_MS);
     return () => clearTimeout(timer);
-  }, [pickerQueued, menuFor]);
+  }, [queued, menuFor]);
 
   const openDetail = (item: TodayMission) =>
     router.push({ pathname: '/stats', params: { missionId: item.mission.id } });
@@ -73,7 +83,26 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
         key: 'plan',
         label: t('today.missions.menu.addToPlan'),
         icon: <Icon name="aggiungi" size={20} color={colors.text} />,
-        onPress: () => (canAddToPlan(view.plan) ? actions.addToPlan(item) : setPickerQueued(true)),
+        onPress: () =>
+          canAddToPlan(view.plan) ? actions.addToPlan(item) : setQueued({ sheet: 'picker' }),
+      });
+    }
+    if (item.state === 'todo') {
+      // With no skips left the sheet still opens and says why (US-OGGI-06).
+      items.push({
+        key: 'skip',
+        label: t('lexicon.skipToday', { context: family }),
+        icon: <Icon name="salta" size={20} color={colors.text} />,
+        onPress: () => setQueued({ sheet: 'skip', item }),
+      });
+    }
+    const skipEventId = item.skipEventId;
+    if (skipEventId !== null) {
+      items.push({
+        key: 'unskip',
+        label: t('today.skip.undo'),
+        icon: <Icon name="ripristina" size={20} color={colors.text} />,
+        onPress: () => actions.undoSkip(skipEventId),
       });
     }
     items.push(
@@ -93,8 +122,13 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
     return items;
   };
 
+  // The screen reader has no menu to close: its «Salta oggi» opens the sheet at once.
   const rowActions = (item: TodayMission) =>
-    itemsFor(item).map(({ key, label, onPress }) => ({ name: key, label, onAction: onPress }));
+    itemsFor(item).map(({ key, label, onPress }) => ({
+      name: key,
+      label,
+      onAction: key === 'skip' ? () => setSkipFor(item) : onPress,
+    }));
 
   const sheets = (
     <>
@@ -114,6 +148,14 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
           actions.addToPlan(item);
         }}
       />
+      <SkipSheet
+        item={skipFor}
+        onClose={() => setSkipFor(null)}
+        onSkip={(item, reason) => {
+          setSkipFor(null);
+          actions.skip(item, reason);
+        }}
+      />
     </>
   );
 
@@ -121,6 +163,7 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
     open: setMenuFor,
     rowActions,
     openPicker: () => setPickerOpen(true),
+    openSkip: setSkipFor,
     openDetail,
     sheets,
   };

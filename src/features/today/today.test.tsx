@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { Stack } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
@@ -751,5 +751,179 @@ describe('Today: bosses', () => {
 
     // Obiettivi has the name of the theme: «Grandi obiettivi» in Minimal (design-sezioni.md 5.1).
     expect(await screen.findByRole('header', { name: 'Grandi obiettivi' })).toBeOnTheScreen();
+  });
+});
+
+describe('Today: skip today and full day', () => {
+  const row = (id: string) => `today-mission-${id}`;
+  const heroRow = (db: Db) => db.select().from(hero).get();
+  const hidden = { includeHiddenElements: true };
+  /** The mission day of today, Friday 6 November. */
+  const dayOf = (db: Db, id: string) =>
+    db
+      .select()
+      .from(missionDays)
+      .where(and(eq(missionDays.missionId, id), eq(missionDays.gameDay, '2026-11-06')))
+      .get();
+
+  async function openSkipFromMenu(id: string) {
+    await fireEvent(screen.getByTestId(`${row(id)}-body`), 'longPress');
+    await fireEvent.press(screen.getByTestId('today-mission-menu-skip'));
+    await screen.findByTestId('today-skip-left');
+  }
+
+  it('skips with a reason: the row goes among the done ones and nothing is lost', async () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const journal = missionId(db, 'journal');
+    await openToday(db);
+
+    await openSkipFromMenu(journal);
+    expect(screen.getByTestId('today-skip-left')).toHaveTextContent(
+      'Ti restano 3 salti questa settimana',
+    );
+    expect(screen.getByTestId('today-skip-confirm')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('today-skip-reason-illness'));
+    expect(screen.getByRole('radio', { name: 'Malattia' })).toBeChecked();
+    await fireEvent.press(screen.getByTestId('today-skip-confirm'));
+
+    expect(dayOf(db, journal)).toMatchObject({ status: 'skipped', skipReason: 'illness' });
+    expect(heroRow(db)).toMatchObject({ xpTotal: 0, coins: 0, hp: 50 });
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(/^Saltata/);
+    expect(screen.getByTestId('today-done')).toHaveTextContent(/saltata · malattia/);
+    expect(screen.getByTestId('today-done-toggle')).toHaveTextContent('Fatte (1)');
+    // The skipped mission is out of the counters of the day.
+    expect(screen.getByTestId('today-missions-count', hidden)).toHaveTextContent('0 di 1');
+    expect(screen.queryByTestId(`${row(journal)}-swipe`, hidden)).toBeNull();
+    expectHeroMatchesLog(db);
+  });
+
+  it('opens the sheet from the swipe and says the skips left this week', async () => {
+    const db = newGame(['journal', 'healthy_meal'], FRIDAY - 2);
+    const journal = missionId(db, 'journal');
+    db.insert(missionDays)
+      .values({
+        missionId: journal,
+        gameDay: '2026-11-04',
+        status: 'skipped',
+        skipReason: 'rest',
+        source: 'app',
+        updatedAt: at(4, 10),
+      })
+      .run();
+    await openToday(db);
+
+    // The action of the swipe is hidden from the screen reader, which has it on the row.
+    await fireEvent.press(screen.getByTestId(`${row(journal)}-swipe-skip`, hidden));
+
+    expect(await screen.findByTestId('today-skip-left')).toHaveTextContent(
+      'Ti restano 2 salti questa settimana',
+    );
+    expect(screen.getByText(/^Salta «.+»$/)).toBeOnTheScreen();
+  });
+
+  it('refuses a fourth skip in the week with a message', async () => {
+    const db = newGame(['journal', 'healthy_meal'], FRIDAY - 4);
+    const journal = missionId(db, 'journal');
+    db.insert(missionDays)
+      .values(
+        (['2026-11-02', '2026-11-03', '2026-11-04'] as const).map((gameDay) => ({
+          missionId: journal,
+          gameDay,
+          status: 'skipped' as const,
+          skipReason: 'travel',
+          source: 'app' as const,
+          updatedAt: at(4, 10),
+        })),
+      )
+      .run();
+    await openToday(db);
+
+    await openSkipFromMenu(journal);
+
+    expect(screen.getByTestId('today-skip-left')).toHaveTextContent(
+      'Hai già usato i 3 salti di questa settimana.',
+    );
+    expect(screen.getByRole('radio', { name: 'Viaggio' })).toBeDisabled();
+    expect(screen.getByTestId('today-skip-confirm')).toBeDisabled();
+    expect(dayOf(db, journal)).toBeUndefined();
+  });
+
+  it('undoes a skip from the notice and from the menu of the row', async () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const journal = missionId(db, 'journal');
+    await openToday(db);
+    await openSkipFromMenu(journal);
+    await fireEvent.press(screen.getByTestId('today-skip-reason-rest'));
+    await fireEvent.press(screen.getByTestId('today-skip-confirm'));
+
+    await fireEvent.press(screen.getByTestId('undo-toast-undo'));
+    expect(dayOf(db, journal)).toBeUndefined();
+    expect(screen.getByTestId(`${row(journal)}-control`)).toBeOnTheScreen();
+
+    await openSkipFromMenu(journal);
+    await fireEvent.press(screen.getByTestId('today-skip-reason-other'));
+    await fireEvent.press(screen.getByTestId('today-skip-confirm'));
+    await fireEvent(screen.getByTestId(`${row(journal)}-body`), 'longPress');
+    expect(screen.queryByTestId('today-mission-menu-skip')).toBeNull();
+    await fireEvent.press(screen.getByTestId('today-mission-menu-unskip'));
+
+    expect(dayOf(db, journal)).toBeUndefined();
+    expectHeroMatchesLog(db);
+  });
+
+  it('shows «Giornata completa» with the last mission and hides it when an undo opens the day', async () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    await openToday(db);
+    await fireEvent.press(screen.getByTestId(`${row(missionId(db, 'journal'))}-control`));
+    expect(screen.queryByTestId('today-full-day')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId(`${row(missionId(db, 'healthy_meal'))}-control`));
+
+    expect(screen.getByTestId('today-full-day')).toHaveTextContent(/Giornata completa/);
+    expect(screen.getByTestId('today-full-day-rewards')).toHaveTextContent(
+      '+10 monete · +5 energia',
+    );
+    expect(screen.getByLabelText('Giornata completa, più 10 monete e 5 energia')).toBeOnTheScreen();
+    expect(screen.queryByTestId('today-missions-count', hidden)).toBeNull();
+    expect(heroRow(db)?.coins).toBe(14);
+
+    await fireEvent.press(screen.getByTestId('undo-toast-undo'));
+
+    expect(screen.queryByTestId('today-full-day')).toBeNull();
+    expect(screen.getByTestId('today-missions-count', hidden)).toHaveTextContent('1 di 2');
+    expect(heroRow(db)?.coins).toBe(2);
+    expectHeroMatchesLog(db);
+  });
+
+  it('completes the day when the last mission left is skipped', async () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const meal = missionId(db, 'healthy_meal');
+    await openToday(db);
+    await fireEvent.press(screen.getByTestId(`${row(missionId(db, 'journal'))}-control`));
+
+    await openSkipFromMenu(meal);
+    await fireEvent.press(screen.getByTestId('today-skip-reason-travel'));
+    await fireEvent.press(screen.getByTestId('today-skip-confirm'));
+
+    expect(screen.getByTestId('today-full-day')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('undo-toast-undo'));
+    expect(screen.queryByTestId('today-full-day')).toBeNull();
+    expectHeroMatchesLog(db);
+  });
+
+  it('frees the place of a skipped priority', async () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const journal = missionId(db, 'journal');
+    setDayPlan(db, journal, clockAt(FRIDAY, 9));
+    await openToday(db);
+
+    await fireEvent(screen.getByTestId(`today-plan-${journal}-body`), 'longPress');
+    await fireEvent.press(screen.getByTestId('today-mission-menu-skip'));
+    await fireEvent.press(await screen.findByTestId('today-skip-reason-rest'));
+    await fireEvent.press(screen.getByTestId('today-skip-confirm'));
+
+    expect(db.select().from(dayPlan).all()).toEqual([]);
+    expect(screen.getByTestId('today-plan-add')).toBeOnTheScreen();
+    expect(screen.getByTestId('today-done')).toHaveTextContent(/saltata · riposo/);
   });
 });

@@ -524,7 +524,8 @@
       "streakDays": "streak {{streak}} days",
       "streakWeek": "streak {{streak}} week",
       "streakWeeks": "streak {{streak}} weeks",
-      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, no data in the last 30 days"
+      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, no data in the last 30 days",
+      "skippedReason": "skipped · {{reason}}"
     },
     "difficulty": {
       "easy": "Easy",
@@ -804,6 +805,30 @@
         "planFull": "There are already 3 priorities: remove one to add another.",
         "failed": "Something went wrong. Try again."
       }
+    },
+    "skip": {
+      "title": "Skip “{{name}}”",
+      "left_one": "You have {{count}} skip left this week",
+      "left_other": "You have {{count}} skips left this week",
+      "none": "You have already used the {{max}} skips of this week.",
+      "chooseFirst": "Choose a reason first.",
+      "reasons": {
+        "illness": "Illness",
+        "travel": "Travel",
+        "rest": "Rest",
+        "other": "Other"
+      },
+      "toast": "Skipped",
+      "undo": "Undo skip",
+      "errors": {
+        "dayChanged": "The day has changed: the skip can no longer be undone.",
+        "alreadyUndone": "The skip was already undone.",
+        "coinsSpent": "The coins of the full day were already spent: the skip cannot be undone."
+      }
+    },
+    "fullDay": {
+      "rewards": "+{{coins}} {{coinsTerm}} · +{{hp}} {{hpTerm}}",
+      "label": "{{title}}, plus {{coins}} {{coinsTerm}} and {{hp}} {{hpTerm}}"
     }
   },
   "habits": {

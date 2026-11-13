@@ -15,6 +15,7 @@ import {
   boss,
   bossSteps,
   companion,
+  dayPlan,
   events,
   hero,
   heroStats,
@@ -266,9 +267,92 @@ describe('undoEvent', () => {
     undoEvent(db, completed, LATER);
     expect(refusalOf(() => undoEvent(db, completed, LATER))).toBe('already_undone');
     expect(() => undoEvent(db, 'missing', LATER)).toThrow(RangeError);
-    skipMission(db, { missionId: missionId(db, 'healthy_meal'), reason: 'rest', ...NOW });
-    expect(() => undoEvent(db, lastEvent(db, 'mission.skipped').id, LATER)).toThrow(RangeError);
     expect(() => undoEvent(db, lastEvent(db, 'event.reverted').id, LATER)).toThrow(RangeError);
+    expect(() => undoEvent(db, lastEvent(db, 'hero.created').id, LATER)).toThrow(RangeError);
     expectHeroMatchesLog(db);
+  });
+});
+
+describe('undoEvent on a skip', () => {
+  function skip(db: Db, id: string): string {
+    skipMission(db, { missionId: id, reason: 'rest', ...NOW });
+    return lastEvent(db, 'mission.skipped').id;
+  }
+
+  it('makes the mission to do again and gives the skip back', () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const journal = missionId(db, 'journal');
+    const skipped = skip(db, journal);
+    expect(undoEvent(db, skipped, LATER)).toEqual({ reverted: [skipped] });
+    expect(db.select().from(missionDays).all()).toEqual([]);
+    expect(lastEvent(db, 'event.reverted')).toMatchObject({ revertsId: skipped, dXp: 0 });
+    // The skip no longer counts in the week: 3 are possible again.
+    skip(db, journal);
+    expect(refusalOf(() => undoEvent(db, skipped, LATER))).toBe('already_undone');
+    expectHeroMatchesLog(db);
+  });
+
+  it('keeps the value reached by a measurable mission before the skip', () => {
+    const db = newGame(['drink_water']);
+    const water = missionId(db, 'drink_water');
+    progressMission(db, { missionId: water, source: 'app', ...NOW });
+    undoEvent(db, skip(db, water), LATER);
+    expect(db.select().from(missionDays).get()).toMatchObject({
+      status: 'partial',
+      value: 0.25,
+      skipReason: null,
+    });
+    expectHeroMatchesLog(db);
+  });
+
+  it('takes back the full-day bonus that the skip gave', () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    complete(db, missionId(db, 'journal'));
+    const skipped = skip(db, missionId(db, 'healthy_meal'));
+    const bonus = lastEvent(db, 'bonus.full_day').id;
+    expect(undoEvent(db, skipped, LATER)).toEqual({ reverted: [skipped, bonus] });
+    expect(db.select().from(hero).get()?.coins).toBe(2);
+    expectHeroMatchesLog(db);
+  });
+
+  it('puts a skipped priority back in its place and takes back the plan bonus', () => {
+    const db = newGame(['journal', 'healthy_meal', 'track_expenses']);
+    const journal = missionId(db, 'journal');
+    const meal = missionId(db, 'healthy_meal');
+    setDayPlan(db, journal, NOW);
+    setDayPlan(db, meal, NOW);
+    const skipped = skip(db, journal);
+    expect(db.select().from(dayPlan).all()).toMatchObject([{ missionId: meal, position: 1 }]);
+    // The plan is now the meal alone: done, it gives the bonus.
+    complete(db, meal);
+    const bonus = lastEvent(db, 'bonus.plan').id;
+    expect(undoEvent(db, skipped, LATER)).toEqual({ reverted: [skipped, bonus] });
+    expect(db.select().from(dayPlan).orderBy(asc(dayPlan.position)).all()).toMatchObject([
+      { missionId: journal, position: 0 },
+      { missionId: meal, position: 1 },
+    ]);
+    expectHeroMatchesLog(db);
+  });
+
+  it('does not put a priority back in a plan filled in the meantime', () => {
+    const db = newGame(['journal', 'healthy_meal', 'track_expenses', 'no_social_evening']);
+    const keys = ['journal', 'healthy_meal', 'track_expenses'];
+    for (const key of keys) {
+      setDayPlan(db, missionId(db, key), NOW);
+    }
+    const skipped = skip(db, missionId(db, 'journal'));
+    setDayPlan(db, missionId(db, 'no_social_evening'), NOW);
+    undoEvent(db, skipped, LATER);
+    expect(db.select({ missionId: dayPlan.missionId }).from(dayPlan).all()).not.toContainEqual({
+      missionId: missionId(db, 'journal'),
+    });
+    expect(db.select().from(dayPlan).all()).toHaveLength(3);
+  });
+
+  it('is refused after the day change', () => {
+    const db = newGame(['journal']);
+    const skipped = skip(db, missionId(db, 'journal'));
+    expect(refusalOf(() => undoEvent(db, skipped, clockAt(7, 10)))).toBe('day_changed');
+    expect(db.select().from(missionDays).get()?.status).toBe('skipped');
   });
 });

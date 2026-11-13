@@ -8,8 +8,10 @@ import { Icon } from '@/features/shared/Icon';
 import { MissionRow } from '@/features/shared/MissionRow';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useTheme } from '@/theme/ThemeProvider';
+import { FullDayCard } from './FullDayCard';
 import { missionIcon, originOf, useMissionTexts } from './missionText';
 import { RowHighlight } from './RowHighlight';
+import { SkipSwipe } from './SkipSwipe';
 import type { MissionActions } from './useMissionActions';
 import type { MissionMenu } from './useMissionMenu';
 
@@ -22,40 +24,48 @@ export interface TodayMissionsProps {
 }
 
 /**
- * «Missioni di oggi» (design-sezioni.md 2.5, 2.6): the missions to do, then the group of the
- * done ones, open by default. A touch on the control completes, a long press opens the menu, a
- * touch on the name opens the detail of the mission. The priorities are only in the Plan (2.3),
- * but the counter counts them.
+ * «Missioni di oggi» (design-sezioni.md 2.5–2.7): the missions to do, then the group of the done
+ * and skipped ones, open by default. A touch on the control completes, a long press opens the
+ * menu, a swipe to the left skips, a touch on the name opens the detail of the mission. The
+ * priorities are only in the Plan (2.3), but the counter counts them. Once the day is full, the
+ * card «Giornata completa» takes the place of the counter.
  */
 export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
-  const { detailOf, warningOf, doneTimeOf } = useMissionTexts(view.day, tzOffset);
+  const { detailOf, warningOf, doneTimeOf, reasonOf } = useMissionTexts(view.day, tzOffset);
   const [doneOpen, setDoneOpen] = useState(true);
 
   const listed = view.missions.filter((item) => !view.plan.includes(item.mission.id));
   const todo = listed.filter((item) => item.state === 'todo');
-  const done = listed.filter((item) => item.state === 'done');
+  // Skipped missions join the done ones (2.5), in the order of the list.
+  const done = listed.filter((item) => item.state !== 'todo');
 
   const separator = <View style={[styles.separator, { backgroundColor: colors.border }]} />;
 
   return (
     <View testID="today-missions" style={styles.section}>
-      <View style={styles.heading}>
-        <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.flex}>
-          {t('today.missions.title', { term: t('lexicon.missions_pl', { context: family }) })}
-        </ThemedText>
-        {/* The ring of the header already says it to the screen reader. */}
-        <ThemedText
-          testID="today-missions-count"
-          variant="caption"
-          color={colors.textMuted}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          {t('today.progress', { done: view.doneCount, total: view.totalCount })}
-        </ThemedText>
-      </View>
+      {view.fullDay ? (
+        <FullDayCard companionStage={view.companion.stage} />
+      ) : (
+        <View style={styles.heading}>
+          <ThemedText variant="sectionTitle" accessibilityRole="header" style={styles.flex}>
+            {t('today.missions.title', { term: t('lexicon.missions_pl', { context: family }) })}
+          </ThemedText>
+          {/* The ring of the header already says it to the screen reader. */}
+          {view.totalCount === 0 ? null : (
+            <ThemedText
+              testID="today-missions-count"
+              variant="caption"
+              color={colors.textMuted}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              {t('today.progress', { done: view.doneCount, total: view.totalCount })}
+            </ThemedText>
+          )}
+        </View>
+      )}
       {todo.length === 0 ? null : (
         <Card>
           {todo.map((item, index) => {
@@ -69,21 +79,26 @@ export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsPr
                   missionId={mission.id}
                   testID={`today-mission-${mission.id}-highlight`}
                 >
-                  <MissionRow
-                    testID={`today-mission-${mission.id}`}
-                    variant="today"
-                    icon={missionIcon(mission)}
-                    name={mission.name}
-                    difficulty={mission.difficulty}
-                    detail={detailOf(item)}
-                    warning={warningOf(item)}
-                    xp={item.xp}
-                    progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
-                    onComplete={(event) => actions.complete(item, originOf(event))}
-                    onPress={() => menu.openDetail(item)}
-                    onLongPress={() => menu.open(item)}
-                    actions={menu.rowActions(item)}
-                  />
+                  <SkipSwipe
+                    testID={`today-mission-${mission.id}-swipe`}
+                    onSkip={() => menu.openSkip(item)}
+                  >
+                    <MissionRow
+                      testID={`today-mission-${mission.id}`}
+                      variant="today"
+                      icon={missionIcon(mission)}
+                      name={mission.name}
+                      difficulty={mission.difficulty}
+                      detail={detailOf(item)}
+                      warning={warningOf(item)}
+                      xp={item.xp}
+                      progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
+                      onComplete={(event) => actions.complete(item, originOf(event))}
+                      onPress={() => menu.openDetail(item)}
+                      onLongPress={() => menu.open(item)}
+                      actions={menu.rowActions(item)}
+                    />
+                  </SkipSwipe>
                 </RowHighlight>
               </Fragment>
             );
@@ -110,23 +125,28 @@ export function TodayMissions({ view, tzOffset, actions, menu }: TodayMissionsPr
           </Pressable>
           {doneOpen ? (
             <Card testID="today-done">
-              {done.map((item, index) => (
-                <Fragment key={item.mission.id}>
-                  {index === 0 ? null : separator}
-                  <MissionRow
-                    testID={`today-mission-${item.mission.id}`}
-                    variant="done"
-                    icon={missionIcon(item.mission)}
-                    name={item.mission.name}
-                    difficulty={item.mission.difficulty}
-                    detail={detailOf(item)}
-                    doneTime={doneTimeOf(item)}
-                    onPress={() => menu.openDetail(item)}
-                    onLongPress={() => menu.open(item)}
-                    actions={menu.rowActions(item)}
-                  />
-                </Fragment>
-              ))}
+              {done.map((item, index) => {
+                const common = {
+                  testID: `today-mission-${item.mission.id}`,
+                  icon: missionIcon(item.mission),
+                  name: item.mission.name,
+                  difficulty: item.mission.difficulty,
+                  detail: detailOf(item),
+                  onPress: () => menu.openDetail(item),
+                  onLongPress: () => menu.open(item),
+                  actions: menu.rowActions(item),
+                };
+                return (
+                  <Fragment key={item.mission.id}>
+                    {index === 0 ? null : separator}
+                    {item.state === 'skipped' ? (
+                      <MissionRow {...common} variant="skipped" reason={reasonOf(item)} />
+                    ) : (
+                      <MissionRow {...common} variant="done" doneTime={doneTimeOf(item)} />
+                    )}
+                  </Fragment>
+                );
+              })}
             </Card>
           ) : null}
         </>

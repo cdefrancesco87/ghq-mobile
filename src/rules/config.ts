@@ -81,6 +81,18 @@ export const FULL_DAY = {
   bonusHp: 5,
 } as const;
 
+/** «Salta oggi» and «Giornata completa» in Today (T59, provisional choices). */
+export const SKIP_TODAY = {
+  /**
+   * A skip that leaves every other mission of the day, or every other priority, done gives the
+   * bonus of the full day, or of the plan, so the order of skip and completions does not matter
+   * (choice 4 only speaks of completions). Its undo takes the bonus back.
+   */
+  givesDayBonuses: true,
+  /** The short animation of the card «Giornata completa» (design-sezioni.md 2.7). */
+  fullDayCardMs: 1500,
+} as const;
+
 export const DAY_PLAN = {
   /** Highest number of priorities in the day plan. */
   maxPriorities: 3,

@@ -52,7 +52,8 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
   const [shieldClosed, setShieldClosed] = useState(false);
   const actions = useMissionActions();
   const menu = useMissionMenu(view, actions);
-  const working = !view.restDay && view.totalCount > 0;
+  // Skipped missions are out of the counters but still listed among the done ones.
+  const working = !view.restDay && view.missions.length > 0;
 
   const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     const past = heroBottom !== null && nativeEvent.contentOffset.y > heroBottom;
@@ -118,7 +119,7 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
             title={t('today.rest.title')}
             message={t('today.rest.message')}
           />
-        ) : view.totalCount === 0 ? (
+        ) : view.missions.length === 0 ? (
           <EmptyState
             testID="today-empty"
             companion={emptyCompanion}

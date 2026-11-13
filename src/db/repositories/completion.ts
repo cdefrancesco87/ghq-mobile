@@ -2,7 +2,7 @@ import { and, eq, gte, inArray, lte } from 'drizzle-orm';
 
 import { completionDeltas, measurableProgress } from '../../rules/completion';
 import { stageFor } from '../../rules/companion';
-import { DAY_PLAN, FULL_DAY } from '../../rules/config';
+import { DAY_PLAN, FULL_DAY, SKIP_TODAY } from '../../rules/config';
 import { canAddToPlan, isFullDay, isPlanComplete, skipsLeft } from '../../rules/day';
 import { weekStartOf } from '../../rules/gameDay';
 import { nextMissionStreak } from '../../rules/streak';
@@ -392,11 +392,52 @@ export function progressMission(db: Db, input: ProgressInput): CompletionResult 
   });
 }
 
+/** Skips of each mission in the week of `day`, up to `day` (at most 3, US-OGGI-06). */
+export function skipsThisWeek(
+  tx: Db,
+  missionIds: readonly string[],
+  day: GameDay,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  if (missionIds.length === 0) {
+    return counts;
+  }
+  const weekStart = weekStartOf(day, weekRulesOn(tx, day).weekStart);
+  const rows = tx
+    .select({ missionId: missionDays.missionId })
+    .from(missionDays)
+    .where(
+      and(
+        inArray(missionDays.missionId, [...missionIds]),
+        eq(missionDays.status, 'skipped'),
+        gte(missionDays.gameDay, weekStart),
+        lte(missionDays.gameDay, day),
+      ),
+    )
+    .all();
+  for (const { missionId } of rows) {
+    counts.set(missionId, (counts.get(missionId) ?? 0) + 1);
+  }
+  return counts;
+}
+
+export interface SkipResult extends WithMoments {
+  /** Skips of the mission still possible this week, after this one. */
+  readonly skipsLeft: number;
+  /** The `mission.skipped` event, for «Annulla». */
+  readonly eventId: string;
+  /** The bonuses of the day the skip completes: every other mission, or priority, done. */
+  readonly bonuses: readonly DayBonus[];
+  /** Notifications to cancel in the operating system, outside the transaction. */
+  readonly cancelledNotificationIds: readonly string[];
+}
+
 /**
  * «Salta oggi» (US-OGGI-06): the mission gives no XP, takes no hit points and does not break its
- * streak. At most 3 skips a week for each mission, from the week start of the settings.
+ * streak. At most 3 skips a week for each mission, from the week start of the settings. The
+ * reminders of the day go, as for a completion.
  */
-export function skipMission(db: Db, input: SkipInput): { skipsLeft: number } {
+export function skipMission(db: Db, input: SkipInput): SkipResult {
   if (!SKIP_REASONS.includes(input.reason)) {
     throw new RangeError(`Unknown reason: ${input.reason}`);
   }
@@ -407,21 +448,15 @@ export function skipMission(db: Db, input: SkipInput): { skipsLeft: number } {
     if (missionDay?.status === 'done' || missionDay?.status === 'skipped') {
       throw new RangeError(`The mission is already ${missionDay.status} today`);
     }
-    const weekStart = weekStartOf(day, weekRulesOn(tx, day).weekStart);
-    const skipsThisWeek = tx
-      .select({ day: missionDays.gameDay })
-      .from(missionDays)
-      .where(
-        and(
-          eq(missionDays.missionId, mission.id),
-          eq(missionDays.status, 'skipped'),
-          gte(missionDays.gameDay, weekStart),
-          lte(missionDays.gameDay, day),
-        ),
-      )
-      .all().length;
-    if (skipsLeft(skipsThisWeek) === 0) {
+    const skipped = skipsThisWeek(tx, [mission.id], day).get(mission.id) ?? 0;
+    if (skipsLeft(skipped) === 0) {
       throw new RangeError('No skips left this week for this mission');
+    }
+    // A skipped priority frees its place in the plan (provisional, T59); the undo puts it back.
+    const inPlan = and(eq(dayPlan.gameDay, day), eq(dayPlan.missionId, mission.id));
+    const priority = tx.select({ position: dayPlan.position }).from(dayPlan).where(inPlan).get();
+    if (priority !== undefined) {
+      tx.delete(dayPlan).where(inPlan).run();
     }
     writeMissionDay(tx, {
       missionId: mission.id,
@@ -432,7 +467,7 @@ export function skipMission(db: Db, input: SkipInput): { skipsLeft: number } {
       source: 'app',
       updatedAt: input.now,
     });
-    appendEvent(tx, {
+    const { event } = appendEvent(tx, {
       type: 'mission.skipped',
       occurredAt: input.now,
       tzOffset: input.tzOffset,
@@ -440,9 +475,22 @@ export function skipMission(db: Db, input: SkipInput): { skipsLeft: number } {
       idemKey: input.idemKey,
       missionId: mission.id,
       gameDay: day,
-      payload: { reason: input.reason },
+      // What an undo needs to restore (undo.ts): the mission day and the place in the plan.
+      payload: {
+        reason: input.reason,
+        before:
+          missionDay === undefined ? null : { status: missionDay.status, value: missionDay.value },
+        planPosition: priority?.position ?? null,
+      },
     });
-    return { skipsLeft: skipsLeft(skipsThisWeek + 1) };
+    const clock: ActionClock = { now: input.now, tzOffset: input.tzOffset, source: 'app' };
+    // The bonus of the plan can bring a new level, a moment of the screen.
+    return withMoments(tx, () => ({
+      skipsLeft: skipsLeft(skipped + 1),
+      eventId: event.id,
+      bonuses: SKIP_TODAY.givesDayBonuses ? giveDayBonuses(tx, day, clock) : [],
+      cancelledNotificationIds: cancelReminders(tx, mission.id, day),
+    }));
   });
 }
 

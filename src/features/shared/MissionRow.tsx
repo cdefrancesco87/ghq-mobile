@@ -9,7 +9,7 @@ import {
 
 import type { Difficulty as DifficultyLevel } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
-import { CompletionControl, DoneMark } from './CompletionControl';
+import { COMPLETION_CONTROL_SIZE, CompletionControl, DoneMark } from './CompletionControl';
 import { Difficulty } from './Difficulty';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
@@ -81,6 +81,13 @@ export type MissionRowProps = CommonProps &
         /** The time of completion, already written for the language. */
         readonly doneTime: string;
       }
+    | {
+        /** Skipped today, among the done ones with the skip icon (design-sezioni.md 2.5). */
+        readonly variant: 'skipped';
+        readonly icon: IconName;
+        /** The reason, already written for the language. */
+        readonly reason: string;
+      }
   );
 
 /** A mission in Today, in Habits and in the Plan of the day (design-sezioni.md A6, 2.5, 3.2). */
@@ -95,7 +102,11 @@ export function MissionRow(props: MissionRowProps) {
   const doneAt =
     props.variant === 'done'
       ? t('shared.missionRow.doneAt', { context: family, time: props.doneTime })
-      : '';
+      : props.variant === 'skipped'
+        ? t('shared.missionRow.skippedReason', { reason: props.reason })
+        : '';
+  // Done and skipped rows have the same muted look and the time, or the reason, under the name.
+  const closed = props.variant === 'done' || props.variant === 'skipped';
   const accessibilityActions = actions?.map(({ name: action, label }) => ({ name: action, label }));
   const onAccessibilityAction = (event: AccessibilityActionEvent) =>
     actions?.find((action) => action.name === event.nativeEvent.actionName)?.onAction();
@@ -107,13 +118,12 @@ export function MissionRow(props: MissionRowProps) {
       {`+${props.xp}`}
     </ThemedText>
   ) : null;
-  const notches =
-    props.variant === 'done' ? null : <Difficulty difficulty={difficulty} showWord={false} />;
+  const notches = closed ? null : <Difficulty difficulty={difficulty} showWord={false} />;
   const rate =
     props.variant === 'list' && props.completionRate !== null
       ? Math.min(Math.max(props.completionRate, 0), 100)
       : null;
-  const muted = props.variant === 'done' || (props.variant === 'list' && props.muted === true);
+  const muted = closed || (props.variant === 'list' && props.muted === true);
   const valueColor = muted ? colors.textMuted : colors.text;
   const listValues =
     props.variant === 'list' ? (
@@ -179,17 +189,17 @@ export function MissionRow(props: MissionRowProps) {
             {name}
           </ThemedText>
           <View style={styles.meta}>
-            {warning === undefined || props.variant === 'done' ? null : (
+            {warning === undefined || closed ? null : (
               <ThemedText testID={`${testID}-warning`} variant="caption" color={colors.dangerText}>
                 {warning}
               </ThemedText>
             )}
             <ThemedText variant="caption" color={colors.textMuted} style={styles.detail}>
-              {props.variant === 'done' ? doneAt : props.detail}
+              {closed ? doneAt : props.detail}
             </ThemedText>
             {large ? null : notches}
           </View>
-          {large && props.variant !== 'done' ? (
+          {large && !closed ? (
             <View testID={`${testID}-under`} style={styles.meta}>
               {xp}
               {notches}
@@ -216,6 +226,16 @@ export function MissionRow(props: MissionRowProps) {
         />
       ) : null}
       {props.variant === 'done' ? <DoneMark testID={`${testID}-control`} /> : null}
+      {props.variant === 'skipped' ? (
+        <View
+          testID={`${testID}-control`}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.mark}
+        >
+          <Icon name="salta" size={20} color={colors.textMuted} />
+        </View>
+      ) : null}
     </View>
   );
 
@@ -236,6 +256,7 @@ export function MissionRow(props: MissionRowProps) {
           },
         );
       case 'done':
+      case 'skipped':
         return t('shared.missionRow.doneLabel', { name, difficulty: difficultyWord, doneAt });
     }
   }
@@ -280,4 +301,10 @@ const styles = StyleSheet.create({
   trailing: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   value: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   struck: { textDecorationLine: 'line-through' },
+  mark: {
+    width: COMPLETION_CONTROL_SIZE,
+    height: COMPLETION_CONTROL_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

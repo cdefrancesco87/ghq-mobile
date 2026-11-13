@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
 
 import { COMPANION_STAGES, moodFor, type CompanionStage, type Mood } from '../../rules/companion';
 import { completionDeltas } from '../../rules/completion';
+import { skipsLeft } from '../../rules/day';
 import { addDays, weekday } from '../../rules/gameDay';
 import { xpToNext } from '../../rules/level';
 import type { GameDay } from '../../rules/types';
@@ -17,7 +18,7 @@ import {
 } from '../schema';
 import type { Db } from '../types';
 import { listActiveBosses, withSteps, type BossProgress } from './boss';
-import { bonusGiven } from './completion';
+import { bonusGiven, skipsThisWeek, type SkipReason } from './completion';
 import { loadHero, type Hero } from './hero';
 import { listTodayMissions, type Mission } from './missions';
 import { gameDayOf, getSetting, weekRulesOn } from './settings';
@@ -43,6 +44,12 @@ export interface TodayMission {
   readonly xp: number;
   /** The `mission.completed` event of today not undone, for «Annulla completamento». */
   readonly completionEventId: string | null;
+  /** «Salta oggi» still possible this week (US-OGGI-06); a skipped mission counts its own skip. */
+  readonly skipsLeft: number;
+  /** Why the mission was skipped today. */
+  readonly skipReason: SkipReason | null;
+  /** The `mission.skipped` event of today not undone, for «Annulla salto». */
+  readonly skipEventId: string | null;
 }
 
 export type TodayBoss = BossProgress;
@@ -87,7 +94,10 @@ export interface TodayView {
   readonly planBonus: boolean;
   /** Active bosses, the nearest deadline first and those without one last. */
   readonly bosses: readonly TodayBoss[];
+  /** The full-day bonus was given today and no undo took it back (design-sezioni.md 2.7). */
+  readonly fullDay: boolean;
   readonly doneCount: number;
+  /** Missions of today without the skipped ones, which do not count in the day (design 8.3). */
   readonly totalCount: number;
   readonly notices: TodayNotices;
 }
@@ -165,12 +175,16 @@ function missionTimes(db: Db, ids: readonly string[]): Map<string, string> {
   return times;
 }
 
-/** The last completion of each mission on the day that no undo has taken back. */
-function completionEvents(db: Db, day: GameDay): Map<string, string> {
+/** The last completion, or skip, of each mission on the day that no undo has taken back. */
+function missionEvents(
+  db: Db,
+  type: 'mission.completed' | 'mission.skipped',
+  day: GameDay,
+): Map<string, string> {
   const completed = db
     .select({ id: events.id, missionId: events.missionId })
     .from(events)
-    .where(and(eq(events.type, 'mission.completed'), eq(events.gameDay, day)))
+    .where(and(eq(events.type, type), eq(events.gameDay, day)))
     .orderBy(asc(events.seq))
     .all();
   if (completed.length === 0) {
@@ -267,7 +281,13 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
           db,
           list.map((m) => m.id),
         );
-  const completions = completionEvents(db, day);
+  const completions = missionEvents(db, 'mission.completed', day);
+  const skips = missionEvents(db, 'mission.skipped', day);
+  const skipped = skipsThisWeek(
+    db,
+    list.map((mission) => mission.id),
+    day,
+  );
   const today = list
     .map((mission): TodayMission => {
       const row = rows.find((item) => item.missionId === mission.id);
@@ -292,6 +312,9 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
           statSecondary: mission.statSecondary,
         }).xp,
         completionEventId: state === 'done' ? (completions.get(mission.id) ?? null) : null,
+        skipsLeft: skipsLeft(skipped.get(mission.id) ?? 0),
+        skipReason: state === 'skipped' ? ((row?.skipReason as SkipReason | null) ?? null) : null,
+        skipEventId: state === 'skipped' ? (skips.get(mission.id) ?? null) : null,
       };
     })
     .sort(listOrder);
@@ -311,9 +334,10 @@ export function getTodayView(db: Db, clock: { now: number; tzOffset: number }): 
       .all()
       .map((row) => row.missionId),
     planBonus: bonusGiven(db, 'bonus.plan', day),
+    fullDay: bonusGiven(db, 'bonus.full_day', day),
     bosses: activeBosses(db),
     doneCount,
-    totalCount: today.length,
+    totalCount: today.filter((item) => item.state !== 'skipped').length,
     notices: notices(db, day, current.exhaustedDay),
   };
 }

@@ -15,6 +15,7 @@ import { canAddToPlan, isPlanComplete } from '@/rules/day';
 import { SHAPES } from '@/theme/shapes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { missionIcon, originOf, useMissionTexts } from './missionText';
+import { SkipSwipe } from './SkipSwipe';
 import type { MissionActions } from './useMissionActions';
 import type { MissionMenu } from './useMissionMenu';
 
@@ -37,8 +38,7 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
   const { colors, family } = useTheme();
   const { detailOf, warningOf, doneTimeOf } = useMissionTexts(view.day, tzOffset);
 
-  // A skipped priority is out of the day, like in the list below, but it still takes its place
-  // in the plan: whether «Salta oggi» frees the place is for T59 to decide.
+  // «Salta oggi» takes a priority out of the plan (T59): the filter only guards older days.
   const priorities = view.plan
     .map((id) => view.missions.find((item) => item.mission.id === id))
     .filter((item): item is TodayMission => item !== undefined && item.state !== 'skipped');
@@ -102,15 +102,17 @@ export function DayPlan({ view, tzOffset, actions, menu }: DayPlanProps) {
                     doneTime={doneTimeOf(item)}
                   />
                 ) : (
-                  <MissionRow
-                    {...common}
-                    variant="priority"
-                    position={(index + 1) as 1 | 2 | 3}
-                    warning={warningOf(item)}
-                    xp={item.xp}
-                    progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
-                    onComplete={(event) => actions.complete(item, originOf(event))}
-                  />
+                  <SkipSwipe testID={`${testID}-swipe`} onSkip={() => menu.openSkip(item)}>
+                    <MissionRow
+                      {...common}
+                      variant="priority"
+                      position={(index + 1) as 1 | 2 | 3}
+                      warning={warningOf(item)}
+                      xp={item.xp}
+                      progress={measurable ? Math.min((item.value ?? 0) / target, 1) : undefined}
+                      onComplete={(event) => actions.complete(item, originOf(event))}
+                    />
+                  </SkipSwipe>
                 )}
               </Fragment>
             );

@@ -524,7 +524,8 @@
       "streakDays": "serie {{streak}} giorni",
       "streakWeek": "serie {{streak}} settimana",
       "streakWeeks": "serie {{streak}} settimane",
-      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, nessun dato negli ultimi 30 giorni"
+      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, nessun dato negli ultimi 30 giorni",
+      "skippedReason": "saltata · {{reason}}"
     },
     "difficulty": {
       "easy": "Facile",
@@ -804,6 +805,30 @@
         "planFull": "Ci sono già 3 priorità: togline una per aggiungerne un'altra.",
         "failed": "Qualcosa non ha funzionato. Riprova."
       }
+    },
+    "skip": {
+      "title": "Salta «{{name}}»",
+      "left_one": "Ti resta {{count}} salto questa settimana",
+      "left_other": "Ti restano {{count}} salti questa settimana",
+      "none": "Hai già usato i {{max}} salti di questa settimana.",
+      "chooseFirst": "Scegli prima un motivo.",
+      "reasons": {
+        "illness": "Malattia",
+        "travel": "Viaggio",
+        "rest": "Riposo",
+        "other": "Altro"
+      },
+      "toast": "Saltata",
+      "undo": "Annulla salto",
+      "errors": {
+        "dayChanged": "La giornata è cambiata: il salto non si può più annullare.",
+        "alreadyUndone": "Il salto è già stato annullato.",
+        "coinsSpent": "Le monete della giornata completa sono già state spese: il salto non si può annullare."
+      }
+    },
+    "fullDay": {
+      "rewards": "+{{coins}} {{coinsTerm}} · +{{hp}} {{hpTerm}}",
+      "label": "{{title}}, più {{coins}} {{coinsTerm}} e {{hp}} {{hpTerm}}"
     }
   },
   "habits": {

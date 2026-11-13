@@ -19,3 +19,36 @@ jest.mock('expo-system-ui', () => ({
   ...jest.requireActual('expo-system-ui'),
   setBackgroundColorAsync: jest.fn(async () => undefined),
 }));
+
+// The swipeable row of gesture-handler 3 listens to shared values that the Reanimated of the tests
+// does not have. In the tests it is the row with its actions next to it, always reachable.
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const { createElement, useImperativeHandle } =
+    jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  const methods = { close: () => {}, openLeft: () => {}, openRight: () => {}, reset: () => {} };
+  const progress = { value: 0, get: () => 0, set: () => {} };
+  function Swipeable({
+    ref,
+    testID,
+    children,
+    renderLeftActions,
+    renderRightActions,
+  }: {
+    ref?: import('react').Ref<typeof methods>;
+    testID?: string;
+    children?: import('react').ReactNode;
+    renderLeftActions?: (...args: unknown[]) => import('react').ReactNode;
+    renderRightActions?: (...args: unknown[]) => import('react').ReactNode;
+  }) {
+    useImperativeHandle(ref, () => methods);
+    return createElement(
+      View,
+      { testID },
+      renderLeftActions?.(progress, progress, methods),
+      children,
+      renderRightActions?.(progress, progress, methods),
+    );
+  }
+  return { __esModule: true, default: Swipeable, SwipeDirection: { LEFT: 'left', RIGHT: 'right' } };
+});

@@ -1,5 +1,6 @@
 import { and, asc, eq, gt, inArray } from 'drizzle-orm';
 
+import { canAddToPlan } from '../../rules/day';
 import { bonusesToRevert, canUndo, revertDeltas, type DayBonus } from '../../rules/undo';
 import type { GameDay } from '../../rules/types';
 import { boss, bossSteps, companion, dayPlan, events, missionDays, missions } from '../schema';
@@ -10,8 +11,9 @@ import { changeHero, NotEnoughCoinsError, type ActionClock } from './hero';
 import { listTodayMissions } from './missions';
 import { gameDayOf, getSetting } from './settings';
 
-// Undo of a completion (US-OGGI-04; modello-dati.md, 4.3): nothing is deleted from the log, an
-// `event.reverted` event adds the opposite changes. Every gain goes back: XP and level, coins,
+// Undo of a completion (US-OGGI-04; modello-dati.md, 4.3) or of a skip (design-sezioni.md A7):
+// nothing is deleted from the log, an `event.reverted` event adds the opposite changes (none for
+// a skip, apart from the bonus it gave). Every gain goes back: XP and level, coins,
 // hit points, stat points, the mission day and streak, the damage to the boss and the bonuses of
 // the day that the undo makes incomplete (CLAUDE.md, choices 4 and 5). The companion never loses
 // a stage and the step of the quest of the first launch stays done.
@@ -30,6 +32,31 @@ export class UndoRefusedError extends RangeError {
 interface CompletionPayload {
   readonly before: { status: 'partial' | 'skipped' | 'done'; value: number | null } | null;
   readonly streakBefore: { streak: number; best: number };
+}
+
+/** What a `mission.skipped` event records for its undo (completion.ts). */
+interface SkipPayload {
+  readonly before: { status: 'partial'; value: number | null } | null;
+  /** The place the mission had in the day plan. */
+  readonly planPosition: number | null;
+}
+
+/** Puts a skipped priority back in the plan: in its place if free, else in the first free one. */
+function restorePriority(tx: Db, missionId: string, day: GameDay, position: number): void {
+  const plan = tx.select().from(dayPlan).where(eq(dayPlan.gameDay, day)).all();
+  const ids = plan.map((row) => row.missionId);
+  if (ids.includes(missionId) || !canAddToPlan(ids)) {
+    return;
+  }
+  const taken = new Set(plan.map((row) => row.position));
+  let free = position;
+  if (taken.has(free)) {
+    free = 0;
+    while (taken.has(free)) {
+      free++;
+    }
+  }
+  tx.insert(dayPlan).values({ gameDay: day, missionId, position: free }).run();
 }
 
 function isReverted(tx: Db, eventId: string): boolean {
@@ -163,6 +190,37 @@ function revertDayBonuses(tx: Db, day: GameDay, clock: ActionClock): string[] {
   });
 }
 
+/**
+ * The opposite of «Salta oggi»: the mission is to do again, with the value it had and its place
+ * in the plan, and the skip no longer counts in the week. The bonuses the day no longer earns go
+ * back with it.
+ */
+function undoSkip(tx: Db, skipped: EventRow, clock: ActionClock): { reverted: string[] } {
+  revert(tx, skipped, clock);
+  const where = and(
+    eq(missionDays.missionId, skipped.missionId!),
+    eq(missionDays.gameDay, skipped.gameDay),
+  );
+  const { before, planPosition } = skipped.payload as Partial<SkipPayload>;
+  // Skips written before T59 have no `before`: a value kept by the skip means a partial mission.
+  const value =
+    before === undefined
+      ? (tx.select().from(missionDays).where(where).get()?.value ?? null)
+      : (before?.value ?? null);
+  if (value === null) {
+    tx.delete(missionDays).where(where).run();
+  } else {
+    tx.update(missionDays)
+      .set({ status: 'partial', value, skipReason: null, updatedAt: clock.now })
+      .where(where)
+      .run();
+  }
+  if (typeof planPosition === 'number') {
+    restorePriority(tx, skipped.missionId!, skipped.gameDay, planPosition);
+  }
+  return { reverted: [skipped.id, ...revertDayBonuses(tx, skipped.gameDay, clock)] };
+}
+
 /** The opposite changes of a completion that can be undone. */
 function undoCompletion(tx: Db, completed: EventRow, clock: ActionClock): { reverted: string[] } {
   revert(tx, completed, clock);
@@ -205,10 +263,10 @@ function undoStep(
 }
 
 /**
- * Undoes a completion or a boss step of today. Refused for an unknown event, an event of another
- * type, an event already undone, after the day change, when the coins to give back were already
- * spent, and for the steps of a defeated boss. Returns the ids of the events undone: the
- * completion and the bonuses it takes back, or the step.
+ * Undoes a completion, a skip or a boss step of today. Refused for an unknown event, an event of
+ * another type, an event already undone, after the day change, when the coins to give back were
+ * already spent, and for the steps of a defeated boss. Returns the ids of the events undone: the
+ * completion or the skip and the bonuses it takes back, or the step.
  */
 export function undoEvent(db: Db, eventId: string, clock: ActionClock): { reverted: string[] } {
   return db.transaction((tx) => {
@@ -217,11 +275,12 @@ export function undoEvent(db: Db, eventId: string, clock: ActionClock): { revert
       throw new RangeError(`Unknown event: ${eventId}`);
     }
     const stepBossId = completed.type === 'boss.step_done' ? completed.bossId : null;
-    if (
-      stepBossId === null &&
-      (completed.type !== 'mission.completed' || completed.missionId === null)
-    ) {
-      throw new RangeError(`Only a completion or a boss step can be undone: ${completed.type}`);
+    const ofMission =
+      completed.type === 'mission.completed' || completed.type === 'mission.skipped';
+    if (stepBossId === null && (!ofMission || completed.missionId === null)) {
+      throw new RangeError(
+        `Only a completion, a skip or a boss step can be undone: ${completed.type}`,
+      );
     }
     if (isReverted(tx, completed.id)) {
       throw new UndoRefusedError('already_undone');
@@ -234,7 +293,9 @@ export function undoEvent(db: Db, eventId: string, clock: ActionClock): { revert
       return undoStep(tx, completed, stepBossId, clock);
     }
     try {
-      return undoCompletion(tx, completed, clock);
+      return completed.type === 'mission.skipped'
+        ? undoSkip(tx, completed, clock)
+        : undoCompletion(tx, completed, clock);
     } catch (error) {
       throw error instanceof NotEnoughCoinsError ? new UndoRefusedError('coins_spent') : error;
     }

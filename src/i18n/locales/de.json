@@ -524,7 +524,8 @@
       "streakDays": "Serie {{streak}} Tage",
       "streakWeek": "Serie {{streak}} Woche",
       "streakWeeks": "Serie {{streak}} Wochen",
-      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, keine Daten in den letzten 30 Tagen"
+      "listLabelNoRate": "{{name}}, {{detail}}, {{difficulty}}, {{streak}}, keine Daten in den letzten 30 Tagen",
+      "skippedReason": "übersprungen · {{reason}}"
     },
     "difficulty": {
       "easy": "Leicht",
@@ -804,6 +805,30 @@
         "planFull": "Es gibt schon 3 Prioritäten: Entferne eine, um eine andere hinzuzufügen.",
         "failed": "Etwas ist schiefgelaufen. Versuch es noch einmal."
       }
+    },
+    "skip": {
+      "title": "„{{name}}“ überspringen",
+      "left_one": "Du kannst diese Woche noch {{count}}-mal überspringen",
+      "left_other": "Du kannst diese Woche noch {{count}}-mal überspringen",
+      "none": "Du hast diese Woche schon {{max}}-mal übersprungen.",
+      "chooseFirst": "Wähle zuerst einen Grund.",
+      "reasons": {
+        "illness": "Krankheit",
+        "travel": "Reise",
+        "rest": "Erholung",
+        "other": "Anderes"
+      },
+      "toast": "Übersprungen",
+      "undo": "Überspringen rückgängig machen",
+      "errors": {
+        "dayChanged": "Der Tag hat gewechselt: Das Überspringen kann nicht mehr rückgängig gemacht werden.",
+        "alreadyUndone": "Das Überspringen wurde schon rückgängig gemacht.",
+        "coinsSpent": "Die Münzen des vollen Tages sind schon ausgegeben: Das Überspringen kann nicht rückgängig gemacht werden."
+      }
+    },
+    "fullDay": {
+      "rewards": "+{{coins}} {{coinsTerm}} · +{{hp}} {{hpTerm}}",
+      "label": "{{title}}, plus {{coins}} {{coinsTerm}} und {{hp}} {{hpTerm}}"
     }
   },
   "habits": {
