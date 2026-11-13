@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 
+import { recordFiredReminders } from '../../db/repositories/appNotifications';
 import { completeMission, progressMission } from '../../db/repositories/completion';
 import { notDeleted } from '../../db/repositories/events';
 import { gameDayOf, getSetting } from '../../db/repositories/settings';
@@ -283,7 +284,9 @@ async function complete(
     } else if (result.status === 'progressed') {
       // The other reminders of the day stay: the target is not reached yet.
       await scheduler.cancel([input.notificationId]);
-      db.delete(scheduledReminders).where(eq(scheduledReminders.osId, input.notificationId)).run();
+      const where = eq(scheduledReminders.osId, input.notificationId);
+      recordFiredReminders(db, input.now, where);
+      db.delete(scheduledReminders).where(where).run();
     }
     return { outcome: result.status };
   } catch (error) {
@@ -309,6 +312,8 @@ async function snooze(
     return { outcome: 'snooze_limit' };
   }
   try {
+    // The reminder snoozed was shown: it stays among the recent notifications.
+    recordFiredReminders(db, input.now, eq(scheduledReminders.osId, row.osId));
     const fireAt = input.now + SNOOZE_MS;
     const snoozeCount = row.snoozeCount + 1;
     const osId = await scheduleReminder(

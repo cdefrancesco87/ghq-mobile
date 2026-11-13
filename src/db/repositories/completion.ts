@@ -18,6 +18,7 @@ import {
   scheduledReminders,
 } from '../schema';
 import type { Db } from '../types';
+import { recordFiredReminders } from './appNotifications';
 import { damageBoss, markStepDone } from './boss';
 import { appendEvent } from './events';
 import { changeHero, loadHero, recordLevelUp, type ActionClock } from './hero';
@@ -226,12 +227,16 @@ function giveDayBonuses(tx: Db, day: GameDay, clock: ActionClock): DayBonus[] {
   return bonuses;
 }
 
-/** Deletes the reminders of the mission for the day and returns their system ids. */
-function cancelReminders(tx: Db, missionId: string, day: GameDay): string[] {
+/**
+ * Deletes the reminders of the mission for the day and returns their system ids; those already
+ * shown stay among the recent notifications.
+ */
+function cancelReminders(tx: Db, missionId: string, day: GameDay, now: number): string[] {
   const where = and(
     eq(scheduledReminders.missionId, missionId),
     eq(scheduledReminders.gameDay, day),
   );
+  recordFiredReminders(tx, now, where);
   const ids = tx
     .select({ osId: scheduledReminders.osId })
     .from(scheduledReminders)
@@ -306,7 +311,7 @@ function finishCompletion(
     status: 'completed',
     completion: { eventId: event.id, xp: change.deltas.xp, coins: change.deltas.coins },
     bonuses,
-    cancelledNotificationIds: cancelReminders(tx, mission.id, day),
+    cancelledNotificationIds: cancelReminders(tx, mission.id, day, clock.now),
   };
 }
 
@@ -489,7 +494,7 @@ export function skipMission(db: Db, input: SkipInput): SkipResult {
       skipsLeft: skipsLeft(skipped + 1),
       eventId: event.id,
       bonuses: SKIP_TODAY.givesDayBonuses ? giveDayBonuses(tx, day, clock) : [],
-      cancelledNotificationIds: cancelReminders(tx, mission.id, day),
+      cancelledNotificationIds: cancelReminders(tx, mission.id, day, input.now),
     }));
   });
 }

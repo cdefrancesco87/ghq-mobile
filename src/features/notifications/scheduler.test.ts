@@ -10,7 +10,7 @@ import {
 } from '@/db/repositories/missions';
 import { setSetting, setWeekRules } from '@/db/repositories/settings';
 import { undoEvent } from '@/db/repositories/undo';
-import { scheduledReminders } from '@/db/schema';
+import { appNotifications, scheduledReminders } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { REMINDERS } from '@/rules/config';
 
@@ -191,6 +191,28 @@ describe('syncReminders', () => {
     await syncReminders(db, scheduler, { now: at(7, 7), tzOffset: TZ });
     expect(scheduler.cancelled).toEqual(['os-1']);
     expect(rows(db)[0]).toMatchObject({ gameDay: '2026-11-07', fireAt: at(7, 8) });
+  });
+
+  it('keeps the reminders already shown among the recent notifications (design 12.1)', async () => {
+    const { db, journal, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    await syncReminders(db, scheduler, { now: at(7, 9), tzOffset: TZ });
+    expect(db.select().from(appNotifications).all()).toEqual([
+      {
+        id: 'reminder:os-1',
+        kind: 'reminder',
+        params: { missionId: journal, gameDay: '2026-11-06' },
+        createdAt: at(FRIDAY, 21),
+        seenAt: null,
+      },
+      {
+        id: 'reminder:os-2',
+        kind: 'reminder',
+        params: { missionId: journal, gameDay: '2026-11-07' },
+        createdAt: at(7, 8),
+        seenAt: null,
+      },
+    ]);
   });
 
   it('stops the reminders of a mission archived or left without times', async () => {

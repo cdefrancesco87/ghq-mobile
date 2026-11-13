@@ -1,5 +1,6 @@
 import { completeMission, skipMission } from '@/db/repositories/completion';
 import { deleteMission, updateMission } from '@/db/repositories/missions';
+import { recentNotifications, unseenNotificationCount } from '@/db/repositories/appNotifications';
 import { setSetting } from '@/db/repositories/settings';
 import type { Db } from '@/db/types';
 
@@ -96,5 +97,22 @@ describe('syncEveningSummary (design 11.5)', () => {
     deleteMission(empty.db, empty.ids[0], SYNC);
     await syncEveningSummary(empty.db, empty.scheduler, SYNC);
     expect(empty.scheduler.pending.size).toBe(0);
+  });
+
+  it('writes the summary among the recent notifications for its time, and only once sent', async () => {
+    const { db, ids, scheduler } = setUp(2);
+    await syncEveningSummary(db, scheduler, SYNC);
+    expect(unseenNotificationCount(db, at(FRIDAY, 21))).toBe(1);
+    // All done before 21:00: the text changes, the row with it.
+    ids.forEach((id) => complete(db, id));
+    await syncEveningSummary(db, scheduler, SYNC);
+    const view = recentNotifications(db, { now: at(FRIDAY, 22), tzOffset: TZ });
+    expect(view.items.map((item) => [item.kind, item.time, item.params.title])).toEqual([
+      ['summary', '21:00', 'Giornata completa!'],
+    ]);
+    // Switched off before it fires: it was never sent.
+    setSetting(db, 'evening_summary', { enabled: false, time: '21:00' }, NOW);
+    await syncEveningSummary(db, scheduler, SYNC);
+    expect(unseenNotificationCount(db, at(FRIDAY, 22))).toBe(0);
   });
 });

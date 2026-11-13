@@ -1,5 +1,6 @@
 import { and, inArray, ne } from 'drizzle-orm';
 
+import { recordFiredReminders } from '../../db/repositories/appNotifications';
 import { notDeleted } from '../../db/repositories/events';
 import { dayChangeOn, gameDayOf, getSetting, weekRulesOn } from '../../db/repositories/settings';
 import { missionDays, missionReminders, missions, scheduledReminders } from '../../db/schema';
@@ -96,6 +97,8 @@ const groupKeyOf = (fireAt: number, missionIds: readonly string[]) =>
   `group@${fireAt}@${[...missionIds].sort().join(',')}`;
 
 async function sync(db: Db, scheduler: ReminderScheduler, input: SyncInput): Promise<SyncResult> {
+  // The reminders already shown join the recent notifications before any row goes.
+  recordFiredReminders(db, input.now);
   const { today, planned } = plan(db, input);
   const dueOn = new Set(planned.map((reminder) => `${reminder.missionId}@${reminder.gameDay}`));
   const future = planned.filter((reminder) => reminder.fireAt > input.now);

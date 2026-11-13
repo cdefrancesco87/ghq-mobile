@@ -1642,6 +1642,16 @@
       "title": "Erledigt!",
       "xp": "+{{xp}} {{xpTerm}}",
       "coins": "{{gain}} · +{{coins}} {{coinsTerm}}"
+    },
+    "recent": {
+      "title": "Letzte Benachrichtigungen",
+      "unseen_one": "{{count}} ungelesen",
+      "unseen_other": "{{count}} ungelesen",
+      "done": "Erledigt",
+      "done_m": "Erledigt",
+      "yesterday": "gestern",
+      "deadlineMissed": "Die Frist ist abgelaufen.",
+      "completeA11y": "{{name}} abschließen"
     }
   }
 }

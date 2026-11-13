@@ -310,6 +310,8 @@ export const NOTIFICATIONS = {
   eveningMaxNames: 3,
   /** PROVISIONAL: how long the confirmation after Complete stays («qualche secondo», 11.3). */
   confirmationMs: 4000,
+  /** PROVISIONAL: notifications listed in the sheet «Notifiche recenti» (design 12.1). */
+  recentMax: 10,
 } as const;
 
 /** Language of the first launch when no device language is supported (CLAUDE.md, choice 19). */

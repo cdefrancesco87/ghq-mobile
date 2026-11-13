@@ -1642,6 +1642,16 @@
       "title": "Fatto!",
       "xp": "+{{xp}} {{xpTerm}}",
       "coins": "{{gain}} · +{{coins}} {{coinsTerm}}"
+    },
+    "recent": {
+      "title": "Notifiche recenti",
+      "unseen_one": "{{count}} non vista",
+      "unseen_other": "{{count}} non viste",
+      "done": "Fatta",
+      "done_m": "Fatto",
+      "yesterday": "ieri",
+      "deadlineMissed": "La scadenza è passata.",
+      "completeA11y": "Completa {{name}}"
     }
   }
 }

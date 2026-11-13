@@ -2,7 +2,7 @@ import { asc, eq } from 'drizzle-orm';
 
 import { deleteMission } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
-import { events, missions, scheduledReminders } from '@/db/schema';
+import { appNotifications, events, missions, scheduledReminders } from '@/db/schema';
 import type { Db } from '@/db/types';
 
 import { FRIDAY, TZ, at, expectHeroMatchesLog, missionId, newGame } from '../../../test/game';
@@ -216,6 +216,10 @@ describe('the Snooze action', () => {
       },
     ]);
     expect(scheduler.scheduled[1]).toMatchObject({ snoozeCount: 1, missionId: journal });
+    // The reminder shown stays among the recent notifications.
+    expect(db.select({ id: appNotifications.id }).from(appNotifications).all()).toEqual([
+      { id: `reminder:${osId}` },
+    ]);
   });
 
   it('allows three snoozes and then stops', async () => {

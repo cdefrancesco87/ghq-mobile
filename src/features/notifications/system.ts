@@ -242,6 +242,15 @@ async function ensureCategory(request: ReminderRequest): Promise<void> {
   incrementCategories.add(category);
 }
 
+/** Clears the number on the icon of the app (iPhone; design 11.7). It never throws. */
+export async function clearAppBadge(): Promise<void> {
+  try {
+    await Notifications.setBadgeCountAsync(0);
+  } catch {
+    // A launcher without badges: nothing to clear.
+  }
+}
+
 /** `undetermined`: never asked yet, so the app can still ask (design-sezioni.md 4.8). */
 export type NotificationPermission = 'granted' | 'denied' | 'undetermined';
 

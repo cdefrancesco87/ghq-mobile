@@ -1,3 +1,4 @@
+import { recordSummary } from '../../db/repositories/appNotifications';
 import { dayChangeOn, gameDayOf, getSetting } from '../../db/repositories/settings';
 import { getTodayView } from '../../db/repositories/todayView';
 import type { Db } from '../../db/types';
@@ -79,13 +80,24 @@ export function syncEveningSummary(
 ): Promise<SummaryRequest | null> {
   return afterReminderSyncs(async () => {
     const dayChange = getSetting(db, 'day_change');
-    const id = `${EVENING_SUMMARY_PREFIX}${gameDayOf(input.now, input.tzOffset, dayChange)}`;
+    const day = gameDayOf(input.now, input.tzOffset, dayChange);
+    const id = `${EVENING_SUMMARY_PREFIX}${day}`;
     const request = plannedEveningSummary(db, input);
     if (request === null) {
       await scheduler.cancel(id);
     } else {
       await scheduler.schedule(request);
     }
+    // The recent notifications get the summary for its time, or lose one no longer scheduled.
+    recordSummary(
+      db,
+      {
+        day,
+        fireAt: request?.fireAt ?? Number.POSITIVE_INFINITY,
+        text: request === null ? null : { title: request.title, body: request.body },
+      },
+      input.now,
+    );
     return request;
   });
 }

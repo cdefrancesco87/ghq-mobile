@@ -21,6 +21,7 @@ import { ThemedText } from '@/features/shared/ThemedText';
 import { useEssential } from '@/features/shared/useGameMode';
 import { hitSlopFor } from '@/features/shared/touch';
 import { companionName } from '@/rules/companion';
+import { RecentNotificationsSheet } from '@/features/notifications/RecentNotificationsSheet';
 import { useTheme } from '@/theme/ThemeProvider';
 import { DayPlan } from './DayPlan';
 import { HeroCard } from './HeroCard';
@@ -39,14 +40,25 @@ export interface TodayScreenProps {
   readonly view: TodayView;
   /** Minutes east of UTC of the phone, for the times of completion. */
   readonly tzOffset: number;
+  /** Today opened to show the unseen notifications («Notifiche recenti», design 12.1). */
+  readonly recentRequested?: boolean;
+  /** Called once that request is handled. */
+  readonly onRecentHandled?: () => void;
 }
+
+const NOTHING = () => undefined;
 
 /**
  * Today (design-sezioni.md 2.1–2.5, 2.8): date and greeting, the notices of the shield, of the
  * missions back from a pause (3.6) and of the companion grown up (6.6), the hero
  * card, the plan of the day, the bosses and the missions of today, or the empty states.
  */
-export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
+export function TodayScreen({
+  view,
+  tzOffset,
+  recentRequested = false,
+  onRecentHandled = NOTHING,
+}: TodayScreenProps) {
   const { t } = useTranslation();
   const { colors, family } = useTheme();
   const router = useRouter();
@@ -206,6 +218,12 @@ export function TodayScreen({ view, tzOffset }: TodayScreenProps) {
         )}
       </ScrollView>
       {menu.sheets}
+      <RecentNotificationsSheet
+        view={view}
+        actions={actions}
+        requested={recentRequested}
+        onHandled={onRecentHandled}
+      />
       {/* The thin bar holds health and experience: none in the Essential mode (2.10). */}
       {sticky && !essential ? <HeroStickyBar hero={view.hero} xpToNext={view.xpToNext} /> : null}
     </View>
