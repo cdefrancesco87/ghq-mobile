@@ -254,6 +254,16 @@ export const HABITS_LIST = {
 } as const;
 
 /**
+ * The manual order of the missions (`sort_order`, modello-dati.md 3.3; design-sezioni.md 3.4). A
+ * moved row goes halfway between its neighbours; when two of them are closer than `minGap` every
+ * mission is numbered again, `step` apart.
+ */
+export const MISSION_ORDER = {
+  step: 1,
+  minGap: 1e-9,
+} as const;
+
+/**
  * Pausing a mission (design-sezioni.md 3.6). PROVISIONAL (backlog T62): «3 giorni», «1 settimana»
  * and «2 settimane» are that many game days of pause, today included; the sheet starts on one week
  * as in mockup D19A.

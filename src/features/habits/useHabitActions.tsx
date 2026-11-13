@@ -30,6 +30,12 @@ export interface HabitActions {
   readonly rowActions: (item: HabitItem) => MissionRowAction[];
   readonly openDetail: (item: HabitItem) => void;
   readonly restore: (item: HabitItem) => void;
+  /** The actions of the swipe (design-sezioni.md 3.5). */
+  readonly edit: (item: HabitItem) => void;
+  readonly archive: (item: HabitItem) => void;
+  readonly resume: (item: HabitItem) => void;
+  /** Opens the sheet «Fino a quando?». */
+  readonly askPause: (item: HabitItem) => void;
   /** The menu and the dialog, to put once in the screen. */
   readonly sheets: ReactNode;
 }
@@ -131,6 +137,9 @@ export function useHabitActions(today: GameDay): HabitActions {
     }
   };
 
+  const edit = (item: HabitItem) =>
+    router.push({ pathname: '/editor', params: { missionId: item.mission.id } });
+
   const itemsFor = (item: HabitItem): ActionSheetItem[] => {
     const archived = item.mission.status === 'archived';
     const icon = (
@@ -143,11 +152,11 @@ export function useHabitActions(today: GameDay): HabitActions {
       icon: icon('ripristina'),
       onPress: () => restore(item),
     };
-    const edit: ActionSheetItem = {
+    const editItem: ActionSheetItem = {
       key: 'edit',
       label: t('habits.menu.edit'),
       icon: icon('modifica'),
-      onPress: () => router.push({ pathname: '/editor', params: { missionId: item.mission.id } }),
+      onPress: () => edit(item),
     };
     const archiveItem: ActionSheetItem = {
       key: 'archive',
@@ -163,7 +172,7 @@ export function useHabitActions(today: GameDay): HabitActions {
       onPress: () => setQueued({ kind: 'delete', item }),
     };
     if (archived) {
-      return [restoreItem, edit, deleteItem];
+      return [restoreItem, editItem, deleteItem];
     }
     if (item.paused) {
       // «Riprendi» comes first in the menu of a paused mission (design-sezioni.md 3.6).
@@ -173,7 +182,7 @@ export function useHabitActions(today: GameDay): HabitActions {
         icon: icon('play'),
         onPress: () => resume(item),
       };
-      return [resumeItem, edit, archiveItem, deleteItem];
+      return [resumeItem, editItem, archiveItem, deleteItem];
     }
     // A single task already done has nothing left to pause.
     const pauseItem: ActionSheetItem | null =
@@ -186,8 +195,8 @@ export function useHabitActions(today: GameDay): HabitActions {
           }
         : null;
     return pauseItem === null
-      ? [edit, archiveItem, deleteItem]
-      : [edit, pauseItem, archiveItem, deleteItem];
+      ? [editItem, archiveItem, deleteItem]
+      : [editItem, pauseItem, archiveItem, deleteItem];
   };
 
   const rowActions = (item: HabitItem) =>
@@ -238,5 +247,15 @@ export function useHabitActions(today: GameDay): HabitActions {
     </>
   );
 
-  return { openMenu: setMenuFor, rowActions, openDetail, restore, sheets };
+  return {
+    openMenu: setMenuFor,
+    rowActions,
+    openDetail,
+    restore,
+    edit,
+    archive,
+    resume,
+    askPause: setPauseFor,
+    sheets,
+  };
 }

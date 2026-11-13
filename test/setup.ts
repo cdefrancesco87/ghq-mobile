@@ -21,36 +21,59 @@ jest.mock('expo-system-ui', () => ({
 }));
 
 // The swipeable row of gesture-handler 3 listens to shared values that the Reanimated of the tests
-// does not have. In the tests it is the row with its actions next to it, always reachable.
+// does not have. In the tests it is the row with its actions next to it, always reachable. Its
+// callbacks stay on the row, so `fireEvent(row, 'swipeableWillOpen', 'left')` calls them, and
+// `__translation` is the position of the row that a test can set before.
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
   const { createElement, useImperativeHandle } =
     jest.requireActual<typeof import('react')>('react');
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
   const methods = { close: () => {}, openLeft: () => {}, openRight: () => {}, reset: () => {} };
   const progress = { value: 0, get: () => 0, set: () => {} };
+  const translation = {
+    value: 0,
+    get() {
+      return this.value;
+    },
+    set(value: number) {
+      this.value = value;
+    },
+  };
   function Swipeable({
     ref,
     testID,
     children,
     renderLeftActions,
     renderRightActions,
+    onSwipeableOpen,
+    onSwipeableWillOpen,
+    onSwipeableOpenStartDrag,
   }: {
     ref?: import('react').Ref<typeof methods>;
     testID?: string;
     children?: import('react').ReactNode;
     renderLeftActions?: (...args: unknown[]) => import('react').ReactNode;
     renderRightActions?: (...args: unknown[]) => import('react').ReactNode;
+    onSwipeableOpen?: (direction: 'left' | 'right') => void;
+    onSwipeableWillOpen?: (direction: 'left' | 'right') => void;
+    onSwipeableOpenStartDrag?: (direction: 'left' | 'right') => void;
   }) {
     useImperativeHandle(ref, () => methods);
     return createElement(
       View,
-      { testID },
-      renderLeftActions?.(progress, progress, methods),
+      // A spread, so the callbacks pass without being props of View.
+      { testID, ...{ onSwipeableOpen, onSwipeableWillOpen, onSwipeableOpenStartDrag } },
+      renderLeftActions?.(progress, translation, methods),
       children,
-      renderRightActions?.(progress, progress, methods),
+      renderRightActions?.(progress, translation, methods),
     );
   }
-  return { __esModule: true, default: Swipeable, SwipeDirection: { LEFT: 'left', RIGHT: 'right' } };
+  return {
+    __esModule: true,
+    default: Swipeable,
+    SwipeDirection: { LEFT: 'left', RIGHT: 'right' },
+    __translation: translation,
+  };
 });
 
 // The health libraries are native modules (Nitro on iPhone, a TurboModule on Android): the tests

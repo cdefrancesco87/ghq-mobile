@@ -2,10 +2,12 @@ import { and, asc, eq, gte, inArray, lte, max, ne } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { z } from 'zod';
 
-import { HABITS_LIST } from '../../rules/config';
+import { TEMPLATE_CATEGORIES } from '../../content/templates';
+import { HABITS_LIST, MISSION_ORDER } from '../../rules/config';
 import { frequencySchema, isDueToday, type Frequency } from '../../rules/frequency';
 import { addDays, isGameDay, weekStartOf, weekday } from '../../rules/gameDay';
 import { HEALTH_METRICS, healthUnit } from '../../rules/health';
+import { orderBetween } from '../../rules/order';
 import {
   DIFFICULTIES,
   STAT_KEYS,
@@ -416,6 +418,107 @@ export function restoreMission(db: Db, missionId: string, context: ActionContext
       updatedAt: context.now,
     });
     record(tx, 'mission.restored', missionId, context);
+    return mission;
+  });
+}
+
+/** Where a moved mission goes (design-sezioni.md 3.4). */
+export interface MissionPlace {
+  /** A category of the templates, or null for «Senza categoria». */
+  readonly categoryKey: string | null;
+  /** The mission it goes just before; null for the end of the category. */
+  readonly beforeId: string | null;
+}
+
+/** The category of a row as Habits shows it: an unknown key is «Senza categoria». */
+function shownCategory(key: string | null): string | null {
+  return (TEMPLATE_CATEGORIES as readonly string[]).includes(key ?? '') ? key : null;
+}
+
+/** Numbers every mission again, `step` apart, keeping the order. */
+function renumber(tx: Db): void {
+  const rows = tx
+    .select({ id: missions.id })
+    .from(missions)
+    .orderBy(asc(missions.sortOrder), asc(missions.createdAt))
+    .all();
+  rows.forEach(({ id }, index) => {
+    tx.update(missions)
+      .set({ sortOrder: (index + 1) * MISSION_ORDER.step })
+      .where(eq(missions.id, id))
+      .run();
+  });
+}
+
+/**
+ * Moves a mission in the manual order of Habits, also into another category (design-sezioni.md
+ * 3.4). The order is that of `sort_order`, which Today also follows for the missions without a
+ * time. Archived missions keep their place.
+ */
+export function moveMission(
+  db: Db,
+  missionId: string,
+  place: MissionPlace,
+  context: ActionContext,
+): Mission {
+  const { categoryKey, beforeId } = place;
+  if (categoryKey !== null && !(TEMPLATE_CATEGORIES as readonly string[]).includes(categoryKey)) {
+    throw new RangeError(`Unknown category: ${categoryKey}`);
+  }
+  if (beforeId === missionId) {
+    throw new RangeError('A mission cannot go before itself');
+  }
+  return db.transaction((tx) => {
+    const current = load(tx, missionId);
+    if (current.status === 'archived') {
+      throw new RangeError('An archived mission cannot be moved');
+    }
+    if (beforeId !== null) {
+      load(tx, beforeId);
+    }
+    const target = (): number | null => {
+      const others = tx
+        .select({
+          id: missions.id,
+          sortOrder: missions.sortOrder,
+          categoryKey: missions.categoryKey,
+          status: missions.status,
+        })
+        .from(missions)
+        .where(and(notDeleted(missions), ne(missions.id, missionId)))
+        .orderBy(asc(missions.sortOrder), asc(missions.createdAt))
+        .all();
+      let index: number;
+      if (beforeId !== null) {
+        index = others.findIndex((row) => row.id === beforeId);
+      } else {
+        const last = others.findLastIndex(
+          (row) => row.status !== 'archived' && shownCategory(row.categoryKey) === categoryKey,
+        );
+        if (last === -1) {
+          return current.sortOrder;
+        }
+        index = last + 1;
+      }
+      return orderBetween(others[index - 1]?.sortOrder ?? null, others[index]?.sortOrder ?? null);
+    };
+    let sortOrder = target();
+    if (sortOrder === null) {
+      renumber(tx);
+      sortOrder = target();
+    }
+    if (sortOrder === null) {
+      throw new RangeError('No room to move the mission');
+    }
+    const categoryChanged = shownCategory(current.categoryKey) !== categoryKey;
+    const mission = save(tx, missionId, {
+      sortOrder,
+      ...(categoryChanged ? { categoryKey } : {}),
+      updatedAt: context.now,
+    });
+    record(tx, 'mission.updated', missionId, context, {
+      fields: categoryChanged ? ['categoryKey', 'sortOrder'] : ['sortOrder'],
+    });
     return mission;
   });
 }

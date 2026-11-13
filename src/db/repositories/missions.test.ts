@@ -9,6 +9,7 @@ import {
   isMissionNameTaken,
   listTodayMissions,
   missionReminderTimes,
+  moveMission,
   pauseMission,
   restoreMission,
   resumeMission,
@@ -384,6 +385,121 @@ describe('listTodayMissions', () => {
     setSetting(db, 'rest_days', [7], NOW);
     expect(todayIds(db, '2026-11-08')).toEqual([]);
     expect(todayIds(db, '2026-11-09')).toHaveLength(1);
+  });
+});
+
+function orderOf(db: Db): string[] {
+  return db
+    .select({ name: missions.name })
+    .from(missions)
+    .orderBy(asc(missions.sortOrder))
+    .all()
+    .map((row) => row.name);
+}
+
+describe('moveMission (design-sezioni.md 3.4)', () => {
+  function four(db: Db) {
+    const make = (name: string, categoryKey: string | null) =>
+      createMission(db, { name, categoryKey }, CONTEXT);
+    return {
+      a: make('A', 'health'),
+      b: make('B', 'health'),
+      c: make('C', 'health'),
+      m: make('M', 'mind'),
+    };
+  }
+
+  it('moves a mission before another one in the same category', () => {
+    const db = createTestDb();
+    const { a, c } = four(db);
+    const moved = moveMission(db, c.id, { categoryKey: 'health', beforeId: a.id }, CONTEXT);
+    expect(moved.categoryKey).toBe('health');
+    expect(orderOf(db)).toEqual(['C', 'A', 'B', 'M']);
+    expect(eventsOf(db, c.id)).toEqual(['mission.created', 'mission.updated']);
+    const payload = db
+      .select({ payload: events.payload })
+      .from(events)
+      .where(eq(events.type, 'mission.updated'))
+      .get()?.payload;
+    expect(payload).toEqual({ fields: ['sortOrder'] });
+  });
+
+  it('moves a mission to the end of its category', () => {
+    const db = createTestDb();
+    const { a } = four(db);
+    moveMission(db, a.id, { categoryKey: 'health', beforeId: null }, CONTEXT);
+    expect(orderOf(db)).toEqual(['B', 'C', 'A', 'M']);
+  });
+
+  it('moves a mission into another category, which changes its category', () => {
+    const db = createTestDb();
+    const { b, m } = four(db);
+    const moved = moveMission(db, b.id, { categoryKey: 'mind', beforeId: m.id }, CONTEXT);
+    expect(moved.categoryKey).toBe('mind');
+    expect(orderOf(db)).toEqual(['A', 'C', 'B', 'M']);
+    const payload = db
+      .select({ payload: events.payload })
+      .from(events)
+      .where(eq(events.type, 'mission.updated'))
+      .get()?.payload;
+    expect(payload).toEqual({ fields: ['categoryKey', 'sortOrder'] });
+  });
+
+  it('moves a mission to the end of another category and to «Senza categoria»', () => {
+    const db = createTestDb();
+    const { a, m } = four(db);
+    moveMission(db, a.id, { categoryKey: 'mind', beforeId: null }, CONTEXT);
+    expect(orderOf(db)).toEqual(['B', 'C', 'M', 'A']);
+    expect(getMission(db, a.id)?.categoryKey).toBe('mind');
+    moveMission(db, m.id, { categoryKey: null, beforeId: null }, CONTEXT);
+    expect(getMission(db, m.id)?.categoryKey).toBeNull();
+  });
+
+  it('numbers the missions again when there is no room between two of them', () => {
+    const db = createTestDb();
+    const { a, b, c } = four(db);
+    for (let round = 0; round < 60; round += 1) {
+      moveMission(
+        db,
+        round % 2 === 0 ? c.id : a.id,
+        { categoryKey: 'health', beforeId: b.id },
+        CONTEXT,
+      );
+    }
+    expect(orderOf(db)).toEqual(['C', 'A', 'B', 'M']);
+    const orders = db.select({ order: missions.sortOrder }).from(missions).all();
+    expect(new Set(orders.map((row) => row.order)).size).toBe(4);
+  });
+
+  it('keeps the order used by Today for the missions without a time', () => {
+    const db = createTestDb();
+    const { a, c } = four(db);
+    moveMission(db, c.id, { categoryKey: 'health', beforeId: a.id }, CONTEXT);
+    expect(listTodayMissions(db, '2026-11-06').map((mission) => mission.name)).toEqual([
+      'C',
+      'A',
+      'B',
+      'M',
+    ]);
+  });
+
+  it('rejects an archived mission, an unknown category and a wrong neighbour', () => {
+    const db = createTestDb();
+    const { a, b } = four(db);
+    expect(() => moveMission(db, a.id, { categoryKey: 'garden', beforeId: null }, CONTEXT)).toThrow(
+      RangeError,
+    );
+    expect(() => moveMission(db, a.id, { categoryKey: 'health', beforeId: a.id }, CONTEXT)).toThrow(
+      RangeError,
+    );
+    expect(() =>
+      moveMission(db, a.id, { categoryKey: 'health', beforeId: 'nobody' }, CONTEXT),
+    ).toThrow(RangeError);
+    archiveMission(db, b.id, CONTEXT);
+    expect(() => moveMission(db, b.id, { categoryKey: 'health', beforeId: null }, CONTEXT)).toThrow(
+      RangeError,
+    );
+    expect(orderOf(db)).toEqual(['A', 'B', 'C', 'M']);
   });
 });
 

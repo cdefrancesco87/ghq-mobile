@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { HabitItem, HabitsView } from '@/db/repositories/habitsView';
+import { moveMission } from '@/db/repositories/missions';
+import { ActionSheet } from '@/features/shared/ActionSheet';
 import { Button } from '@/features/shared/Button';
 import { Card } from '@/features/shared/Card';
 import { Chip } from '@/features/shared/Chip';
@@ -19,10 +21,16 @@ import { SearchField } from '@/features/shared/SearchField';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { missionIcon } from '@/features/today/missionText';
+import type { MissionRowAction } from '@/features/shared/MissionRow';
+import { useUndoToast } from '@/features/shared/UndoToast';
 import type { GameDay } from '@/rules/types';
+import { runAction } from '@/stores/app';
 import { useHabitsUiStore } from '@/stores/habits';
 import { useTheme } from '@/theme/ThemeProvider';
 import { HABIT_FILTERS } from './filters';
+import { HabitSwipe, type SwipeAction } from './HabitSwipe';
+import { moveTarget, type ReorderGroup } from './reorder';
+import { ReorderRow } from './ReorderRow';
 import { useHabitActions } from './useHabitActions';
 
 const EMPTY_COMPANION_SIZE = 128;
@@ -37,7 +45,8 @@ export interface HabitsScreenProps {
  * chips (remembered), the missions by category with collapsible headers, the group «In pausa» at
  * the bottom, the archive with Restore, the long-press menu and the empty states. While searching,
  * the list keeps the active filter and, with «Tutte», shows the archived matches at the bottom; no
- * match offers «Crea “…”». Reorder comes later (T77).
+ * match offers «Crea “…”». «Altro › Riordina» shows the handles and «Fine» (3.4); the rows slide
+ * to pause, archive or edit (3.5).
  */
 export function HabitsScreen({ view }: HabitsScreenProps) {
   const { t } = useTranslation();
@@ -50,6 +59,10 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [reordering, setReordering] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const toast = useUndoToast();
   const { counts, companion } = view;
   const nothing = counts.all === 0 && counts.archived === 0;
   const needle = searching ? searchable(query.trim()) : '';
@@ -86,9 +99,115 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
     return describeFrequency(mission.frequency, t, mission.dueDay);
   };
 
+  const groups: ReorderGroup[] = view.categories.map(({ key, items }) => ({
+    key,
+    ids: items.map((item) => item.mission.id),
+  }));
+  const categoryName = (key: string | null) =>
+    key === null ? t('habits.noCategory') : t(`templateCategories.${key}`);
+
+  const move = (item: HabitItem, steps: number) => {
+    const place = moveTarget(groups, item.mission.id, steps);
+    if (place === null) {
+      return;
+    }
+    try {
+      runAction((db, clock) => moveMission(db, item.mission.id, place, clock));
+    } catch {
+      toast.show({ message: t('today.missions.errors.failed') });
+      return;
+    }
+    const ids =
+      groups
+        .find((group) => group.key === place.categoryKey)
+        ?.ids.filter((id) => id !== item.mission.id) ?? [];
+    const position = place.beforeId === null ? ids.length + 1 : ids.indexOf(place.beforeId) + 1;
+    AccessibilityInfo.announceForAccessibility(
+      t('habits.reorder.moved', {
+        name: item.mission.name,
+        category: categoryName(place.categoryKey),
+        position,
+        count: ids.length + 1,
+      }),
+    );
+  };
+
+  const moveActions = (item: HabitItem): MissionRowAction[] =>
+    (
+      [
+        ['moveUp', -1],
+        ['moveDown', 1],
+      ] as const
+    )
+      .filter(([, steps]) => moveTarget(groups, item.mission.id, steps) !== null)
+      .map(([name, steps]) => ({
+        name,
+        label: t(`habits.reorder.${name}`),
+        onAction: () => move(item, steps),
+      }));
+
+  const swipeActions = (item: HabitItem): SwipeAction[] => {
+    const archive: SwipeAction = {
+      key: 'archive',
+      label: t('habits.swipe.archive'),
+      icon: 'archivio',
+      color: colors.textMuted,
+      onPress: () => actions.archive(item),
+    };
+    if (item.paused) {
+      return [
+        {
+          key: 'resume',
+          label: t('habits.swipe.resume'),
+          icon: 'play',
+          color: colors.info,
+          onPress: () => actions.resume(item),
+        },
+        archive,
+      ];
+    }
+    // A single task already done has nothing left to pause.
+    return item.doneDay !== null
+      ? [archive]
+      : [
+          {
+            key: 'pause',
+            label: t('habits.swipe.pause'),
+            icon: 'pausa',
+            color: colors.info,
+            onPress: () => actions.askPause(item),
+          },
+          archive,
+        ];
+  };
+
   const row = (item: HabitItem) => {
     const { mission } = item;
     const archived = mission.status === 'archived';
+    if (reordering) {
+      return (
+        <ReorderRow
+          key={mission.id}
+          testID={`habits-row-${mission.id}-reorder`}
+          onDrop={(steps) => move(item, steps)}
+          onDragging={setDragging}
+        >
+          <MissionRow
+            testID={`habits-row-${mission.id}`}
+            variant="list"
+            name={mission.name}
+            difficulty={mission.difficulty}
+            icon={missionIcon(mission)}
+            detail={detailOf(item)}
+            streak={mission.streak}
+            streakUnit={mission.frequency?.type === 'times_per_week' ? 'weeks' : 'days'}
+            completionRate={item.completionRate}
+            muted={item.doneDay !== null}
+            actions={moveActions(item)}
+          />
+        </ReorderRow>
+      );
+    }
     const missionRow = (
       <MissionRow
         testID={`habits-row-${mission.id}`}
@@ -108,7 +227,17 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
       />
     );
     if (!archived) {
-      return <View key={mission.id}>{missionRow}</View>;
+      return (
+        <HabitSwipe
+          key={mission.id}
+          testID={`habits-row-${mission.id}-swipe`}
+          leftActions={swipeActions(item)}
+          onLongSwipe={() => actions.archive(item)}
+          onEdit={() => actions.edit(item)}
+        >
+          <View style={{ backgroundColor: colors.surface }}>{missionRow}</View>
+        </HabitSwipe>
+      );
     }
     return (
       <View key={mission.id} style={styles.archivedRow}>
@@ -132,16 +261,20 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
       </View>
     ));
 
-  const categories = view.categories
-    .map((category) => ({
-      ...category,
-      items: category.items.filter((item) => inFilter(item) && matches(item)),
-    }))
-    .filter((category) => category.items.length > 0);
-  const paused = view.paused.filter((item) => inFilter(item) && matches(item));
+  // Reorder mode shows every active mission, whatever the filter (PROVISIONAL, T77).
+  const categories = reordering
+    ? view.categories
+    : view.categories
+        .map((category) => ({
+          ...category,
+          items: category.items.filter((item) => inFilter(item) && matches(item)),
+        }))
+        .filter((category) => category.items.length > 0);
+  const paused = reordering ? [] : view.paused.filter((item) => inFilter(item) && matches(item));
   // With «Tutte» the search also looks among the archived missions, shown at the bottom (3.3).
-  const archived =
-    filter === 'archived' || (filter === 'all' && needle !== '')
+  const archived = reordering
+    ? []
+    : filter === 'archived' || (filter === 'all' && needle !== '')
       ? view.archived.filter(matches)
       : [];
 
@@ -157,7 +290,7 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
     });
 
   const group = (key: string, name: string, items: readonly HabitItem[]): ReactNode => {
-    const open = needle !== '' || !collapsed.has(key);
+    const open = reordering || needle !== '' || !collapsed.has(key);
     return (
       <View key={key} testID={`habits-category-${key}`} style={styles.category}>
         <Pressable
@@ -165,7 +298,7 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
           accessibilityRole="button"
           accessibilityLabel={t('habits.categoryLabel', { name, count: items.length })}
           accessibilityState={{ expanded: open }}
-          onPress={() => toggle(key)}
+          onPress={reordering ? undefined : () => toggle(key)}
           style={styles.categoryHeader}
         >
           <ThemedText
@@ -178,7 +311,9 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
           <ThemedText variant="caption" color={colors.textMuted}>
             {String(items.length)}
           </ThemedText>
-          <Icon name={open ? 'freccia-giu' : 'freccia-su'} size={16} color={colors.textMuted} />
+          {reordering ? null : (
+            <Icon name={open ? 'freccia-giu' : 'freccia-su'} size={16} color={colors.textMuted} />
+          )}
         </Pressable>
         {open ? <Card>{withDividers(items)}</Card> : null}
       </View>
@@ -186,20 +321,14 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
   };
 
   const list =
-    filter === 'archived' ? (
+    filter === 'archived' && !reordering ? (
       archived.length === 0 ? null : (
         <Card testID="habits-archived">{withDividers(archived)}</Card>
       )
     ) : (
       <>
         {categories.map((category) =>
-          group(
-            category.key ?? 'none',
-            category.key === null
-              ? t('habits.noCategory')
-              : t(`templateCategories.${category.key}`),
-            category.items,
-          ),
+          group(category.key ?? 'none', categoryName(category.key), category.items),
         )}
         {paused.length === 0 ? null : group(PAUSED_KEY, t('habits.pausedGroup'), paused)}
         {archived.length === 0 ? null : (
@@ -214,6 +343,12 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
   const closeSearch = () => {
     setSearching(false);
     setQuery('');
+  };
+
+  const startReorder = () => {
+    closeSearch();
+    setCollapsed(new Set());
+    setReordering(true);
   };
 
   const noResults = (
@@ -254,16 +389,34 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
           title={t('lexicon.missions_pl', { context: family })}
           caption={t('habits.active', { count: counts.all })}
           actions={
-            nothing ? undefined : (
-              <Pressable
-                testID="habits-search-open"
-                accessibilityRole="button"
-                accessibilityLabel={t('habits.search.open')}
-                onPress={() => setSearching(true)}
-                style={styles.headerButton}
-              >
-                <Icon name="cerca" color={colors.text} />
-              </Pressable>
+            reordering ? (
+              <Button
+                variant="text"
+                testID="habits-reorder-done"
+                label={t('habits.reorder.done')}
+                onPress={() => setReordering(false)}
+              />
+            ) : nothing ? undefined : (
+              <View style={styles.headerActions}>
+                <Pressable
+                  testID="habits-search-open"
+                  accessibilityRole="button"
+                  accessibilityLabel={t('habits.search.open')}
+                  onPress={() => setSearching(true)}
+                  style={styles.headerButton}
+                >
+                  <Icon name="cerca" color={colors.text} />
+                </Pressable>
+                <Pressable
+                  testID="habits-more"
+                  accessibilityRole="button"
+                  accessibilityLabel={t('habits.more')}
+                  onPress={() => setMoreOpen(true)}
+                  style={styles.headerButton}
+                >
+                  <Icon name="altro" color={colors.text} />
+                </Pressable>
+              </View>
             )
           }
         />
@@ -271,9 +424,17 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
       <ScrollView
         testID="habits-scroll"
         keyboardShouldPersistTaps="handled"
+        scrollEnabled={!dragging}
         contentContainerStyle={styles.content}
       >
-        {nothing ? (
+        {reordering ? (
+          <>
+            <ThemedText testID="habits-reorder-hint" color={colors.textMuted}>
+              {t('habits.reorder.hint')}
+            </ThemedText>
+            {list}
+          </>
+        ) : nothing ? (
           <EmptyState
             testID="habits-empty"
             companion={
@@ -325,6 +486,20 @@ export function HabitsScreen({ view }: HabitsScreenProps) {
         )}
       </ScrollView>
       {actions.sheets}
+      <ActionSheet
+        testID="habits-more-menu"
+        visible={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        items={[
+          {
+            key: 'reorder',
+            label: t('habits.reorder.start'),
+            icon: <Icon name="trascina" size={20} color={colors.text} />,
+            disabled: view.categories.length === 0,
+            onPress: startReorder,
+          },
+        ]}
+      />
     </View>
   );
 }
@@ -348,6 +523,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
+  headerActions: { flexDirection: 'row' },
   headerButton: {
     width: MIN_TOUCH,
     height: MIN_TOUCH,

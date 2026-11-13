@@ -1,6 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { Stack } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { AccessibilityInfo } from 'react-native';
+import { State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import type { ComponentType } from 'react';
 
 import { completeMission } from '@/db/repositories/completion';
@@ -61,6 +64,8 @@ async function openHabits(db: Db, clock = () => clockAt(FRIDAY, 10)) {
 }
 
 const row = (id: string) => `habits-row-${id}`;
+/** The handles and the swipe actions are hidden from the screen reader, which has them on the row. */
+const hidden = { includeHiddenElements: true };
 
 async function openMenu(id: string) {
   await fireEvent(screen.getByTestId(`${row(id)}-body`), 'longPress');
@@ -472,5 +477,168 @@ describe('Habits: pause', () => {
     expect(screen.getByTestId(`today-mission-${water}`)).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('today-notice-resumed-close'));
     expect(screen.queryByTestId('today-notice-resumed')).toBeNull();
+  });
+});
+
+describe('Habits: reorder (design-sezioni.md 3.4, 3.11)', () => {
+  function threeMissions() {
+    const db = newGame(['drink_water']);
+    const water = missionId(db, 'drink_water');
+    const run = createMission(db, { name: 'Corsa', categoryKey: 'health' }, clockAt(FRIDAY, 9)).id;
+    const think = createMission(db, { name: 'Medita', categoryKey: 'mind' }, clockAt(FRIDAY, 9)).id;
+    return { db, water, run, think };
+  }
+
+  const order = (db: Db) =>
+    db
+      .select({ id: missions.id, categoryKey: missions.categoryKey })
+      .from(missions)
+      .orderBy(missions.sortOrder)
+      .all();
+
+  async function startReorder() {
+    await fireEvent.press(screen.getByTestId('habits-more'));
+    await fireEvent.press(screen.getByTestId('habits-more-menu-reorder'));
+  }
+
+  const moveBy = (id: string, actionName: 'moveUp' | 'moveDown') =>
+    fireEvent(screen.getByTestId(`${row(id)}-body`), 'accessibilityAction', {
+      nativeEvent: { actionName },
+    });
+
+  it('shows the handles and «Fine», and moves a row in the same category for the screen reader', async () => {
+    const { db, water, run, think } = threeMissions();
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    await openHabits(db);
+    await startReorder();
+
+    expect(screen.getByTestId('habits-reorder-hint')).toBeOnTheScreen();
+    expect(screen.getByTestId(`${row(water)}-reorder-handle`, hidden)).toBeOnTheScreen();
+    expect(screen.queryByTestId('habits-filter-all')).toBeNull();
+    // The first row cannot go up; the last one cannot go down.
+    expect(
+      screen
+        .getByTestId(`${row(water)}-body`)
+        .props.accessibilityActions.map((action: { name: string }) => action.name),
+    ).toEqual(['moveDown']);
+    expect(
+      screen
+        .getByTestId(`${row(think)}-body`)
+        .props.accessibilityActions.map((action: { name: string }) => action.name),
+    ).toEqual(['moveUp']);
+
+    await moveBy(run, 'moveUp');
+
+    expect(order(db).map((mission) => mission.id)).toEqual([run, water, think]);
+    expect(announce).toHaveBeenCalledWith('Corsa: Salute, posizione 1 di 2');
+
+    await fireEvent.press(screen.getByTestId('habits-reorder-done'));
+    expect(screen.queryByTestId(`${row(water)}-reorder-handle`, hidden)).toBeNull();
+    expect(screen.getByTestId('habits-filter-all')).toBeOnTheScreen();
+    announce.mockRestore();
+  });
+
+  it('moves a row into another category, which changes its category', async () => {
+    const { db, water, run, think } = threeMissions();
+    await openHabits(db);
+    await startReorder();
+
+    await moveBy(run, 'moveDown');
+
+    expect(order(db)).toEqual([
+      { id: water, categoryKey: 'health' },
+      { id: run, categoryKey: 'mind' },
+      { id: think, categoryKey: 'mind' },
+    ]);
+    expect(screen.getByTestId('habits-category-mind')).toContainElement(
+      screen.getByTestId(row(run)),
+    );
+  });
+
+  it('moves a row by dragging its handle', async () => {
+    const { db, water, run, think } = threeMissions();
+    await openHabits(db);
+    await startReorder();
+    await fireEvent(screen.getByTestId(`${row(water)}-reorder`), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 64 } },
+    });
+
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId(`${row(water)}-reorder-handle`), [
+        { state: State.BEGAN, translationY: 0 },
+        { state: State.ACTIVE, translationY: 0 },
+        { translationY: 70 },
+        { state: State.END, translationY: 70 },
+      ]);
+    });
+
+    expect(order(db).map((mission) => mission.id)).toEqual([run, water, think]);
+  });
+
+  it('uses the new order in Today for the missions without a time', async () => {
+    const { db, water, run } = threeMissions();
+    await openHabits(db);
+    await startReorder();
+    await moveBy(run, 'moveUp');
+    await fireEvent.press(screen.getByTestId('habits-reorder-done'));
+
+    await fireEvent.press(screen.getByTestId('tab-today'));
+    await screen.findByTestId('today-screen');
+    const ids = screen
+      .getAllByTestId(new RegExp(`^today-mission-(${run}|${water})$`))
+      .map((element) => element.props.testID as string);
+    expect(ids.indexOf(`today-mission-${run}`)).toBeLessThan(ids.indexOf(`today-mission-${water}`));
+  });
+});
+
+describe('Habits: swipe (design-sezioni.md 3.5)', () => {
+  const swipe = (id: string) => `${row(id)}-swipe`;
+  const translation = (
+    jest.requireMock('react-native-gesture-handler/ReanimatedSwipeable') as {
+      __translation: { value: number };
+    }
+  ).__translation;
+
+  afterEach(() => {
+    translation.value = 0;
+  });
+
+  it('archives at once with a long swipe to the left, with Undo', async () => {
+    const db = newGame(['drink_water', 'read_pages']);
+    const water = missionId(db, 'drink_water');
+    await openHabits(db);
+    await fireEvent(screen.getByTestId(swipe(water)), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 64 } },
+    });
+
+    // A short swipe only shows the actions.
+    translation.value = -120;
+    await fireEvent(screen.getByTestId(swipe(water)), 'swipeableWillOpen', 'left');
+    expect(db.select().from(missions).where(eq(missions.id, water)).get()?.status).toBe('active');
+
+    translation.value = -300;
+    await fireEvent(screen.getByTestId(swipe(water)), 'swipeableWillOpen', 'left');
+    expect(db.select().from(missions).where(eq(missions.id, water)).get()?.status).toBe('archived');
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(/Archiviata/);
+    expect(screen.queryByTestId(row(water))).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('undo-toast-undo'));
+    expect(db.select().from(missions).where(eq(missions.id, water)).get()?.status).toBe('active');
+  });
+
+  it('shows Pausa and Archivia to the left and Modifica to the right', async () => {
+    const db = newGame(['drink_water', 'read_pages']);
+    const water = missionId(db, 'drink_water');
+    const read = missionId(db, 'read_pages');
+    await openHabits(db);
+
+    await fireEvent.press(screen.getByTestId(`${swipe(water)}-archive`, hidden));
+    expect(db.select().from(missions).where(eq(missions.id, water)).get()?.status).toBe('archived');
+
+    await fireEvent.press(screen.getByTestId(`${swipe(read)}-pause`, hidden));
+    expect(screen.getByTestId('habits-pause-confirm')).toBeOnTheScreen();
+
+    await fireEvent(screen.getByTestId(swipe(read)), 'swipeableWillOpen', 'right');
+    expect(screen).toHavePathnameWithParams(`/editor?missionId=${read}`);
   });
 });

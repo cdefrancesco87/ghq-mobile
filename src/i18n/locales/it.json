@@ -1023,6 +1023,21 @@
       "dateChosen": "Fino al {{day}} {{month}}",
       "open": "Senza data di fine",
       "confirm": "Metti in pausa"
+    },
+    "more": "Altro",
+    "reorder": {
+      "start": "Riordina",
+      "done": "Fine",
+      "hint": "Trascina le maniglie per spostare le missioni, anche in un'altra categoria.",
+      "moveUp": "Sposta su",
+      "moveDown": "Sposta giù",
+      "moved": "{{name}}: {{category}}, posizione {{position}} di {{count}}"
+    },
+    "swipe": {
+      "pause": "Pausa",
+      "resume": "Riprendi",
+      "archive": "Archivia",
+      "edit": "Modifica"
     }
   },
   "goals": {
