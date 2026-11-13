@@ -24,7 +24,10 @@ import { QuestLog } from './QuestLog';
 import { SummaryTile } from './SummaryTile';
 import { useBackfillCandidates } from './useBackfillCandidates';
 import { useHeatmapDay } from './useHeatmapDay';
+import { StatTrendSection } from './StatTrendSection';
 import { TrendRow } from './TrendRow';
+import { useStatTrend, useWeeklyRecap } from './useWeeklyRecap';
+import { WeeklyRecapCard } from './WeeklyRecapCard';
 
 type Tab = 'overview' | 'log';
 
@@ -39,7 +42,9 @@ export interface StatsScreenProps {
  * Statistics, a route of the stack opened from the Profile and from the hero card in Today
  * (design-sezioni.md 8.1, 8.2, 8.4, 8.9, mockup B9, D29): the tabs Panoramica and Registro (T67), the summary 2×2 (one column with very large text, 8.12) whose
  * comparisons appear only when positive, and the missions from the least constant in the period.
- * The heatmap (8.3) sits between the summary and the trends, its days open a sheet.
+ * The heatmap (8.3) sits between the summary and the trends, its days open a sheet. The weekly
+ * recap (8.7) is at the very top from the time of the recap for a week, and the trend of the
+ * stats (8.8) closes the Overview (T81).
  */
 export function StatsScreen({ view }: StatsScreenProps) {
   const { t, i18n } = useTranslation();
@@ -52,6 +57,8 @@ export function StatsScreen({ view }: StatsScreenProps) {
   const [sheetVisible, setSheetVisible] = useState(false);
   const day = useHeatmapDay(openDay);
   const backfill = useBackfillCandidates(openDay);
+  const recap = useWeeklyRecap();
+  const statTrend = useStatTrend();
 
   const showDay = (gameDay: GameDay) => {
     setOpenDay(gameDay);
@@ -104,6 +111,7 @@ export function StatsScreen({ view }: StatsScreenProps) {
           <QuestLog />
         ) : (
           <>
+            {recap === null ? null : <WeeklyRecapCard testID="stats-recap" view={recap} />}
             <Summary summary={view.summary} term={term} />
             <View style={styles.group}>
               <ThemedText variant="label" accessibilityRole="header" color={colors.textMuted}>
@@ -154,6 +162,7 @@ export function StatsScreen({ view }: StatsScreenProps) {
                 </ThemedText>
               )}
             </View>
+            {statTrend === null ? null : <StatTrendSection trend={statTrend} />}
           </>
         )}
       </ScrollView>

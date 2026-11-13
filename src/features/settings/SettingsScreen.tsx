@@ -52,6 +52,8 @@ type OpenSheet =
   | 'weekStart'
   | 'restDays'
   | 'eveningTime'
+  | 'weeklyDay'
+  | 'weeklyTime'
   | 'privacy'
   | 'licenses'
   | 'gameMode'
@@ -62,6 +64,7 @@ type OpenSheet =
 const FIELD_HEIGHT = 48;
 const LANGUAGES = Object.keys(LANGUAGE_NAMES) as Language[];
 const WEEK_STARTS: readonly Weekday[] = [1, 7];
+const WEEKDAYS: readonly Weekday[] = [1, 2, 3, 4, 5, 6, 7];
 const REDUCE_MOTION = ['system', 'on', 'off'] as const;
 
 interface RowSpec {
@@ -141,6 +144,7 @@ export function SettingsScreen() {
 
   const quiet = settings.quiet_hours.map((interval) => quietTimes(interval, language));
   const evening = settings.evening_summary;
+  const weekly = settings.weekly_recap;
 
   const chooseLanguage = (next: Language) => {
     useSettingsStore.getState().update('language', next);
@@ -377,6 +381,55 @@ export function SettingsScreen() {
           onSwitch={(enabled) =>
             runAction((db, clock) => setSetting(db, 'recall_enabled', enabled, clock.now))
           }
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'weeklyRecap',
+      group: 'notifications',
+      label: t('settings.weeklyRecap'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-weekly"
+          icon="statistiche"
+          label={t('settings.weeklyRecap')}
+          switchValue={weekly.enabled}
+          onSwitch={(enabled) =>
+            runAction((db, clock) =>
+              setSetting(db, 'weekly_recap', { ...weekly, enabled }, clock.now),
+            )
+          }
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'weeklyDay',
+      group: 'notifications',
+      label: t('settings.weeklyRecapDay'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-weekly-day"
+          icon="calendario"
+          label={t('settings.weeklyRecapDay')}
+          value={weekdayName(weekly.weekday, language)}
+          onPress={() => setSheet('weeklyDay')}
+          last={last}
+        />
+      ),
+    },
+    {
+      key: 'weeklyTime',
+      group: 'notifications',
+      label: t('settings.weeklyRecapTime'),
+      render: (last) => (
+        <SettingsRow
+          testID="settings-weekly-time"
+          icon="timer"
+          label={t('settings.weeklyRecapTime')}
+          value={formatClock(weekly.time, language)}
+          onPress={() => setSheet('weeklyTime')}
           last={last}
         />
       ),
@@ -659,6 +712,31 @@ export function SettingsScreen() {
           runAction((db, clock) =>
             setSetting(db, 'evening_summary', { ...evening, time }, clock.now),
           );
+          close();
+        }}
+        onClose={close}
+      />
+      <ChoiceSheet
+        testID="settings-weekly-day-sheet"
+        visible={sheet === 'weeklyDay'}
+        title={t('settings.weeklyRecapDay')}
+        choices={WEEKDAYS.map((value) => ({ value, label: weekdayName(value, language) }))}
+        selected={weekly.weekday}
+        onChoose={(weekday) => {
+          runAction((db, clock) =>
+            setSetting(db, 'weekly_recap', { ...weekly, weekday }, clock.now),
+          );
+          close();
+        }}
+        onClose={close}
+      />
+      <TimeSheet
+        testID="settings-weekly-time-sheet"
+        visible={sheet === 'weeklyTime'}
+        title={t('settings.weeklyRecapTime')}
+        value={weekly.time}
+        onDone={(time) => {
+          runAction((db, clock) => setSetting(db, 'weekly_recap', { ...weekly, time }, clock.now));
           close();
         }}
         onClose={close}

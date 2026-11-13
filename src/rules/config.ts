@@ -463,3 +463,32 @@ export const RECALL = {
   /** It fires this many days after the last opening, at the same time of day. */
   afterDays: 3,
 } as const;
+
+/** The weekly recap of Statistics (design-sezioni.md 8.7, 10.6; backlog T81). */
+export const WEEKLY_RECAP = {
+  /** Default of the Settings: Sunday (1 = Monday, 7 = Sunday) at 19:00 (design 10.6). */
+  defaultWeekday: 7 as const,
+  defaultTime: '19:00',
+  /** A recap covers this many game days, ending on the day of the recap. */
+  weekDays: 7,
+  /**
+   * PROVISIONAL (T81): below this share of the expected occurrences done, the week went badly and
+   * the card closes with a line of encouragement of the companion (design 8.7).
+   */
+  goodWeekShare: 0.5,
+  /**
+   * PROVISIONAL (T81): a record counts as beaten only if it was at least this long, like the «Serie
+   * record» of the tale (CLAUDE.md, choice 26).
+   */
+  recordMin: 3,
+  /** PROVISIONAL (T81): how many past recaps the Registro shows. */
+  pastWeeks: 12,
+} as const;
+
+/** The trend of the stats of the hero in Statistics (design-sezioni.md 8.8; backlog T81). */
+export const STAT_TREND = {
+  /** PROVISIONAL (T81): months on the chart, the current one included. */
+  chartMonths: 6,
+  /** The sentence under the chart: «Forza: da 3 a 7 negli ultimi 3 mesi». */
+  sentenceMonths: 3,
+} as const;

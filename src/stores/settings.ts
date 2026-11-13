@@ -44,6 +44,7 @@ const KEYS: readonly StoredKey[] = [
   'backup',
   'reminders_enabled',
   'recall_enabled',
+  'weekly_recap',
 ];
 
 function readAll(read: <K extends StoredKey>(key: K) => SettingValue<K>): AppSettings {

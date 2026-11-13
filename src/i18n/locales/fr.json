@@ -1335,7 +1335,38 @@
       "3": "tout fait"
     },
     "heatmapDayCount": "{{done}} {{term}} sur {{scheduled}} · {{rate}} %",
-    "heatmapDayNothing": "Rien de prévu ce jour-là."
+    "heatmapDayNothing": "Rien de prévu ce jour-là.",
+    "recap": {
+      "title": "Your week",
+      "title_arcade": "WEEKLY SCORE",
+      "title_fantasy": "Chronicle of the week",
+      "title_cyberpunk": "Weekly report",
+      "title_lovecraft": "Chronicle of the week",
+      "title_minimal": "Your week",
+      "range": "{{from}} – {{to}}",
+      "mostConsistent": "Most consistent: {{name}}, {{done}} of {{expected}}",
+      "bossDamage": "{{term}}: {{damage}} damage",
+      "levels": "+{{count}} {{term}}",
+      "points_one": "+{{count}} stat point",
+      "points_other": "+{{count}} stat points",
+      "records": "Records beaten: {{list}}",
+      "recordItem_one": "{{name}}, {{count}} day",
+      "recordItem_other": "{{name}}, {{count}} days",
+      "encouragement": "Every step counts: next week we start again together.",
+      "signature": "— {{name}}",
+      "past": "Past recaps",
+      "pastTitle": "Past weeks"
+    },
+    "statTrend": {
+      "title": "Stats trend",
+      "sentence_one": "{{stat}}: from {{from}} to {{to}} in the last month",
+      "sentence_other": "{{stat}}: from {{from}} to {{to}} in the last {{count}} months",
+      "same_one": "{{stat}}: {{term}} {{level}} in the last month",
+      "same_other": "{{stat}}: {{term}} {{level}} in the last {{count}} months",
+      "value": "{{term}} {{level}}",
+      "description": "{{stat}} month by month: {{values}}",
+      "stats": "Stat"
+    }
   },
   "questLog": {
     "filters": {
@@ -1631,7 +1662,10 @@
       "off": "Non"
     },
     "vibrations": "Vibrations",
-    "generalPause": "Pause générale"
+    "generalPause": "Pause générale",
+    "weeklyRecap": "Weekly recap",
+    "weeklyRecapDay": "Recap day",
+    "weeklyRecapTime": "Recap time"
   },
   "backup": {
     "title": "Sauvegarde et restauration",
@@ -1785,6 +1819,9 @@
     "recall": {
       "title": "{{name}} is waiting for you",
       "body": "Two minutes are enough to start again."
+    },
+    "weeklyRecap": {
+      "body": "See what went well these days."
     }
   },
   "widgets": {

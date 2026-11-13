@@ -499,3 +499,77 @@ describe('Statistics: forgotten completion', () => {
     expect(screen.getByTestId('stats-day-backfill')).toBeOnTheScreen();
   });
 });
+
+describe('Statistics: weekly recap and stats trend (T81)', () => {
+  function complete(db: Db, day: number) {
+    closePendingDays(db, clockAt(day, 9));
+    completeMission(db, {
+      missionId: missionId(db, 'journal'),
+      source: 'app',
+      now: at(day, 10),
+      tzOffset: TZ,
+    });
+  }
+
+  it('shows no recap before the first Sunday evening', async () => {
+    await open(newGame(['journal']), 8);
+    expect(screen.queryByTestId('stats-recap')).toBeNull();
+  });
+
+  it('puts the recap of last week at the top, with only the successes', async () => {
+    const db = newGame(['journal']);
+    for (let day = 6; day <= 8; day++) {
+      complete(db, day);
+    }
+    // Sunday 15 at 10: still the week of Friday 6 – Sunday 8.
+    await open(db, 15);
+    expect(screen.getByTestId('stats-recap')).toHaveTextContent(/La tua settimana/);
+    expect(screen.getByTestId('stats-recap')).toHaveTextContent(/6 nov – 8 nov/);
+    expect(screen.getByTestId('stats-recap-mostConsistent')).toHaveTextContent(
+      /Più costante: .+, 3 su 3/,
+    );
+    expect(screen.getByTestId('stats-recap-progress')).toHaveTextContent(/punti statistica/);
+    expect(screen.queryByTestId('stats-recap-encouragement')).toBeNull();
+  });
+
+  it('closes a bad week with the encouragement of the companion', async () => {
+    const db = newGame(['journal']);
+    // Sunday 22: the week of 9–15 with one completion.
+    complete(db, 12);
+    await open(db, 22);
+    expect(screen.getByTestId('stats-recap-encouragement')).toHaveTextContent(
+      'Ogni passo conta: la prossima settimana ripartiamo insieme. — Cloudy',
+    );
+  });
+
+  it('keeps the past recaps in the Registro', async () => {
+    const db = newGame(['journal']);
+    complete(db, 7);
+    await open(db, 22);
+    await fireEvent.press(screen.getByTestId('stats-tabs-log'));
+    await fireEvent.press(await screen.findByTestId('stats-log-recaps'));
+    expect(await screen.findByTestId('stats-recaps-2026-11-08')).toHaveTextContent(/1 su/);
+    expect(screen.queryByTestId('stats-recaps-2026-11-15')).toBeNull();
+  });
+
+  it('draws the level of a stat month by month, with the sentence', async () => {
+    const db = newGame(['journal']);
+    for (let day = 6; day <= 40; day++) {
+      complete(db, day);
+    }
+    await open(db, 40);
+    const trend = screen.getByTestId('stats-stat-trend');
+    expect(trend).toHaveTextContent(/Andamento delle statistiche/);
+    expect(screen.getByTestId('stats-stat-trend-chart-line')).toBeOnTheScreen();
+    // Minimal: «Movimento» is the name of strength.
+    expect(text('stats-stat-trend-sentence')).toBe('Movimento: livello 0 negli ultimi 3 mesi');
+    const sentences: string[] = [];
+    for (const key of ['constitution', 'intelligence', 'wisdom', 'charisma', 'discipline']) {
+      await fireEvent.press(screen.getByTestId(`stats-stat-trend-chip-${key}`));
+      sentences.push(text('stats-stat-trend-sentence'));
+    }
+    expect(sentences.some((sentence) => /: da 0 a \d+ negli ultimi 3 mesi$/.test(sentence))).toBe(
+      true,
+    );
+  });
+});

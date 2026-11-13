@@ -41,6 +41,18 @@ describe('openTodayFrom (design 11.3, 11.5)', () => {
     expect(useHighlightStore.getState().missionId).toBeNull();
   });
 
+  it('opens Statistics from the weekly recap, every week (T81)', () => {
+    const weekly = (date: number) => {
+      const value = response('weekly-recap', { kind: 'weekly' });
+      return { ...value, notification: { ...value.notification, date } };
+    };
+    expect(openTodayFrom(weekly(1))).toBe(true);
+    expect(openTodayFrom(weekly(1))).toBe(false);
+    expect(openTodayFrom(weekly(2))).toBe(true);
+    expect(router.navigate).toHaveBeenCalledTimes(2);
+    expect(router.navigate).toHaveBeenLastCalledWith('/stats');
+  });
+
   it('ignores the buttons, the other notifications and a response already opened', () => {
     expect(openTodayFrom(response('r2', { kind: 'reminder', missionId: 'm1' }, 'complete'))).toBe(
       false,

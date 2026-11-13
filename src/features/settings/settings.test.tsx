@@ -311,6 +311,21 @@ describe('Settings', () => {
     expect(getSetting(db, 'recall_enabled')).toBe(true);
   });
 
+  it('sets the weekly recap: switch, day and time, Sunday at 19:00 by default (T81)', async () => {
+    const db = newGame(['meditation']);
+    await open(db);
+    expect(screen.getByTestId('settings-weekly')).toHaveProp('value', true);
+    expect(text('settings-weekly-day-value')).toBe('Domenica');
+    expect(text('settings-weekly-time-value')).toBe('19:00');
+    await fireEvent(screen.getByTestId('settings-weekly'), 'valueChange', false);
+    await press('settings-weekly-day');
+    await press('settings-weekly-day-sheet-6');
+    await press('settings-weekly-time');
+    await pickTime('settings-weekly-time-sheet', 9, 15);
+    expect(getSetting(db, 'weekly_recap')).toEqual({ enabled: false, weekday: 6, time: '09:15' });
+    expect(text('settings-weekly-day-value')).toBe('Sabato');
+  });
+
   it('chooses «Riduci movimento» among Come il telefono, Sì and No', async () => {
     const db = newGame(['meditation']);
     await open(db);

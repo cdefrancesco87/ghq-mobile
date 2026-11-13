@@ -34,6 +34,8 @@ import { longDay } from './HeatmapDaySheet';
 import { NO_RANGE, QuestLogFilterSheet, type QuestLogRange } from './QuestLogFilterSheet';
 import { useBackfillCandidates } from './useBackfillCandidates';
 import { useQuestLog } from './useQuestLog';
+import { usePastWeeklyRecaps } from './useWeeklyRecap';
+import { WeeklyRecapCard } from './WeeklyRecapCard';
 
 const ICONS: Record<QuestLogType, IconName> = {
   'mission.completed': 'completa',
@@ -68,6 +70,7 @@ const kindKey = (type: QuestLogType) => type.replace('.', '_');
  * confirmation (the rules of T40). «+ Completamento dimenticato» completes afterwards a mission of
  * the last 7 days (US-STAT-03), shown only when there is one. In the Essential mode (8.11) no
  * entries of health, bosses, coins and shop, and no chips Boss and Oggetti: only the experience.
+ * «Riepiloghi passati» opens the weekly recaps before the one of the Overview (8.7, T81).
  */
 export function QuestLog() {
   const { t, i18n } = useTranslation();
@@ -93,6 +96,8 @@ export function QuestLog() {
   const [backfillKey, setBackfillKey] = useState(0);
   const view = useQuestLog({ filter, ...range, limit, essential });
   const backfill = useBackfillCandidates();
+  const pastRecaps = usePastWeeklyRecaps(true);
+  const [recapsVisible, setRecapsVisible] = useState(false);
 
   // The dialog opens once the menu has slid away: two modals at once do not open on iOS.
   useEffect(() => {
@@ -254,6 +259,14 @@ export function QuestLog() {
           }}
         />
       ) : null}
+      {pastRecaps.length > 0 ? (
+        <Button
+          testID="stats-log-recaps"
+          variant="secondary"
+          label={t('statsScreen.recap.past')}
+          onPress={() => setRecapsVisible(true)}
+        />
+      ) : null}
       {empty ? (
         <EmptyState
           testID={ranged || filter !== 'all' ? 'stats-log-empty-filtered' : 'stats-log-empty'}
@@ -357,6 +370,23 @@ export function QuestLog() {
           onDone={() => setBackfillVisible(false)}
         />
       </Sheet>
+      <Sheet
+        testID="stats-recaps"
+        visible={recapsVisible}
+        onClose={() => setRecapsVisible(false)}
+        size="full"
+        title={t('statsScreen.recap.pastTitle')}
+      >
+        <ScrollView contentContainerStyle={styles.recaps}>
+          {pastRecaps.map((recap) => (
+            <WeeklyRecapCard
+              key={recap.lastDay}
+              testID={`stats-recaps-${recap.lastDay}`}
+              view={recap}
+            />
+          ))}
+        </ScrollView>
+      </Sheet>
       <ActionSheet
         testID="stats-log-menu"
         visible={menuVisible}
@@ -393,6 +423,7 @@ export function QuestLog() {
 
 const styles = StyleSheet.create({
   log: { gap: 16 },
+  recaps: { gap: 12, paddingBottom: 16 },
   chips: { gap: 8, paddingVertical: 4 },
   group: { gap: 8 },
   card: { paddingVertical: 0 },

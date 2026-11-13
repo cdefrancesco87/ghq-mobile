@@ -18,30 +18,35 @@ const opened = new Set<string>();
 
 /**
  * A touch on a reminder, a group, the evening summary, the end of a timer or the check-in after 3
- * days opens Today; a reminder and a timer also give the row of their mission a short highlight
- * (design-sezioni.md 11.3, 11.5; T79). True if it opened Today.
+ * days opens Today, the weekly recap opens Statistics (T81); a reminder and a timer also give
+ * the row of their mission a short highlight (design-sezioni.md 11.3, 11.5; T79). True if it
+ * opened a screen.
  */
 export function openTodayFrom(response: Notifications.NotificationResponse): boolean {
   const { identifier, content } = response.notification.request;
   const kind = content.data?.kind;
+  // The recap and the check-in keep one identifier: the instant tells one week from the next.
+  const key = `${identifier}@${String(response.notification.date)}`;
   if (
     response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER ||
     (kind !== 'reminder' &&
       kind !== 'group' &&
       kind !== 'summary' &&
       kind !== 'timer' &&
-      kind !== 'recall') ||
-    opened.has(identifier)
+      kind !== 'recall' &&
+      kind !== 'weekly') ||
+    opened.has(key)
   ) {
     return false;
   }
-  opened.add(identifier);
+  opened.add(key);
   const missionId = content.data?.missionId;
   if ((kind === 'reminder' || kind === 'timer') && typeof missionId === 'string') {
     useHighlightStore.getState().highlight(missionId);
   }
   try {
-    router.navigate('/today');
+    // The weekly recap opens its card, at the top of the Overview of Statistics (design 8.7).
+    router.navigate(kind === 'weekly' ? '/stats' : '/today');
   } catch {
     // The navigation is not ready: the app opens on Today anyway.
   }

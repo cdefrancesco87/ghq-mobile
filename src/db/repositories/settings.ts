@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { MAX_TEMPLATES, MISSION_TEMPLATES } from '../../content/templates';
 import { addDays, isGameDay, toGameDay } from '../../rules/gameDay';
-import { FALLBACK_LANGUAGE, HERO_NAME_MAX_LENGTH } from '../../rules/config';
+import { FALLBACK_LANGUAGE, HERO_NAME_MAX_LENGTH, WEEKLY_RECAP } from '../../rules/config';
 import { pickLanguage } from '../../rules/language';
 import { GAME_MODES, LANGUAGES, type GameDay } from '../../rules/types';
 import { settings } from '../schema';
@@ -96,6 +96,15 @@ export const settingSchemas = {
   evening_summary: z.strictObject({ enabled: z.boolean(), time }),
   /** The check-in after 3 days without opening the app (design 10.6, 11.6): on by default. */
   recall_enabled: z.boolean(),
+  /**
+   * The weekly recap (design 8.7, 10.6; backlog T81): the notification switch, the day of the week
+   * (1 = Monday, 7 = Sunday) and the time; the card of Statistics follows the day and the time.
+   */
+  weekly_recap: z.strictObject({
+    enabled: z.boolean(),
+    weekday: z.literal([1, 2, 3, 4, 5, 6, 7]),
+    time,
+  }),
   /** «Come il telefono», «Sì», «No». */
   reduce_motion: z.enum(['system', 'on', 'off']),
   /** The light vibration of the celebrations (design 10.7, A7): on by default. */
@@ -183,6 +192,11 @@ export const SETTING_DEFAULTS: { readonly [K in KeyWithDefault]: SettingValue<K>
   quiet_hours: [],
   evening_summary: { enabled: true, time: '21:00' },
   recall_enabled: true,
+  weekly_recap: {
+    enabled: true,
+    weekday: WEEKLY_RECAP.defaultWeekday,
+    time: WEEKLY_RECAP.defaultTime,
+  },
   reduce_motion: 'system',
   vibrations: true,
   colorblind: false,

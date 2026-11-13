@@ -1335,7 +1335,38 @@
       "3": "tutto fatto"
     },
     "heatmapDayCount": "{{done}} {{term}} su {{scheduled}} · {{rate}}%",
-    "heatmapDayNothing": "Niente in programma in questo giorno."
+    "heatmapDayNothing": "Niente in programma in questo giorno.",
+    "recap": {
+      "title": "La tua settimana",
+      "title_arcade": "WEEKLY SCORE",
+      "title_fantasy": "Cronaca della settimana",
+      "title_cyberpunk": "Report settimanale",
+      "title_lovecraft": "Cronaca della settimana",
+      "title_minimal": "La tua settimana",
+      "range": "{{from}} – {{to}}",
+      "mostConsistent": "Più costante: {{name}}, {{done}} su {{expected}}",
+      "bossDamage": "{{term}}: {{damage}} danni",
+      "levels": "+{{count}} {{term}}",
+      "points_one": "+{{count}} punto statistica",
+      "points_other": "+{{count}} punti statistica",
+      "records": "Record battuti: {{list}}",
+      "recordItem_one": "{{name}}, {{count}} giorno",
+      "recordItem_other": "{{name}}, {{count}} giorni",
+      "encouragement": "Ogni passo conta: la prossima settimana ripartiamo insieme.",
+      "signature": "— {{name}}",
+      "past": "Riepiloghi passati",
+      "pastTitle": "Settimane passate"
+    },
+    "statTrend": {
+      "title": "Andamento delle statistiche",
+      "sentence_one": "{{stat}}: da {{from}} a {{to}} nell'ultimo mese",
+      "sentence_other": "{{stat}}: da {{from}} a {{to}} negli ultimi {{count}} mesi",
+      "same_one": "{{stat}}: {{term}} {{level}} nell'ultimo mese",
+      "same_other": "{{stat}}: {{term}} {{level}} negli ultimi {{count}} mesi",
+      "value": "{{term}} {{level}}",
+      "description": "{{stat}} mese per mese: {{values}}",
+      "stats": "Statistica"
+    }
   },
   "questLog": {
     "filters": {
@@ -1631,7 +1662,10 @@
       "off": "No"
     },
     "vibrations": "Vibrazioni",
-    "generalPause": "Pausa generale"
+    "generalPause": "Pausa generale",
+    "weeklyRecap": "Riepilogo settimanale",
+    "weeklyRecapDay": "Giorno del riepilogo",
+    "weeklyRecapTime": "Ora del riepilogo"
   },
   "backup": {
     "title": "Backup e ripristino",
@@ -1785,6 +1819,9 @@
     "recall": {
       "title": "{{name}} ti aspetta",
       "body": "Bastano due minuti per ripartire."
+    },
+    "weeklyRecap": {
+      "body": "Guarda cosa è andato bene in questi giorni."
     }
   },
   "widgets": {

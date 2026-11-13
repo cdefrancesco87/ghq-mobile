@@ -7,6 +7,7 @@ import { syncWidgets } from '../widgets/sync';
 import { systemWidgetHost } from '../widgets/system';
 import { syncEveningSummary } from './evening';
 import { syncRecall } from './recall';
+import { syncWeeklyRecap } from './weeklyRecap';
 import { handleReminderAction, type ReminderOutcome } from './reminders';
 import { syncReminders } from './scheduler';
 import {
@@ -16,6 +17,7 @@ import {
   systemRecall,
   systemScheduler,
   systemSummary,
+  systemWeeklyRecap,
 } from './system';
 import { notificationTextsOf } from './texts';
 
@@ -33,8 +35,8 @@ function tzOffsetAt(now: number): number {
 }
 
 /**
- * Aligns the notifications of the system with the reminders of the missions (`syncReminders`)
- * and the evening summary, only with the permission granted. Channels and buttons are named
+ * Aligns the notifications of the system with the reminders of the missions (`syncReminders`),
+ * the evening summary and the weekly recap, only with the permission granted. Channels and buttons are named
  * again first, so a new language reaches them. It never throws: a failure waits for the next
  * call.
  */
@@ -47,6 +49,8 @@ export async function syncSystemReminders(db: Db, now = Date.now()): Promise<voi
     const input = { now, tzOffset: tzOffsetAt(now) };
     await syncReminders(db, systemScheduler, input);
     await syncEveningSummary(db, systemSummary, input);
+    // The weekly recap of Statistics (design 8.7, 10.6; T81).
+    await syncWeeklyRecap(db, systemWeeklyRecap, input);
   } catch {
     // Nothing to show: the reminders are aligned again at the next start or action.
   }

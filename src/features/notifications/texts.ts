@@ -63,6 +63,11 @@ export interface NotificationTexts {
    */
   readonly recall: NotificationText;
   /**
+   * The weekly recap (design 8.7, 10.6; backlog T81): the title of the card in the tone of the
+   * theme and a line that invites to open it, signed by the companion.
+   */
+  readonly weeklyRecap: NotificationText;
+  /**
    * A text signed by the companion (design 11.2, 6.7; backlog T80): the text, then «— Cloudy» on
    * its own line, with the name given to the companion or the one of the theme.
    */
@@ -181,6 +186,10 @@ export function notificationTexts(settings: TextSettings): NotificationTexts {
     recall: {
       title: t('notifications.recall.title', { name: companion }),
       body: t('notifications.recall.body'),
+    },
+    weeklyRecap: {
+      title: t('statsScreen.recap.title', { context }),
+      body: sign(t('notifications.weeklyRecap.body')),
     },
     sign,
     channels: Object.fromEntries(
