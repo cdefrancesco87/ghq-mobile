@@ -78,6 +78,21 @@ export function victoryReward(steps: number, difficulty: Difficulty): VictoryRew
   return { xp, coins: Math.floor(xp / BOSS.victoryXpPerCoin) };
 }
 
+export interface BossPreview extends VictoryReward {
+  readonly hp: number;
+}
+
+/**
+ * The preview of a new boss (design-sezioni.md 5.2): hit points and reward of a victory. Null while
+ * the steps are fewer than 2 or more than 20, since that boss cannot be created.
+ */
+export function bossPreview(steps: number, difficulty: Difficulty): BossPreview | null {
+  if (!Number.isInteger(steps) || steps < BOSS.minSteps || steps > BOSS.maxSteps) {
+    return null;
+  }
+  return { hp: bossHpMax(steps), ...victoryReward(steps, difficulty) };
+}
+
 /** Coins stolen when a deadline passes: 10% of the coins, rounded down, at most 500. */
 export function deadlineSteal(coins: number): number {
   assertNonNegativeInteger(coins, 'Coins');

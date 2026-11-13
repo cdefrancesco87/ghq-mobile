@@ -44,6 +44,8 @@ export default function RootLayout() {
           name="editor"
           options={{ presentation: 'formSheet', sheetAllowedDetents: [0.9] }}
         />
+        {/* The creation of a boss is one screen at full height (design-sezioni.md 5.2). */}
+        <Stack.Screen name="goal-editor" options={{ presentation: 'fullScreenModal' }} />
       </Stack>
     </AppProviders>
   );

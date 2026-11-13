@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
@@ -38,6 +39,8 @@ export interface ScreenHeaderProps {
   readonly scrollY?: SharedValue<number>;
   /** Always the compact bar, for the screens opened from another one. */
   readonly compact?: boolean;
+  /** Buttons beside the large title, like «Nuovo» and «Altro» in Obiettivi. */
+  readonly actions?: ReactNode;
   readonly testID?: string;
 }
 
@@ -48,6 +51,7 @@ export function ScreenHeader({
   onBack,
   scrollY,
   compact = false,
+  actions,
   testID = 'screen-header',
 }: ScreenHeaderProps) {
   const { t } = useTranslation();
@@ -89,17 +93,21 @@ export function ScreenHeader({
     >
       {compact ? null : (
         <Animated.View style={[styles.large, largeStyle]}>
-          {caption === undefined ? null : (
-            <ThemedText variant="caption" color={colors.textMuted}>
-              {caption}
+          <View style={styles.titles}>
+            {caption === undefined ? null : (
+              <ThemedText variant="caption" color={colors.textMuted}>
+                {caption}
+              </ThemedText>
+            )}
+            <ThemedText variant="screenTitle" accessibilityRole="header" numberOfLines={1}>
+              {title}
             </ThemedText>
-          )}
-          <ThemedText variant="screenTitle" accessibilityRole="header" numberOfLines={1}>
-            {title}
-          </ThemedText>
+          </View>
+          {actions === undefined ? null : <View style={styles.actions}>{actions}</View>}
         </Animated.View>
       )}
-      <View style={styles.bar}>
+      {/* The bar lies over the large title: it lets the touches through to its buttons. */}
+      <View style={styles.bar} pointerEvents="box-none">
         {onBack === undefined ? null : (
           <Pressable
             testID={`${testID}-back`}
@@ -133,7 +141,15 @@ export function ScreenHeader({
 
 const styles = StyleSheet.create({
   container: { overflow: 'hidden', justifyContent: 'flex-end' },
-  large: { paddingHorizontal: 16, paddingBottom: 8 },
+  large: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  titles: { flex: 1 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   bar: {
     position: 'absolute',
     left: 0,

@@ -7,7 +7,6 @@ import { xpToNext } from '../../rules/level';
 import type { GameDay } from '../../rules/types';
 import {
   boss,
-  bossSteps,
   companion,
   daySummaries,
   dayPlan,
@@ -17,7 +16,7 @@ import {
   missions as missionsTable,
 } from '../schema';
 import type { Db } from '../types';
-import type { Boss } from './boss';
+import { listActiveBosses, withSteps, type BossProgress } from './boss';
 import { bonusGiven } from './completion';
 import { loadHero, type Hero } from './hero';
 import { listTodayMissions, type Mission } from './missions';
@@ -46,12 +45,7 @@ export interface TodayMission {
   readonly completionEventId: string | null;
 }
 
-export interface TodayBoss {
-  readonly boss: Boss;
-  readonly stepsDone: number;
-  readonly stepsTotal: number;
-  readonly nextStep: { readonly id: string; readonly title: string } | null;
-}
+export type TodayBoss = BossProgress;
 
 export interface TodayNotices {
   /** The hero has half XP today (CLAUDE.md, choice 3). */
@@ -99,46 +93,20 @@ export interface TodayView {
 }
 
 function activeBosses(db: Db): TodayBoss[] {
-  const active = db.select().from(boss).where(eq(boss.status, 'active')).all();
-  if (active.length === 0) {
-    return [];
-  }
-  const steps = db
-    .select()
-    .from(bossSteps)
-    .where(
-      inArray(
-        bossSteps.bossId,
-        active.map((item) => item.id),
-      ),
-    )
-    .orderBy(asc(bossSteps.position))
-    .all();
-  return active
-    .map((item) => {
-      const own = steps.filter((step) => step.bossId === item.id);
-      const next = own.find((step) => step.doneAt === null);
-      return {
-        boss: item,
-        stepsDone: own.filter((step) => step.doneAt !== null).length,
-        stepsTotal: own.length,
-        nextStep: next === undefined ? null : { id: next.id, title: next.title },
-      };
-    })
-    .sort((a, b) => {
-      const left = a.boss.deadlineDay;
-      const right = b.boss.deadlineDay;
-      if (left === right) {
-        return a.boss.createdAt - b.boss.createdAt;
-      }
-      if (left === null) {
-        return 1;
-      }
-      if (right === null) {
-        return -1;
-      }
-      return left < right ? -1 : 1;
-    });
+  return withSteps(db, listActiveBosses(db)).sort((a, b) => {
+    const left = a.boss.deadlineDay;
+    const right = b.boss.deadlineDay;
+    if (left === right) {
+      return a.boss.createdAt - b.boss.createdAt;
+    }
+    if (left === null) {
+      return 1;
+    }
+    if (right === null) {
+      return -1;
+    }
+    return left < right ? -1 : 1;
+  });
 }
 
 /** Events of a type on a game day; neither of these two types is ever undone. */

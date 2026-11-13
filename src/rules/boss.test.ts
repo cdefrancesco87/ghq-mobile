@@ -1,6 +1,7 @@
 import {
   applyBossDamage,
   bossHpMax,
+  bossPreview,
   canCreateBoss,
   deadlineSteal,
   shouldWarnDeadline,
@@ -79,6 +80,20 @@ describe('victoryReward', () => {
   it('rejects invalid steps and difficulties', () => {
     expect(() => victoryReward(1, 'medium')).toThrow(RangeError);
     expect(() => victoryReward(4, 'epic' as Difficulty)).toThrow(RangeError);
+  });
+});
+
+describe('bossPreview', () => {
+  it('shows the hit points and the reward of a new boss (design-sezioni.md 5.2)', () => {
+    expect(bossPreview(8, 'medium')).toEqual({ hp: 160, xp: 120, coins: 24 });
+    expect(bossPreview(2, 'easy')).toEqual({ hp: 40, xp: 20, coins: 4 });
+    expect(bossPreview(20, 'hard')).toEqual({ hp: 400, xp: 400, coins: 80 });
+  });
+
+  it('has no preview with too few or too many steps', () => {
+    expect(bossPreview(0, 'medium')).toBeNull();
+    expect(bossPreview(1, 'medium')).toBeNull();
+    expect(bossPreview(21, 'medium')).toBeNull();
   });
 });
 

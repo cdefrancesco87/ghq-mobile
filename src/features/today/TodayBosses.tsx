@@ -1,18 +1,17 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { TodayView } from '@/db/repositories/todayView';
-import { BossCard, type BossHit } from '@/features/bosses/BossCard';
+import { BossCard } from '@/features/bosses/BossCard';
+import { useBossStep } from '@/features/bosses/useBossStep';
 import { Icon } from '@/features/shared/Icon';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { MissionActions } from './useMissionActions';
 
-/** How long the number of the damage stays beside the bar (design-sezioni.md 5.4). */
-export const DAMAGE_MS = 1500;
 const DOT_SIZE = 6;
 /** The side margin of the content of Today (TodayScreen). */
 const SCREEN_MARGIN = 16;
@@ -35,19 +34,9 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
   // Until the first layout the pages take the width of the screen less the margins of Today.
   const [width, setWidth] = useState(screenSize.width - 2 * SCREEN_MARGIN);
   const [page, setPage] = useState(0);
-  const [hit, setHit] = useState<(BossHit & { readonly bossId: string }) | null>(null);
-  // A second tap before Today is read again would send the same step twice.
-  const lastTap = useRef<{ readonly view: TodayView; readonly stepId: string } | null>(null);
+  const step = useBossStep(actions.completeStep, view);
   const { bosses } = view;
   const current = Math.min(page, Math.max(bosses.length - 1, 0));
-
-  useEffect(() => {
-    if (hit === null) {
-      return undefined;
-    }
-    const timer = setTimeout(() => setHit(null), DAMAGE_MS);
-    return () => clearTimeout(timer);
-  }, [hit]);
 
   if (bosses.length === 0) {
     return (
@@ -70,24 +59,8 @@ export function TodayBosses({ view, actions }: TodayBossesProps) {
         testID={`today-boss-${item.boss.id}`}
         item={item}
         day={view.day}
-        hit={hit?.bossId === item.boss.id ? hit : null}
-        onCompleteStep={() => {
-          const stepId = item.nextStep?.id;
-          if (stepId === undefined) {
-            return;
-          }
-          if (lastTap.current?.view === view && lastTap.current.stepId === stepId) {
-            return;
-          }
-          lastTap.current = { view, stepId };
-          const dealt = actions.completeStep(item);
-          if (dealt === null) {
-            // Nothing was saved: the same step can be tried again.
-            lastTap.current = null;
-          } else {
-            setHit((last) => ({ bossId: item.boss.id, dealt, key: (last?.key ?? 0) + 1 }));
-          }
-        }}
+        hit={step.hitOf(item.boss.id)}
+        onCompleteStep={() => step.completeStep(item)}
       />
     </View>
   ));

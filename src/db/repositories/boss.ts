@@ -176,6 +176,42 @@ function activeCount(tx: Db): number {
   return tx.select({ id: boss.id }).from(boss).where(eq(boss.status, 'active')).all().length;
 }
 
+/** A boss with its steps done, all of them and the next one to do. */
+export interface BossProgress {
+  readonly boss: Boss;
+  readonly stepsDone: number;
+  readonly stepsTotal: number;
+  readonly nextStep: { readonly id: string; readonly title: string } | null;
+}
+
+/** The steps of some bosses, in their order: Today and Obiettivi (design-sezioni.md 2.4, 5.1). */
+export function withSteps(db: Db, bosses: readonly Boss[]): BossProgress[] {
+  if (bosses.length === 0) {
+    return [];
+  }
+  const steps = db
+    .select()
+    .from(bossSteps)
+    .where(
+      inArray(
+        bossSteps.bossId,
+        bosses.map((item) => item.id),
+      ),
+    )
+    .orderBy(asc(bossSteps.position))
+    .all();
+  return bosses.map((item) => {
+    const own = steps.filter((step) => step.bossId === item.id);
+    const next = own.find((step) => step.doneAt === null);
+    return {
+      boss: item,
+      stepsDone: own.filter((step) => step.doneAt !== null).length,
+      stepsTotal: own.length,
+      nextStep: next === undefined ? null : { id: next.id, title: next.title },
+    };
+  });
+}
+
 /** The active bosses, from the oldest: the choices of «Boss collegato» (design-sezioni.md 4.9). */
 export function listActiveBosses(db: Db): Boss[] {
   return db.select().from(boss).where(eq(boss.status, 'active')).orderBy(asc(boss.createdAt)).all();

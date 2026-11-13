@@ -8,12 +8,13 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import type { TodayBoss } from '@/db/repositories/todayView';
+import type { BossProgress } from '@/db/repositories/boss';
 import { Bar } from '@/features/shared/Bar';
 import { BossSprite } from '@/features/shared/BossSprite';
 import { Card } from '@/features/shared/Card';
 import { CompletionControl } from '@/features/shared/CompletionControl';
 import { Icon } from '@/features/shared/Icon';
+import { ProgressRing, ringStroke } from '@/features/shared/ProgressRing';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useReduceMotion } from '@/features/shared/useReduceMotion';
 import { BOSS } from '@/rules/config';
@@ -22,8 +23,8 @@ import type { GameDay } from '@/rules/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useBossTexts } from './bossTexts';
 
-/** 16×16 at 3× in the compact card (design-sezioni.md 2.4). */
-const SPRITE_SIZE = 48;
+/** 16×16 at 3× in the compact card (design-sezioni.md 2.4), 32×32 at 3× in Obiettivi (5.1). */
+const SPRITE_SIZE = { compact: 48, large: 96 } as const;
 const SHAKE = 4;
 const SHAKE_STEP_MS = 50;
 
@@ -34,7 +35,9 @@ export interface BossHit {
 }
 
 export interface BossCardProps {
-  readonly item: TodayBoss;
+  readonly item: BossProgress;
+  /** Compact in Today (2.4), large in Obiettivi (5.1). */
+  readonly variant?: 'compact' | 'large';
   readonly day: GameDay;
   readonly onCompleteStep: (event: GestureResponderEvent) => void;
   readonly hit: BossHit | null;
@@ -42,13 +45,22 @@ export interface BossCardProps {
 }
 
 /**
- * The compact card of a boss in Today (design-sezioni.md 2.4, 5.4; mockup B2): sprite, name,
- * days to the deadline, the bar with its number, the steps done and the next step with its
- * control. A hit shakes the sprite (not with «Riduci movimento») and shows the damage.
+ * The card of a boss (design-sezioni.md 2.4, 5.1, 5.4; mockups B2, B3a): sprite, name, days to the
+ * deadline, the bar with its number, the steps done and the next step with its control. A hit
+ * shakes the sprite (not with «Riduci movimento») and shows the damage. The large card of
+ * Obiettivi has the sprite at 96, in Minimal a large ring with the share of the hit points taken
+ * (5.9), the steps in the words of the theme and one sentence for the screen reader (5.11).
  */
-export function BossCard({ item, day, onCompleteStep, hit, testID }: BossCardProps) {
+export function BossCard({
+  item,
+  variant = 'compact',
+  day,
+  onCompleteStep,
+  hit,
+  testID,
+}: BossCardProps) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, family } = useTheme();
   const reduceMotion = useReduceMotion();
   const { nameOf, stepTitleOf } = useBossTexts();
   const { boss } = item;
@@ -81,16 +93,49 @@ export function BossCard({ item, day, onCompleteStep, hit, testID }: BossCardPro
         : daysLeft === 0
           ? t('bosses.card.dueToday')
           : t('bosses.card.days', { count: daysLeft });
+  const large = variant === 'large';
+  const size = SPRITE_SIZE[variant];
+  const kind = boss.kind === 'starter' ? 'quest' : boss.difficulty;
+  const taken = boss.hpMax === 0 ? 0 : 1 - boss.hp / boss.hpMax;
+  const steps = t('bosses.card.steps', {
+    done: item.stepsDone,
+    total: item.stepsTotal,
+    context: large ? family : undefined,
+  });
+  const summary = [
+    name,
+    boss.kind === 'starter'
+      ? null
+      : t('bosses.card.difficulty', { difficulty: t(`shared.difficulty.${boss.difficulty}`) }),
+    t('bosses.card.hpSummary', { hp: boss.hp, max: boss.hpMax }),
+    t('bosses.card.stepsSummary', { done: item.stepsDone, total: item.stepsTotal }),
+    deadline,
+  ]
+    .filter((part) => part !== null)
+    .join(', ');
 
   return (
     <Card testID={testID}>
-      <View style={styles.top}>
+      <View
+        style={styles.top}
+        // The large card is read in one sentence (5.11); the step keeps its own control.
+        accessible={large}
+        accessibilityLabel={large ? summary : undefined}
+      >
         <Animated.View style={shaking}>
-          <BossSprite
-            kind={boss.kind === 'starter' ? 'quest' : boss.difficulty}
-            size={SPRITE_SIZE}
-            testID={`${testID}-sprite`}
-          />
+          {large && family === 'minimal' ? (
+            <View testID={`${testID}-ring`} style={[styles.ring, { width: size, height: size }]}>
+              <ProgressRing progress={taken} size={size} strokeWidth={ringStroke(family)} />
+              <View style={styles.ringCenter}>
+                <Icon name="boss" size={24} color={colors.primary} />
+                <ThemedText variant="numbers">
+                  {t('bosses.card.percent', { percent: Math.round(taken * 100) })}
+                </ThemedText>
+              </View>
+            </View>
+          ) : (
+            <BossSprite kind={kind} size={size} testID={`${testID}-sprite`} />
+          )}
         </Animated.View>
         <View style={styles.flex}>
           <View style={styles.titleRow}>
@@ -139,8 +184,13 @@ export function BossCard({ item, day, onCompleteStep, hit, testID }: BossCardPro
               </ThemedText>
             )}
           </View>
-          <ThemedText variant="caption" color={colors.textMuted}>
-            {t('bosses.card.steps', { done: item.stepsDone, total: item.stepsTotal })}
+          <ThemedText
+            testID={`${testID}-steps`}
+            variant={large ? 'label' : 'caption'}
+            // Arcade shows the steps as the stages of the boss, in the main colour (mockup B3a).
+            color={large && family === 'arcade' ? colors.primary : colors.textMuted}
+          >
+            {steps}
           </ThemedText>
         </View>
       </View>
@@ -176,5 +226,7 @@ const styles = StyleSheet.create({
   deadline: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   separator: { height: StyleSheet.hairlineWidth, marginVertical: 8 },
+  ring: { alignItems: 'center', justifyContent: 'center' },
+  ringCenter: { position: 'absolute', alignItems: 'center' },
   next: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

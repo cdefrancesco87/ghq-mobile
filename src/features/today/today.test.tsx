@@ -748,6 +748,7 @@ describe('Today: bosses', () => {
       screen.getByRole('button', { name: 'Dividi un grande obiettivo in passi' }),
     );
 
-    expect(await screen.findByRole('header', { name: 'Obiettivi' })).toBeOnTheScreen();
+    // Obiettivi has the name of the theme: «Grandi obiettivi» in Minimal (design-sezioni.md 5.1).
+    expect(await screen.findByRole('header', { name: 'Grandi obiettivi' })).toBeOnTheScreen();
   });
 });

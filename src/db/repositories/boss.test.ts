@@ -97,6 +97,28 @@ describe('createBoss', () => {
     expectHeroMatchesLog(db);
   });
 
+  it('creates a boss with 2 or 20 steps', () => {
+    const db = newGame(['journal']);
+    const two = createBoss(db, { ...THESIS, steps: ['Uno', 'Due'] }, NOW);
+    const twenty = Array.from({ length: 20 }, (_, index) => `Passo ${index + 1}`);
+    const long = createBoss(db, { ...THESIS, name: 'Maratona', steps: twenty }, NOW);
+    expect(two.hpMax).toBe(40);
+    expect(stepIds(db, two.id)).toHaveLength(2);
+    expect(long.hpMax).toBe(400);
+    expect(stepIds(db, long.id)).toHaveLength(20);
+  });
+
+  it('moves a mission linked to another boss to the new one', () => {
+    const db = newGame(['journal', 'read_pages']);
+    const read = missionId(db, 'read_pages');
+    const first = createBoss(db, { ...THESIS, missionIds: [read] }, NOW);
+    const second = createBoss(db, { ...THESIS, name: 'Trasloco', missionIds: [read] }, NOW);
+    expect(db.select().from(missions).where(eq(missions.id, read)).get()?.bossId).toBe(second.id);
+    expect(
+      db.select({ id: missions.id }).from(missions).where(eq(missions.bossId, first.id)).all(),
+    ).toEqual([]);
+  });
+
   it('refuses a fourth active boss, the quest of the first launch included', () => {
     const db = newGame(['journal']);
     createBoss(db, THESIS, NOW);
