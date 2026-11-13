@@ -32,7 +32,7 @@
       "Bash(git ls-remote*)",
       "Bash(gh pr create*)",
       "Bash(gh pr view*)",
-      "Bash(gh pr merge * --merge --delete-branch)",
+      "Bash(gh pr merge * --squash --delete-branch)",
       "Bash(gh pr edit * --base main)"
     ],
     "deny": [
