@@ -160,6 +160,8 @@ export const COMPANION = {
   puppyAtCompletions: 1,
   /** The puppy becomes an adult at this number of completions. */
   adultAtCompletions: 150,
+  /** The name of the companion, up to this many characters (design-sezioni.md 6.7). */
+  nameMaxLength: 20,
 } as const;
 
 /** Companion mood, from the share of missions completed in the last days. */

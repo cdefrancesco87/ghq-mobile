@@ -1,4 +1,12 @@
-import { moodFor, stageFor, type CompanionStage, type DayCompletion } from '@/rules/companion';
+import {
+  companionName,
+  growthOf,
+  moodFor,
+  stageFor,
+  storedCompanionName,
+  type CompanionStage,
+  type DayCompletion,
+} from '@/rules/companion';
 
 function days(...pairs: [scheduledCount: number, doneCount: number][]): DayCompletion[] {
   return pairs.map(([scheduledCount, doneCount]) => ({ scheduledCount, doneCount }));
@@ -74,5 +82,79 @@ describe('moodFor', () => {
     expect(() => moodFor(days([2, 3]))).toThrow(RangeError);
     expect(() => moodFor(days([-1, 0]))).toThrow(RangeError);
     expect(() => moodFor(days([3, 1.5]))).toThrow(RangeError);
+  });
+});
+
+describe('growthOf', () => {
+  it('counts the egg towards its first completion', () => {
+    expect(growthOf('egg', 0)).toEqual({
+      stageNumber: 1,
+      stageCount: 3,
+      done: 0,
+      target: 1,
+      left: 1,
+    });
+  });
+
+  it('counts the puppy towards the adult stage', () => {
+    expect(growthOf('baby', 87)).toEqual({
+      stageNumber: 2,
+      stageCount: 3,
+      done: 87,
+      target: 150,
+      left: 63,
+    });
+    expect(growthOf('baby', 149).left).toBe(1);
+  });
+
+  it('shows the adult fully grown', () => {
+    expect(growthOf('adult', 212)).toEqual({
+      stageNumber: 3,
+      stageCount: 3,
+      done: 212,
+      target: null,
+      left: 0,
+    });
+  });
+
+  it('never counts below zero or beyond the target when an undo lowered the total', () => {
+    // A puppy stays a puppy after the undo of its first completion.
+    expect(growthOf('baby', 0)).toMatchObject({ done: 0, left: 150 });
+    expect(growthOf('egg', 3)).toMatchObject({ done: 1, left: 0 });
+  });
+
+  it('rejects impossible totals', () => {
+    expect(() => growthOf('baby', -1)).toThrow(RangeError);
+    expect(() => growthOf('baby', 1.5)).toThrow(RangeError);
+    expect(() => growthOf('teen' as CompanionStage, 3)).toThrow(RangeError);
+  });
+});
+
+describe('companionName', () => {
+  it('uses the name chosen by the user in every theme', () => {
+    expect(companionName('Fiocco', 'Cloudy')).toBe('Fiocco');
+    expect(companionName('Fiocco', 'Pixel')).toBe('Fiocco');
+  });
+
+  it('follows the theme while the name is the default one', () => {
+    expect(companionName(null, 'Cloudy')).toBe('Cloudy');
+    expect(companionName(null, 'Pixel')).toBe('Pixel');
+  });
+});
+
+describe('storedCompanionName', () => {
+  it('keeps the typed name without the spaces around it', () => {
+    expect(storedCompanionName('  Fiocco ', 'Cloudy')).toBe('Fiocco');
+  });
+
+  it('goes back to the default of the theme when the name is empty or the default one', () => {
+    expect(storedCompanionName('   ', 'Cloudy')).toBeNull();
+    expect(storedCompanionName('', 'Cloudy')).toBeNull();
+    expect(storedCompanionName(' Cloudy ', 'Cloudy')).toBeNull();
+  });
+
+  it('accepts up to 20 characters and refuses longer names', () => {
+    expect(storedCompanionName('A'.repeat(20), 'Cloudy')).toBe('A'.repeat(20));
+    expect(() => storedCompanionName('A'.repeat(21), 'Cloudy')).toThrow(RangeError);
   });
 });

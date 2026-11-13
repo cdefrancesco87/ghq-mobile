@@ -70,3 +70,16 @@ export const PIXEL_SPRITES = {
 } as const satisfies Readonly<
   Record<string, { readonly source: ImageSourcePropType; readonly grid: number }>
 >;
+
+/** The enlarged PNG of each pixel habitat of the companion and the size of its original grid. */
+export const PIXEL_HABITATS = {
+  "habitat-arcade": { source: require('../../../../assets/sprites/habitat-arcade.png'), width: 130, height: 140 },
+  "habitat-cyberpunk": { source: require('../../../../assets/sprites/habitat-cyberpunk.png'), width: 130, height: 140 },
+  "habitat-fantasy": { source: require('../../../../assets/sprites/habitat-fantasy.png'), width: 130, height: 140 },
+  "habitat-lovecraft": { source: require('../../../../assets/sprites/habitat-lovecraft.png'), width: 130, height: 140 },
+} as const satisfies Readonly<
+  Record<
+    string,
+    { readonly source: ImageSourcePropType; readonly width: number; readonly height: number }
+  >
+>;

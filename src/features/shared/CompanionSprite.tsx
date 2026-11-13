@@ -15,8 +15,34 @@ export interface CompanionSpriteProps {
   readonly mood: CompanionPose;
   /** The theme in use when missing; another one for previews. */
   readonly theme?: ThemeKey;
+  /** The name chosen by the user; the default of the theme when missing. */
+  readonly name?: string;
   readonly size?: number;
   readonly testID?: string;
+}
+
+/**
+ * What the screen reader says of the companion («Pixel, cucciolo, felice», design-sezioni.md
+ * 6.12): also for a control that holds the sprite.
+ */
+export function useCompanionDescription({
+  stage,
+  mood,
+  theme,
+  name: chosen,
+}: Pick<CompanionSpriteProps, 'stage' | 'mood' | 'theme' | 'name'>): string {
+  const { t } = useTranslation();
+  const active = useTheme();
+  const key = theme ?? active.key;
+  const name = chosen ?? t('lexicon.companion', { context: THEMES[key].family });
+  const stageWord = t(`shared.companionSprite.stage.${stage}`);
+  return stage === 'egg'
+    ? t('shared.companionSprite.egg', { name, stage: stageWord })
+    : t('shared.companionSprite.grown', {
+        name,
+        stage: stageWord,
+        mood: t(`shared.companionSprite.mood.${mood}`),
+      });
 }
 
 /** The companion of a theme, described to the screen reader («Pixel, cucciolo, felice»). */
@@ -24,25 +50,15 @@ export function CompanionSprite({
   stage,
   mood,
   theme,
+  name,
   size = DEFAULT_SIZE,
   testID,
 }: CompanionSpriteProps) {
-  const { t } = useTranslation();
   const active = useTheme();
-  const key = theme ?? active.key;
-  const name = t('lexicon.companion', { context: THEMES[key].family });
-  const stageWord = t(`shared.companionSprite.stage.${stage}`);
-  const label =
-    stage === 'egg'
-      ? t('shared.companionSprite.egg', { name, stage: stageWord })
-      : t('shared.companionSprite.grown', {
-          name,
-          stage: stageWord,
-          mood: t(`shared.companionSprite.mood.${mood}`),
-        });
+  const label = useCompanionDescription({ stage, mood, theme, name });
   return (
     <Sprite
-      spriteKey={companionSpriteKey(key, stage, mood)}
+      spriteKey={companionSpriteKey(theme ?? active.key, stage, mood)}
       size={size}
       label={label}
       testID={testID}

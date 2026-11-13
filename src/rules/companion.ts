@@ -80,3 +80,57 @@ export function moodFor(lastDays: readonly DayCompletion[], todayDoneCount = 0):
   }
   return 'normal';
 }
+
+/** The growth bar of the companion sheet (design-sezioni.md 6.2): «87 di 150 missioni». */
+export interface Growth {
+  /** «stadio 2 di 3». */
+  readonly stageNumber: number;
+  readonly stageCount: number;
+  /** Completions counted towards the next stage, never beyond its threshold. */
+  readonly done: number;
+  /** Completions that open the next stage; null when the companion is fully grown. */
+  readonly target: number | null;
+  /** Completions still missing for the next stage. */
+  readonly left: number;
+}
+
+/**
+ * Where the companion is on its way to the next stage. The stage is the stored one, which never
+ * goes back: after an undo the count may be below the threshold already passed, so it is clamped.
+ */
+export function growthOf(stage: CompanionStage, completionsTotal: number): Growth {
+  assertNonNegativeInteger(completionsTotal, 'Total completions');
+  const index = COMPANION_STAGES.indexOf(stage);
+  if (index < 0) {
+    throw new RangeError(`Unknown companion stage: ${stage}`);
+  }
+  const base = { stageNumber: index + 1, stageCount: COMPANION_STAGES.length };
+  if (stage === 'adult') {
+    return { ...base, done: completionsTotal, target: null, left: 0 };
+  }
+  const target = stage === 'egg' ? COMPANION.puppyAtCompletions : COMPANION.adultAtCompletions;
+  const done = Math.min(completionsTotal, target);
+  return { ...base, done, target, left: target - done };
+}
+
+/**
+ * The name shown: the one chosen by the user, or the default of the theme in use, so that a
+ * default name follows the theme and a chosen one stays (design-sezioni.md 6.9).
+ *
+ * @param stored `companion.name`: null means the default of the theme.
+ */
+export function companionName(stored: string | null, themeDefault: string): string {
+  return stored ?? themeDefault;
+}
+
+/**
+ * The value to store for a typed name: trimmed; null, the default of the theme, when it is empty
+ * or the default name itself, so that it keeps following the theme.
+ */
+export function storedCompanionName(typed: string, themeDefault: string): string | null {
+  const name = typed.trim();
+  if (name.length > COMPANION.nameMaxLength) {
+    throw new RangeError(`The companion name is longer than ${COMPANION.nameMaxLength}: ${name}`);
+  }
+  return name === '' || name === themeDefault.trim() ? null : name;
+}

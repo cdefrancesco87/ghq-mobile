@@ -43,6 +43,7 @@ export const EVENT_TYPES = [
   'hero.exhausted',
   'hero.renamed',
   'companion.stage_up',
+  'companion.renamed',
   'companion.gift',
   'item.bought',
   'item.used',

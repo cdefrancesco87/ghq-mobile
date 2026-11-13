@@ -907,5 +907,48 @@
       "stepDoneLabel": "Step {{position}} of {{total}}, done",
       "stepLeftMissing": "At least one step to do is needed for the final blow"
     }
+  },
+  "companion": {
+    "stage": {
+      "egg": "Egg",
+      "baby": "Baby",
+      "adult": "Adult"
+    },
+    "stageLine": "{{stage}} · stage {{number}} of {{count}}",
+    "growth": "Growth",
+    "hatch": "Hatching",
+    "count": "{{done}} of {{target}} {{term}}",
+    "total": "{{done}} {{term}}",
+    "left": "{{left}} more {{term}} to grow up.",
+    "eggHint": "It hatches at your first completion.",
+    "adultHint": "{{name}} has reached the last stage.",
+    "rename": "Rename",
+    "nameLabel": "Companion name",
+    "nameHint": "Up to {{max}} characters",
+    "tapHint": "Tap to say hi",
+    "says": "{{name}} says: {{text}}",
+    "closeBubble": "Close the bubble",
+    "lines": {
+      "egg": {
+        "1": "The egg rocks gently.",
+        "2": "Something is moving in there.",
+        "3": "Knock knock… not yet."
+      },
+      "happy": {
+        "1": "What a lovely day together!",
+        "2": "I love hanging out with you, {{hero}}!",
+        "3": "Party time?"
+      },
+      "normal": {
+        "1": "Hi, {{hero}}! What's the plan today?",
+        "2": "I'm here if you need company.",
+        "3": "Want to do something together?"
+      },
+      "sad": {
+        "1": "Will you keep me company for a bit?",
+        "2": "So nice to see you, {{hero}}.",
+        "3": "Shall we do one small thing together today?"
+      }
+    }
   }
 }

@@ -13,6 +13,7 @@ import { Icon } from '@/features/shared/Icon';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useLargeText } from '@/features/shared/useLargeText';
 import { termInSentence } from '@/i18n/lexicon';
+import { companionName as nameOf } from '@/rules/companion';
 import { HP } from '@/rules/config';
 import { titleIndex } from '@/rules/level';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -41,7 +42,7 @@ export function HeroCard({ view }: HeroCardProps) {
   const xpTerm = t('lexicon.xp', { context: family });
   const streakTerm = t('lexicon.streak', { context: family });
   const coinsTerm = t('lexicon.coins_pl', { context: family });
-  const companionName = companion.name ?? t('lexicon.companion', { context: family });
+  const companionName = nameOf(companion.name, t('lexicon.companion', { context: family }));
 
   const streak = (
     <Chip
@@ -66,6 +67,7 @@ export function HeroCard({ view }: HeroCardProps) {
             <CompanionSprite
               stage={companion.stage}
               mood={companion.mood}
+              name={companionName}
               size={family === 'minimal' ? COMPANION_SIZE_MINIMAL : COMPANION_SIZE}
             />
           </Pressable>

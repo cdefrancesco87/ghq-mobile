@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { AccessibilityInfo, Dimensions, Pressable, StyleSheet } from 'react-native';
 
 import type { EventRow } from '@/db/repositories/events';
+import { useHeroStore } from '@/stores/hero';
 import { useSettingsStore } from '@/stores/settings';
 
 import { renderThemed } from '../../../test/render';
@@ -47,6 +48,7 @@ beforeEach(() => {
 afterEach(() => {
   jest.useRealTimers();
   useSettingsStore.getState().reset();
+  useHeroStore.getState().reset();
   jest.restoreAllMocks();
 });
 
@@ -348,6 +350,12 @@ describe('MomentQueue', () => {
     await renderQueue([STAGE_UP]);
     expect(screen.getByText('Cloudy è cresciuto!')).toBeTruthy();
     expect(screen.getByText('Ora è un adulto')).toBeTruthy();
+  });
+
+  it('writes the name chosen for the companion', async () => {
+    useHeroStore.setState({ companionName: 'Fiocco' });
+    await renderQueue([STAGE_UP]);
+    expect(screen.getByText('Fiocco è cresciuto!')).toBeTruthy();
   });
 
   it('throws confetti for a victory, none with «Riduci movimento»', async () => {

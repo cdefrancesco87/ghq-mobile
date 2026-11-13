@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgXml } from 'react-native-svg';
 
 import { TITLE_KEYS } from '@/content/titles';
+import { companionName } from '@/rules/companion';
+import { useHeroStore } from '@/stores/hero';
 import { useTheme } from '@/theme/ThemeProvider';
 import { announceOnIos } from './announce';
 import { Button } from './Button';
@@ -87,6 +89,7 @@ function useCountUp(value: number, run: boolean): number {
 function useMomentTexts(moment: Moment): MomentTexts {
   const { t } = useTranslation();
   const { family } = useTheme();
+  const chosenName = useHeroStore((state) => state.companionName);
   switch (moment.kind) {
     case 'level_up':
       return {
@@ -117,7 +120,7 @@ function useMomentTexts(moment: Moment): MomentTexts {
     case 'companion_stage':
       return {
         title: t('shared.moments.companionGrown', {
-          name: t('lexicon.companion', { context: family }),
+          name: companionName(chosenName, t('lexicon.companion', { context: family })),
         }),
         detail: t(`shared.moments.companionStage.${moment.stage}`),
       };

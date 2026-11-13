@@ -175,7 +175,11 @@ describe('game configuration', () => {
   });
 
   it('matches «Compagno» in «Regole di gioco»', () => {
-    expect(COMPANION).toEqual({ puppyAtCompletions: 1, adultAtCompletions: 150 });
+    expect(COMPANION).toEqual({
+      puppyAtCompletions: 1,
+      adultAtCompletions: 150,
+      nameMaxLength: 20,
+    });
     expect(MOOD).toEqual({ windowDays: 3, happyAbove: 0.7, sadBelow: 0.3 });
   });
 

@@ -907,5 +907,48 @@
       "stepDoneLabel": "Étape {{position}} sur {{total}}, faite",
       "stepLeftMissing": "Il faut au moins une étape à faire pour le coup final"
     }
+  },
+  "companion": {
+    "stage": {
+      "egg": "Œuf",
+      "baby": "Bébé",
+      "adult": "Adulte"
+    },
+    "stageLine": "{{stage}} · stade {{number}} sur {{count}}",
+    "growth": "Croissance",
+    "hatch": "Éclosion",
+    "count": "{{done}} sur {{target}} {{term}}",
+    "total": "{{done}} {{term}}",
+    "left": "Encore {{left}} {{term}} pour devenir adulte.",
+    "eggHint": "Il éclot à ta première réussite.",
+    "adultHint": "{{name}} a atteint le dernier stade.",
+    "rename": "Renommer",
+    "nameLabel": "Nom du compagnon",
+    "nameHint": "Jusqu'à {{max}} caractères",
+    "tapHint": "Touche pour le saluer",
+    "says": "{{name}} dit : {{text}}",
+    "closeBubble": "Fermer la bulle",
+    "lines": {
+      "egg": {
+        "1": "L'œuf se balance doucement.",
+        "2": "Quelque chose bouge là-dedans.",
+        "3": "Toc toc… pas encore."
+      },
+      "happy": {
+        "1": "Quelle belle journée ensemble !",
+        "2": "J'adore être avec toi, {{hero}} !",
+        "3": "On fait la fête ?"
+      },
+      "normal": {
+        "1": "Salut, {{hero}} ! On fait quoi aujourd'hui ?",
+        "2": "Je suis là si tu veux de la compagnie.",
+        "3": "On fait quelque chose ensemble ?"
+      },
+      "sad": {
+        "1": "Tu me tiens un peu compagnie ?",
+        "2": "Ça fait plaisir de te voir, {{hero}}.",
+        "3": "On fait une petite chose ensemble aujourd'hui ?"
+      }
+    }
   }
 }

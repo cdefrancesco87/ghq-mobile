@@ -44,6 +44,12 @@ export function companionSpriteKey(
   return stage === 'egg' ? `${prefix}-uovo` : `${prefix}-${STAGE_FILES[stage]}-${POSE_FILES[pose]}`;
 }
 
+/** The habitat of the companion sheet (design-sezioni.md 6.10): Minimal has one per version. */
+export function habitatKey(theme: ThemeKey): string {
+  const { family } = THEMES[theme];
+  return family === 'minimal' ? `habitat-${theme}` : `habitat-${family}`;
+}
+
 /** `null` for Minimal, which has no boss sprites: a line icon in a circle stands in for them. */
 export function bossSpriteKey(family: ThemeFamily, kind: BossKind): string | null {
   return family === 'minimal' ? null : `boss-${family}-${BOSS_FILES[kind]}`;

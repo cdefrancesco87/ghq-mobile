@@ -907,5 +907,48 @@
       "stepDoneLabel": "Schritt {{position}} von {{total}}, erledigt",
       "stepLeftMissing": "Für den letzten Schlag braucht es mindestens einen offenen Schritt"
     }
+  },
+  "companion": {
+    "stage": {
+      "egg": "Ei",
+      "baby": "Baby",
+      "adult": "Erwachsen"
+    },
+    "stageLine": "{{stage}} · Stufe {{number}} von {{count}}",
+    "growth": "Wachstum",
+    "hatch": "Schlüpfen",
+    "count": "{{done}} von {{target}} {{term}}",
+    "total": "{{done}} {{term}}",
+    "left": "Noch {{left}} {{term}} bis zum Erwachsensein.",
+    "eggHint": "Es schlüpft beim ersten Abschluss.",
+    "adultHint": "{{name}} hat die letzte Stufe erreicht.",
+    "rename": "Umbenennen",
+    "nameLabel": "Name des Begleiters",
+    "nameHint": "Bis zu {{max}} Zeichen",
+    "tapHint": "Tippen zum Begrüßen",
+    "says": "{{name}} sagt: {{text}}",
+    "closeBubble": "Sprechblase schließen",
+    "lines": {
+      "egg": {
+        "1": "Das Ei schaukelt sanft.",
+        "2": "Da drin bewegt sich etwas.",
+        "3": "Klopf, klopf … noch nicht."
+      },
+      "happy": {
+        "1": "Was für ein schöner Tag zusammen!",
+        "2": "Ich bin so gern bei dir, {{hero}}!",
+        "3": "Feiern wir?"
+      },
+      "normal": {
+        "1": "Hallo, {{hero}}! Was machen wir heute?",
+        "2": "Ich bin da, wenn du Gesellschaft brauchst.",
+        "3": "Wollen wir etwas zusammen machen?"
+      },
+      "sad": {
+        "1": "Leistest du mir ein bisschen Gesellschaft?",
+        "2": "Schön, dich zu sehen, {{hero}}.",
+        "3": "Machen wir heute eine kleine Sache zusammen?"
+      }
+    }
   }
 }

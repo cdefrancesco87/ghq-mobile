@@ -907,5 +907,48 @@
       "stepDoneLabel": "Passo {{position}} di {{total}}, fatto",
       "stepLeftMissing": "Serve almeno un passo da fare per il colpo finale"
     }
+  },
+  "companion": {
+    "stage": {
+      "egg": "Uovo",
+      "baby": "Cucciolo",
+      "adult": "Adulto"
+    },
+    "stageLine": "{{stage}} · stadio {{number}} di {{count}}",
+    "growth": "Crescita",
+    "hatch": "Schiusa",
+    "count": "{{done}} di {{target}} {{term}}",
+    "total": "{{done}} {{term}}",
+    "left": "Ancora {{left}} {{term}} per diventare adulto.",
+    "eggHint": "Si schiude al primo completamento.",
+    "adultHint": "{{name}} ha raggiunto l'ultimo stadio.",
+    "rename": "Cambia nome",
+    "nameLabel": "Nome del compagno",
+    "nameHint": "Fino a {{max}} caratteri",
+    "tapHint": "Toccalo per salutarlo",
+    "says": "{{name}} dice: {{text}}",
+    "closeBubble": "Chiudi il fumetto",
+    "lines": {
+      "egg": {
+        "1": "L'uovo dondola piano.",
+        "2": "Qualcosa si muove là dentro.",
+        "3": "Toc toc… è ancora presto."
+      },
+      "happy": {
+        "1": "Che bella giornata insieme!",
+        "2": "Mi piace stare con te, {{hero}}!",
+        "3": "Facciamo festa?"
+      },
+      "normal": {
+        "1": "Ciao, {{hero}}! Che si fa oggi?",
+        "2": "Sono qui, se ti serve compagnia.",
+        "3": "Ti va di fare qualcosa insieme?"
+      },
+      "sad": {
+        "1": "Mi fai un po' di compagnia?",
+        "2": "Che bello vederti, {{hero}}.",
+        "3": "Facciamo una piccola cosa insieme oggi?"
+      }
+    }
   }
 }

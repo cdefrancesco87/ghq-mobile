@@ -174,7 +174,7 @@ describe('Today: header and hero card', () => {
   it.each([
     ['today-hero-streak', 'Statistiche'],
     ['today-hero-coins', 'Negozio'],
-    ['today-hero-companion', 'Compagno'],
+    ['today-hero-companion', 'Cloudy'],
   ])('opens a screen from %s', async (testID, title) => {
     await openToday(newGame(['meditation']));
 

@@ -55,6 +55,8 @@ export interface BarProps {
    * points of a boss that only the last step can take (design-sezioni.md 5.3).
    */
   readonly protectedValue?: number;
+  /** Writes `value/max` beside the bar; off when the screen writes the numbers itself. */
+  readonly showValue?: boolean;
   readonly testID?: string;
 }
 
@@ -66,6 +68,7 @@ export function Bar({
   max,
   showLabel = true,
   protectedValue = 0,
+  showValue = true,
   testID,
 }: BarProps) {
   const { t } = useTranslation();
@@ -97,9 +100,11 @@ export function Bar({
           protectedRatio={barRatio(Math.min(protectedValue, value), max)}
           testID={testID}
         />
-        <ThemedText variant="numbers" color={kind === 'hp' ? colors.hpText : colors.text}>
-          {`${value}/${max}`}
-        </ThemedText>
+        {showValue ? (
+          <ThemedText variant="numbers" color={kind === 'hp' ? colors.hpText : colors.text}>
+            {`${value}/${max}`}
+          </ThemedText>
+        ) : null}
       </View>
     </View>
   );

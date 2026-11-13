@@ -153,12 +153,12 @@ describe('navigation', () => {
     expect(await screen.findByRole('header', { name: 'Statistiche' })).toBeOnTheScreen();
   });
 
-  it('has a placeholder for companion, shop and settings', async () => {
+  it('opens the companion and has a placeholder for shop and settings', async () => {
     await openApp(newGame(['drink_water']));
     await screen.findByTestId('today-screen');
 
     for (const [path, title] of [
-      ['/companion', 'Compagno'],
+      ['/companion', 'Cloudy'],
       ['/shop', 'Negozio'],
       ['/settings', 'Impostazioni'],
     ] as const) {

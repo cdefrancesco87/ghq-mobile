@@ -907,5 +907,48 @@
       "stepDoneLabel": "Paso {{position}} de {{total}}, hecho",
       "stepLeftMissing": "Hace falta al menos un paso por hacer para el golpe final"
     }
+  },
+  "companion": {
+    "stage": {
+      "egg": "Huevo",
+      "baby": "Cría",
+      "adult": "Adulto"
+    },
+    "stageLine": "{{stage}} · etapa {{number}} de {{count}}",
+    "growth": "Crecimiento",
+    "hatch": "Eclosión",
+    "count": "{{done}} de {{target}} {{term}}",
+    "total": "{{done}} {{term}}",
+    "left": "Faltan {{left}} {{term}} para hacerse adulto.",
+    "eggHint": "Eclosiona con tu primera misión completada.",
+    "adultHint": "{{name}} ha llegado a la última etapa.",
+    "rename": "Cambiar nombre",
+    "nameLabel": "Nombre del compañero",
+    "nameHint": "Hasta {{max}} caracteres",
+    "tapHint": "Tócalo para saludarlo",
+    "says": "{{name}} dice: {{text}}",
+    "closeBubble": "Cerrar el bocadillo",
+    "lines": {
+      "egg": {
+        "1": "El huevo se balancea despacio.",
+        "2": "Algo se mueve ahí dentro.",
+        "3": "Toc, toc… todavía no."
+      },
+      "happy": {
+        "1": "¡Qué día tan bonito juntos!",
+        "2": "¡Me encanta estar contigo, {{hero}}!",
+        "3": "¿Lo celebramos?"
+      },
+      "normal": {
+        "1": "¡Hola, {{hero}}! ¿Qué hacemos hoy?",
+        "2": "Aquí estoy si quieres compañía.",
+        "3": "¿Hacemos algo juntos?"
+      },
+      "sad": {
+        "1": "¿Me haces un poco de compañía?",
+        "2": "Qué alegría verte, {{hero}}.",
+        "3": "¿Hacemos una cosita juntos hoy?"
+      }
+    }
   }
 }

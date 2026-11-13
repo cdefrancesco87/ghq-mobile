@@ -15,6 +15,8 @@ const GENERATED = 'src/features/shared/generated';
 
 /** The longest side of a PNG, at least: enough for a 128 pt sprite on a 3.5× screen. */
 const MIN_PNG_SIDE = 512;
+/** The width of a habitat PNG, at least: the whole width of a large phone (1290 px). */
+const MIN_HABITAT_WIDTH = 1290;
 
 const svgNames = (folder) =>
   readdirSync(join(DESIGN, folder))
@@ -41,15 +43,19 @@ function attribute(tag, name) {
   return new RegExp(`\\s${name}="([^"]*)"`).exec(tag)?.[1];
 }
 
-/** The pixels of a sprite: only whole-pixel `rect`s with a solid colour, or it stops. */
-function pixelsOf(path, svg) {
+/**
+ * The pixels of a sprite, or of a habitat when `square` is false: only whole-pixel `rect`s with a
+ * solid colour, or it stops.
+ */
+function pixelsOf(path, svg, square = true) {
   const clean = withoutMetadata(svg);
-  const [, width, height] = /viewBox="0 0 (\d+) (\d+)"/.exec(clean) ?? [];
-  if (width === undefined || width !== height) {
+  const [, viewWidth, viewHeight] = /viewBox="0 0 (\d+) (\d+)"/.exec(clean) ?? [];
+  if (viewWidth === undefined || (square && viewWidth !== viewHeight)) {
     throw new Error(`${path}: the sprite is not square`);
   }
-  const side = Number(width);
-  const pixels = new Uint8Array(side * side * 4);
+  const width = Number(viewWidth);
+  const height = Number(viewHeight);
+  const pixels = new Uint8Array(width * height * 4);
   const shapes = clean.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
   const rects = shapes.match(/<rect\b[^>]*\/>/g) ?? [];
   if (rects.join('') !== shapes) {
@@ -65,16 +71,16 @@ function pixelsOf(path, svg) {
     const y = Number(attribute(rect, 'y') ?? 0);
     const w = Number(attribute(rect, 'width'));
     const h = Number(attribute(rect, 'height'));
-    if (![x, y, w, h].every(Number.isInteger) || x + w > side || y + h > side) {
+    if (![x, y, w, h].every(Number.isInteger) || x + w > width || y + h > height) {
       throw new Error(`${path}: rect outside the grid: ${rect}`);
     }
     for (let row = y; row < y + h; row += 1) {
       for (let column = x; column < x + w; column += 1) {
-        pixels.set([...color, 255], (row * side + column) * 4);
+        pixels.set([...color, 255], (row * width + column) * 4);
       }
     }
   }
-  return { side, pixels };
+  return { width, height, pixels };
 }
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
@@ -103,19 +109,20 @@ function pngChunk(type, data) {
 }
 
 /** An RGBA PNG, with every sprite pixel repeated `scale` times (nearest-neighbour). */
-function encodePng({ side, pixels }, scale) {
-  const size = side * scale;
-  const row = 1 + size * 4;
-  const raw = Buffer.alloc(row * size);
-  for (let y = 0; y < size; y += 1) {
-    for (let x = 0; x < size; x += 1) {
-      const from = (Math.floor(y / scale) * side + Math.floor(x / scale)) * 4;
+function encodePng({ width, height, pixels }, scale) {
+  const sizeX = width * scale;
+  const sizeY = height * scale;
+  const row = 1 + sizeX * 4;
+  const raw = Buffer.alloc(row * sizeY);
+  for (let y = 0; y < sizeY; y += 1) {
+    for (let x = 0; x < sizeX; x += 1) {
+      const from = (Math.floor(y / scale) * width + Math.floor(x / scale)) * 4;
       raw.set(pixels.subarray(from, from + 4), y * row + 1 + x * 4);
     }
   }
   const header = Buffer.alloc(13);
-  header.writeUInt32BE(size, 0);
-  header.writeUInt32BE(size, 4);
+  header.writeUInt32BE(sizeX, 0);
+  header.writeUInt32BE(sizeY, 4);
   header.set([8, 6, 0, 0, 0], 8); // 8 bits, RGBA, no interlacing
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
@@ -158,7 +165,8 @@ const spritePaths = [...svgNames('lotto3'), ...svgNames('lotto4'), ...svgNames('
 );
 const isVector = (path) => stem(path).includes('minimal');
 const logos = svgNames('lotto4').filter((path) => stem(path).startsWith('logo-'));
-const vectors = [...spritePaths.filter(isVector), ...logos];
+const habitatPaths = svgNames('lotto4').filter((path) => stem(path).startsWith('habitat-'));
+const vectors = [...spritePaths.filter(isVector), ...habitatPaths.filter(isVector), ...logos];
 
 rmSync(SPRITES, { recursive: true, force: true });
 mkdirSync(SPRITES, { recursive: true });
@@ -168,10 +176,20 @@ const sprites = spritePaths
   .filter((path) => !isVector(path))
   .map((path) => {
     const pixels = pixelsOf(path, readSvg(path));
-    const scale = Math.ceil(MIN_PNG_SIDE / pixels.side);
+    const scale = Math.ceil(MIN_PNG_SIDE / pixels.width);
     writeFileSync(join(SPRITES, `${stem(path)}.png`), encodePng(pixels, scale));
     const source = `require('../../../../${SPRITES}/${stem(path)}.png')`;
-    return [stem(path), `{ source: ${source}, grid: ${pixels.side} }`];
+    return [stem(path), `{ source: ${source}, grid: ${pixels.width} }`];
+  });
+
+const habitats = habitatPaths
+  .filter((path) => !isVector(path))
+  .map((path) => {
+    const pixels = pixelsOf(path, readSvg(path), false);
+    const scale = Math.ceil(MIN_HABITAT_WIDTH / pixels.width);
+    writeFileSync(join(SPRITES, `${stem(path)}.png`), encodePng(pixels, scale));
+    const source = `require('../../../../${SPRITES}/${stem(path)}.png')`;
+    return [stem(path), `{ source: ${source}, width: ${pixels.width}, height: ${pixels.height} }`];
   });
 
 const NOTE = '// GENERATED by scripts/build-assets.mjs from assets/design/: do not edit.\n';
@@ -189,7 +207,7 @@ export const PIXEL_ICON_BODIES = ${literal(
     pixelIcons.map(([name, path]) => [name, JSON.stringify(bodyOf(readSvg(path)))]),
   )} as const;
 
-/** Complete SVGs of the vector art: the Minimal companion and the logo. */
+/** Complete SVGs of the vector art: the Minimal companion and habitat, and the logo. */
 export const VECTOR_SVGS = ${literal(
     vectors.map((path) => [stem(path), JSON.stringify(withoutMetadata(readSvg(path)))]),
   )} as const;
@@ -204,7 +222,17 @@ writeFileSync(
 export const PIXEL_SPRITES = ${literal(sprites)} as const satisfies Readonly<
   Record<string, { readonly source: ImageSourcePropType; readonly grid: number }>
 >;
+
+/** The enlarged PNG of each pixel habitat of the companion and the size of its original grid. */
+export const PIXEL_HABITATS = ${literal(habitats)} as const satisfies Readonly<
+  Record<
+    string,
+    { readonly source: ImageSourcePropType; readonly width: number; readonly height: number }
+  >
+>;
 `,
 );
 
-console.log(`${sprites.length} PNG, ${vectors.length} vector SVG, ${lineIcons.length} line icons`);
+console.log(
+  `${sprites.length + habitats.length} PNG, ${vectors.length} vector SVG, ${lineIcons.length} line icons`,
+);
