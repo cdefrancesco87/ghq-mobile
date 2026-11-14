@@ -1,5 +1,5 @@
 import { HABITS_LIST } from './config';
-import { isScheduled, type Frequency } from './frequency';
+import { isScheduled, requiredInWeek, type Frequency } from './frequency';
 import { addDays, diffDays, weekday, weekStartOf, type Weekday } from './gameDay';
 import type { PauseInterval } from './pause';
 import type { GameDay } from './types';
@@ -228,21 +228,22 @@ function byWeek(
   let done = 0;
   for (let week = weekStartOf(first, weekStart); week <= lastDay; week = addDays(week, 7)) {
     const weekEnd = addDays(week, 6);
+    const from = week < first ? first : week;
+    const to = weekEnd < lastDay ? weekEnd : lastDay;
     let completed = 0;
-    let excused = 0;
-    for (
-      let day = week < first ? first : week;
-      day <= weekEnd && day <= lastDay;
-      day = addDays(day, 1)
-    ) {
-      const state = status.get(day);
-      if (state === 'done') {
+    for (let day = from; day <= to; day = addDays(day, 1)) {
+      if (status.get(day) === 'done') {
         completed++;
-      } else if (state === 'skipped' || isPaused(day, pauses)) {
-        excused++;
       }
     }
-    const required = Math.max(0, times - excused);
+    // The same required count as the close (closeDays.ts): every skipped or paused day, done
+    // or not, lowers N by one (choices 17, 23).
+    const required = requiredInWeek(
+      times,
+      from,
+      to,
+      (day) => status.get(day) === 'skipped' || isPaused(day, pauses),
+    );
     const counted = Math.min(completed, required);
     // Only a whole week that is over can be missed.
     const whole = week >= first && weekEnd <= lastDay && isPast(weekEnd, input);

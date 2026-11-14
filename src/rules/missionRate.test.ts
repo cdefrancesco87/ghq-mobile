@@ -203,6 +203,19 @@ describe('completionRate of a habit counted per week', () => {
     expect(completionRate(threeTimes({ days, pauses }))).toBe(Math.floor((6 / 7) * 100));
   });
 
+  it('lowers N for a paused day even when it was done, like the close (choice 23)', () => {
+    // N = 3, paused Monday, done Monday and Wednesday: the close requires 2 and the week succeeds.
+    const input = threeTimes({
+      mission: { ...threeTimes().mission, createdDay: '2026-11-02' },
+      lastDay: '2026-11-08',
+      lastDayClosed: true,
+      days: done('2026-11-02', '2026-11-04'),
+      pauses: [{ from: '2026-11-02', until: '2026-11-03' }],
+    });
+    expect(completionCounts(input)).toEqual({ expected: 2, done: 2 });
+    expect(completionRate(input)).toBe(100);
+  });
+
   function weekOf(monday: GameDay): GameDay[] {
     return [monday, addDays(monday, 1), addDays(monday, 2)];
   }
