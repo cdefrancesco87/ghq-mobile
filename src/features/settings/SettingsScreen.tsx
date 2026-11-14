@@ -761,7 +761,11 @@ export function SettingsScreen() {
         notes={[t('settings.fromTomorrow')]}
         onChoose={(value) => {
           runAction((db, clock) =>
-            setWeekRules(db, { weekStart: value as 1 | 7 }, { today: day.today, now: clock.now }),
+            setWeekRules(
+              db,
+              { weekStart: value as 1 | 7 },
+              { today: day.today, now: clock.now, tzOffset: clock.tzOffset },
+            ),
           );
           close();
         }}
@@ -773,7 +777,11 @@ export function SettingsScreen() {
         value={restDays}
         onDone={(days) => {
           runAction((db, clock) =>
-            setWeekRules(db, { restDays: [...days] }, { today: day.today, now: clock.now }),
+            setWeekRules(
+              db,
+              { restDays: [...days] },
+              { today: day.today, now: clock.now, tzOffset: clock.tzOffset },
+            ),
           );
           close();
         }}

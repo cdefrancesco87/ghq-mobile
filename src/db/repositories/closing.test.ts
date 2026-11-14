@@ -185,4 +185,22 @@ describe('closePendingDays', () => {
     expect(getSetting(db, 'rest_days')).toEqual([5, 6, 7]);
     expectHeroMatchesLog(db);
   });
+
+  it('closes the days before a pending change with the old rules when the rules change again', () => {
+    // Friday 6: Friday becomes a rest day from Saturday; the journal of Friday is missed. The app
+    // stays open until Sunday 8, when the first day of the week changes too.
+    const db = newGame(['journal']);
+    setWeekRules(db, { restDays: [5] }, { today: '2026-11-06', now: at(6, 10) });
+    setWeekRules(db, { weekStart: 7 }, { today: '2026-11-08', ...clockAt(8, 10) });
+    closePendingDays(db, clockAt(8, 11));
+    const summaries = db.select().from(daySummaries).orderBy(asc(daySummaries.gameDay)).all();
+    expect(summaries.map((row) => [row.gameDay, row.isRestDay])).toEqual([
+      ['2026-11-06', false],
+      ['2026-11-07', false],
+    ]);
+    expect(summaries[0]?.hpLost).toBeGreaterThan(0);
+    expect(getSetting(db, 'rest_days')).toEqual([5]);
+    expect(pendingWeekRules(db)).toMatchObject({ week_start: 7, from_day: '2026-11-09' });
+    expectHeroMatchesLog(db);
+  });
 });

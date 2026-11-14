@@ -9,6 +9,7 @@ import { pickLanguage } from '../../rules/language';
 import { GAME_MODES, LANGUAGES, type GameDay } from '../../rules/types';
 import { settings } from '../schema';
 import type { Db } from '../types';
+import { closePendingDays } from './closing';
 
 // The settings: a key-value table where every value is JSON validated by the Zod schema of its
 // key (modello-dati.md, 3.10). Defaults come from design-sezioni.md, section 10.
@@ -370,13 +371,27 @@ export function promoteWeekRules(db: Db, day: GameDay, now: number): void {
 
 /**
  * Changes the first day of the week or the rest days from tomorrow, so the day in progress keeps
- * its rules (design 10.5). Choosing again the rules in force cancels a pending change.
+ * its rules (design 10.5). Choosing again the rules in force cancels a pending change. With the
+ * time zone of the action, the days still to close are closed first, in the same transaction, so
+ * a change already waiting closes the days before its day with the old rules; today is then the
+ * game day of the clock, not the one a screen opened long ago still shows.
  */
 export function setWeekRules(
   db: Db,
   change: Partial<WeekRules>,
-  { today, now }: { today: GameDay; now: number },
+  clock: { today: GameDay; now: number; tzOffset?: number },
 ): void {
+  db.transaction((tx) => {
+    let today = clock.today;
+    if (clock.tzOffset !== undefined) {
+      closePendingDays(tx, { now: clock.now, tzOffset: clock.tzOffset });
+      today = gameDayOf(clock.now, clock.tzOffset, getSetting(tx, 'day_change'));
+    }
+    changeWeekRules(tx, change, today, clock.now);
+  });
+}
+
+function changeWeekRules(db: Db, change: Partial<WeekRules>, today: GameDay, now: number): void {
   promoteWeekRules(db, today, now);
   const inForce = weekRulesOn(db, today);
   const pending = pendingWeekRules(db);
