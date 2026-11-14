@@ -1,4 +1,21 @@
-import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, or, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNull,
+  lt,
+  lte,
+  ne,
+  notExists,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
+import { alias, type SQLiteColumn } from 'drizzle-orm/sqlite-core';
 
 import { QUEST_LOG } from '../../rules/config';
 import type { GameDay } from '../../rules/types';
@@ -49,6 +66,9 @@ const ESSENTIAL_HIDDEN: readonly QuestLogType[] = [
   'day.closed',
 ];
 
+/** The chips that match most of the log. */
+const DENSE_FILTERS: readonly QuestLogFilter[] = ['all', 'completions'];
+
 /** The events «Annulla» works on (undo.ts), on the day they happened. */
 const UNDOABLE_TYPES: readonly QuestLogType[] = [
   'mission.completed',
@@ -65,8 +85,16 @@ export interface QuestLogQuery {
   readonly to?: GameDay | null;
   /** How many entries at most; QUEST_LOG.pageSize when missing. */
   readonly limit?: number;
+  /** Only the entries after this one in the list (keyset paging): `next` of the page before. */
+  readonly before?: QuestLogCursor | null;
   /** The Essential mode: without the entries of ESSENTIAL_HIDDEN. */
   readonly essential?: boolean;
+}
+
+/** A place in the list, newest first: the game day and the order of writing of an entry. */
+export interface QuestLogCursor {
+  readonly gameDay: GameDay;
+  readonly seq: number;
 }
 
 export interface QuestLogEntry {
@@ -110,6 +138,8 @@ export interface QuestLogView {
   readonly days: readonly QuestLogDay[];
   /** More entries beyond the limit. */
   readonly hasMore: boolean;
+  /** With `hasMore`, the `before` of the next page. */
+  readonly next: QuestLogCursor | null;
   /** The missions of the «Filtra» sheet: every mission not deleted, by name. */
   readonly missions: readonly { readonly id: string; readonly name: string }[];
 }
@@ -122,6 +152,23 @@ function localTime(occurredAt: number, tzOffset: number): string {
 
 const numberOr = (value: unknown): number | null => (typeof value === 'number' ? value : null);
 
+const reverts = alias(events, 'reverts');
+const other = alias(events, 'other');
+const otherReverts = alias(events, 'other_reverts');
+const otherBoss = alias(boss, 'other_boss');
+
+/** Not undone: no `event.reverted` points at the row `id` (index events_reverts_idx). */
+const notReverted = (db: Db, undo: typeof reverts | typeof otherReverts, id: SQLiteColumn) =>
+  notExists(
+    db
+      .select({ one: sql`1` })
+      .from(undo)
+      .where(and(eq(undo.revertsId, id), eq(undo.type, 'event.reverted'))),
+  );
+
+/** Not of a deleted boss (or of no boss). */
+const bossShown = (status: SQLiteColumn) => or(isNull(status), ne(status, 'deleted'))!;
+
 /** The Registro, with the filters of the chips and of «Filtra». */
 export function getQuestLog(db: Db, clock: ActionClock, query: QuestLogQuery): QuestLogView {
   const today = gameDayOf(clock.now, clock.tzOffset, getSetting(db, 'day_change'));
@@ -129,10 +176,47 @@ export function getQuestLog(db: Db, clock: ActionClock, query: QuestLogQuery): Q
     (type) => query.essential !== true || !ESSENTIAL_HIDDEN.includes(type),
   );
   const conditions: SQL[] = [
-    inArray(events.type, [...types]),
+    // Under Tutto and Completamenti most of the log matches: the unary plus keeps SQLite off
+    // events_type_idx, so it walks events_day_idx in the order of the page and stops at the
+    // limit. The other chips match few events, which events_type_idx finds faster.
+    DENSE_FILTERS.includes(query.filter)
+      ? sql`+${events.type} in ${types}`
+      : inArray(events.type, [...types]),
     isNull(missions.deletedAt),
-    or(isNull(boss.status), ne(boss.status, 'deleted'))!,
+    bossShown(boss.status),
+    notReverted(db, reverts, events.id),
+    // A day close is an entry only when it cost hit points.
+    or(ne(events.type, 'day.closed'), ne(events.dHp, 0))!,
   ];
+  if (types.includes('mission.progressed')) {
+    // Every tap of a measurable mission is a progress: a day keeps only where it got to, and
+    // nothing when the mission was completed (as in the history of the mission, T53). Only the
+    // entries the Registro shows count: not undone, not of a deleted boss.
+    const settling = types.filter(
+      (type) => type === 'mission.completed' || type === 'mission.backfilled',
+    );
+    const later = and(eq(other.type, 'mission.progressed'), gt(other.seq, events.seq))!;
+    conditions.push(
+      or(
+        ne(events.type, 'mission.progressed'),
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(other)
+            .leftJoin(otherBoss, eq(otherBoss.id, other.bossId))
+            .where(
+              and(
+                eq(other.missionId, events.missionId),
+                eq(other.gameDay, events.gameDay),
+                settling.length > 0 ? or(inArray(other.type, settling), later) : later,
+                bossShown(otherBoss.status),
+                notReverted(db, otherReverts, other.id),
+              ),
+            ),
+        ),
+      )!,
+    );
+  }
   if (query.missionId != null) {
     conditions.push(eq(events.missionId, query.missionId));
   }
@@ -142,8 +226,18 @@ export function getQuestLog(db: Db, clock: ActionClock, query: QuestLogQuery): Q
   if (query.to != null) {
     conditions.push(lte(events.gameDay, query.to));
   }
+  if (query.before != null) {
+    conditions.push(
+      or(
+        lt(events.gameDay, query.before.gameDay),
+        and(eq(events.gameDay, query.before.gameDay), lt(events.seq, query.before.seq)),
+      )!,
+    );
+  }
+  const limit = query.limit ?? QUEST_LOG.pageSize;
   const rows = db
     .select({
+      seq: events.seq,
       id: events.id,
       type: events.type,
       gameDay: events.gameDay,
@@ -168,42 +262,11 @@ export function getQuestLog(db: Db, clock: ActionClock, query: QuestLogQuery): Q
     // By game day: an event written for a past day (a day close, a forgotten completion) sits in
     // its own day.
     .orderBy(desc(events.gameDay), desc(events.seq))
+    // One more than the page, to know whether there are more.
+    .limit(limit + 1)
     .all();
-
-  const reverted = new Set(
-    db
-      .select({ revertsId: events.revertsId })
-      .from(events)
-      .where(eq(events.type, 'event.reverted'))
-      .all()
-      .map((row) => row.revertsId),
-  );
-  const kept = rows.filter(
-    (row) => !reverted.has(row.id) && (row.type !== 'day.closed' || row.dHp !== 0),
-  );
-
-  // Every tap of a measurable mission is a progress: a day keeps only where it got to, and
-  // nothing when the mission was completed (as in the history of the mission, T53).
-  const settled = new Set(
-    kept
-      .filter((row) => row.type === 'mission.completed' || row.type === 'mission.backfilled')
-      .map((row) => `${row.missionId}|${row.gameDay}`),
-  );
-  const progressed = new Set<string>();
-  const shown = kept.filter((row) => {
-    if (row.type !== 'mission.progressed') {
-      return true;
-    }
-    const key = `${row.missionId}|${row.gameDay}`;
-    if (settled.has(key) || progressed.has(key)) {
-      return false;
-    }
-    progressed.add(key);
-    return true;
-  });
-
-  const limit = query.limit ?? QUEST_LOG.pageSize;
-  const page = shown.slice(0, limit);
+  const page = rows.slice(0, limit);
+  const last = page[page.length - 1];
 
   // The damage of a completion to its boss is in the `boss.damaged` written in the same action.
   const completionInstants = page
@@ -279,7 +342,9 @@ export function getQuestLog(db: Db, clock: ActionClock, query: QuestLogQuery): Q
   return {
     today,
     days,
-    hasMore: shown.length > limit,
+    hasMore: rows.length > limit,
+    next:
+      rows.length > limit && last !== undefined ? { gameDay: last.gameDay, seq: last.seq } : null,
     missions: db
       .select({ id: missions.id, name: missions.name })
       .from(missions)

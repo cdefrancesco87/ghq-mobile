@@ -2,7 +2,12 @@ import { getBadgesView } from '@/db/repositories/badges';
 import { getHeatmap } from '@/db/repositories/heatmap';
 import { listHabitsView } from '@/db/repositories/habitsView';
 import { getProfileView, getStatDetail } from '@/db/repositories/profile';
-import { getQuestLog, type QuestLogQuery } from '@/db/repositories/questLog';
+import {
+  getQuestLog,
+  QUEST_LOG_FILTERS,
+  type QuestLogQuery,
+  type QuestLogView,
+} from '@/db/repositories/questLog';
 import { getStatsView } from '@/db/repositories/statsView';
 import {
   getCurrentWeeklyRecap,
@@ -12,6 +17,7 @@ import {
 import { QUEST_LOG } from '@/rules/config';
 
 import { totalsFromLog, heroTotals } from '../../../test/db';
+import { getQuestLogV1 } from '../../../test/legacy/questLogV1';
 import { SEED_NOW, SEED_TZ, seedEventLog, type SeededLog } from '../../../test/eventLogSeed';
 
 // Measurements of the views that read the event log, on a long game: about 3 years and 20,000
@@ -77,5 +83,47 @@ describe('event log views on a long game', () => {
     ];
     const lines = cases.map(([name, run]) => `${name.padEnd(40)} ${measure(run).toFixed(1)} ms`);
     console.log(`${seeded.events} events, ${DAYS} days\n${lines.join('\n')}`);
+  });
+
+  it('pages the Registro in SQL exactly as the old reading of the whole log', () => {
+    const { db, missionIds } = seeded;
+    const withoutCursor = ({ next: _next, ...view }: QuestLogView) => view;
+    for (const filter of QUEST_LOG_FILTERS) {
+      for (const essential of [false, true]) {
+        for (const extra of [
+          {},
+          { limit: QUEST_LOG.pageSize * 7 },
+          { limit: 100_000 },
+          { missionId: missionIds.drink_water, limit: 400 },
+          { missionId: missionIds.journal },
+          { missionId: missionIds.tidy_desk },
+          { from: '2026-03-01', to: '2026-04-15', limit: 1000 },
+        ] as Partial<QuestLogQuery>[]) {
+          const query: QuestLogQuery = { filter, essential, ...extra };
+          expect(withoutCursor(getQuestLog(db, clock, query))).toEqual(
+            getQuestLogV1(db, clock, query),
+          );
+        }
+      }
+    }
+  });
+
+  it('pages with a cursor through the same entries as one long list', () => {
+    const { db } = seeded;
+    const whole = getQuestLog(db, clock, { filter: 'all', limit: 100_000 });
+    expect(whole.hasMore).toBe(false);
+    expect(whole.next).toBeNull();
+    const ids: string[] = [];
+    let before: QuestLogView['next'] = null;
+    let pages = 0;
+    do {
+      const page = getQuestLog(db, clock, { filter: 'all', limit: 500, before });
+      ids.push(...page.days.flatMap((day) => day.entries.map((entry) => entry.id)));
+      expect(page.next !== null).toBe(page.hasMore);
+      before = page.next;
+      pages += 1;
+    } while (before !== null);
+    expect(pages).toBeGreaterThan(1);
+    expect(ids).toEqual(whole.days.flatMap((day) => day.entries.map((entry) => entry.id)));
   });
 });
