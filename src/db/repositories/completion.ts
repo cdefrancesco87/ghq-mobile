@@ -305,7 +305,7 @@ function finishCompletion(
   }
   countCompletion(tx, clock);
   if (mission.bossId !== null) {
-    damageBoss(tx, mission.bossId, rewards.bossDamage, clock);
+    damageBoss(tx, mission.bossId, rewards.bossDamage, clock, event.id);
   }
   advanceStarterQuest(tx, clock);
   const bonuses = giveDayBonuses(tx, day, clock);

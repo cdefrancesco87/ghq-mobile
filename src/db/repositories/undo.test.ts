@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 
 import { completeBossStep, createBoss } from '@/db/repositories/boss';
 import {
@@ -158,6 +158,51 @@ describe('undoEvent', () => {
     expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(58);
     undoEvent(db, completed, LATER);
     expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(60);
+    expectHeroMatchesLog(db);
+  });
+
+  it('gives back nothing for a completion that did not damage its locked boss', () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const journal = missionId(db, 'journal');
+    const meal = missionId(db, 'healthy_meal');
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'medium', steps: ['A', 'B', 'C'], missionIds: [journal, meal] },
+      NOW,
+    );
+    db.update(boss).set({ status: 'locked' }).where(eq(boss.id, thesis.id)).run();
+    const first = complete(db, journal);
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(60);
+    db.update(boss).set({ status: 'active' }).where(eq(boss.id, thesis.id)).run();
+    complete(db, meal);
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(58);
+    undoEvent(db, first, LATER);
+    // The damage belongs to the other completion: the boss keeps it.
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(58);
+    expectHeroMatchesLog(db);
+  });
+
+  it('heals by the damage of the same action for completions written before the link', () => {
+    const db = newGame(['journal', 'healthy_meal']);
+    const journal = missionId(db, 'journal');
+    const meal = missionId(db, 'healthy_meal');
+    const thesis = createBoss(
+      db,
+      { name: 'Tesi', difficulty: 'medium', steps: ['A', 'B', 'C'], missionIds: [journal, meal] },
+      NOW,
+    );
+    const first = complete(db, journal);
+    completeMission(db, { missionId: meal, source: 'app', ...clockAt(6, 11) });
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(56);
+    // Old events: the `boss.damaged` events carry no link to their completion. The log is
+    // append-only, so the test lifts the guard to write them as they were.
+    db.run(sql`DROP TRIGGER events_no_update`);
+    for (const row of db.select().from(events).where(eq(events.type, 'boss.damaged')).all()) {
+      const { completionId: _link, ...payload } = row.payload;
+      db.update(events).set({ payload }).where(eq(events.id, row.id)).run();
+    }
+    undoEvent(db, first, LATER);
+    expect(db.select().from(boss).where(eq(boss.id, thesis.id)).get()?.hp).toBe(58);
     expectHeroMatchesLog(db);
   });
 

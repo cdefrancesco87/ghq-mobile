@@ -121,23 +121,32 @@ function restoreMissionDay(tx: Db, completed: EventRow, payload: CompletionPaylo
     .run();
 }
 
-/** Gives back to the boss the hit points taken by the completion (`dealt` of `boss.damaged`). */
+/**
+ * Gives back to the boss the hit points taken by the completion: the `dealt` of the
+ * `boss.damaged` event linked to it (`completionId`), nothing if the completion dealt no damage
+ * (a boss not active, e.g. locked in a chain). Events written before the link have no
+ * `completionId`: the damage is the one written by the same action (same instant, right after).
+ */
 function restoreBoss(tx: Db, completed: EventRow, now: number): void {
   if (completed.bossId === null) {
     return;
   }
-  const damaged = tx
+  const candidates = tx
     .select()
     .from(events)
     .where(
       and(
         eq(events.type, 'boss.damaged'),
         eq(events.bossId, completed.bossId),
+        eq(events.occurredAt, completed.occurredAt),
         gt(events.seq, completed.seq),
       ),
     )
     .orderBy(asc(events.seq))
-    .get();
+    .all();
+  const damaged =
+    candidates.find((row) => row.payload.completionId === completed.id) ??
+    candidates.find((row) => row.payload.completionId === undefined);
   const dealt = damaged?.payload.dealt;
   if (typeof dealt === 'number') {
     healBoss(tx, completed.bossId, dealt, now);

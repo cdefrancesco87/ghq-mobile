@@ -90,9 +90,16 @@ function eventBase(clock: ActionClock, bossId: string) {
 /**
  * The damage of a completed mission to its boss. Missions never win: the hit points stop at
  * 10 × steps left. A boss that is not active takes no damage. The event records the hit points
- * really taken (`dealt`), so that an undo can give them back.
+ * really taken (`dealt`) and the completion that dealt them (`completionId`), so that the undo of
+ * that completion gives back exactly those hit points.
  */
-export function damageBoss(tx: Db, bossId: string, damage: number, clock: ActionClock): void {
+export function damageBoss(
+  tx: Db,
+  bossId: string,
+  damage: number,
+  clock: ActionClock,
+  completionId?: string,
+): void {
   const target = tx.select().from(boss).where(eq(boss.id, bossId)).get();
   if (target === undefined || target.status !== 'active') {
     return;
@@ -102,7 +109,12 @@ export function damageBoss(tx: Db, bossId: string, damage: number, clock: Action
   appendEvent(tx, {
     ...eventBase(clock, bossId),
     type: 'boss.damaged',
-    payload: { damage, dealt: target.hp - hit.hp, hp: hit.hp },
+    payload: {
+      damage,
+      dealt: target.hp - hit.hp,
+      hp: hit.hp,
+      ...(completionId === undefined ? {} : { completionId }),
+    },
   });
 }
 

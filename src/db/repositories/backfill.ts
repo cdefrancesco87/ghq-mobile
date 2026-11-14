@@ -125,7 +125,7 @@ export function backfillCompletion(db: Db, input: BackfillInput): BackfillResult
       }
       countCompletion(tx, clock);
       if (mission.bossId !== null && rewards.bossDamage > 0) {
-        damageBoss(tx, mission.bossId, rewards.bossDamage, clock);
+        damageBoss(tx, mission.bossId, rewards.bossDamage, clock, event.id);
       }
       return { eventId: event.id, xp: change.deltas.xp, coins: change.deltas.coins };
     });
