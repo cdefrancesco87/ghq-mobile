@@ -230,6 +230,29 @@ describe('the Snooze action', () => {
     ]);
   });
 
+  it('snoozes once when the same action arrives twice at the same time (Android)', async () => {
+    // The background task and the listener of the app both receive the touch on Snooze.
+    const { db, scheduler, journal } = setUp();
+    const osId = await remind(db, scheduler, journal);
+    const results = await Promise.all([
+      act(db, scheduler, journal, ACTION_SNOOZE, osId),
+      act(db, scheduler, journal, ACTION_SNOOZE, osId),
+    ]);
+    expect(results.map((result) => result.outcome).sort()).toEqual(['ignored', 'snoozed']);
+    expect(scheduler.scheduled).toHaveLength(2);
+    expect(reminders(db)).toMatchObject([{ snoozeCount: 1, fireAt: NOW + SNOOZE_MS }]);
+  });
+
+  it('keeps the reminder when the snooze cannot be scheduled', async () => {
+    const { db, scheduler, journal } = setUp();
+    const osId = await remind(db, scheduler, journal);
+    jest.spyOn(scheduler, 'schedule').mockRejectedValueOnce(new Error('refused'));
+    await expect(act(db, scheduler, journal, ACTION_SNOOZE, osId)).resolves.toMatchObject({
+      outcome: 'failed',
+    });
+    expect(reminders(db)).toMatchObject([{ osId, snoozeCount: 0 }]);
+  });
+
   it('allows three snoozes and then stops', async () => {
     const { db, scheduler, journal } = setUp();
     let osId = await remind(db, scheduler, journal);

@@ -358,32 +358,59 @@ async function snooze(
   scheduler: ReminderScheduler,
   input: ReminderActionInput,
 ): Promise<ReminderOutcome> {
-  const row = db
-    .select()
-    .from(scheduledReminders)
-    .where(eq(scheduledReminders.osId, input.notificationId))
-    .get();
-  if (row === undefined) {
-    // A completion removes the reminders of the day: there is nothing left to snooze.
+  // The row is claimed (read and removed) in one transaction, before any await: on Android the
+  // same touch can reach both the background task and the listener of the app, and the second
+  // one then finds nothing to snooze.
+  type Claim =
+    | { readonly status: 'missing' }
+    | { readonly status: 'limit' }
+    | { readonly status: 'claimed'; readonly row: typeof scheduledReminders.$inferSelect };
+  let claim: Claim;
+  try {
+    claim = db.transaction((tx): Claim => {
+      const where = eq(scheduledReminders.osId, input.notificationId);
+      const found = tx.select().from(scheduledReminders).where(where).get();
+      if (found === undefined) {
+        return { status: 'missing' };
+      }
+      if (found.snoozeCount >= MAX_SNOOZES) {
+        return { status: 'limit' };
+      }
+      // The reminder snoozed was shown: it stays among the recent notifications.
+      recordFiredReminders(tx, input.now, where);
+      tx.delete(scheduledReminders).where(where).run();
+      return { status: 'claimed', row: found };
+    });
+  } catch (error) {
+    return { outcome: 'failed', message: error instanceof Error ? error.message : String(error) };
+  }
+  if (claim.status === 'missing') {
+    // A completion removes the reminders of the day, and a snooze its reminder: nothing left.
     return { outcome: 'ignored' };
   }
-  if (row.snoozeCount >= MAX_SNOOZES) {
+  if (claim.status === 'limit') {
     return { outcome: 'snooze_limit' };
   }
+  const { row } = claim;
   try {
-    // The reminder snoozed was shown: it stays among the recent notifications.
-    recordFiredReminders(db, input.now, eq(scheduledReminders.osId, row.osId));
     const fireAt = input.now + SNOOZE_MS;
     const snoozeCount = row.snoozeCount + 1;
-    const osId = await scheduleReminder(
-      db,
-      scheduler,
-      { missionId: row.missionId, fireAt, now: input.now, tzOffset: input.tzOffset, snoozeCount },
-      row.osId,
-    );
+    const osId = await scheduleReminder(db, scheduler, {
+      missionId: row.missionId,
+      fireAt,
+      now: input.now,
+      tzOffset: input.tzOffset,
+      snoozeCount,
+    });
     await scheduler.cancel([row.osId]);
     return { outcome: 'snoozed', osId, fireAt, snoozeCount };
   } catch (error) {
+    // The snooze was not scheduled: the reminder comes back, so Snooze and Complete still work.
+    try {
+      db.insert(scheduledReminders).values(row).onConflictDoNothing().run();
+    } catch {
+      // The mission was deleted meanwhile: nothing to bring back.
+    }
     return { outcome: 'failed', message: error instanceof Error ? error.message : String(error) };
   }
 }
