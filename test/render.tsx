@@ -15,7 +15,11 @@ const METRICS = {
 /** Renders a component with the theme and the language it reads, as under `AppProviders`. */
 export async function renderThemed(
   ui: ReactElement,
-  { theme = 'minimal-chiaro', language = 'it' }: { theme?: ThemeKey; language?: Language } = {},
+  {
+    theme = 'minimal-chiaro',
+    language = 'it',
+    colorblind = false,
+  }: { theme?: ThemeKey; language?: Language; colorblind?: boolean } = {},
 ): Promise<ThemeTokens> {
   const i18n = await createI18n(language);
   await render(
@@ -24,6 +28,7 @@ export async function renderThemed(
         <ThemeProvider
           theme={theme === 'minimal-chiaro' || theme === 'minimal-scuro' ? 'minimal' : theme}
           colorScheme={theme === 'minimal-scuro' ? 'dark' : 'light'}
+          colorblind={colorblind}
         >
           {ui}
         </ThemeProvider>

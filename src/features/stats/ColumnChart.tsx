@@ -50,7 +50,7 @@ export interface ColumnChartProps {
 }
 
 /**
- * A column chart (design-sezioni.md 8.5, gap L15), or with `line` a line chart (8.8, T81): columns in `primario`, dashed goal line in
+ * A column chart (design-sezioni.md 8.5, gap L15), or with `line` a line chart (8.8, T81): columns in the chart colour (`primario`, or the colour-blind scale), dashed goal line in
  * `testoTenue`, axes in `bordo`. A tap on a column writes its exact value under the chart. The
  * screen reader reads the description, and the table of the values opens with a button; with
  * very large text the chart is that table (8.12, A11.1).
@@ -142,7 +142,7 @@ export function ColumnChart({
                   .filter((point) => point !== null)
                   .join(' ')}
                 fill="none"
-                stroke={colors.primary}
+                stroke={colors.chart}
                 strokeWidth={2}
               />
             ) : null}
@@ -150,10 +150,11 @@ export function ColumnChart({
               !line ? null : column.value === null ? null : (
                 <Circle
                   key={column.key}
+                  testID={`${testID}-point-${column.key}`}
                   cx={index * slot + slot / 2}
                   cy={y(column.value)}
                   r={index === selected ? 6 : 4}
-                  fill={index === selected ? colors.xp : colors.primary}
+                  fill={index === selected ? colors.xp : colors.chart}
                 />
               ),
             )}
@@ -161,12 +162,13 @@ export function ColumnChart({
               line || column.value === null || column.value <= 0 ? null : (
                 <Rect
                   key={column.key}
+                  testID={`${testID}-bar-${column.key}`}
                   x={index * slot + (slot - barWidth) / 2}
                   y={y(column.value)}
                   width={barWidth}
                   height={HEIGHT - y(column.value)}
                   rx={radius}
-                  fill={index === selected ? colors.xp : colors.primary}
+                  fill={index === selected ? colors.xp : colors.chart}
                 />
               ),
             )}

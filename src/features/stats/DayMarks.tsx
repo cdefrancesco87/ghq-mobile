@@ -53,7 +53,7 @@ export function DayMarks({ testID, title, columns }: DayMarksProps) {
 
   const look: Record<DayMark, { fill: string; border: string }> = {
     done: { fill: colors.done, border: colors.done },
-    missed: { fill: 'transparent', border: colors.dangerText },
+    missed: { fill: 'transparent', border: colors.missed },
     skipped: { fill: colors.track, border: colors.track },
     open: { fill: 'transparent', border: colors.primary },
     off: { fill: 'transparent', border: colors.border },

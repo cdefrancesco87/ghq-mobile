@@ -17,6 +17,11 @@ export const COLORBLIND = {
   orange: '#d55e00',
   /** Heatmap levels 1–3 (less than half, at least half, all); level 0 stays the theme's. */
   heatmap: ['#e69f00', '#56b4e9', '#2f86d4'],
+  /**
+   * Bars, line and points of the charts: the light blue of the heatmap, so that the selected
+   * column, in the blue of the experience, stays apart.
+   */
+  chart: '#56b4e9',
 } as const;
 
 /** The colours of a theme with the colour-blind scale on heatmap, bars and states. */
@@ -30,5 +35,7 @@ export function withColorblindColors(colors: ThemeColors): ThemeColors {
     boss: COLORBLIND.orange,
     danger: COLORBLIND.orange,
     heatmap: [colors.heatmap[0], low, half, full],
+    chart: COLORBLIND.chart,
+    missed: COLORBLIND.orange,
   };
 }

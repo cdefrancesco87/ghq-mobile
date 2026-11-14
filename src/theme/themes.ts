@@ -53,6 +53,10 @@ export interface ThemeColors {
   readonly boss: string;
   /** Four levels for the heatmap, from empty (level 0) to full (level 3). */
   readonly heatmap: readonly [string, string, string, string];
+  /** Bars, line and points of the charts: the primary colour, a scale colour for colour-blind. */
+  readonly chart: string;
+  /** Mark of a missed day: the danger text colour, a scale colour for colour-blind. */
+  readonly missed: string;
 }
 
 export interface TextStyleToken {
@@ -100,6 +104,8 @@ function colorsOf(key: ThemeKey, raw: RawColours): ThemeColors {
     }
     return value;
   };
+  const primary = required('primario');
+  const dangerText = required('pericoloTesto');
   return {
     background: required('sfondo'),
     surface: required('superficie'),
@@ -108,7 +114,7 @@ function colorsOf(key: ThemeKey, raw: RawColours): ThemeColors {
     track: required('traccia'),
     text: required('testo'),
     textMuted: required('testoTenue'),
-    primary: required('primario'),
+    primary,
     onPrimary: required('suPrimario'),
     hp: required('vita'),
     hpText: required('vitaTesto'),
@@ -119,7 +125,7 @@ function colorsOf(key: ThemeKey, raw: RawColours): ThemeColors {
     doneText: required('fattoTesto'),
     skipped: required('saltato'),
     danger: required('pericolo'),
-    dangerText: required('pericoloTesto'),
+    dangerText,
     info: required('info'),
     infoText: required('infoTesto'),
     boss: required('boss'),
@@ -129,6 +135,8 @@ function colorsOf(key: ThemeKey, raw: RawColours): ThemeColors {
       required('heatmap2'),
       required('heatmap3'),
     ],
+    chart: primary,
+    missed: dangerText,
   };
 }
 
