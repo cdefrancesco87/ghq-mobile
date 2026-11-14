@@ -600,9 +600,38 @@ export function deleteMission(
 }
 
 /**
+ * The user brought the task back from the archive after its last completion: the automatic
+ * archiving must not take it away again.
+ */
+function restoredAfterDone(tx: Db, missionId: string): boolean {
+  const restored = tx
+    .select({ occurredAt: events.occurredAt, gameDay: events.gameDay })
+    .from(events)
+    .where(and(eq(events.missionId, missionId), eq(events.type, 'mission.restored')))
+    .orderBy(desc(events.seq))
+    .get();
+  if (restored === undefined) {
+    return false;
+  }
+  const done = tx
+    .select({ gameDay: missionDays.gameDay, doneAt: missionDays.doneAt })
+    .from(missionDays)
+    .where(and(eq(missionDays.missionId, missionId), eq(missionDays.status, 'done')))
+    .orderBy(desc(missionDays.gameDay))
+    .get();
+  if (done === undefined) {
+    return true;
+  }
+  return done.doneAt !== null
+    ? restored.occurredAt > done.doneAt
+    : restored.gameDay >= done.gameDay;
+}
+
+/**
  * Archives by itself every single task done at least 7 days ago (analisi-funzionale.md, section
  * 3; design-sezioni.md 3.7 ★). It runs at every start, after the day closing; running it again
- * changes nothing. Returns the ids of the tasks archived now.
+ * changes nothing. A task the user restored after it was done stays where the user put it.
+ * Returns the ids of the tasks archived now.
  */
 export function archiveCompletedSingles(db: Db, context: ActionContext): string[] {
   return db.transaction((tx) => {
@@ -622,7 +651,8 @@ export function archiveCompletedSingles(db: Db, context: ActionContext): string[
       )
       .orderBy(asc(missions.sortOrder))
       .all()
-      .map((row) => row.id);
+      .map((row) => row.id)
+      .filter((missionId) => !restoredAfterDone(tx, missionId));
     for (const missionId of due) {
       save(tx, missionId, {
         status: 'archived',

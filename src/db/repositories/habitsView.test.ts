@@ -9,6 +9,7 @@ import {
   createMission,
   deleteMission,
   pauseMission,
+  restoreMission,
   resumeMission,
 } from '@/db/repositories/missions';
 import { events, missionDays, missions } from '@/db/schema';
@@ -218,6 +219,21 @@ describe('archiveCompletedSingles', () => {
     const other = setup();
     deleteMission(other.db, other.task, clockAt(8, 9));
     expect(archiveCompletedSingles(other.db, clockAt(20, 10))).toEqual([]);
+  });
+
+  it('leaves alone a task the user restored from the archive after it was done', () => {
+    const { db, task } = setup();
+    expect(archiveCompletedSingles(db, clockAt(14, 10))).toEqual([task]);
+    restoreMission(db, task, clockAt(14, 12));
+    expect(archiveCompletedSingles(db, clockAt(15, 10))).toEqual([]);
+    expect(archiveCompletedSingles(db, clockAt(30, 10))).toEqual([]);
+    expect(db.select().from(missions).where(eq(missions.id, task)).get()?.status).toBe('active');
+    const logged = db
+      .select()
+      .from(events)
+      .where(and(eq(events.missionId, task), eq(events.type, 'mission.archived')))
+      .all();
+    expect(logged).toHaveLength(1);
   });
 
   it('follows the day change setting', () => {
