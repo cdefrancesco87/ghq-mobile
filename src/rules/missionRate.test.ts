@@ -338,4 +338,19 @@ describe('pauseSpans', () => {
       { from: '2026-11-04', until: '2026-11-06' },
     ]);
   });
+
+  it('opens the pause again when the archive of a paused mission is undone', () => {
+    expect(
+      pauseSpans([
+        { type: 'mission.paused', gameDay: '2026-11-02', until: '2026-11-10' },
+        { type: 'mission.archived', gameDay: '2026-11-04' },
+        { type: 'mission.restored', gameDay: '2026-11-04', until: '2026-11-10', paused: true },
+        { type: 'mission.archived', gameDay: '2026-11-12' },
+        { type: 'mission.restored', gameDay: '2026-11-13', until: null },
+      ]),
+    ).toEqual([
+      { from: '2026-11-02', until: '2026-11-04' },
+      { from: '2026-11-04', until: '2026-11-10' },
+    ]);
+  });
 });

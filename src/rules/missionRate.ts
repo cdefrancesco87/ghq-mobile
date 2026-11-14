@@ -51,6 +51,8 @@ export interface PauseEvent {
   readonly gameDay: GameDay;
   /** `paused_until` of a `mission.paused` event: the first day active again. */
   readonly until?: GameDay | null;
+  /** A `mission.restored` that brings a paused mission back paused (undo of an archive). */
+  readonly paused?: boolean;
 }
 
 const PAUSE_ENDS = new Set(['mission.resumed', 'mission.archived', 'mission.deleted']);
@@ -69,7 +71,10 @@ export function pauseSpans(events: readonly PauseEvent[]): PauseSpan[] {
     }
   };
   for (const event of events) {
-    if (event.type === 'mission.paused') {
+    if (
+      event.type === 'mission.paused' ||
+      (event.type === 'mission.restored' && event.paused === true)
+    ) {
       close(event.gameDay);
       open = { from: event.gameDay, until: event.until ?? null };
     } else if (PAUSE_ENDS.has(event.type)) {

@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lte, max, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, max, ne } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { z } from 'zod';
 
@@ -15,7 +15,14 @@ import {
   type GameDay,
   type StatKey,
 } from '../../rules/types';
-import { dayPlan, missionDays, missionReminders, missions, scheduledReminders } from '../schema';
+import {
+  dayPlan,
+  events,
+  missionDays,
+  missionReminders,
+  missions,
+  scheduledReminders,
+} from '../schema';
 import type { Db } from '../types';
 import { appendEvent, notDeleted, type EventType } from './events';
 import { gameDayOf, getSetting, weekRulesOn } from './settings';
@@ -396,7 +403,8 @@ export function resumeMission(db: Db, missionId: string, context: ActionContext)
 /** Archives a mission: its history stays and it can be restored (US-ABI-03). */
 export function archiveMission(db: Db, missionId: string, context: ActionContext): Mission {
   return db.transaction((tx) => {
-    if (load(tx, missionId).status === 'archived') {
+    const current = load(tx, missionId);
+    if (current.status === 'archived') {
       throw new RangeError('The mission is already archived');
     }
     const mission = save(tx, missionId, {
@@ -405,7 +413,42 @@ export function archiveMission(db: Db, missionId: string, context: ActionContext
       archivedAt: context.now,
       updatedAt: context.now,
     });
-    record(tx, 'mission.archived', missionId, context);
+    // What «Annulla» brings back (undoArchiveMission).
+    record(tx, 'mission.archived', missionId, context, {
+      previousStatus: current.status,
+      pausedUntil: current.pausedUntil,
+    });
+    return mission;
+  });
+}
+
+/**
+ * «Annulla» of an archive: the mission goes back as it was, a paused one still paused until the
+ * same day. A pause that has ended meanwhile brings it back active.
+ */
+export function undoArchiveMission(db: Db, missionId: string, context: ActionContext): Mission {
+  return db.transaction((tx) => {
+    if (load(tx, missionId).status !== 'archived') {
+      throw new RangeError('Only an archived mission can be restored');
+    }
+    const archived = tx
+      .select({ payload: events.payload })
+      .from(events)
+      .where(and(eq(events.missionId, missionId), eq(events.type, 'mission.archived')))
+      .orderBy(desc(events.seq))
+      .get();
+    const payload = archived?.payload ?? {};
+    const until = (payload.pausedUntil as GameDay | null | undefined) ?? null;
+    const paused =
+      payload.previousStatus === 'paused' && (until === null || until > today(tx, context));
+    const mission = save(tx, missionId, {
+      status: paused ? 'paused' : 'active',
+      pausedUntil: paused ? until : null,
+      archivedAt: null,
+      updatedAt: context.now,
+    });
+    // A restored pause opens again for the rates of Habits and Statistics (pauseSpans).
+    record(tx, 'mission.restored', missionId, context, paused ? { paused: true, until } : {});
     return mission;
   });
 }

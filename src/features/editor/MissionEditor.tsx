@@ -21,7 +21,7 @@ import {
   isMissionNameTaken,
   listTodayMissions,
   missionReminderTimes,
-  restoreMission,
+  undoArchiveMission,
   updateMission,
 } from '@/db/repositories/missions';
 import { gameDayOf, getSetting } from '@/db/repositories/settings';
@@ -285,7 +285,7 @@ export function MissionEditor({
       message: t('editor.archived'),
       onUndo: () => {
         try {
-          runAction((tx, clock) => restoreMission(tx, missionId, clock));
+          runAction((tx, clock) => undoArchiveMission(tx, missionId, clock));
         } catch {
           toast.show({ message: t('today.missions.errors.failed') });
         }

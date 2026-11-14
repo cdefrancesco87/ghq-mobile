@@ -68,6 +68,7 @@ const RATE_EVENTS: EventType[] = [
   'mission.paused',
   'mission.resumed',
   'mission.archived',
+  'mission.restored',
   'mission.deleted',
 ];
 
@@ -132,6 +133,7 @@ export function listHabitsView(db: Db, clock: ActionClock): HabitsView {
           type: event.type,
           gameDay: event.gameDay,
           until: (event.payload.until as GameDay | null | undefined) ?? null,
+          paused: event.payload.paused === true,
         })),
       ),
       ...general,

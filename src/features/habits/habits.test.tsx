@@ -220,6 +220,24 @@ describe('Habits: archive and delete', () => {
     expect(screen.getByTestId('habits-filter-all')).toHaveTextContent('Tutte 2');
   });
 
+  it('keeps the pause when the archive of a paused mission is undone', async () => {
+    const db = newGame(['drink_water', 'read_pages']);
+    const water = missionId(db, 'drink_water');
+    pauseMission(db, water, '2026-11-12', clockAt(FRIDAY, 9));
+    await openHabits(db);
+
+    await openMenu(water);
+    await fireEvent.press(screen.getByTestId('habits-menu-archive'));
+    expect(db.select().from(missions).where(eq(missions.id, water)).get()?.status).toBe('archived');
+
+    await fireEvent.press(screen.getByTestId('undo-toast-undo'));
+    expect(db.select().from(missions).where(eq(missions.id, water)).get()).toMatchObject({
+      status: 'paused',
+      pausedUntil: '2026-11-12',
+      archivedAt: null,
+    });
+  });
+
   it('offers the same actions to the screen reader', async () => {
     const db = newGame(['drink_water']);
     const water = missionId(db, 'drink_water');

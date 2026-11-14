@@ -8,6 +8,7 @@ import {
   deleteMission,
   pauseMission,
   restoreMission,
+  undoArchiveMission,
   resumeMission,
 } from '@/db/repositories/missions';
 import { systemScheduler } from '@/features/notifications/system';
@@ -92,7 +93,7 @@ export function useHabitActions(today: GameDay): HabitActions {
       message: t('habits.archivedToast'),
       onUndo: () => {
         try {
-          runAction((db, clock) => restoreMission(db, item.mission.id, clock));
+          runAction((db, clock) => undoArchiveMission(db, item.mission.id, clock));
         } catch {
           failed();
         }

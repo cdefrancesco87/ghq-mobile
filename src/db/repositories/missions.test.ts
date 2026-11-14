@@ -13,6 +13,7 @@ import {
   pauseMission,
   restoreMission,
   resumeMission,
+  undoArchiveMission,
   updateMission,
 } from '@/db/repositories/missions';
 import { setSetting } from '@/db/repositories/settings';
@@ -334,6 +335,50 @@ describe('pause, resume, archive and restore', () => {
       'mission.archived',
       'mission.restored',
     ]);
+  });
+
+  it('undoes the archive of a paused mission keeping its pause', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    pauseMission(db, mission.id, '2026-11-10', CONTEXT);
+    archiveMission(db, mission.id, CONTEXT);
+    expect(undoArchiveMission(db, mission.id, CONTEXT)).toMatchObject({
+      status: 'paused',
+      pausedUntil: '2026-11-10',
+      archivedAt: null,
+    });
+    expect(eventsOf(db, mission.id)).toEqual([
+      'mission.created',
+      'mission.paused',
+      'mission.archived',
+      'mission.restored',
+    ]);
+
+    // Paused with no end, it comes back paused with no end.
+    pauseMission(db, mission.id, null, CONTEXT);
+    archiveMission(db, mission.id, CONTEXT);
+    expect(undoArchiveMission(db, mission.id, CONTEXT)).toMatchObject({
+      status: 'paused',
+      pausedUntil: null,
+    });
+  });
+
+  it('undoes the archive as active when the pause has ended meanwhile, or it was active', () => {
+    const db = createTestDb();
+    const mission = createMission(db, { name: 'Corri' }, CONTEXT);
+    pauseMission(db, mission.id, '2026-11-08', CONTEXT);
+    archiveMission(db, mission.id, CONTEXT);
+    const later = { now: NOW + 3 * 24 * 3_600_000, tzOffset: 60 };
+    expect(undoArchiveMission(db, mission.id, later)).toMatchObject({
+      status: 'active',
+      pausedUntil: null,
+    });
+    archiveMission(db, mission.id, CONTEXT);
+    expect(undoArchiveMission(db, mission.id, CONTEXT)).toMatchObject({
+      status: 'active',
+      pausedUntil: null,
+    });
+    expect(() => undoArchiveMission(db, mission.id, CONTEXT)).toThrow(RangeError);
   });
 
   it('restores only archived missions', () => {
