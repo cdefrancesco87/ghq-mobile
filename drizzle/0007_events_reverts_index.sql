@@ -1,0 +1,1 @@
+CREATE INDEX `events_reverts_idx` ON `events` (`reverts_id`) WHERE "events"."reverts_id" IS NOT NULL;

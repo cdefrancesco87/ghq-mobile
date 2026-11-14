@@ -8,6 +8,7 @@ import m0003 from './0003_day_summaries_is_paused.sql';
 import m0004 from './0004_rewards.sql';
 import m0005 from './0005_boss_main_quest_and_chains.sql';
 import m0006 from './0006_scheduled_reminders_content_hash.sql';
+import m0007 from './0007_events_reverts_index.sql';
 
   export default {
     journal,
@@ -18,7 +19,8 @@ m0002,
 m0003,
 m0004,
 m0005,
-m0006
+m0006,
+m0007
     }
   }
   

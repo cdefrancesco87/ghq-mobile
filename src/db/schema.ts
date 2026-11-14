@@ -382,5 +382,10 @@ export const events = sqliteTable(
     index('events_day_idx').on(t.gameDay),
     index('events_mission_idx').on(t.missionId, t.gameDay),
     index('events_type_idx').on(t.type, t.gameDay),
+    // The undo of an event, for «not undone» (NOT EXISTS ... reverts_id = id): only the
+    // `event.reverted` rows carry it, so the index stays small.
+    index('events_reverts_idx')
+      .on(t.revertsId)
+      .where(sql`${t.revertsId} IS NOT NULL`),
   ],
 );

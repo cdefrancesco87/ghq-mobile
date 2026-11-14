@@ -50,6 +50,13 @@
       "when": 1794649772428,
       "tag": "0006_scheduled_reminders_content_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794655295745,
+      "tag": "0007_events_reverts_index",
+      "breakpoints": true
     }
   ]
 }
