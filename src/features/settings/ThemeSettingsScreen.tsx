@@ -3,12 +3,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import type { SettingValue } from '@/db/repositories/settings';
+import { setSetting, type SettingValue } from '@/db/repositories/settings';
 import { announceOnIos } from '@/features/shared/announce';
 import { Button } from '@/features/shared/Button';
 import { ScreenHeader } from '@/features/shared/ScreenHeader';
 import { ThemeCarousel } from '@/features/shared/ThemeCarousel';
 import { useUndoToast } from '@/features/shared/UndoToast';
+import { runAction } from '@/stores/app';
 import { useHeroStore } from '@/stores/hero';
 import { useThemeStore } from '@/stores/theme';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -28,7 +29,9 @@ export function ThemeSettingsScreen() {
   const [chosen, setChosen] = useState<SettingValue<'theme'>>(current);
 
   const apply = () => {
-    useThemeStore.getState().setTheme(chosen);
+    // Through `runAction`, so reminders, summaries, boss warnings and widgets take the words of
+    // the new theme at once.
+    runAction((db, clock) => setSetting(db, 'theme', chosen, clock.now));
     const message = t('settings.themeApplied');
     toast.show({ message });
     announceOnIos(message);

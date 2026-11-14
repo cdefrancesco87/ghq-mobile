@@ -9,6 +9,7 @@ import { useBossTexts } from '@/features/bosses/bossTexts';
 import { useEssential } from '@/features/shared/useGameMode';
 import { BOSS } from '@/rules/config';
 import { onActionDone, useAppStore } from '@/stores/app';
+import { useThemeStore } from '@/stores/theme';
 
 import { syncBossWarnings, type BossWarningText } from './bossWarnings';
 import { notificationPermission, systemBossWarnings } from './system';
@@ -63,11 +64,13 @@ function openBoss(response: Notifications.NotificationResponse): void {
  * touch on one opens the card of its boss. It draws nothing. The texts follow the game mode.
  */
 export function BossNotifications() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { nameOf } = useBossTexts();
   // In the Essential mode the warning speaks of a goal, not of a boss (11.8).
   const essential = useEssential();
   const db = useAppStore((state) => state.db);
+  const theme = useThemeStore((state) => state.theme);
+  const language = i18n.language;
   const textOf = (target: Boss): BossWarningText => {
     const name = nameOf(target);
     return {
@@ -89,7 +92,6 @@ export function BossNotifications() {
       return undefined;
     }
     const sync = () => void syncSystemBossWarnings(db, (target) => texts.current(target));
-    sync();
     const stopListening = onActionDone(sync);
     const subscription = Notifications.addNotificationResponseReceivedListener(openBoss);
     void Notifications.getLastNotificationResponseAsync()
@@ -104,6 +106,14 @@ export function BossNotifications() {
       subscription.remove();
     };
   }, [db]);
+
+  // At the start, and again once the texts of a new language, theme or game mode are drawn: the
+  // listener of the actions runs before the new render, with the texts of the old one.
+  useEffect(() => {
+    if (db !== null) {
+      void syncSystemBossWarnings(db, (target) => texts.current(target));
+    }
+  }, [db, language, theme, essential]);
 
   return null;
 }

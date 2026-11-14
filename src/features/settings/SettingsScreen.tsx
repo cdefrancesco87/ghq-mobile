@@ -153,7 +153,9 @@ export function SettingsScreen() {
   const weekly = settings.weekly_recap;
 
   const chooseLanguage = (next: Language) => {
-    useSettingsStore.getState().update('language', next);
+    // Through `runAction`, so reminders, summaries, boss warnings and widgets take the new
+    // language at once.
+    runAction((db, clock) => setSetting(db, 'language', next, clock.now));
     void i18n.changeLanguage(next);
     close();
   };

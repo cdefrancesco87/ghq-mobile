@@ -154,6 +154,8 @@ describe('Settings', () => {
     expect(screen.getByTestId('settings-theme-use')).toBeEnabled();
     await press('settings-theme-use');
     expect(useThemeStore.getState().theme).toBe('fantasy');
+    // Reminders, summaries, boss warnings and widgets take the words of the new theme.
+    expect(actionDone).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Stessi dati, nuova veste')).toBeOnTheScreen();
     expect(screen.getByTestId('settings-theme-use')).toBeDisabled();
   });
@@ -174,6 +176,8 @@ describe('Settings', () => {
     await press('settings-language-sheet-en');
     expect(useSettingsStore.getState().settings.language).toBe('en');
     expect(getSetting(db, 'language')).toBe('en');
+    // Reminders, summaries, boss warnings and widgets take the new language.
+    expect(actionDone).toHaveBeenCalledWith(db);
     expect(await screen.findByText('Settings')).toBeOnTheScreen();
     expect(text('settings-language-value')).toBe('English');
   });
