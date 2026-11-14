@@ -401,7 +401,7 @@ Rendere visibile il progresso: costanza, andamento delle singole missioni e stor
 - **US-STAT-02** Come utente voglio vedere l'andamento di una singola missione, così che capisca su quale devo lavorare.
   - Dal dettaglio missione si vedono serie, record e percentuale per periodo.
 - **US-STAT-03** Come utente voglio uno storico di tutto ciò che ho fatto, così che possa correggere o ricordare.
-  - Il registro consente di aggiungere un completamento dimenticato fino a 7 giorni indietro; questo non dà vita persa indietro né ripristina la serie se già spezzata.
+  - Il registro consente di aggiungere un completamento dimenticato fino a 7 giorni indietro; questo non dà vita persa indietro né ripristina la serie se già spezzata, e dà solo i punti statistica (14/11).
 - **US-STAT-04 (F2)** Come procrastinatore voglio un riepilogo settimanale positivo, così che veda i successi e non solo le mancanze.
   - Il riepilogo arriva come notifica la domenica alle 19:00 (modificabile) e resta consultabile in Statistiche.
 
@@ -428,7 +428,7 @@ L'identità dell'eroe e il punto d'accesso a compagno, negozio, trofei e imposta
 - **US-PROF-03** Come utente voglio poter cambiare il nome dell'eroe, così che il profilo mi rappresenti.
 - **US-PROF-04** Come appassionato di GDR voglio statistiche che crescono con le abitudini che coltivo, così che veda in quali aree della vita sto migliorando.
   - Ogni completamento dà punti alla statistica principale della missione e il 30% (per difetto) alla secondaria, se c'è.
-  - Annullare un completamento toglie i punti; un completamento dimenticato aggiunto dal registro li dà.
+  - Annullare un completamento toglie i punti; un completamento dimenticato aggiunto dal registro dà solo i punti statistica, senza XP né monete (14/11).
 - **US-PROF-05** Come utente voglio vedere a colpo d'occhio la scheda del mio eroe, così che capisca quali statistiche sto trascurando.
   - La freccia di forma è ↓ quando negli ultimi 30 giorni una statistica ha guadagnato meno punti dei 30 precedenti.
 

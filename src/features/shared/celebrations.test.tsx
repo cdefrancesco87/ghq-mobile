@@ -305,9 +305,9 @@ describe('MomentQueue', () => {
   it('writes the level with the new title in the lexicon of the theme', async () => {
     await renderQueue([LEVEL_UP], 'fantasy');
     expect(screen.getByText('Rango 5!')).toBeTruthy();
-    expect(screen.getByText('Nuovo titolo: Cavaliere')).toBeTruthy();
+    expect(screen.getByText('Nuovo titolo: Apprendista')).toBeTruthy();
     expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
-      'Rango 5!. Nuovo titolo: Cavaliere',
+      'Rango 5!. Nuovo titolo: Apprendista',
     );
   });
 

@@ -148,3 +148,14 @@ Decide sempre Claudio; «Claude» indica le scelte minori prese in autonomia e m
 - 08/11: pacchetto mockup per Claude Code in sviluppo/mockup-per-claude-code/ (+zip); il thread «Secondo backlog: schermate» riallinea backlog-schermate.md ai frame. Da copiare nel repo in docs/riferimenti/mockup/.
 - 08/11: Claudio approva L03 (soglia testo grande fontScale ≥ 1,3; barra a 4 voci + [+]) e L04 (lessico con singolare/plurale/genere, etichette barra non tematizzate). Percorso mockup nel repo: docs/mockup/.
 - 08/11: aggiunta A11 (L03 e L04) a design-sezioni.md e design/lessico-v2.json (it definitivo, en proposto, de/fr/es da fare in T28).
+- 12/11: decisione di Claudio: Claude Code può unire in main le proprie PR dei task, con merge commit (regola in CLAUDE.md del pacchetto).
+- 14/11: Claudio, scelta minore 21 (T49): la vita del boss resta passi × 20; un passo aggiunto alza vita e vita massima di 20, un passo non fatto tolto li abbassa di 20; un passo già fatto non si toglie; deve restare almeno un passo da fare; il boss si elimina in modo logico (`deleted_at`, eventi `boss.updated` e `boss.deleted`).
+- 14/11: Claudio: il completamento dimenticato dà solo punti statistica, niente XP né monete (scelta minore 27; chiude la «Proposta» di xp-e-monete).
+- 14/11: Claudio: monete per badge 25 / 50 / 100 (facile, medio, difficile) (scelta minore 28).
+- 14/11: Claudio: regali per il compagno e relativo negozio da rivedere con più oggetti e un uso diverso; T86 fuori dalla prima versione.
+- 14/11: Claudio: una attività singola senza scadenza resta in Oggi finché non è fatta (scelta minore 29, task T93 corregge `isDueToday`).
+- 14/11: Claudio: l'ora della scadenza esce dal design attuale; nuovo task Should T94 «ora facoltativa con promemoria» (scelta minore 30).
+- 14/11: Claudio: colori fissi del badge dei chip (`BADGE_FILL`, `BADGE_TEXT`) tenuti come eccezione documentata (scelta minore 31); errore di un'azione: avviso generico, app aperta, stato invariato (scelta minore 32); decorazioni di tema di Oggi (design 2.9): task Could T95 dopo le schermate; moltiplicatore di serie: serie dell'eroe, confermato (scelta minore 2).
+- 14/11: Claudio: titoli dell'eroe approvati (`design/lessico-v2.json`, `titoliEroe`, 11 per tema, 4 temi; Minimal senza titoli); portati nel codice e C07 aggiornata.
+- 14/11: Claudio: Claude Code unisce le proprie PR con squash merge, come in CLAUDE.md; sostituisce la riga del 12/11 («merge commit»); `docs/prompt-loop.md` («Do not merge») allineato a CLAUDE.md.
+- 14/11: Claudio: per il momento tedesco, francese e spagnolo sono nascosti dal selettore della lingua (restano solo italiano e inglese); i file delle altre lingue restano nel repo (scelta minore 33).

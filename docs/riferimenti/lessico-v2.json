@@ -1,5 +1,5 @@
 {
-  "nota": "Lessico v2 (L04, approvata 08/11). Voci: singolare, plurale, genere (m/f). it e en definitive; de, fr, es in bozza (scelta minore 7). Etichette della barra non tematizzate. Temi: arcade, fantasy, cyberpunk, lovecraft, minimal. I nomi dei compagni restano in temi.json.",
+  "nota": "Lessico v2 (L04, approvata 08/11). Voci: singolare, plurale, genere (m/f). it e en definitive; de, fr, es in bozza (scelta minore 7). Etichette della barra non tematizzate. Temi: arcade, fantasy, cyberpunk, lovecraft, minimal. I nomi dei compagni restano in temi.json. Titoli dell'eroe (`titoliEroe`, approvati il 14/11): 11 per tema, indice 0–10 = livelli 1, 5, 10 … 50 (`titleIndex` del T07); senza genere in it e en; Arcade e Cyberpunk uguali in tutte le lingue; Minimal non ha titoli e mostra solo «Livello N».",
   "it": {
     "vita": {
       "arcade": {"s": "VITA", "p": "VITE", "g": "f"},
@@ -56,6 +56,12 @@
       "statistiche": {"arcade": "HIGH SCORE", "fantasy": "Statistiche", "cyberpunk": "Statistiche", "lovecraft": "Statistiche", "minimal": "Statistiche"},
       "modifica": "«Modifica» + singolare di `missioni` o `boss` del tema (es. «Modifica impresa»)",
       "missioniDiOggi": "plurale di `missioni` + «di oggi» (da confermare nei frame)"
+    },
+    "titoliEroe": {
+      "arcade": ["ROOKIE", "PLAYER", "CHALLENGER", "PRO", "ACE", "VETERAN", "ELITE", "CHAMPION", "MASTER", "SUPERSTAR", "LEGEND"],
+      "fantasy": ["Recluta", "Apprendista", "Viandante", "Sentinella", "Spada giurata", "Portastendardo", "Custode della fiamma", "Ammazzadraghi", "Gloria del regno", "Leggenda vivente", "Mito immortale"],
+      "cyberpunk": ["Script Kiddie", "Runner", "Netrunner", "Decker", "Fixer", "Ghost", "Zero-Day", "Sysop", "Root", "Architect", "Singularity"],
+      "lovecraft": ["Testimone", "Detective", "Cronista", "Archivista", "Occultista", "Interprete dei segni", "Veggente", "Custode dei sigilli", "Sentinella della soglia", "Voce dell'abisso", "Mente oltre il velo"]
     }
   },
   "en": {
@@ -71,9 +77,42 @@
       "vittoria": {"arcade": "YOU WIN!", "fantasy": "Victory!", "cyberpunk": "ACCESS GRANTED", "lovecraft": "The Horror is banished", "minimal": "Goal reached"},
       "profilo": {"arcade": "PLAYER 1", "fantasy": "Hero sheet", "cyberpunk": "Dossier", "lovecraft": "Investigator's journal", "minimal": "Profile"},
       "statistiche": {"arcade": "HIGH SCORE", "fantasy": "Statistics", "cyberpunk": "Statistics", "lovecraft": "Statistics", "minimal": "Statistics"}
+    },
+    "titoliEroe": {
+      "arcade": ["ROOKIE", "PLAYER", "CHALLENGER", "PRO", "ACE", "VETERAN", "ELITE", "CHAMPION", "MASTER", "SUPERSTAR", "LEGEND"],
+      "fantasy": ["Recruit", "Apprentice", "Wayfarer", "Sentinel", "Sworn Sword", "Standard-Bearer", "Keeper of the Flame", "Dragonslayer", "Glory of the Realm", "Living Legend", "Immortal Myth"],
+      "cyberpunk": ["Script Kiddie", "Runner", "Netrunner", "Decker", "Fixer", "Ghost", "Zero-Day", "Sysop", "Root", "Architect", "Singularity"],
+      "lovecraft": ["Witness", "Detective", "Chronicler", "Archivist", "Occultist", "Reader of Signs", "Seer", "Keeper of the Seals", "Sentinel of the Threshold", "Voice of the Abyss", "Mind Beyond the Veil"]
     }
   },
-  "de": {"_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it"},
-  "fr": {"_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it"},
-  "es": {"_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it"}
+  "de": {
+    "_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it",
+    "titoliEroe": {
+      "_stato": "bozza del 14/11, da rivedere in C07; genere: Wanderer, Bannerträger, Hüter, Drachentöter e quasi tutti i Lovecraft sono maschili",
+      "arcade": ["ROOKIE", "PLAYER", "CHALLENGER", "PRO", "ACE", "VETERAN", "ELITE", "CHAMPION", "MASTER", "SUPERSTAR", "LEGEND"],
+      "fantasy": ["Neuling", "Lehrling", "Wanderer", "Wache", "Geschworene Klinge", "Bannerträger", "Hüter der Flamme", "Drachentöter", "Ruhm des Reiches", "Lebende Legende", "Unsterblicher Mythos"],
+      "cyberpunk": ["Script Kiddie", "Runner", "Netrunner", "Decker", "Fixer", "Ghost", "Zero-Day", "Sysop", "Root", "Architect", "Singularity"],
+      "lovecraft": ["Zeuge", "Detektiv", "Chronist", "Archivar", "Okkultist", "Zeichendeuter", "Seher", "Hüter der Siegel", "Wache an der Schwelle", "Stimme des Abgrunds", "Geist jenseits des Schleiers"]
+    }
+  },
+  "fr": {
+    "_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it",
+    "titoliEroe": {
+      "_stato": "bozza del 14/11, da rivedere in C07; genere: Apprenti, Voyageur, Gardien, Tueur, Chroniqueur, Voyant sono maschili",
+      "arcade": ["ROOKIE", "PLAYER", "CHALLENGER", "PRO", "ACE", "VETERAN", "ELITE", "CHAMPION", "MASTER", "SUPERSTAR", "LEGEND"],
+      "fantasy": ["Recrue", "Apprenti", "Voyageur", "Sentinelle", "Lame jurée", "Porte-étendard", "Gardien de la flamme", "Tueur de dragons", "Gloire du royaume", "Légende vivante", "Mythe immortel"],
+      "cyberpunk": ["Script Kiddie", "Runner", "Netrunner", "Decker", "Fixer", "Ghost", "Zero-Day", "Sysop", "Root", "Architect", "Singularity"],
+      "lovecraft": ["Témoin", "Détective", "Chroniqueur", "Archiviste", "Occultiste", "Interprète des signes", "Voyant", "Gardien des sceaux", "Sentinelle du seuil", "Voix de l'abîme", "Esprit au-delà du voile"]
+    }
+  },
+  "es": {
+    "_stato": "bozza: da fare in T28 (scelta minore 7), stessa struttura di it",
+    "titoliEroe": {
+      "_stato": "bozza del 14/11, da rivedere in C07; genere: tutti senza genere",
+      "arcade": ["ROOKIE", "PLAYER", "CHALLENGER", "PRO", "ACE", "VETERAN", "ELITE", "CHAMPION", "MASTER", "SUPERSTAR", "LEGEND"],
+      "fantasy": ["Recluta", "Aprendiz", "Caminante", "Centinela", "Espada jurada", "Portaestandarte", "Vigía de la llama", "Matadragones", "Gloria del reino", "Leyenda viva", "Mito inmortal"],
+      "cyberpunk": ["Script Kiddie", "Runner", "Netrunner", "Decker", "Fixer", "Ghost", "Zero-Day", "Sysop", "Root", "Architect", "Singularity"],
+      "lovecraft": ["Testigo", "Detective", "Cronista", "Archivista", "Ocultista", "Intérprete de los signos", "Vidente", "Vigía de los sellos", "Centinela del umbral", "Voz del abismo", "Mente más allá del velo"]
+    }
+  }
 }

@@ -1,8 +1,8 @@
-import { FALLBACK_LANGUAGE } from './config';
-import { LANGUAGES, type Language } from './types';
+import { ENABLED_LANGUAGES, FALLBACK_LANGUAGE } from './config';
+import { type Language } from './types';
 
 function isLanguage(code: string): code is Language {
-  return (LANGUAGES as readonly string[]).includes(code);
+  return (ENABLED_LANGUAGES as readonly string[]).includes(code);
 }
 
 /**

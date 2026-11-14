@@ -21,7 +21,7 @@ You are in the GHQ Mobile development loop. In this round run **one single task*
    - add one line at the end of the Diario of the file containing the task, in Italian: date, task code, what you did in one sentence, any minor choices or content to review;
    - commit all the task's files with the message `Txx: <task title translated into English>` (a hook refuses commit messages with Italian words; use the same English title for the PR);
    - if the task started from another task's branch, first check with `git ls-remote origin <base-branch>` that it is on the remote; if not, push it first (it is allowed);
-   - push the branch with `git push -u origin <branch>` and open a PR with `gh pr create`, targeting `main`, or the previous task's branch if the task started from it. Do not merge;
+   - push the branch with `git push -u origin <branch>` and open a PR with `gh pr create`, targeting `main`, or the previous task's branch if the task started from it. Merge only as `CLAUDE.md` allows (own task PRs, CI green, review findings answered, always `gh pr merge <n> --squash --delete-branch`, oldest first); otherwise leave the PR open;
    - give `gh pr create` a `--title` and a single-line `--body` (or `--fill`): no heredoc, no `$(...)`.
    - if the push or the PR fails for a reason other than permissions (network, credentials), stop and write "LOOP FERMO" with the error; the commit stays on the branch.
 10. If verification still fails after 3 attempts, or a decision is needed that the documents and `CLAUDE.md` do not provide:

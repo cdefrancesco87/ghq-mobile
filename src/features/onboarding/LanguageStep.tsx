@@ -6,6 +6,7 @@ import { Icon } from '@/features/shared/Icon';
 import { Logo } from '@/features/shared/Logo';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
+import { ENABLED_LANGUAGES } from '@/rules/config';
 import { LANGUAGE_NAMES, type Language } from '@/i18n';
 import { useSettingsStore } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -13,7 +14,9 @@ import { OnboardingStep, StepButton } from './OnboardingStep';
 
 const LOGO_HEIGHT = 56;
 const ROW_HEIGHT = 56;
-const LANGUAGES = Object.keys(LANGUAGE_NAMES) as Language[];
+const LANGUAGES = (Object.keys(LANGUAGE_NAMES) as Language[]).filter((language) =>
+  ENABLED_LANGUAGES.includes(language),
+);
 
 /** The language of the phone is already selected; a tap changes every text at once (1.2). */
 export function LanguageStep({ onContinue }: { readonly onContinue: () => void }) {

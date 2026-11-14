@@ -1,3 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import deTexts from '@/i18n/locales/de.json';
+import enTexts from '@/i18n/locales/en.json';
+import esTexts from '@/i18n/locales/es.json';
+import frTexts from '@/i18n/locales/fr.json';
+import itTexts from '@/i18n/locales/it.json';
 import { SHOP_ITEMS } from '@/content/shop';
 import { MISSION_TEMPLATES, TEMPLATE_CATEGORIES } from '@/content/templates';
 import { TITLE_KEYS, TITLE_THEMES } from '@/content/titles';
@@ -85,11 +93,22 @@ describe('hero titles', () => {
     }
   });
 
-  it('starts from the examples of design-sezioni.md 9.3', () => {
-    expect(TITLE_KEYS.arcade.slice(0, 3)).toEqual(['newbie', 'player', 'pro']);
-    expect(TITLE_KEYS.fantasy.slice(0, 3)).toEqual(['squire', 'knight', 'paladin']);
-    expect(TITLE_KEYS.cyberpunk.slice(0, 3)).toEqual(['street_kid', 'runner', 'netrunner']);
-    expect(TITLE_KEYS.lovecraft.slice(0, 3)).toEqual(['curious', 'scholar', 'investigator']);
-    expect(TITLE_KEYS.minimal.slice(0, 3)).toEqual(['beginner', 'steady', 'expert']);
+  it('has the titles approved on 14/11 (lessico-v2.json, titoliEroe) in every language', () => {
+    const lexicon = JSON.parse(
+      readFileSync(join(__dirname, '../../docs/riferimenti/lessico-v2.json'), 'utf8'),
+    ) as Record<string, { titoliEroe: Record<string, string[]> }>;
+    const locales = { it: itTexts, en: enTexts, de: deTexts, fr: frTexts, es: esTexts } as Record<
+      string,
+      { titles: Record<string, Record<string, string>> }
+    >;
+    for (const language of Object.keys(locales)) {
+      for (const theme of ['arcade', 'fantasy', 'cyberpunk', 'lovecraft'] as const) {
+        const expected = lexicon[language].titoliEroe[theme];
+        expect(expected).toHaveLength(11);
+        expect(TITLE_KEYS[theme].map((key) => locales[language].titles[theme][key])).toEqual(
+          expected,
+        );
+      }
+    }
   });
 });

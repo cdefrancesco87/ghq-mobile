@@ -308,7 +308,7 @@ Il loop non li esegue: servono il telefono, un account o una decisione.
 | C04 | Confermare gli identificativi dell'app (`ch.ghq.mobile` è provvisorio) | Prima di T32 | build |
 | C05 | Confermare quale serie usa il moltiplicatore di XP (scelta minore 2 di `CLAUDE.md`) | Quando vuoi | T09 resta valido |
 | C06 | Decidere le proposte aperte di XP e monete (cambi di difficoltà, facili dimezzate, ritardi, completamenti a posteriori) e i valori di badge e ricompense | Prima del secondo backlog | regole in più |
-| C07 | Rivedere i contenuti in bozza: modelli di missione, titoli dell'eroe, testi in tedesco, francese e spagnolo | Dopo T21 e T28 | – |
+| C07 | Rivedere i contenuti in bozza: modelli di missione, testi in tedesco, francese e spagnolo (compresi i titoli dell'eroe in queste tre lingue). I titoli dell'eroe in italiano e inglese sono definitivi dal 14/11: 11 per tema in `design/lessico-v2.json`, voce `titoliEroe`, da copiare in `src/i18n/locales/` al posto delle bozze del T28 | Dopo T21 e T28 | – |
 | C08 | Creare l'account Expo, `eas login`, `eas build --profile development --platform android` e installare l'APK sul telefono | Dopo T32 | prova notifiche |
 | C09 | Provare il prototipo delle notifiche su Android seguendo `docs/prova-notifiche.md` | Dopo C08 | decisione nativo sì/no |
 | C10 | Più avanti: iPhone e Apple Developer Program per provare anche su iOS | Quando Android è avanti | prova iOS |

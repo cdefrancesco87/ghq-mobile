@@ -129,7 +129,8 @@ describe('getLanguage', () => {
   it('gives the device language while no language was saved (choice 19)', () => {
     const db = createTestDb();
     expect(getLanguage(db, ['it-IT'])).toBe('it');
-    expect(getLanguage(db, ['pt-BR', 'fr-FR'])).toBe('fr');
+    expect(getLanguage(db, ['pt-BR', 'it-IT'])).toBe('it');
+    expect(getLanguage(db, ['fr-FR'])).toBe('en'); // French is hidden (choice 33)
     expect(getLanguage(db, ['ja-JP'])).toBe('en');
     expect(getLanguage(db, [])).toBe('en');
   });

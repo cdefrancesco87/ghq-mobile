@@ -470,7 +470,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: cr
 
 ### 4.3 Tipo e difficoltà
 
-  - Tipo: interruttore a due posizioni, Abitudine (default) e Attività singola. Con Attività singola la riga Frequenza diventa Scadenza (data e ora facoltative).
+  - Tipo: interruttore a due posizioni, Abitudine (default) e Attività singola. Con Attività singola la riga Frequenza diventa Scadenza (solo data, facoltativa; l'ora facoltativa con promemoria è una funzione Should a parte, T94, 14/11).
   - Difficoltà: tre pulsanti affiancati con le tacche del tema, il nome e gli XP (Facile 10, Media 25, Difficile 50); Media è preselezionata.
   - Cambiando difficoltà in modifica compare sotto la riga «Vale dai prossimi completamenti».
 
@@ -491,7 +491,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★. Obiettivo di design: cr
   - Elenco a scelta singola: Ogni giorno; Giorni della settimana; N volte a settimana; Ogni N giorni; Mensile; Annuale. Sotto l'opzione scelta compare il suo controllo.
   - Giorni della settimana: 7 cerchi con l'iniziale, a partire dal primo giorno impostato nelle Impostazioni. N volte a settimana: contatore da 1 a 6. Ogni N giorni: contatore da 2 a 30 e data di inizio. Mensile: griglia dei giorni 1–31 più «Ultimo giorno del mese». Annuale: giorno e mese.
   - ★ Le frequenze Should e Could che non entrano nella versione non compaiono affatto, invece di comparire spente con «presto».
-  - Attività singola: Scadenza con data e ora facoltative; senza data l'attività resta in Oggi finché non è fatta.
+  - Attività singola: Scadenza con la sola data, facoltativa (l'ora arriverà con il T94); senza data l'attività resta in Oggi finché non è fatta (confermato il 14/11, correzione del codice nel T93).
 
 ### 4.7 Obiettivo misurabile
 
@@ -686,7 +686,9 @@ Stato: approvata da Claudio il 30/10, con le scelte ★ e le modifiche su umori 
   - Il tocco sulla matita trasforma il nome in un campo modificabile, fino a 20 caratteri; Invio conferma. Il nome di default è quello del tema (Blob, Brace, BIT-0, Glub, Goccia).
   - Il nome compare nei fumetti e, se la firma dei promemoria entra nella versione, nelle notifiche.
 
-### 6.8 Regali (Could)
+### 6.8 Regali (Could, da rivedere: 14/11)
+
+  - Claudio, 14/11: la funzione va ripensata con più oggetti e un uso diverso dal solo biscotto, caramella e palla; fuori dalla prima versione. Il testo sotto è la vecchia versione.
 
   - «Fai un regalo» apre un foglio con i regali posseduti (biscotto, caramella, palla) e la quantità; se non ce ne sono, «Compra nel Negozio».
   - Donando un regalo il compagno esulta, qualunque sia il suo umore: fa la faccia felice e saltella, con un effetto del tema intorno, poi mangia il regalo o ci gioca, per circa 2 secondi in tutto. L'umore sale di un livello con l'etichetta «Felice fino a domani», poi il fumetto ricorda le missioni (es. «Grazie, Claudio\! Ma non dimenticarti di prenderti cura di te stesso. Completa i task di oggi\!»).
@@ -943,6 +945,7 @@ Stato: approvata da Claudio il 30/10, con le scelte ★ e le modifiche su nomi L
 
   - Nel Profilo una riga con titolo e contatore («Badge · 12 di 38»), gli ultimi badge sbloccati e «Vedi tutti».
   - «Vedi tutti» apre una griglia a 3 colonne: i badge sbloccati sono a colori con la data; quelli bloccati sono sagome in testo tenue con la condizione e l'avanzamento (es. «Serie di 30 giorni · 23 di 30»).
+  - Ogni badge dà 25, 50 o 100 monete (facile, medio, difficile; approvato il 14/11).
   - Il tocco su un badge apre il dettaglio con condizione, data e monete bonus ricevute. Lo sblocco è un momento a schermo intero, già previsto nelle basi comuni, con le monete bonus.
   - Forma dei badge per tema: medaglia pixel (Arcade), sigillo di ceralacca (Fantasy), toppa o chip (Cyberpunk), sigillo antico (Lovecraft), cerchio con icona (Minimal).
 
