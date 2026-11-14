@@ -570,6 +570,23 @@ describe.each(THEMES_UNDER_TEST)('shared components in %s', (theme) => {
       expect(screen.queryByText('Fatto')).toBeNull();
     });
 
+    it('undoes only once on a double tap on «Annulla»', async () => {
+      const onUndo = jest.fn();
+      await openProvider();
+      await act(async () => toast.show({ message: 'Fatto', onUndo }));
+
+      // Two taps before the notice has gone from the screen.
+      const undo = screen.getByRole('button', { name: 'Annulla' });
+      const press = undo.props.onClick as () => void;
+      await act(async () => {
+        press();
+        press();
+      });
+
+      expect(onUndo).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText('Fatto')).toBeNull();
+    });
+
     it('shows one at a time: a new one replaces the old and restarts the 5 seconds', async () => {
       await openProvider();
       await act(async () => toast.show({ message: 'Primo', onUndo: jest.fn() }));

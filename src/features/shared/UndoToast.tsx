@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,6 +50,8 @@ export function UndoToastProvider({ children }: { readonly children: ReactNode }
     return () => clearTimeout(timer);
   }, [request]);
 
+  // The notice already undone: a second tap before it leaves the screen must not undo twice.
+  const undone = useRef<UndoToastRequest | null>(null);
   const onUndo = request?.onUndo;
 
   return (
@@ -55,6 +65,10 @@ export function UndoToastProvider({ children }: { readonly children: ReactNode }
               onUndo === undefined
                 ? undefined
                 : () => {
+                    if (undone.current === request) {
+                      return;
+                    }
+                    undone.current = request;
                     setRequest(null);
                     onUndo();
                   }
