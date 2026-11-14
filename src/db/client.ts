@@ -7,7 +7,9 @@ import migrations from '../../drizzle/migrations';
 import { lastAppliedMigrationAt, migrateWithBackup } from './migrateWithBackup';
 import {
   dropPreviousDatabase,
+  isMigratedDatabase,
   putBackPreviousDatabase,
+  recoverInterruptedRestore,
   replaceDatabaseFile,
   type RestoreFiles,
 } from './restore';
@@ -65,11 +67,29 @@ function close(opened: AppDatabase): void {
   opened.sqlite.closeSync();
 }
 
+/** True while a restore of this process has the database of the phone aside. */
+let restoring = false;
+
+/** The database file opens and has every migration of this app. */
+function liveDatabaseIsValid(): boolean {
+  return isMigratedDatabase<AppDatabase>({
+    journal: migrations.journal.entries,
+    open,
+    close,
+    lastAppliedAt: (opened) => lastAppliedMigrationAt(opened.db),
+  });
+}
+
 /**
  * Opens the database of the app and applies the missing migrations, with a safety copy of the
- * file that comes back if a migration fails (MigrationFailedError).
+ * file that comes back if a migration fails (MigrationFailedError). A restore cut short by the
+ * app being killed is settled first: its restored file stays only if it was complete, otherwise
+ * the database of the phone comes back.
  */
 export async function openAppDatabase(): Promise<Db> {
+  if (!restoring) {
+    recoverInterruptedRestore(databasePath(), appFiles, liveDatabaseIsValid);
+  }
   const { db } = await migrateWithBackup<AppDatabase>({
     path: databasePath(),
     files: appFiles,
@@ -123,16 +143,19 @@ export function serializeAppDatabase(db: Db): Uint8Array {
  */
 export function replaceAppDatabase(bytes: Uint8Array): void {
   closeAll();
-  replaceDatabaseFile(databasePath(), bytes, appFiles);
+  replaceDatabaseFile(databasePath(), bytes, appFiles, liveDatabaseIsValid);
+  restoring = true;
 }
 
 /** Brings back the database of the phone when the restored one did not open. */
 export function putBackPreviousAppDatabase(): void {
   closeAll();
   putBackPreviousDatabase(databasePath(), appFiles);
+  restoring = false;
 }
 
 /** Deletes the old database once the restored one is open. */
 export function dropPreviousAppDatabase(): void {
   dropPreviousDatabase(databasePath(), appFiles);
+  restoring = false;
 }

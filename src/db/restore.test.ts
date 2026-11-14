@@ -12,8 +12,10 @@ import {
 } from '@/db/migrateWithBackup';
 import {
   dropPreviousDatabase,
+  isMigratedDatabase,
   previousCopyOf,
   putBackPreviousDatabase,
+  recoverInterruptedRestore,
   replaceDatabaseFile,
   type RestoreFiles,
 } from '@/db/restore';
@@ -64,6 +66,9 @@ const options = (): MigrateWithBackupOptions<FileDb> => ({
   migrate: (db) => migrate(db, { migrationsFolder: MIGRATIONS_FOLDER }),
 });
 
+/** The check of the start: the live file opens and has every migration of the app. */
+const liveIsValid = () => isMigratedDatabase({ ...options(), journal: journal.entries });
+
 /** A database in memory with only the first migration: a backup of an older app. */
 function olderBackup(): Uint8Array {
   const folder = path.join(dir, 'old-migrations');
@@ -101,7 +106,7 @@ describe('replaceDatabaseFile', () => {
     await phoneDatabase('fantasy');
     const backup = olderBackup();
 
-    replaceDatabaseFile(file, backup, nodeFiles);
+    replaceDatabaseFile(file, backup, nodeFiles, liveIsValid);
     const restored = await migrateWithBackup(options());
 
     expect(lastAppliedMigrationAt(restored)).toBe(NEWEST);
@@ -114,7 +119,7 @@ describe('replaceDatabaseFile', () => {
   });
 
   it('works on a phone without a database yet', async () => {
-    replaceDatabaseFile(file, olderBackup(), nodeFiles);
+    replaceDatabaseFile(file, olderBackup(), nodeFiles, liveIsValid);
     const restored = await migrateWithBackup(options());
     expect(themeOf(restored)).toBe('arcade');
     restored.$client.close();
@@ -124,7 +129,7 @@ describe('replaceDatabaseFile', () => {
 describe('putBackPreviousDatabase', () => {
   it('brings back the database of the phone when the restored one does not open', async () => {
     await phoneDatabase('fantasy');
-    replaceDatabaseFile(file, new Uint8Array([1, 2, 3]), nodeFiles);
+    replaceDatabaseFile(file, new Uint8Array([1, 2, 3]), nodeFiles, liveIsValid);
     await expect(migrateWithBackup(options())).rejects.toThrow();
 
     putBackPreviousDatabase(file, nodeFiles);
@@ -132,6 +137,62 @@ describe('putBackPreviousDatabase', () => {
 
     expect(themeOf(back)).toBe('fantasy');
     expect(fs.existsSync(previousCopyOf(file))).toBe(false);
+    back.$client.close();
+  });
+});
+
+describe('recoverInterruptedRestore', () => {
+  it('puts the phone database back when the app stopped before the restored one was migrated', async () => {
+    await phoneDatabase('fantasy');
+    replaceDatabaseFile(file, olderBackup(), nodeFiles, liveIsValid);
+    // The app is killed here: the next start finds the copy aside and a file not migrated.
+
+    expect(recoverInterruptedRestore(file, nodeFiles, liveIsValid)).toBe('put_back');
+    const back = await migrateWithBackup(options());
+    expect(themeOf(back)).toBe('fantasy');
+    expect(fs.existsSync(previousCopyOf(file))).toBe(false);
+    back.$client.close();
+  });
+
+  it('puts the phone database back when the live files are gone', async () => {
+    await phoneDatabase('fantasy');
+    fs.copyFileSync(file, previousCopyOf(file));
+    fs.rmSync(file);
+
+    expect(recoverInterruptedRestore(file, nodeFiles, liveIsValid)).toBe('put_back');
+    const back = await migrateWithBackup(options());
+    expect(themeOf(back)).toBe('fantasy');
+    back.$client.close();
+  });
+
+  it('keeps a restored database that was already migrated and drops the copy', async () => {
+    await phoneDatabase('fantasy');
+    replaceDatabaseFile(file, olderBackup(), nodeFiles, liveIsValid);
+    (await migrateWithBackup(options())).$client.close();
+
+    expect(recoverInterruptedRestore(file, nodeFiles, liveIsValid)).toBe('kept_restored');
+    const restored = await migrateWithBackup(options());
+    expect(themeOf(restored)).toBe('arcade');
+    expect(fs.existsSync(previousCopyOf(file))).toBe(false);
+    restored.$client.close();
+  });
+
+  it('does nothing without a copy aside', async () => {
+    await phoneDatabase('fantasy');
+    expect(recoverInterruptedRestore(file, nodeFiles, liveIsValid)).toBe('none');
+  });
+});
+
+describe('replaceDatabaseFile after an interrupted restore', () => {
+  it('never deletes the copy aside while the live database is not valid', async () => {
+    await phoneDatabase('fantasy');
+    fs.copyFileSync(file, previousCopyOf(file));
+    fs.writeFileSync(file, new Uint8Array([1, 2, 3]));
+
+    replaceDatabaseFile(file, olderBackup(), nodeFiles, liveIsValid);
+    putBackPreviousDatabase(file, nodeFiles);
+    const back = await migrateWithBackup(options());
+    expect(themeOf(back)).toBe('fantasy');
     back.$client.close();
   });
 });
