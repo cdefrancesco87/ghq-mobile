@@ -148,7 +148,7 @@ Serve a tre cose: rende la chiusura idempotente (un giorno già chiuso non si ri
 
 ### 3.8 Boss (`boss`) e passi (`boss_steps`)
 
-`boss`: `id`, `name`, `difficulty`, `stat_key`, `hp_max` (passi × 20), `hp`, `deadline_day`, `deadline_warned` (avviso a 3 giorni già mandato), `status` (`active`, `defeated`, `archived`), `defeated_at`, `kind` (`normal`, `starter` per la quest di partenza), `created_at`, `updated_at`. Un indice parziale e un controllo nel codice impediscono più di 3 boss attivi.
+`boss`: `id`, `name`, `difficulty`, `stat_key`, `hp_max` (passi × 20), `hp`, `deadline_day`, `deadline_warned` (avviso a 3 giorni già mandato), `status` (`active`, `defeated`, `archived`), `defeated_at`, `kind` (`normal`, `starter` per la quest di partenza), `deleted_at` (cancellazione logica, scelta minore 21 del 14/11; le query filtrano `deleted_at IS NULL`), `created_at`, `updated_at`. Un indice parziale e un controllo nel codice impediscono più di 3 boss attivi.
 
 `boss_steps`: `id`, `boss_id`, `position`, `title`, `done_at`. La Sala dei trofei è semplicemente `boss` con `status = 'defeated'`, ordinata per `defeated_at`.
 
@@ -195,7 +195,7 @@ Perché nel database e non in MMKV: un solo file da salvare nel backup e da ripr
 | Missioni | `mission.created`, `mission.updated`, `mission.paused`, `mission.resumed`, `mission.archived`, `mission.restored`, `mission.deleted` |
 | Completamenti | `mission.completed`, `mission.progressed` (valore parziale), `mission.skipped`, `mission.backfilled`, `event.reverted` (annulla) |
 | Giornata | `day.closed` (vita persa, scudo usato), `bonus.full_day`, `bonus.plan`, `pause.started`, `pause.ended` (giorni di pausa, scadenze dei boss spostate; `cancelled: true` se annullata prima dell'inizio), `pause.changed` (data di fine cambiata durante la pausa, con la vecchia e la nuova data) |
-| Boss | `boss.created`, `boss.step_done`, `boss.damaged`, `boss.defeated`, `boss.deadline_missed` (monete rubate), `boss.archived` |
+| Boss | `boss.created`, `boss.step_done`, `boss.damaged`, `boss.defeated`, `boss.deadline_missed` (monete rubate), `boss.archived`, `boss.updated` (nome, passi aggiunti, tolti, riordinati; con `hp_max` prima e dopo), `boss.deleted` |
 | Eroe e compagno | `hero.level_up`, `hero.exhausted`, `hero.renamed`, `companion.stage_up`, `companion.gift` |
 | Negozio | `item.bought`, `item.used`, `shield.consumed`, `reward.redeemed`, `badge.unlocked`; lo scudo della vittoria sta nei delta di `boss.defeated` |
 

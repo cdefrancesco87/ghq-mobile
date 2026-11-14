@@ -42,7 +42,7 @@ Sono una prima taratura da verificare con l'uso.
 - Un completamento si può annullare fino al cambio di giornata (default 06:00, modificabile dall'utente): XP, monete, danno al boss e serie tornano come prima.
 - Una missione misurabile dà XP solo quando il valore raggiunge l'obiettivo; superarlo non dà XP in più.
 - Per le missioni «N volte a settimana» contano al massimo N completamenti a settimana.
-- **Proposta:** un completamento dimenticato aggiunto dal registro (fino a 7 giorni indietro) dà XP e monete base, ma non il moltiplicatore di serie né i bonus di giornata. Correggere i dati resta possibile, ma accumulare completamenti a posteriori non conviene.
+- **Completamento dimenticato** (approvato da Claudio il 14/11): aggiunto dal registro fino a 7 giorni indietro, dà solo i punti statistica; niente XP, monete, moltiplicatore di serie né bonus di giornata. Non restituisce vita e non ripara una serie spezzata. Correggere i dati resta possibile, ma accumulare completamenti a posteriori non conviene.
 
 ### Attività singole in ritardo
 
@@ -81,7 +81,7 @@ Nella versione precedente il budget fisso impediva a un membro del team di gonfi
 - Missioni completate: 2, 5 o 10 monete secondo la difficoltà.
 - Giornata completa: +10 monete.
 - Boss sconfitto: un quinto degli XP della vittoria, più uno scudo della serie (100 monete al suo posto se se ne hanno già 2).
-- Badge sbloccato: monete bonus, valore ancora da definire.
+- Badge sbloccato: monete bonus, 25 (facile), 50 (medio) o 100 (difficile) in base al traguardo (approvato il 14/11; la fascia di ogni badge è nel codice, in bozza fino alla revisione dei contenuti).
 - Quest di partenza del primo avvio: le prime monete.
 
 Con 5 missioni medie al giorno e la giornata completa si guadagnano circa 35 monete al giorno.
@@ -96,7 +96,7 @@ In un solo caso: se la scadenza di un boss passa, il boss sbeffeggia l'eroe e ru
 | --- | --- | --- | --- |
 | Pozione | 50 monete | +10 vita, senza superare il massimo di 50 | Must |
 | Scudo della serie | 100 monete | Protegge le serie per un giorno mancato; massimo 2 posseduti | Should |
-| Regali per il compagno (biscotti, caramelle, palla) | da definire | Animazione del compagno felice e umore su di un livello fino al cambio di giornata; poi il compagno ricorda di proseguire con le abitudini | Could |
+| Regali per il compagno (biscotti, caramelle, palla) | da rivedere (14/11: fuori dalla prima versione; servono più oggetti e un uso diverso) | Animazione del compagno felice e umore su di un livello fino al cambio di giornata; poi il compagno ricorda di proseguire con le abitudini | Could |
 | Ricompense personali | automatico secondo l'entità | Un premio della vita reale, es. «Un episodio di una serie», di entità piccola, media, grande o epica | Should |
 
 Una pozione costa circa un giorno e mezzo di costanza, uno scudo circa tre giorni. L'acquisto di altri compagni è Won't per questa versione.
@@ -142,8 +142,7 @@ Tutto resta sul telefono; i dati escono solo verso il backup nel cloud personale
 - Il limite di un cambio di difficoltà ogni 7 giorni va bene, o basta che il cambio non ricalcoli il passato?
 - I rendimenti decrescenti sulle missioni facili oltre le 10 al giorno vanno bene?
 - Un'attività singola in ritardo dà metà di XP e monete: va bene, o preferisci nessuna riduzione?
-- I completamenti aggiunti a posteriori danno solo XP e monete base, senza bonus: va bene?
 - I suggerimenti del compagno sulla difficoltà sono Should o Could?
-- Quante monete dà un badge, e quanto costano i regali?
+- Prezzi e uso dei regali per il compagno: da rivedere insieme a più oggetti (14/11).
 - Quanto costano le ricompense personali piccole, medie, grandi ed epiche?
 - Moltiplicatore di serie e bonus del Piano non sono nella tabella MoSCoW: li segno come Must?

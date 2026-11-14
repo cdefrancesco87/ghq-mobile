@@ -144,7 +144,7 @@ describe('Today: header and hero card', () => {
     await openToday(db);
 
     expect(screen.getByTestId('today-hero-name')).toHaveTextContent('Claudio');
-    expect(screen.getByTestId('today-hero-title')).toHaveTextContent('Scudiero');
+    expect(screen.getByTestId('today-hero-title')).toHaveTextContent('Recluta');
   });
 
   it('reads date and greeting, then level, health, experience, streak and coins', async () => {

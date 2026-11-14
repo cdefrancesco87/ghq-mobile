@@ -155,5 +155,11 @@ export const MOOD = {
   sadBelow: 0.3,
 } as const;
 
+/**
+ * Languages offered in the app (CLAUDE.md, choice 33, 14/11): German, French and Spanish stay in
+ * the language files but are hidden until their texts are reviewed.
+ */
+export const ENABLED_LANGUAGES: readonly Language[] = ['it', 'en'];
+
 /** Language of the first launch when no device language is supported (CLAUDE.md, choice 19). */
 export const FALLBACK_LANGUAGE: Language = 'en';

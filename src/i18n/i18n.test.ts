@@ -180,10 +180,13 @@ describe('createI18n', () => {
 
 describe('deviceLanguage', () => {
   it('takes the first supported language of the phone (choice 19)', () => {
+    mockLocaleTags = ['it-IT'];
+    expect(deviceLanguage()).toBe('it');
+    mockLocaleTags = ['pt-BR', 'en-GB'];
+    expect(deviceLanguage()).toBe('en');
+    // German, French and Spanish are hidden for now (choice 33)
     mockLocaleTags = ['de-DE'];
-    expect(deviceLanguage()).toBe('de');
-    mockLocaleTags = ['pt-BR', 'fr-FR'];
-    expect(deviceLanguage()).toBe('fr');
+    expect(deviceLanguage()).toBe('en');
   });
 
   it('falls back to English when no language of the phone is supported (choice 19)', () => {
