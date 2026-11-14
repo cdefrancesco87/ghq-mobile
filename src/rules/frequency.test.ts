@@ -2,6 +2,7 @@ import {
   frequencySchema,
   isDueToday,
   isScheduled,
+  requiredInWeek,
   type DueMission,
   type Frequency,
   type ScheduleContext,
@@ -325,5 +326,14 @@ describe('isDueToday', () => {
 
   it('rejects a day that does not exist', () => {
     expect(() => isDueToday(task('2026-11-01'), '2026-13-01', NO_HISTORY)).toThrow(RangeError);
+  });
+});
+
+describe('requiredInWeek', () => {
+  it('subtracts each excused day once, minimum 0', () => {
+    const excused = new Set<string>(['2026-11-02', '2026-11-03']);
+    expect(requiredInWeek(3, '2026-11-02', '2026-11-08', (d) => excused.has(d))).toBe(1);
+    expect(requiredInWeek(1, '2026-11-02', '2026-11-08', (d) => excused.has(d))).toBe(0);
+    expect(requiredInWeek(3, '2026-11-04', '2026-11-08', (d) => excused.has(d))).toBe(3);
   });
 });

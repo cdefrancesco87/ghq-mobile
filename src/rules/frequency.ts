@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { diffDays, isGameDay, weekStartOf, weekday, type Weekday } from './gameDay';
+import { addDays, diffDays, isGameDay, weekStartOf, weekday, type Weekday } from './gameDay';
 import { isPausedOn } from './pause';
 import type { GameDay } from './types';
 
@@ -135,4 +135,24 @@ export function isDueToday(mission: DueMission, day: GameDay, ctx: ScheduleConte
     return !ctx.completedDays.some((completedDay) => completedDay < day);
   }
   return mission.frequency !== null && isScheduled(mission.frequency, day, ctx);
+}
+
+/**
+ * How many completions a week of «N volte a settimana» requires between `from` and `to`, both
+ * included: N minus one for every day skipped (choice 17) or of general pause (choice 23),
+ * minimum 0. A day both skipped and paused reduces N only once.
+ */
+export function requiredInWeek(
+  times: number,
+  from: GameDay,
+  to: GameDay,
+  isExcused: (day: GameDay) => boolean,
+): number {
+  let excused = 0;
+  for (let day = from; day <= to; day = addDays(day, 1)) {
+    if (isExcused(day)) {
+      excused++;
+    }
+  }
+  return Math.max(0, times - excused);
 }

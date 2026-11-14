@@ -802,6 +802,21 @@ describe('closeDays', () => {
       expect(result.missionStreaks).toEqual([]);
     });
 
+    it('counts once a day both skipped and paused (choices 17, 23)', () => {
+      // N = 3, paused Mon–Tue, skipped on Tue: 2 excused days, so 1 time is still required.
+      const result = closeDays(
+        input({
+          lastClosedDay: '2026-11-01',
+          today: '2026-11-09',
+          missions: [weekly({ streak: 2, streakBest: 2 })],
+          missionDays: [{ missionId: 'w', gameDay: '2026-11-03', status: 'skipped' }],
+          pauses: [{ fromDay: '2026-11-02', untilDay: '2026-11-03' }],
+        }),
+      );
+      expect(result.days[6].summary).toMatchObject({ missedXp: 25, hpLost: 10 });
+      expect(result.missionStreaks).toEqual([{ missionId: 'w', streak: 0, best: 2 }]);
+    });
+
     it('takes no hit points for a week judged on a paused last day, but breaks its streak', () => {
       const result = closeDays(
         input({

@@ -1,8 +1,8 @@
 import { DIFFICULTY_VALUES, HP } from './config';
 import { applyHp, hpLoss } from './day';
-import { isDueToday, type DueMission } from './frequency';
+import { isDueToday, requiredInWeek, type DueMission } from './frequency';
 import { addDays, daysBetween, weekStartOf, weekday, type Weekday } from './gameDay';
-import { isPausedDay, pausedDaysBetween, type PauseInterval } from './pause';
+import { isPausedDay, type PauseInterval } from './pause';
 import {
   nextHeroStreak,
   nextMissionStreak,
@@ -161,13 +161,17 @@ function missionResult(
     const rangeStart: GameDay = isFirstPartialWeek ? mission.createdDay : start;
 
     const doneInWeek = new Set(completedDays.filter((d) => d >= rangeStart && d <= day)).size;
-    // Each skip in the week reduces the required count by 1, minimum 0 (choice 17).
-    const skipsInWeek = rows.filter(
-      (row) => row.status === 'skipped' && row.gameDay >= rangeStart && row.gameDay <= day,
-    ).length;
-    // Each paused day too, together with the skips (choice 23).
-    const pausedInWeek = pausedDaysBetween(pauses, rangeStart, day);
-    const effectiveTimes = Math.max(0, frequency.times - skipsInWeek - pausedInWeek);
+    // Each skip and each paused day in the week reduce the required count by 1, a day both
+    // skipped and paused only once, minimum 0 (choices 17, 23).
+    const skippedDays = new Set(
+      rows.filter((row) => row.status === 'skipped').map((row) => row.gameDay),
+    );
+    const effectiveTimes = requiredInWeek(
+      frequency.times,
+      rangeStart,
+      day,
+      (d) => skippedDays.has(d) || isPausedDay(d, pauses),
+    );
     if (effectiveTimes === 0) {
       // Skips and pause brought N to 0: the streak neither grows nor breaks (choices 17, 23).
       return { mission, done: doneToday ? 1 : 0, missed: 0, occurrence: null };
