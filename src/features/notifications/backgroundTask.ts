@@ -46,7 +46,8 @@ export async function syncSystemReminders(db: Db, now = Date.now()): Promise<voi
       return;
     }
     await setUpNotifications(notificationTextsOf(db));
-    const input = { now, tzOffset: tzOffsetAt(now) };
+    // The offset of each instant: the window of 7 days can cross a change of summer time.
+    const input = { now, tzOffset: tzOffsetAt(now), tzOffsetAt };
     await syncReminders(db, systemScheduler, input);
     await syncEveningSummary(db, systemSummary, input);
     // The weekly recap of Statistics (design 8.7, 10.6; T81).
@@ -67,7 +68,7 @@ export async function syncSystemRecall(db: Db, now = Date.now()): Promise<void> 
     if ((await notificationPermission()) !== 'granted') {
       return;
     }
-    await syncRecall(db, systemRecall, { now, tzOffset: tzOffsetAt(now) });
+    await syncRecall(db, systemRecall, { now, tzOffset: tzOffsetAt(now), tzOffsetAt });
   } catch {
     // The check-in is scheduled again at the next opening.
   }

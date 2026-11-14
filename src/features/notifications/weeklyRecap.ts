@@ -32,12 +32,17 @@ export interface WeeklyRecapInput {
   readonly now: number;
   /** Minutes east of UTC. */
   readonly tzOffset: number;
+  /**
+   * The offset of each UTC instant, for the times past a change of summer time; `tzOffset` for
+   * every instant when missing.
+   */
+  readonly tzOffsetAt?: (instant: number) => number;
 }
 
 /** The next recap notification, or null: switched off, or held by a pause without an end. */
 export function plannedWeeklyRecap(
   db: Db,
-  { now, tzOffset }: WeeklyRecapInput,
+  { now, tzOffset, tzOffsetAt }: WeeklyRecapInput,
 ): WeeklyRecapRequest | null {
   const setting = getSetting(db, 'weekly_recap');
   if (!setting.enabled) {
@@ -47,7 +52,7 @@ export function plannedWeeklyRecap(
   const fireAt = nextRecapAt({
     now,
     today: gameDayOf(now, tzOffset, dayChange),
-    tzOffset,
+    tzOffset: tzOffsetAt ?? tzOffset,
     dayChange: (day) => dayChangeOn(dayChange, addDays(day, -1)),
     weekday: setting.weekday,
     time: setting.time,

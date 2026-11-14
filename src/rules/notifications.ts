@@ -1,6 +1,7 @@
 import { NOTIFICATIONS } from './config';
 import { addDays } from './gameDay';
 import type { PlannedReminder } from './reminders';
+import { utcOfLocalMinute, type TzOffset } from './timeZone';
 import type { GameDay } from './types';
 
 // How the notifications are put together (design-sezioni.md 11.4 and 11.5): reminders of the same
@@ -81,8 +82,8 @@ export interface EveningSummaryAtInput {
   readonly time: string;
   /** Local `HH:MM` when the game day starts (the day change of the day before). */
   readonly dayChange: string;
-  /** Minutes east of UTC. */
-  readonly tzOffset: number;
+  /** Minutes east of UTC, or the offset of each instant (summer time). */
+  readonly tzOffset: TzOffset;
 }
 
 function minutesOf(time: string): number {
@@ -110,5 +111,5 @@ export function eveningSummaryAt({
   if (local < start) {
     local = localMinutes(addDays(day, 1), minutesOf(time));
   }
-  return (local - tzOffset) * MS_PER_MINUTE;
+  return utcOfLocalMinute(local, tzOffset);
 }

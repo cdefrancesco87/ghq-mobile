@@ -2,6 +2,7 @@ import { roundXp } from './completion';
 import { BOSS, BOSS_EDIT, SHOP, STARTER_QUEST_REWARD, STATS } from './config';
 import { addDays, diffDays } from './gameDay';
 import { xpToNext } from './level';
+import { utcOfLocalMinute, type TzOffset } from './timeZone';
 import {
   DIFFICULTIES,
   STAT_KEYS,
@@ -166,12 +167,13 @@ const MS_PER_MINUTE = 60_000;
 /**
  * UTC instant of the system notification of the deadline warning (design-sezioni.md 11.6): the
  * local `BOSS.deadlineWarningTime` of the first day of the warning, 3 days before the deadline.
- * The time comes after any day change, so the calendar day is the game day.
+ * The time comes after any day change, so the calendar day is the game day. `tzOffset` can be
+ * the offset of each instant, for a warning past a change of summer time.
  */
-export function deadlineWarningAt(deadline: GameDay, tzOffset: number): number {
+export function deadlineWarningAt(deadline: GameDay, tzOffset: TzOffset): number {
   const [year, month, day] = addDays(deadline, -BOSS.deadlineWarningDays).split('-').map(Number);
   const [hours, minutes] = BOSS.deadlineWarningTime.split(':').map(Number);
-  return Date.UTC(year, month - 1, day, hours, minutes) - tzOffset * MS_PER_MINUTE;
+  return utcOfLocalMinute(Date.UTC(year, month - 1, day, hours, minutes) / MS_PER_MINUTE, tzOffset);
 }
 
 /** «Giorni impiegati» of a trophy (design-sezioni.md 5.7): from the creation to the victory, at least 1. */

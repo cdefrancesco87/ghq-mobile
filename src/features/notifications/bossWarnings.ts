@@ -45,6 +45,11 @@ export interface BossWarningInput {
   readonly now: number;
   /** Minutes east of UTC. */
   readonly tzOffset: number;
+  /**
+   * The offset of each UTC instant, for a warning past a change of summer time; `tzOffset` for
+   * every instant when missing.
+   */
+  readonly tzOffsetAt?: (instant: number) => number;
 }
 
 export interface BossWarningSync {
@@ -60,9 +65,10 @@ export interface BossWarningSync {
  */
 export function plannedBossWarnings(
   db: Db,
-  { now, tzOffset }: BossWarningInput,
+  { now, tzOffset: offsetNow, tzOffsetAt }: BossWarningInput,
   textOf: (target: Boss) => BossWarningText,
 ): BossWarningRequest[] {
+  const tzOffset = tzOffsetAt ?? offsetNow;
   const pause = getGeneralPause(db);
   return db
     .select()

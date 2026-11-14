@@ -36,6 +36,11 @@ export interface SummaryInput {
   readonly now: number;
   /** Minutes east of UTC. */
   readonly tzOffset: number;
+  /**
+   * The offset of each UTC instant, for the times past a change of summer time; `tzOffset` for
+   * every instant when missing.
+   */
+  readonly tzOffsetAt?: (instant: number) => number;
 }
 
 /**
@@ -44,7 +49,7 @@ export interface SummaryInput {
  */
 export function plannedEveningSummary(
   db: Db,
-  { now, tzOffset }: SummaryInput,
+  { now, tzOffset, tzOffsetAt }: SummaryInput,
 ): SummaryRequest | null {
   const setting = getSetting(db, 'evening_summary');
   const dayChange = getSetting(db, 'day_change');
@@ -53,7 +58,7 @@ export function plannedEveningSummary(
     day: today,
     time: setting.time,
     dayChange: dayChangeOn(dayChange, addDays(today, -1)),
-    tzOffset,
+    tzOffset: tzOffsetAt ?? tzOffset,
   });
   if (!setting.enabled || fireAt <= now) {
     return null;

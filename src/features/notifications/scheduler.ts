@@ -34,6 +34,11 @@ export interface SyncInput {
   readonly now: number;
   /** Minutes east of UTC. */
   readonly tzOffset: number;
+  /**
+   * The offset of each UTC instant, for the times past a change of summer time; `tzOffset` for
+   * every instant when missing.
+   */
+  readonly tzOffsetAt?: (instant: number) => number;
 }
 
 export interface SyncResult {
@@ -42,7 +47,7 @@ export interface SyncResult {
 }
 
 /** The reminders that should be scheduled from `now` on, with the game day of `now`. */
-function plan(db: Db, { now, tzOffset }: SyncInput) {
+function plan(db: Db, { now, tzOffset, tzOffsetAt }: SyncInput) {
   const dayChange = getSetting(db, 'day_change');
   const today = gameDayOf(now, tzOffset, dayChange);
   // The general switch of the Settings off: no reminder is wanted, the scheduled ones go.
@@ -89,7 +94,7 @@ function plan(db: Db, { now, tzOffset }: SyncInput) {
     days: REMINDERS.windowDays,
     quietHours: getSetting(db, 'quiet_hours'),
     dayChange: (day) => dayChangeOn(dayChange, day),
-    tzOffset,
+    tzOffset: tzOffsetAt ?? tzOffset,
     weekStart: (day) => rulesOn(day).weekStart,
     restDays: (day) => rulesOn(day).restDays,
   });

@@ -34,10 +34,18 @@ export interface RecallInput {
   readonly now: number;
   /** Minutes east of UTC. */
   readonly tzOffset: number;
+  /**
+   * The offset of each UTC instant, for the times past a change of summer time; `tzOffset` for
+   * every instant when missing.
+   */
+  readonly tzOffsetAt?: (instant: number) => number;
 }
 
 /** The check-in wanted after an opening at `now`, or null: switched off, or held by a pause. */
-export function plannedRecall(db: Db, { now, tzOffset }: RecallInput): RecallRequest | null {
+export function plannedRecall(
+  db: Db,
+  { now, tzOffset, tzOffsetAt }: RecallInput,
+): RecallRequest | null {
   if (!getSetting(db, 'recall_enabled')) {
     return null;
   }
@@ -45,7 +53,7 @@ export function plannedRecall(db: Db, { now, tzOffset }: RecallInput): RecallReq
   const today = gameDayOf(now, tzOffset, dayChange);
   const fireAt = recallAt({
     now,
-    tzOffset,
+    tzOffset: tzOffsetAt ?? tzOffset,
     dayChange: dayChangeOn(dayChange, addDays(today, RECALL.afterDays)),
     quietHours: getSetting(db, 'quiet_hours'),
     pause: getGeneralPause(db),

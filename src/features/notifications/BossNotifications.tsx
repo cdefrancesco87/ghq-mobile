@@ -29,7 +29,12 @@ async function syncSystemBossWarnings(db: Db, textOf: (target: Boss) => BossWarn
     await syncBossWarnings(
       db,
       systemBossWarnings,
-      { now, tzOffset: -new Date(now).getTimezoneOffset() },
+      {
+        now,
+        tzOffset: -new Date(now).getTimezoneOffset(),
+        // The offset of each instant: a deadline can be past a change of summer time.
+        tzOffsetAt: (instant) => -new Date(instant).getTimezoneOffset(),
+      },
       (target) => {
         const text = textOf(target);
         return { title: text.title, body: sign(text.body) };

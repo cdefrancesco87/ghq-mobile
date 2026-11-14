@@ -1,5 +1,6 @@
 import { isDueToday, type DueMission } from './frequency';
 import { addDays, weekday, type Weekday } from './gameDay';
+import { localMinuteOf, utcOfLocalMinute, type TzOffset } from './timeZone';
 import type { GameDay } from './types';
 
 // When the reminders of the missions fire (analisi-funzionale.md section 11, design-sezioni.md
@@ -46,8 +47,11 @@ export interface PlannedRemindersInput {
    * the time of each day while a change of the setting is pending.
    */
   readonly dayChange: string | ((day: GameDay) => string);
-  /** Minutes east of UTC (local time = UTC + offset). */
-  readonly tzOffset: number;
+  /**
+   * Minutes east of UTC (local time = UTC + offset): one value, or the offset of each instant,
+   * so a reminder after a change of summer time keeps its local time.
+   */
+  readonly tzOffset: TzOffset;
   /** The first day of the week: one for every day, or the one of each day while it changes. */
   readonly weekStart: Weekday | ((day: GameDay) => Weekday);
   /** No mission is due on a rest day, so no reminder fires. */
@@ -111,16 +115,16 @@ function afterQuietHours(local: number, quietHours: readonly QuietInterval[]): n
  * that is not a reminder (the goal reached with the health data, design-sezioni.md 12.7) waits
  * until then.
  *
- * @param tzOffset Minutes east of UTC.
+ * @param tzOffset Minutes east of UTC, or the offset of each instant.
  */
 export function quietHoursEnd(
   now: number,
-  tzOffset: number,
+  tzOffset: TzOffset,
   quietHours: readonly QuietInterval[],
 ): number {
-  const local = Math.floor(now / MS_PER_MINUTE) + tzOffset;
+  const local = localMinuteOf(now, tzOffset);
   const end = afterQuietHours(local, quietHours);
-  return end === local ? now : (end - tzOffset) * MS_PER_MINUTE;
+  return end === local ? now : utcOfLocalMinute(end, tzOffset);
 }
 
 /**
@@ -186,7 +190,7 @@ export function plannedReminders(input: PlannedRemindersInput): PlannedReminder[
       if (local >= dayEnd) {
         continue;
       }
-      const fireAt = (local - input.tzOffset) * MS_PER_MINUTE;
+      const fireAt = utcOfLocalMinute(local, input.tzOffset);
       planned.set(`${mission.id}@${fireAt}`, { missionId: mission.id, gameDay: day, fireAt });
     }
   }

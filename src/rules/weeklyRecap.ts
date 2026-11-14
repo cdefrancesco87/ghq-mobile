@@ -3,6 +3,7 @@ import { addDays, diffDays, weekday, type Weekday } from './gameDay';
 import { eveningSummaryAt } from './notifications';
 import { isPausedDay, type PauseInterval } from './pause';
 import { quietHoursEnd, type QuietInterval } from './reminders';
+import type { TzOffset } from './timeZone';
 import type { GameDay } from './types';
 
 // The weekly recap of Statistics (analisi-funzionale.md US-STAT-04; design-sezioni.md 8.7, 10.6;
@@ -23,8 +24,8 @@ export interface RecapClock extends RecapTime {
   readonly now: number;
   /** The game day of `now`. */
   readonly today: GameDay;
-  /** Minutes east of UTC. */
-  readonly tzOffset: number;
+  /** Minutes east of UTC, or the offset of each instant (summer time). */
+  readonly tzOffset: TzOffset;
   /** The day change valid on a game day (HH:MM). */
   readonly dayChange: (day: GameDay) => string;
 }
