@@ -49,10 +49,26 @@ describe('syncWidgets', () => {
     expect(written[0]).toMatchObject({ done: 1, total: 2 });
   });
 
-  it('writes nothing before the first launch is finished', async () => {
-    const { host, written } = fakeHost();
+  it('writes an empty snapshot before the first launch is finished, and after a wipe', async () => {
+    // A widget left from the data deleted with «Elimina tutti i dati» must not show them.
+    const { host, written } = fakeHost([
+      encodeTarget({ kind: 'complete', missionId: 'old', day: '2026-11-06', stamp: 'g1' }),
+    ]);
     const result = await syncWidgets(createTestDb(), host, () => clockAt(FRIDAY, 12));
-    expect(result.snapshot).toBeNull();
-    expect(written).toEqual([]);
+    expect(result).toEqual({ outcomes: [], snapshot: null });
+    expect(written).toHaveLength(1);
+    expect(written[0]).toMatchObject({
+      day: '2026-11-06',
+      state: 'rest',
+      streak: 0,
+      level: null,
+      levelText: null,
+      done: 0,
+      total: 0,
+      missions: [],
+      message: null,
+      unseen: 0,
+      pending: [],
+    });
   });
 });

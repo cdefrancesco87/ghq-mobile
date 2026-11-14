@@ -1,11 +1,16 @@
 import { unseenNotificationCount } from '../../db/repositories/appNotifications';
 import type { ActionClock } from '../../db/repositories/hero';
 import { hasProfile } from '../../db/repositories/onboarding';
-import { getSetting } from '../../db/repositories/settings';
+import { gameDayOf, getSetting } from '../../db/repositories/settings';
 import { getTodayView } from '../../db/repositories/todayView';
 import type { Db } from '../../db/types';
 import { handleWidgetTarget, type WidgetOutcome } from './actions';
-import { buildWidgetSnapshot, widgetThemeOf, type WidgetSnapshot } from './snapshot';
+import {
+  buildWidgetSnapshot,
+  emptyWidgetSnapshot,
+  widgetThemeOf,
+  type WidgetSnapshot,
+} from './snapshot';
 import { widgetTextsOf } from './texts';
 
 // Keeps the widgets in line with the data (design-sezioni.md 12.2, 12.3): first the touches the
@@ -32,7 +37,10 @@ export interface WidgetSyncOptions {
 export interface WidgetSyncResult {
   /** What happened to every touch read from the widgets. */
   readonly outcomes: readonly WidgetOutcome[];
-  /** The snapshot written; null before the first launch is finished. */
+  /**
+   * The snapshot written; null before the first launch is finished (or after a wipe), when an
+   * empty one is written.
+   */
   readonly snapshot: WidgetSnapshot | null;
 }
 
@@ -43,6 +51,16 @@ export async function syncWidgets(
   options: WidgetSyncOptions = {},
 ): Promise<WidgetSyncResult> {
   if (!hasProfile(db)) {
+    // The touches recorded on the old data are dropped with them: the empty snapshot has no
+    // list of touches.
+    const now = clock();
+    host.update(
+      emptyWidgetSnapshot(
+        gameDayOf(now.now, now.tzOffset, getSetting(db, 'day_change')),
+        widgetThemeOf(getSetting(db, 'theme')),
+        { texts: widgetTextsOf(db), generation: now.now.toString(36) },
+      ),
+    );
     return { outcomes: [], snapshot: null };
   }
   const act = options.act ?? ((action) => action(db, clock()));

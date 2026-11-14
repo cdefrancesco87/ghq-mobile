@@ -268,3 +268,44 @@ export function buildWidgetSnapshot(
     pending: [],
   };
 }
+
+/**
+ * The snapshot with no profile (before the first launch is finished, after «Elimina tutti i
+ * dati»): no missions, no streak, no level, no message, so a widget left on the home screen
+ * shows none of the data deleted.
+ */
+export function emptyWidgetSnapshot(
+  day: GameDay,
+  theme: WidgetTheme,
+  { texts, generation }: Pick<WidgetExtras, 'texts' | 'generation'>,
+): WidgetSnapshot {
+  return {
+    day,
+    generation,
+    essential: false,
+    state: 'rest',
+    streak: 0,
+    level: null,
+    levelText: null,
+    done: 0,
+    total: 0,
+    remaining: 0,
+    remainingText: texts.remaining(0),
+    progressText: texts.progress(0, 0),
+    message: null,
+    remainingTexts: [texts.remaining(0)],
+    progressTexts: [texts.progress(0, 0)],
+    fullDayText: texts.fullDay,
+    missions: [],
+    more: 0,
+    moreText: null,
+    companion: { stage: 'egg', mood: 'normal' },
+    unseen: 0,
+    unseenText: null,
+    colors: { light: colorsOf(theme.light.colors), dark: colorsOf(theme.dark.colors) },
+    description: 'GHQ',
+    moreA11y: texts.moreLabel,
+    urls: { open: TODAY_URL, more: TODAY_URL },
+    pending: [],
+  };
+}
