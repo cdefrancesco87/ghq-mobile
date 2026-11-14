@@ -1007,6 +1007,32 @@ describe('Today: measurable missions', () => {
     );
     expectHeroMatchesLog(db);
   });
+
+  it('adds the value once on a double tap while the sheet slides away', async () => {
+    const db = newGame(['drink_water', 'journal']);
+    const water = missionId(db, 'drink_water');
+    await openToday(db);
+
+    await fireEvent(screen.getByTestId(`${row(water)}-control`), 'longPress');
+    await fireEvent.changeText(await screen.findByTestId('today-value-input'), '0,5');
+    await fireEvent.press(screen.getByTestId('today-value-add'));
+    await fireEvent.press(screen.getByTestId('today-value-add'));
+    expect(dayOf(db, water)).toMatchObject({ status: 'partial', value: 0.5 });
+    expectHeroMatchesLog(db);
+  });
+
+  it('opens the value sheet empty again for the same mission', async () => {
+    const db = newGame(['drink_water', 'journal']);
+    const water = missionId(db, 'drink_water');
+    await openToday(db);
+
+    await fireEvent(screen.getByTestId(`${row(water)}-control`), 'longPress');
+    await fireEvent.changeText(await screen.findByTestId('today-value-input'), '1');
+    await fireEvent.press(screen.getByTestId('today-value-sheet-backdrop'));
+    await fireEvent(screen.getByTestId(`${row(water)}-control`), 'longPress');
+    expect(screen.getByTestId('today-value-input')).toHaveProp('value', '');
+    expect(screen.getByTestId('today-value-add')).toBeDisabled();
+  });
 });
 
 describe('Today: quest of the first launch', () => {

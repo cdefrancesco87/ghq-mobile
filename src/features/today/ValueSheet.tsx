@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View } from 'react-native';
 
@@ -29,10 +29,27 @@ export function ValueSheet({ item, onClose, onAdd }: ValueSheetProps) {
   const [text, setText] = useState('');
   // The last mission shown, so the sheet keeps its texts while it slides away.
   const [shown, setShown] = useState(item);
+  // Every opening starts empty, even for the mission shown last time.
+  const [wasOpen, setWasOpen] = useState(false);
+  // Set by «Aggiungi»: a second tap while the sheet slides away must not add the amount again.
+  const [submitted, setSubmitted] = useState(false);
+  const submittedRef = useRef(false);
+  const open = item !== null;
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setText('');
+      setSubmitted(false);
+    }
+  }
   if (item !== null && item !== shown) {
     setShown(item);
-    setText('');
   }
+  useEffect(() => {
+    if (open) {
+      submittedRef.current = false;
+    }
+  }, [open]);
   const shape = SHAPES[family].control;
   const radius = shape.kind === 'rounded' ? shape.radius : 0;
   const amount = parseAmount(text);
@@ -73,12 +90,15 @@ export function ValueSheet({ item, onClose, onAdd }: ValueSheetProps) {
         <Button
           testID="today-value-add"
           label={t('today.value.add')}
-          disabled={amount === null}
-          disabledReason={t('today.value.invalid')}
+          disabled={amount === null || submitted}
+          disabledReason={submitted ? undefined : t('today.value.invalid')}
           onPress={() => {
-            if (shown !== null && amount !== null) {
-              onAdd(shown, amount);
+            if (shown === null || amount === null || submittedRef.current) {
+              return;
             }
+            submittedRef.current = true;
+            setSubmitted(true);
+            onAdd(shown, amount);
           }}
         />
       </View>
