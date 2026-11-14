@@ -78,7 +78,14 @@ describe('scheduleReminder', () => {
     expect(scheduler.scheduled).toHaveLength(1);
     expect(scheduler.scheduled[0]).toMatchObject({ missionId: journal, snoozeCount: 0 });
     expect(reminders(db)).toEqual([
-      { osId, missionId: journal, gameDay: '2026-11-06', fireAt: NOW + 10_000, snoozeCount: 0 },
+      {
+        osId,
+        missionId: journal,
+        gameDay: '2026-11-06',
+        fireAt: NOW + 10_000,
+        snoozeCount: 0,
+        contentHash: expect.stringMatching(/^[0-9a-f]{8}$/),
+      },
     ]);
   });
 
@@ -213,6 +220,7 @@ describe('the Snooze action', () => {
         gameDay: '2026-11-06',
         fireAt: NOW + SNOOZE_MS,
         snoozeCount: 1,
+        contentHash: expect.stringMatching(/^[0-9a-f]{8}$/),
       },
     ]);
     expect(scheduler.scheduled[1]).toMatchObject({ snoozeCount: 1, missionId: journal });

@@ -43,6 +43,13 @@
       "when": 1794587770867,
       "tag": "0005_boss_main_quest_and_chains",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794649772428,
+      "tag": "0006_scheduled_reminders_content_hash",
+      "breakpoints": true
     }
   ]
 }

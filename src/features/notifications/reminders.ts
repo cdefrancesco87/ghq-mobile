@@ -8,7 +8,7 @@ import { missions, scheduledReminders } from '../../db/schema';
 import type { Db } from '../../db/types';
 import type { GameDay } from '../../rules/types';
 import { incrementLabel } from '../shared/amount';
-import { notificationTextsOf } from './texts';
+import { notificationTextsOf, type NotificationTexts } from './texts';
 
 // The logic of the actions on a reminder (stack-tecnologico.md, point 5; modello-dati.md 3.9 and
 // 4.4). It depends on no screen, no React state and no Expo module: the notifications of the
@@ -145,6 +145,66 @@ function remember(
   });
 }
 
+/** A short fingerprint of the texts of a notification (FNV-1a, 32 bits, in hex). */
+function fingerprint(parts: readonly (string | number | null)[]): string {
+  const text = JSON.stringify(parts);
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+/** The fingerprint of the texts of a reminder: title, body and the labels of its buttons. */
+export function reminderContentHash(request: ReminderRequest): string {
+  return fingerprint([
+    request.title,
+    request.body,
+    request.completeLabel,
+    request.snoozeLabel,
+    request.increment?.amount ?? null,
+    request.increment?.unit ?? null,
+  ]);
+}
+
+/** The fingerprint of the texts of a group: its title and its body. */
+export function groupContentHash(request: ReminderGroupRequest): string {
+  return fingerprint([request.title, request.body]);
+}
+
+export interface ReminderRequestInput {
+  readonly missionId: string;
+  readonly fireAt: number;
+  readonly snoozeCount?: number;
+}
+
+/**
+ * The notification of a reminder of a mission, with the texts of today (name, language, theme,
+ * increment). `texts` can be passed when many reminders are built together.
+ */
+export function reminderRequestOf(
+  db: Db,
+  input: ReminderRequestInput,
+  texts: NotificationTexts = notificationTextsOf(db),
+): ReminderRequest {
+  const mission = missionOf(db, input.missionId);
+  const increment = incrementOf(mission);
+  return {
+    missionId: input.missionId,
+    title: mission.name,
+    body: texts.reminderBody,
+    snoozeLabel: texts.snoozeLabel,
+    fireAt: input.fireAt,
+    snoozeCount: input.snoozeCount ?? 0,
+    increment,
+    completeLabel:
+      increment === null
+        ? null
+        : incrementLabel(increment.amount, increment.unit, getSetting(db, 'language')),
+  };
+}
+
 /**
  * Schedules a reminder of a mission and remembers it in `scheduled_reminders`, so that a
  * completion can cancel it and the snoozes can be counted.
@@ -155,23 +215,8 @@ export async function scheduleReminder(
   input: ScheduleReminderInput,
   replacing: string | null = null,
 ): Promise<string> {
-  const mission = missionOf(db, input.missionId);
-  const increment = incrementOf(mission);
-  const snoozeCount = input.snoozeCount ?? 0;
-  const texts = notificationTextsOf(db);
-  const osId = await scheduler.schedule({
-    missionId: input.missionId,
-    title: mission.name,
-    body: texts.reminderBody,
-    snoozeLabel: texts.snoozeLabel,
-    fireAt: input.fireAt,
-    snoozeCount,
-    increment,
-    completeLabel:
-      increment === null
-        ? null
-        : incrementLabel(increment.amount, increment.unit, getSetting(db, 'language')),
-  });
+  const request = reminderRequestOf(db, input);
+  const osId = await scheduler.schedule(request);
   try {
     remember(
       db,
@@ -181,7 +226,8 @@ export async function scheduleReminder(
         gameDay:
           input.gameDay ?? gameDayOf(input.now, input.tzOffset, getSetting(db, 'day_change')),
         fireAt: input.fireAt,
-        snoozeCount,
+        snoozeCount: request.snoozeCount,
+        contentHash: reminderContentHash(request),
       },
       replacing,
     );
@@ -219,6 +265,23 @@ export interface ScheduleGroupInput {
   readonly fireAt: number;
 }
 
+/** The notification of a group, with the texts of today. */
+export function groupRequestOf(
+  db: Db,
+  members: readonly { readonly missionId: string }[],
+  fireAt: number,
+  texts: NotificationTexts = notificationTextsOf(db),
+): ReminderGroupRequest {
+  const names = members.map((member) => missionOf(db, member.missionId).name);
+  const text = texts.group(names);
+  return {
+    missionIds: members.map((member) => member.missionId),
+    title: text.title,
+    body: text.body,
+    fireAt,
+  };
+}
+
 /**
  * Schedules one notification for reminders of the same minute (design-sezioni.md 11.4) and
  * remembers a row for each mission, so that completing one cancels the group.
@@ -228,14 +291,9 @@ export async function scheduleReminderGroup(
   scheduler: ReminderScheduler,
   { members, fireAt }: ScheduleGroupInput,
 ): Promise<string> {
-  const names = members.map((member) => missionOf(db, member.missionId).name);
-  const text = notificationTextsOf(db).group(names);
-  const groupId = await scheduler.scheduleGroup({
-    missionIds: members.map((member) => member.missionId),
-    title: text.title,
-    body: text.body,
-    fireAt,
-  });
+  const request = groupRequestOf(db, members, fireAt);
+  const contentHash = groupContentHash(request);
+  const groupId = await scheduler.scheduleGroup(request);
   try {
     db.transaction((tx) => {
       for (const member of members) {
@@ -246,6 +304,7 @@ export async function scheduleReminderGroup(
             gameDay: member.gameDay,
             fireAt,
             snoozeCount: 0,
+            contentHash,
           })
           .run();
       }

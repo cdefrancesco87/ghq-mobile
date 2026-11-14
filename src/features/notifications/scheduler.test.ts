@@ -99,6 +99,7 @@ describe('syncReminders', () => {
       gameDay: '2026-11-06',
       fireAt: at(FRIDAY, 21),
       snoozeCount: 0,
+      contentHash: expect.stringMatching(/^[0-9a-f]{8}$/),
     });
     expect(rows(db)[1]).toMatchObject({ gameDay: '2026-11-07', fireAt: at(7, 8) });
   });
@@ -110,6 +111,48 @@ describe('syncReminders', () => {
     await syncReminders(db, scheduler, { now: NOW + 60_000, tzOffset: TZ });
     expect(rows(db)).toEqual(before);
     expect(scheduler.cancelled).toEqual([]);
+  });
+
+  it('schedules again the reminders whose text changed: a new name or a new language', async () => {
+    const { db, journal, scheduler } = setUp();
+    await syncReminders(db, scheduler, SYNC);
+    updateMission(db, journal, { name: 'Diary' }, SYNC);
+    await syncReminders(db, scheduler, SYNC);
+    expect(new Set([...scheduler.pending.values()].map((request) => request.title))).toEqual(
+      new Set(['Diary']),
+    );
+    expect(scheduler.pending.size).toBe(13);
+    expect(rows(db)).toHaveLength(13);
+
+    const italian = [...scheduler.pending.values()][0].body;
+    setSetting(db, 'language', 'en', NOW);
+    await syncReminders(db, scheduler, SYNC);
+    const bodies = new Set([...scheduler.pending.values()].map((request) => request.body));
+    expect(bodies.size).toBe(1);
+    expect(bodies.has(italian)).toBe(false);
+    expect(rows(db)).toHaveLength(13);
+  });
+
+  it('schedules again a measurable reminder when its increment changes («+250 ml»)', async () => {
+    const { db, journal, scheduler } = setUp(['21:00']);
+    updateMission(
+      db,
+      journal,
+      { goal: { type: 'quantity', target: 2000, unit: 'milliliter', increment: 250 } },
+      SYNC,
+    );
+    await syncReminders(db, scheduler, SYNC);
+    const labelBefore = [...scheduler.pending.values()][0].completeLabel;
+    updateMission(
+      db,
+      journal,
+      { goal: { type: 'quantity', target: 2000, unit: 'milliliter', increment: 500 } },
+      SYNC,
+    );
+    await syncReminders(db, scheduler, SYNC);
+    const labels = new Set([...scheduler.pending.values()].map((request) => request.completeLabel));
+    expect(labels.size).toBe(1);
+    expect(labels.has(labelBefore)).toBe(false);
   });
 
   it('follows a change of the times and of the quiet hours', async () => {
@@ -300,6 +343,18 @@ describe('syncReminders with reminders of the same minute (design 11.4)', () => 
     await syncReminders(db, scheduler, { now: NOW + 60_000, tzOffset: TZ });
     expect(rows(db)).toEqual(before);
     expect(scheduler.cancelled).toEqual([]);
+  });
+
+  it('schedules a group again when the name of one of its missions changes', async () => {
+    const { db, ids, scheduler } = setUpThree();
+    await syncReminders(db, scheduler, SYNC);
+    updateMission(db, ids[0], { name: 'Diary' }, SYNC);
+    await syncReminders(db, scheduler, SYNC);
+    expect(scheduler.groups.size).toBe(6);
+    for (const group of scheduler.groups.values()) {
+      expect(group.body).toContain('Diary');
+    }
+    expect(rows(db)).toHaveLength(18);
   });
 
   it('splits a group when one of its missions is completed before it fires', async () => {

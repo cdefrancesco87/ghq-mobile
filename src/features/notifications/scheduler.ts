@@ -13,11 +13,16 @@ import type { GameDay } from '../../rules/types';
 import { reminderSlots, type ReminderSlot } from '../../rules/notifications';
 import { plannedReminders } from '../../rules/reminders';
 import {
+  groupContentHash,
   groupOf,
+  groupRequestOf,
+  reminderContentHash,
+  reminderRequestOf,
   scheduleReminder,
   scheduleReminderGroup,
   type ReminderScheduler,
 } from './reminders';
+import { notificationTextsOf } from './texts';
 
 // Keeps the notifications of the system and `scheduled_reminders` aligned with the reminders of
 // the missions, on a window of a few days (iOS keeps at most 64 scheduled notifications). It runs
@@ -145,14 +150,40 @@ async function sync(db: Db, scheduler: ReminderScheduler, input: SyncInput): Pro
     ]),
   );
 
-  // The scheduled notifications that are still wanted stay; a group stays only whole.
+  // The texts of the notifications as they would be scheduled now: a reminder whose name,
+  // increment, language or theme changed is scheduled again.
+  const texts = notificationTextsOf(db);
+  const sameContent = (slot: ReminderSlot, contentHash: string | null): boolean => {
+    try {
+      const hash = slot.grouped
+        ? groupContentHash(groupRequestOf(db, slot.members, slot.fireAt, texts))
+        : reminderContentHash(
+            reminderRequestOf(
+              db,
+              { missionId: slot.members[0].missionId, fireAt: slot.fireAt },
+              texts,
+            ),
+          );
+      return hash === contentHash;
+    } catch {
+      return false;
+    }
+  };
+
+  // The scheduled notifications that are still wanted stay; a group stays only whole, and only
+  // with the same texts.
   const groups = new Map<string, (typeof existing)[number][]>();
   for (const row of keptFuture) {
     const group = groupOf(row.osId);
     if (group === null) {
       const key = keyOf(row);
       const slot = wanted.get(key);
-      if (slot !== undefined && !slot.grouped && slot.members[0].gameDay === row.gameDay) {
+      if (
+        slot !== undefined &&
+        !slot.grouped &&
+        slot.members[0].gameDay === row.gameDay &&
+        sameContent(slot, row.contentHash)
+      ) {
         wanted.delete(key);
       } else {
         stale.push(row.osId);
@@ -172,7 +203,12 @@ async function sync(db: Db, scheduler: ReminderScheduler, input: SyncInput): Pro
       slot?.members.every((member) =>
         rows.some((row) => row.missionId === member.missionId && row.gameDay === member.gameDay),
       ) ?? false;
-    if (rows.length === size && slot !== undefined && sameDays) {
+    if (
+      rows.length === size &&
+      slot !== undefined &&
+      sameDays &&
+      rows.every((row) => sameContent(slot, row.contentHash))
+    ) {
       wanted.delete(key);
     } else {
       stale.push(...rows.map((row) => row.osId));

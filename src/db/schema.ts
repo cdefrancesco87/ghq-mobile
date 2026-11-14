@@ -335,6 +335,12 @@ export const scheduledReminders = sqliteTable(
     gameDay: text('game_day').$type<GameDay>().notNull(),
     fireAt: integer('fire_at').notNull(),
     snoozeCount: integer('snooze_count').notNull().default(0),
+    /**
+     * A fingerprint of the texts of the notification (title, body, buttons): a reminder whose
+     * texts changed (a new name, increment, language or theme) is scheduled again. Null for the
+     * rows written before it existed, which are scheduled again once.
+     */
+    contentHash: text('content_hash'),
   },
   (t) => [index('scheduled_reminders_mission_idx').on(t.missionId, t.gameDay)],
 );
