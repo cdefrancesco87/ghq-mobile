@@ -1478,9 +1478,11 @@
     "open": "+ Réalisation oubliée",
     "title": "Réalisation oubliée",
     "note": "Donne seulement les {{xp}} et pièces de base. Ne rend pas les points de {{hp}} perdus et ne répare pas les jours de {{streak}} déjà perdus.",
+    "noteEssential": "Donne seulement les {{xp}} de base. Ne répare pas les jours de {{streak}} déjà perdus.",
     "confirm": "Ajouter la réalisation",
     "choose": "Choisis d'abord ce que tu as fait",
     "done": "Réalisation ajoutée : +{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+    "doneEssential": "Réalisation ajoutée : +{{xp}} {{xpTerm}}",
     "empty": "Rien à rattraper ces 7 derniers jours."
   },
   "missionDetail": {

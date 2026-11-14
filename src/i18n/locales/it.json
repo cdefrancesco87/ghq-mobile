@@ -1478,9 +1478,11 @@
     "open": "+ Completamento dimenticato",
     "title": "Completamento dimenticato",
     "note": "Dà solo {{xp}} e monete di base. Non restituisce i punti di {{hp}} persi e non ripara i giorni di {{streak}} già persi.",
+    "noteEssential": "Dà solo {{xp}} di base. Non ripara i giorni di {{streak}} già persi.",
     "confirm": "Aggiungi il completamento",
     "choose": "Scegli prima cosa hai completato",
     "done": "Completamento aggiunto: +{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+    "doneEssential": "Completamento aggiunto: +{{xp}} {{xpTerm}}",
     "empty": "Negli ultimi 7 giorni non c'è nulla da recuperare."
   },
   "missionDetail": {

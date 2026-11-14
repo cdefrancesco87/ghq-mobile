@@ -487,6 +487,47 @@ describe('Statistics: forgotten completion', () => {
     expect(screen.getByText(/^Completamento aggiunto: \+\d+ XP · \+\d+ monete$/)).toBeOnTheScreen();
   });
 
+  it('in the Essential mode speaks of no coins nor health', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal', 'no_social_evening']);
+    setSetting(db, 'game_mode', 'essential', at(6, 9));
+    const journal = missionId(db, 'journal');
+    await openLog(db, 9);
+
+    await fireEvent.press(screen.getByTestId('stats-log-backfill'));
+    expect(screen.getByTestId('backfill-note')).toHaveTextContent(
+      'Dà solo XP di base. Non ripara i giorni di serie già persi.',
+    );
+    await fireEvent.press(screen.getByTestId(`backfill-option-2026-11-07-${journal}`));
+    await fireEvent.press(screen.getByTestId('backfill-confirm'));
+    await act(async () => {
+      jest.advanceTimersByTime(SHEET_DURATION_MS);
+    });
+
+    expect(backfills(db)).toHaveLength(1);
+    expect(screen.getByText(/^Completamento aggiunto: \+\d+ XP$/)).toBeOnTheScreen();
+  });
+
+  it('adds once on a second tap while the sheet slides away, without an error', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['journal', 'no_social_evening']);
+    const journal = missionId(db, 'journal');
+    await openLog(db, 9);
+
+    await fireEvent.press(screen.getByTestId('stats-log-backfill'));
+    await fireEvent.press(screen.getByTestId(`backfill-option-2026-11-07-${journal}`));
+    await fireEvent.press(screen.getByTestId('backfill-confirm'));
+    await fireEvent.press(screen.getByTestId('backfill-confirm'));
+    expect(screen.queryByText('Qualcosa non ha funzionato. Riprova.')).toBeNull();
+    await act(async () => {
+      jest.advanceTimersByTime(SHEET_DURATION_MS);
+    });
+
+    expect(backfills(db)).toHaveLength(1);
+    expect(screen.queryByText('Qualcosa non ha funzionato. Riprova.')).toBeNull();
+    expect(screen.getByText(/^Completamento aggiunto: /)).toBeOnTheScreen();
+  });
+
   it('offers no forgotten completion when nothing was missed', async () => {
     await openLog(newGame(['journal']), 6);
     expect(screen.queryByTestId('stats-log-backfill')).toBeNull();

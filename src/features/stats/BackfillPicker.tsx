@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { useMomentQueue } from '@/features/shared/MomentQueue';
 import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
+import { useEssential } from '@/features/shared/useGameMode';
 import { useUndoToast } from '@/features/shared/UndoToast';
 import { termInSentence } from '@/i18n/lexicon';
 import { addDays } from '@/rules/gameDay';
@@ -44,30 +45,38 @@ export function BackfillPicker({ days, today, withDays = true, onDone }: Backfil
   const toast = useUndoToast();
   const { enqueue } = useMomentQueue();
   const [choice, setChoice] = useState<Choice | null>(null);
+  // A second tap on «Aggiungi» while the sheet slides away adds nothing (and shows no error).
+  const added = useRef(false);
+  // Essential (8.11): no coins and no health in the texts.
+  const essential = useEssential();
   const lexicon = (key: string) => t(`lexicon.${key}`, { context: family });
 
   const dayTitle = (day: GameDay) =>
     day === addDays(today, -1) ? t('questLog.yesterday') : longDay(day, i18n.language);
 
   const confirm = () => {
-    if (choice === null) {
+    if (choice === null || added.current) {
       return;
     }
     try {
       const result = runAction((db, clock) =>
         backfillCompletion(db, { ...choice, now: clock.now, tzOffset: clock.tzOffset }),
       );
+      added.current = true;
+      setChoice(null);
       onDone();
       // The moments and the toast come once the sheet has slid away: two modals at once do not
       // open on iOS.
       setTimeout(() => {
         toast.show({
-          message: t('backfill.done', {
-            xp: result.xp,
-            xpTerm: lexicon('xp_pl'),
-            coins: result.coins,
-            coinsTerm: termInSentence(lexicon('coins_pl'), i18n.language),
-          }),
+          message: essential
+            ? t('backfill.doneEssential', { xp: result.xp, xpTerm: lexicon('xp_pl') })
+            : t('backfill.done', {
+                xp: result.xp,
+                xpTerm: lexicon('xp_pl'),
+                coins: result.coins,
+                coinsTerm: termInSentence(lexicon('coins_pl'), i18n.language),
+              }),
         });
         enqueue(result.moments);
       }, SHEET_DURATION_MS);
@@ -101,7 +110,10 @@ export function BackfillPicker({ days, today, withDays = true, onDone }: Backfil
                     )}
                     <Pressable
                       testID={`backfill-option-${day}-${mission.id}`}
-                      onPress={() => setChoice({ day, missionId: mission.id })}
+                      onPress={() => {
+                        added.current = false;
+                        setChoice({ day, missionId: mission.id });
+                      }}
                       accessibilityRole="radio"
                       accessibilityState={{ checked }}
                       accessibilityLabel={
@@ -120,11 +132,16 @@ export function BackfillPicker({ days, today, withDays = true, onDone }: Backfil
         ))
       )}
       <ThemedText testID="backfill-note" variant="caption" color={colors.textMuted}>
-        {t('backfill.note', {
-          xp: lexicon('xp_pl'),
-          hp: termInSentence(lexicon('hp'), i18n.language),
-          streak: termInSentence(lexicon('streak'), i18n.language),
-        })}
+        {essential
+          ? t('backfill.noteEssential', {
+              xp: lexicon('xp_pl'),
+              streak: termInSentence(lexicon('streak'), i18n.language),
+            })
+          : t('backfill.note', {
+              xp: lexicon('xp_pl'),
+              hp: termInSentence(lexicon('hp'), i18n.language),
+              streak: termInSentence(lexicon('streak'), i18n.language),
+            })}
       </ThemedText>
       <Button
         testID="backfill-confirm"

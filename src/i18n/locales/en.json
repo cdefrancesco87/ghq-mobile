@@ -1478,9 +1478,11 @@
     "open": "+ Forgotten completion",
     "title": "Forgotten completion",
     "note": "Gives only base {{xp}} and coins. It does not give back lost {{hp}} points or repair {{streak}} days already lost.",
+    "noteEssential": "Gives only base {{xp}}. It does not repair {{streak}} days already lost.",
     "confirm": "Add the completion",
     "choose": "First choose what you completed",
     "done": "Completion added: +{{xp}} {{xpTerm}} · +{{coins}} {{coinsTerm}}",
+    "doneEssential": "Completion added: +{{xp}} {{xpTerm}}",
     "empty": "Nothing to catch up on in the last 7 days."
   },
   "missionDetail": {
