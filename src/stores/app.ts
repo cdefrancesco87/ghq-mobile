@@ -270,6 +270,22 @@ export function runAction<T>(action: (db: Db, clock: ActionClock) => T): T {
   const { db, clock } = getSession();
   const now = clock();
   const result = action(db, now);
+  afterAction(db, now);
+  return result;
+}
+
+/**
+ * The work that follows an action written outside `runAction`: an action of a notification
+ * (handled with an await, or by the background task on another connection) or a change of the
+ * language or of the theme. It unlocks the badges, refreshes the stores and tells the listeners,
+ * as `runAction` does. It throws only when the session is closed.
+ */
+export function refreshAfterOutsideChange(): void {
+  const { db, clock } = getSession();
+  afterAction(db, clock());
+}
+
+function afterAction(db: Db, now: ActionClock): void {
   checkBadgesAfter(db, now);
   loadStores(db);
   useAppStore.setState({ hasProfile: hasProfile(db) });
@@ -280,5 +296,4 @@ export function runAction<T>(action: (db: Db, clock: ActionClock) => T): T {
       // The action is already saved: a listener that fails must not make it look failed.
     }
   }
-  return result;
 }

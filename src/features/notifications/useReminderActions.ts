@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
-import { onActionDone, useAppStore } from '@/stores/app';
+import type { Db } from '@/db/types';
+import { onActionDone, refreshAfterOutsideChange, useAppStore } from '@/stores/app';
 import { useHighlightStore } from '@/stores/highlight';
 
 import {
@@ -54,6 +55,46 @@ export function openTodayFrom(response: Notifications.NotificationResponse): boo
 }
 
 /**
+ * The work after an action written outside `runAction` (badges, stores, listeners: widgets, Live
+ * Activities, health, boss warnings, reminders). It never throws: with the session closed (a wipe
+ * or a restore) the next start does it.
+ */
+function refreshQuietly(): void {
+  try {
+    refreshAfterOutsideChange();
+  } catch {
+    // The session is closed.
+  }
+}
+
+/**
+ * A response that reaches the app while it runs: it opens Today when touched, runs the action of
+ * its button, then the same work that follows an action of the app (`runAction`). It never
+ * rejects.
+ */
+export async function respondInApp(
+  db: Db,
+  response: Notifications.NotificationResponse,
+): Promise<void> {
+  openTodayFrom(response);
+  try {
+    await handleNotificationResponse(db, response);
+  } catch {
+    // Nothing saved, or saved before the failure: the refresh shows the real state.
+  }
+  refreshQuietly();
+}
+
+/**
+ * The app comes back to the front: on Android the background task may have saved an action of a
+ * notification on its own connection, so the stores are reloaded and the listeners run, as after
+ * an action of the app (this also moves the check-in after 3 days). It never throws.
+ */
+export function refreshWhenActive(): void {
+  refreshQuietly();
+}
+
+/**
  * Registers the task of the reminders and listens to the responses while the app runs (iPhone
  * actions and Android with the app open). The response that started the app is handled too. It
  * schedules the reminders and the evening summary at the start and after every action of the
@@ -77,12 +118,12 @@ export function useReminderActions(): void {
     });
     const appState = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
-        void syncSystemRecall(db);
+        // The listener of the actions above moves the check-in after 3 days.
+        refreshWhenActive();
       }
     });
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      openTodayFrom(response);
-      void handleNotificationResponse(db, response).then(() => syncSystemReminders(db));
+      void respondInApp(db, response);
     });
     void Notifications.getLastNotificationResponseAsync()
       .then((response) => {
