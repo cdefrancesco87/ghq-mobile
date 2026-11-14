@@ -31,6 +31,7 @@ import { Sheet } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { MIN_TOUCH } from '@/features/shared/touch';
 import { useEssential } from '@/features/shared/useGameMode';
+import { useUndoToast } from '@/features/shared/UndoToast';
 import { useReduceMotion } from '@/features/shared/useReduceMotion';
 import { ItemSprite } from '@/features/shop/ItemSprite';
 import { useShopTexts } from '@/features/shop/shopTexts';
@@ -95,6 +96,11 @@ export function CompanionScreen({ view, gifts, cheerOnOpen = false }: CompanionS
   const essential = useEssential();
   const shopTexts = useShopTexts();
   const cheerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toast = useUndoToast();
+  // Two quick taps (or Invio then the blur) arrive before the screen draws again: once only.
+  const given = useRef(false);
+  const renamed = useRef(false);
+  const failed = () => toast.show({ message: t('today.missions.errors.failed') });
   const jump = useSharedValue(0);
   const jumping = useAnimatedStyle(() => ({ transform: [{ translateY: jump.get() }] }));
 
@@ -152,11 +158,17 @@ export function CompanionScreen({ view, gifts, cheerOnOpen = false }: CompanionS
 
   const give = (key: GiftKey) => {
     // A second tap while the sheet slides away gives nothing more.
-    if (!giftsOpen) {
+    if (!giftsOpen || given.current) {
       return;
     }
-    runAction((db, clock) => giveGift(db, key, clock));
+    given.current = true;
     setGiftsOpen(false);
+    try {
+      runAction((db, clock) => giveGift(db, key, clock));
+    } catch {
+      failed();
+      return;
+    }
     announceOnIos(t('companion.gift.given', { name, gift: shopTexts.name(key) }));
     cheer();
   };
@@ -178,15 +190,21 @@ export function CompanionScreen({ view, gifts, cheerOnOpen = false }: CompanionS
   };
 
   const startEditing = () => {
+    renamed.current = false;
     setDraft(name);
     setEditing(true);
   };
   const save = () => {
-    if (!editing) {
+    if (!editing || renamed.current) {
       return;
     }
+    renamed.current = true;
     setEditing(false);
-    runAction((db, clock) => renameCompanion(db, draft, themeDefault, clock));
+    try {
+      runAction((db, clock) => renameCompanion(db, draft, themeDefault, clock));
+    } catch {
+      failed();
+    }
   };
 
   const count =
@@ -382,7 +400,10 @@ export function CompanionScreen({ view, gifts, cheerOnOpen = false }: CompanionS
               accessibilityRole="button"
               accessibilityLabel={t('companion.gift.row')}
               accessibilityHint={t('companion.gift.rowHint')}
-              onPress={() => setGiftsOpen(true)}
+              onPress={() => {
+                given.current = false;
+                setGiftsOpen(true);
+              }}
               style={styles.giftRow}
             >
               <Icon name="regalo" color={colors.text} />

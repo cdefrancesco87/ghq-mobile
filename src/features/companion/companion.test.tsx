@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 
+import * as companionRepository from '@/db/repositories/companion';
 import { completeMission } from '@/db/repositories/completion';
 import { appendEvent } from '@/db/repositories/events';
 import { changeHero } from '@/db/repositories/hero';
@@ -149,6 +150,25 @@ describe('Companion sheet', () => {
     expect(db.select().from(companion).get()?.name).toBe('Fiocco');
     const renamed = db.select().from(events).where(eq(events.type, 'companion.renamed')).all();
     expect(renamed.map((event) => event.payload)).toEqual([{ from: null, to: 'Fiocco' }]);
+  });
+
+  it('says when the rename fails instead of throwing', async () => {
+    const db = newGame(['meditation']);
+    await open(db);
+    const rename = jest.spyOn(companionRepository, 'renameCompanion').mockImplementation(() => {
+      throw new Error('disk full');
+    });
+    try {
+      await fireEvent.press(screen.getByTestId('companion-rename'));
+      await fireEvent.changeText(screen.getByTestId('companion-name-input'), 'Fiocco');
+      await fireEvent(screen.getByTestId('companion-name-input'), 'submitEditing');
+    } finally {
+      rename.mockRestore();
+    }
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(
+      'Qualcosa non ha funzionato. Riprova.',
+    );
+    expect(db.select().from(companion).get()?.name).toBeNull();
   });
 
   it('keeps following the theme while the name is the default one', async () => {
@@ -400,6 +420,33 @@ describe('Companion gifts', () => {
     expect(
       screen.getByTestId('companion-gift-cheer', HIDDEN).props.children as unknown[],
     ).toHaveLength(1);
+  });
+
+  it('gives the last gift once on a double tap, without throwing', async () => {
+    const db = sadPuppyWith('ball');
+    await open(db);
+    await fireEvent.press(screen.getByTestId('companion-gift-open'));
+    // Two taps before the screen has drawn again.
+    const press = screen.getByTestId('companion-gift-give-ball').props.onClick as () => void;
+    await act(async () => {
+      press();
+      press();
+    });
+    expect(owned(db, 'ball')).toBe(0);
+    expect(db.select().from(events).where(eq(events.type, 'companion.gift')).all()).toHaveLength(1);
+  });
+
+  it('says when the gift cannot be given instead of throwing', async () => {
+    const db = sadPuppyWith('ball');
+    await open(db);
+    await fireEvent.press(screen.getByTestId('companion-gift-open'));
+    // The gift is used up meanwhile (e.g. from another screen).
+    db.delete(inventory).run();
+    await fireEvent.press(screen.getByTestId('companion-gift-give-ball'));
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent(
+      'Qualcosa non ha funzionato. Riprova.',
+    );
+    expect(db.select().from(events).where(eq(events.type, 'companion.gift')).all()).toHaveLength(0);
   });
 
   it('says when the companion is already happy, and still lets the gift be given', async () => {
