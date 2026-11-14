@@ -220,6 +220,19 @@ describe('Habits: archive and delete', () => {
     expect(screen.getByTestId('habits-filter-all')).toHaveTextContent('Tutte 2');
   });
 
+  it('opens the editor from the menu once the menu has slid away', async () => {
+    jest.useFakeTimers();
+    const db = newGame(['drink_water']);
+    const water = missionId(db, 'drink_water');
+    await openHabits(db);
+
+    await openMenu(water);
+    await fireEvent.press(screen.getByTestId('habits-menu-edit'));
+    expect(screen.queryByTestId('editor-name')).toBeNull();
+    await waitForDialog();
+    expect(screen.getByTestId('editor-name')).toHaveProp('value', 'templates.drink_water.name');
+  });
+
   it('keeps the pause when the archive of a paused mission is undone', async () => {
     const db = newGame(['drink_water', 'read_pages']);
     const water = missionId(db, 'drink_water');

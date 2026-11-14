@@ -42,7 +42,7 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
   // The sheets asked from the menu wait for the menu to slide away: on iOS a modal shown while
   // another one is still closing may never appear.
   const [queued, setQueued] = useState<
-    { sheet: 'picker' } | { sheet: 'skip' | 'value'; item: TodayMission } | null
+    { sheet: 'picker' } | { sheet: 'skip' | 'value' | 'editor'; item: TodayMission } | null
   >(null);
 
   useEffect(() => {
@@ -55,12 +55,17 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
         setPickerOpen(true);
       } else if (queued.sheet === 'value') {
         setValueFor(queued.item);
+      } else if (queued.sheet === 'editor') {
+        router.push({ pathname: '/editor', params: { missionId: queued.item.mission.id } });
       } else {
         setSkipFor(queued.item);
       }
     }, SHEET_DURATION_MS);
     return () => clearTimeout(timer);
-  }, [queued, menuFor]);
+  }, [queued, menuFor, router]);
+
+  const openEditor = (item: TodayMission) =>
+    router.push({ pathname: '/editor', params: { missionId: item.mission.id } });
 
   const openDetail = (item: TodayMission) =>
     router.push({ pathname: '/stats', params: { missionId: item.mission.id } });
@@ -124,7 +129,8 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
         key: 'edit',
         label: t('today.missions.menu.edit'),
         icon: <Icon name="modifica" size={20} color={colors.text} />,
-        onPress: () => router.push({ pathname: '/editor', params: { missionId: item.mission.id } }),
+        // The editor is a sheet too: it waits for the menu to slide away (iOS).
+        onPress: () => setQueued({ sheet: 'editor', item }),
       },
       {
         key: 'progress',
@@ -146,7 +152,9 @@ export function useMissionMenu(view: TodayView, actions: MissionActions): Missio
           ? () => setSkipFor(item)
           : key === 'value'
             ? () => setValueFor(item)
-            : onPress,
+            : key === 'edit'
+              ? () => openEditor(item)
+              : onPress,
     }));
 
   const sheets = (

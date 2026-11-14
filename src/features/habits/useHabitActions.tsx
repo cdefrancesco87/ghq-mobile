@@ -41,7 +41,7 @@ export interface HabitActions {
   readonly sheets: ReactNode;
 }
 
-type Queued = { readonly kind: 'delete' | 'pause'; readonly item: HabitItem };
+type Queued = { readonly kind: 'delete' | 'pause' | 'edit'; readonly item: HabitItem };
 
 /** Edit, pause, resume, archive, restore and delete from Habits (design-sezioni.md 3.2, 3.6, 3.7). */
 export function useHabitActions(today: GameDay): HabitActions {
@@ -61,11 +61,15 @@ export function useHabitActions(today: GameDay): HabitActions {
       return undefined;
     }
     const timer = setTimeout(() => {
-      (queued.kind === 'delete' ? setDeleteFor : setPauseFor)(queued.item);
       setQueued(null);
+      if (queued.kind === 'edit') {
+        router.push({ pathname: '/editor', params: { missionId: queued.item.mission.id } });
+      } else {
+        (queued.kind === 'delete' ? setDeleteFor : setPauseFor)(queued.item);
+      }
     }, SHEET_DURATION_MS);
     return () => clearTimeout(timer);
-  }, [queued, menuFor]);
+  }, [queued, menuFor, router]);
 
   const failed = () => toast.show({ message: t('today.missions.errors.failed') });
 
@@ -157,7 +161,8 @@ export function useHabitActions(today: GameDay): HabitActions {
       key: 'edit',
       label: t('habits.menu.edit'),
       icon: icon('modifica'),
-      onPress: () => edit(item),
+      // The editor is a sheet too: it waits for the menu to slide away (iOS).
+      onPress: () => setQueued({ kind: 'edit', item }),
     };
     const archiveItem: ActionSheetItem = {
       key: 'archive',
@@ -200,8 +205,13 @@ export function useHabitActions(today: GameDay): HabitActions {
       : [editItem, pauseItem, archiveItem, deleteItem];
   };
 
+  // The screen reader has no menu to close: its «Modifica» opens the editor at once.
   const rowActions = (item: HabitItem) =>
-    itemsFor(item).map(({ key, label, onPress }) => ({ name: key, label, onAction: onPress }));
+    itemsFor(item).map(({ key, label, onPress }) => ({
+      name: key,
+      label,
+      onAction: key === 'edit' ? () => edit(item) : onPress,
+    }));
 
   const sheets = (
     <>

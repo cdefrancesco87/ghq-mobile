@@ -24,6 +24,7 @@ import {
 } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { MOMENT_MAX_MS } from '@/features/shared/MomentQueue';
+import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { UNDO_TOAST_MS } from '@/features/shared/UndoToast';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
@@ -491,6 +492,24 @@ describe('Today: missions and completion', () => {
 
     expect(await screen.findByRole('header', { name: 'Modifica abitudine' })).toBeOnTheScreen();
     expect(screen.getByTestId('editor-name')).toHaveProp('value', 'templates.read_pages.name');
+  });
+
+  it('waits for the menu to slide away before opening the editor', async () => {
+    const db = newGame(['journal', 'read_pages']);
+    const pages = missionId(db, 'read_pages');
+    await openToday(db);
+    jest.useFakeTimers();
+    try {
+      await openMenu(pages);
+      await fireEvent.press(screen.getByTestId('today-mission-menu-edit'));
+      expect(screen.queryByTestId('editor-name')).toBeNull();
+      await act(async () => {
+        jest.advanceTimersByTime(SHEET_DURATION_MS);
+      });
+      expect(screen.getByTestId('editor-name')).toHaveProp('value', 'templates.read_pages.name');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('shows the level-up moment when the completion takes the hero to the next level', async () => {
