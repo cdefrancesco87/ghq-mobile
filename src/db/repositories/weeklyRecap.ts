@@ -1,11 +1,27 @@
-import { and, asc, eq, inArray, isNotNull, ne, or } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  between,
+  eq,
+  exists,
+  gte,
+  inArray,
+  isNotNull,
+  lt,
+  ne,
+  notExists,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
+import { alias, type SQLiteColumn } from 'drizzle-orm/sqlite-core';
 
-import { WEEKLY_RECAP } from '../../rules/config';
+import { STAT_TREND, WEEKLY_RECAP } from '../../rules/config';
 import { addDays, diffDays } from '../../rules/gameDay';
 import { heroLevelFromXp } from '../../rules/level';
 import { archivedWindow, completionCounts } from '../../rules/missionRate';
-import { statTrend, type StatChange, type StatTrend } from '../../rules/statTrend';
-import type { GameDay, StatPoints } from '../../rules/types';
+import { monthStart, statTrend, type StatChange, type StatTrend } from '../../rules/statTrend';
+import { STAT_KEYS, type GameDay, type StatKey, type StatPoints } from '../../rules/types';
 import {
   beatenRecord,
   recapFirstDay,
@@ -38,9 +54,22 @@ const LOG_TYPES: EventType[] = [
   'mission.completed',
   'boss.damaged',
   'boss.step_done',
-  'event.reverted',
   'day.closed',
 ];
+
+const reverts = alias(events, 'reverts');
+
+/** Not undone: no `event.reverted` points at the row `id` (index events_reverts_idx). */
+const notReverted = (db: Db, id: SQLiteColumn) =>
+  notExists(
+    db
+      .select({ one: sql`1` })
+      .from(reverts)
+      .where(and(eq(reverts.revertsId, id), eq(reverts.type, 'event.reverted'))),
+  );
+
+/** The best hero streak among the day closes read, 0 when none carries one. */
+const HERO_STREAK_MAX = sql<number>`coalesce(max(case when json_type(${events.payload}, '$.heroStreak') in ('integer', 'real') then json_extract(${events.payload}, '$.heroStreak') end), 0)`;
 
 interface Context {
   readonly db: Db;
@@ -105,33 +134,67 @@ export function getWeeklyRecaps(
       .all()
       .map((row) => row.id),
   );
-  const log = db
+  // Only the days of the recaps are read; before them, only the best hero streak counts.
+  const since = weeks.map((lastDay) => recapFirstDay(lastDay, heroDay)).sort()[0];
+  const until = [...weeks].sort().reverse()[0];
+  const kept = db
     .select({
-      id: events.id,
       type: events.type,
       gameDay: events.gameDay,
       occurredAt: events.occurredAt,
       missionId: events.missionId,
       bossId: events.bossId,
-      revertsId: events.revertsId,
       payload: events.payload,
     })
     .from(events)
-    .where(inArray(events.type, LOG_TYPES))
+    .where(
+      and(
+        inArray(events.type, LOG_TYPES),
+        between(events.gameDay, since, until),
+        notReverted(db, events.id),
+      ),
+    )
     .orderBy(asc(events.seq))
     .all();
-  const reverted = new Set(
-    log.filter((row) => row.type === 'event.reverted').map((row) => row.revertsId),
-  );
-  const kept = log.filter((row) => row.type !== 'event.reverted' && !reverted.has(row.id));
+  const streakBefore =
+    db
+      .select({ best: HERO_STREAK_MAX })
+      .from(events)
+      .where(
+        and(eq(events.type, 'day.closed'), lt(events.gameDay, since), notReverted(db, events.id)),
+      )
+      .get()?.best ?? 0;
   // The damage of a completion is in the `boss.damaged` of the same action: an undone completion
   // took it back (healBoss).
+  const hitInstants = [
+    ...new Set(
+      kept
+        .filter((row) => row.type === 'boss.damaged' && row.bossId !== null)
+        .map((row) => row.occurredAt),
+    ),
+  ];
   const undoneHits = new Set(
-    log
-      .filter((row) => row.type === 'mission.completed' && reverted.has(row.id))
-      .map((row) => `${row.bossId}|${row.occurredAt}`),
+    hitInstants.length === 0
+      ? []
+      : db
+          .select({ bossId: events.bossId, occurredAt: events.occurredAt })
+          .from(events)
+          .where(
+            and(
+              eq(events.type, 'mission.completed'),
+              inArray(events.occurredAt, hitInstants),
+              exists(
+                db
+                  .select({ one: sql`1` })
+                  .from(reverts)
+                  .where(and(eq(reverts.revertsId, events.id), eq(reverts.type, 'event.reverted'))),
+              ),
+            ),
+          )
+          .all()
+          .map((row) => `${row.bossId}|${row.occurredAt}`),
   );
-  const changes = changesOf(db);
+  const changes = changesOf(db, since);
   const companionName = db.select({ name: companion.name }).from(companion).get()?.name ?? null;
 
   return weeks.map((lastDay) => {
@@ -166,7 +229,7 @@ export function getWeeklyRecaps(
     const streakOf = (row: (typeof kept)[number]) =>
       typeof row.payload.heroStreak === 'number' ? row.payload.heroStreak : 0;
     const heroRecord = beatenRecord(
-      closed.filter((row) => row.gameDay < firstDay).map(streakOf),
+      [streakBefore, ...closed.filter((row) => row.gameDay < firstDay).map(streakOf)],
       closed.filter((row) => inWeek(row.gameDay)).map(streakOf),
     );
     if (heroRecord !== null) {
@@ -245,18 +308,52 @@ export function getPastWeeklyRecaps(db: Db, clock: ActionClock): WeeklyRecapView
   return getWeeklyRecaps(db, clock, lastDays);
 }
 
-/** The XP and the stat points changed on each game day, undone events and undos included. */
-function changesOf(db: Db): (StatChange & { readonly xp: number })[] {
-  return db
-    .select({ gameDay: events.gameDay, xp: events.dXp, stats: events.dStats })
+/**
+ * The XP and the stat points changed on each game day from `since`, undone events and undos
+ * included, summed in SQL; everything before `since` is summed into one change on the day before
+ * it. Exact for every sum up to a day from the day before `since` on.
+ */
+function changesOf(db: Db, since: GameDay): (StatChange & { readonly xp: number })[] {
+  const changed = or(ne(events.dXp, 0), isNotNull(events.dStats))!;
+  const sums = {
+    xp: sql<number>`coalesce(sum(${events.dXp}), 0)`,
+    ...(Object.fromEntries(
+      STAT_KEYS.map((stat) => [
+        stat,
+        sql<number>`coalesce(sum(json_extract(${events.dStats}, ${`$.${stat}`})), 0)`,
+      ]),
+    ) as Record<StatKey, SQL<number>>),
+  };
+  const toChange = (gameDay: GameDay, row: { xp: number } & Record<StatKey, number>) => ({
+    gameDay,
+    xp: row.xp,
+    stats: Object.fromEntries(STAT_KEYS.map((stat) => [stat, row[stat]])) as StatPoints,
+  });
+  const before = db
+    .select(sums)
     .from(events)
-    .where(or(ne(events.dXp, 0), isNotNull(events.dStats)))
-    .all()
-    .map((row) => ({ gameDay: row.gameDay, xp: row.xp, stats: (row.stats ?? {}) as StatPoints }));
+    .where(and(changed, lt(events.gameDay, since)))
+    .get();
+  const days = db
+    .select({ gameDay: events.gameDay, ...sums })
+    .from(events)
+    .where(and(changed, gte(events.gameDay, since)))
+    .groupBy(events.gameDay)
+    .all();
+  return [
+    ...(before === undefined ? [] : [toChange(addDays(since, -1), before)]),
+    ...days.map((row) => toChange(row.gameDay, row)),
+  ];
 }
 
 /** The level of the stats month by month (design 8.8). */
 export function getStatTrend(db: Db, clock: ActionClock): StatTrend {
   const { today, heroDay } = contextOf(db, clock);
-  return statTrend(changesOf(db), heroDay, today);
+  // The trend reads the levels at the end of the months on the chart and at the start of the
+  // months of the sentence: nothing before the earliest of them.
+  const since = [
+    monthStart(today, STAT_TREND.chartMonths - 1),
+    monthStart(today, STAT_TREND.sentenceMonths - 1),
+  ].sort()[0];
+  return statTrend(changesOf(db, since), heroDay, today);
 }

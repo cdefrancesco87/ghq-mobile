@@ -13,12 +13,26 @@ import {
   getCurrentWeeklyRecap,
   getPastWeeklyRecaps,
   getStatTrend,
+  getWeeklyRecaps,
 } from '@/db/repositories/weeklyRecap';
+import { addDays } from '@/rules/gameDay';
 import { QUEST_LOG } from '@/rules/config';
 
 import { totalsFromLog, heroTotals } from '../../../test/db';
 import { getQuestLogV1 } from '../../../test/legacy/questLogV1';
-import { SEED_NOW, SEED_TZ, seedEventLog, type SeededLog } from '../../../test/eventLogSeed';
+import {
+  getCurrentWeeklyRecapV1,
+  getPastWeeklyRecapsV1,
+  getStatTrendV1,
+  getWeeklyRecapsV1,
+} from '../../../test/legacy/weeklyRecapV1';
+import {
+  SEED_NOW,
+  SEED_TODAY,
+  SEED_TZ,
+  seedEventLog,
+  type SeededLog,
+} from '../../../test/eventLogSeed';
 
 // Measurements of the views that read the event log, on a long game: about 3 years and 20,000
 // events with GHQ_PERF_FULL=1, one year by default so that `npm test` stays fast. The timings are
@@ -125,5 +139,25 @@ describe('event log views on a long game', () => {
     } while (before !== null);
     expect(pages).toBeGreaterThan(1);
     expect(ids).toEqual(whole.days.flatMap((day) => day.entries.map((entry) => entry.id)));
+  });
+
+  it('reads the weekly recaps and the stat trend exactly as the old reading of the whole log', () => {
+    const { db, firstDay } = seeded;
+    // Today, a day in the middle of the game and the first days of the hero.
+    for (const back of [0, 40, 200, DAYS - 3, DAYS - 20]) {
+      const day = Date.UTC(2026, 10, 14 - back, 19, 30);
+      const at = { now: day, tzOffset: SEED_TZ };
+      expect(getStatTrend(db, at)).toEqual(getStatTrendV1(db, at));
+      expect(getCurrentWeeklyRecap(db, at)).toEqual(getCurrentWeeklyRecapV1(db, at));
+      expect(getPastWeeklyRecaps(db, at)).toEqual(getPastWeeklyRecapsV1(db, at));
+    }
+    const lastDays = [
+      addDays(firstDay, -3),
+      addDays(firstDay, 2),
+      addDays(firstDay, 30),
+      addDays(SEED_TODAY, -200),
+      addDays(SEED_TODAY, -1),
+    ];
+    expect(getWeeklyRecaps(db, clock, lastDays)).toEqual(getWeeklyRecapsV1(db, clock, lastDays));
   });
 });
