@@ -37,6 +37,7 @@ import { formatClock } from '@/features/shared/formatClock';
 import { Icon } from '@/features/shared/Icon';
 import { statIcon } from '@/features/shared/icons';
 import { SegmentedControl } from '@/features/shared/SegmentedControl';
+import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { ThemedText } from '@/features/shared/ThemedText';
 import { useEssential } from '@/features/shared/useGameMode';
 import { useLargeText } from '@/features/shared/useLargeText';
@@ -163,6 +164,19 @@ export function MissionEditor({
     library && missionId === undefined ? 'library' : null,
   );
   const [dialog, setDialog] = useState<Dialog | null>(null);
+  // «Crea un obiettivo» goes to the goals once the boss sheet has slid away: on iOS a screen
+  // shown while a modal is still closing may never appear.
+  const [toGoals, setToGoals] = useState(false);
+  useEffect(() => {
+    if (!toGoals || sheet !== null) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setToGoals(false);
+      router.navigate('/goals');
+    }, SHEET_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [toGoals, sheet, router]);
   const [failed, setFailed] = useState(false);
   // Enter and Save, or two quick taps, would otherwise save twice.
   const saving = useRef(false);
@@ -721,7 +735,7 @@ export function MissionEditor({
         }}
         onCreateGoal={() => {
           setSheet(null);
-          router.navigate('/goals');
+          setToGoals(true);
         }}
       />
       <ConfirmDialog

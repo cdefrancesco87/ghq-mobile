@@ -10,6 +10,7 @@ import { setSetting } from '@/db/repositories/settings';
 import { boss, missionReminders, missions } from '@/db/schema';
 import type { Db } from '@/db/types';
 import { NO_HEALTH } from '@/features/health/source';
+import { SHEET_DURATION_MS } from '@/features/shared/Sheet';
 import { setHealthSource } from '@/features/health/system';
 import { AppProviders } from '@/features/shell/AppProviders';
 import { createI18n } from '@/i18n';
@@ -489,6 +490,27 @@ describe('Mission editor: other options and editing', () => {
     expect(screen.getByTestId('editor-boss-create')).toHaveTextContent(
       'Nessun grande obiettivo attivo · Crea un obiettivo',
     );
+  });
+
+  it('goes to the goals only once the boss sheet has slid away', async () => {
+    const db = newGame(['journal']);
+    archiveBoss(db, db.select().from(boss).get()!.id, clockAt(FRIDAY, 9));
+    const journal = db.select().from(missions).get()!;
+    await openToEdit(db, journal.id);
+    await name('Diario della sera');
+    await openOption('boss');
+    jest.useFakeTimers();
+    try {
+      await fireEvent.press(screen.getByTestId('editor-boss-create'));
+      // On iOS a screen shown while the sheet is still closing may never appear.
+      expect(screen).toHavePathname('/editor');
+      await act(async () => {
+        jest.advanceTimersByTime(SHEET_DURATION_MS);
+      });
+      expect(screen).toHavePathname('/goals');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('edits a mission: new difficulty from the next completions', async () => {
