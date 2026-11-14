@@ -8,6 +8,7 @@ import {
 } from '@/db/repositories/health';
 import { archiveMission, createMission, updateMission } from '@/db/repositories/missions';
 import { createProfile } from '@/db/repositories/onboarding';
+import { undoEvent } from '@/db/repositories/undo';
 import { events, missionDays } from '@/db/schema';
 import type { Db } from '@/db/types';
 
@@ -109,11 +110,27 @@ describe('recordHealthValue', () => {
     expect(result?.status).toBe('progressed');
     expect(dayRow(db, id)).toMatchObject({ status: 'partial', value: 6200, source: 'health' });
     const event = db.select().from(events).where(eq(events.type, 'mission.progressed')).get();
-    expect(event).toMatchObject({ source: 'health', idemKey: `health:${id}|2026-11-13|6200` });
+    // The key ends with the events of the mission that day before it: here its creation.
+    expect(event).toMatchObject({ source: 'health', idemKey: `health:${id}|2026-11-13|6200|1` });
 
     // A later reading adds only the difference.
     recordHealthValue(db, { missionId: id, value: 7000, ...clock(11) });
     expect(dayRow(db, id)?.value).toBe(7000);
+  });
+
+  it('records the same reading again after an undo brought the value back', () => {
+    const db = newGame();
+    const id = walk(db);
+    const first = recordHealthValue(db, { missionId: id, value: 8100, ...clock(10) });
+    expect(first?.status).toBe('completed');
+    // The same reading twice (the app and the background task) still counts once.
+    expect(recordHealthValue(db, { missionId: id, value: 8100, ...clock(10) })).toBeNull();
+    undoEvent(db, first!.completion!.eventId, clock(11));
+    expect(dayRow(db, id)?.value ?? 0).toBe(0);
+
+    const again = recordHealthValue(db, { missionId: id, value: 8100, ...clock(12) });
+    expect(again?.status).toBe('completed');
+    expect(dayRow(db, id)).toMatchObject({ status: 'done', value: 8100 });
   });
 
   it('does nothing when the reading is not higher than the value of the day', () => {

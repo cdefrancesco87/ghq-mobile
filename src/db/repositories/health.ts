@@ -1,8 +1,8 @@
-import { and, isNotNull, ne } from 'drizzle-orm';
+import { and, count, eq, isNotNull, ne } from 'drizzle-orm';
 
 import { healthAmount, type HealthMetric } from '../../rules/health';
 import type { GameDay } from '../../rules/types';
-import { missions } from '../schema';
+import { events, missions } from '../schema';
 import type { Db } from '../types';
 import { missionDayOf, progressMission, type CompletionResult } from './completion';
 import { notDeleted } from './events';
@@ -86,9 +86,10 @@ export interface HealthValueInput extends HealthClock {
 
 /**
  * Brings a linked mission to the value read: only the difference is added, and the goal reached
- * completes it once (`progressMission`). The key names mission, day and value, so the same
- * reading from the app and the background task counts once. Null when nothing changes: a reading
- * not higher than the value of the day, a mission done or skipped today.
+ * completes it once (`progressMission`). The key names mission, day, value and the events of the
+ * mission that day, so the same reading from the app and the background task counts once, and
+ * again after an undo. Null when nothing changes: a reading not higher than the value of the
+ * day, a mission done or skipped today.
  */
 export function recordHealthValue(db: Db, input: HealthValueInput): CompletionResult | null {
   const day = gameDayOf(input.now, input.tzOffset, getSetting(db, 'day_change'));
@@ -107,11 +108,19 @@ export function recordHealthValue(db: Db, input: HealthValueInput): CompletionRe
   if (amount <= 0) {
     return null;
   }
+  // The events of the mission on the day so far: an undo adds one, so a reading equal to one
+  // already used before the undo gets a new key, while the same reading twice keeps it.
+  const written =
+    db
+      .select({ value: count() })
+      .from(events)
+      .where(and(eq(events.missionId, mission.id), eq(events.gameDay, day)))
+      .get()?.value ?? 0;
   const result = progressMission(db, {
     missionId: mission.id,
     amount,
     source: 'health',
-    idemKey: `health:${mission.id}|${day}|${input.value}`,
+    idemKey: `health:${mission.id}|${day}|${input.value}|${written}`,
     now: input.now,
     tzOffset: input.tzOffset,
   });

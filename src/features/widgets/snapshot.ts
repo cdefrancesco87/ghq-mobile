@@ -18,10 +18,19 @@ export interface WidgetTarget {
   readonly day: GameDay;
   /**
    * What makes a touch unique, for its idempotency key: the generation of the snapshot for a
-   * completion, the value reached for a measurable mission. Two touches on the same circle of the
-   * same snapshot count once.
+   * completion, the generation and the value reached for a measurable mission (`progressStamp`).
+   * Two touches on the same circle of the same snapshot count once; a value reached again after
+   * an undo comes with a new snapshot, so it counts again.
    */
   readonly stamp: string;
+}
+
+/**
+ * The stamp of a touch on a measurable mission: `<generation>~<value>`. The widget writes the
+ * next one itself after a touch (`GhqWidgets`), with the value it reached.
+ */
+export function progressStamp(generation: string, value: number): string {
+  return `${generation}~${value}`;
 }
 
 const KINDS = { c: 'complete', p: 'progress' } as const;
@@ -193,7 +202,7 @@ function rowOf(
   const value = item.value ?? 0;
   const quantity = goalType === 'quantity' && goalTarget !== null && goalUnit !== null;
   const target: WidgetTarget = measurable
-    ? { kind: 'progress', missionId: id, day, stamp: String(value) }
+    ? { kind: 'progress', missionId: id, day, stamp: progressStamp(generation, value) }
     : { kind: 'complete', missionId: id, day, stamp: generation };
   return {
     id,

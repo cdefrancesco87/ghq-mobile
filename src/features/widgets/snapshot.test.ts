@@ -155,7 +155,7 @@ describe('buildWidgetSnapshot (design-sezioni.md 12.1–12.3)', () => {
       kind: 'progress',
       missionId: water.id,
       day: TODAY,
-      stamp: '0',
+      stamp: 'g1~0',
     });
     expect(water).toMatchObject({ value: 0, step: 0.25, goal: 2 });
   });

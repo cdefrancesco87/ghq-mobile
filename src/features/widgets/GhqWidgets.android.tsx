@@ -78,7 +78,10 @@ const MediumLayout = (props: WidgetSnapshot, environment: WidgetEnvironment) => 
         value,
         done: finished,
         xp: finished ? null : item.xp,
-        target: finished ? null : ['p', item.id, props.day, String(value)].join('|'),
+        // The stamp of `progressStamp`: the generation of the snapshot and the value reached.
+        target: finished
+          ? null
+          : ['p', item.id, props.day, props.generation + '~' + String(value)].join('|'),
       };
     });
     const target = props.missions.find((item) => item.id === id)?.target;
