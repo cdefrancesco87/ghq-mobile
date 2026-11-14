@@ -77,6 +77,8 @@ export function watchTimerActivities(db: Db, host: TimerActivityHost): () => voi
         again = false;
         try {
           if (!hasProfile(db)) {
+            // The data are gone (or not there yet): a timer of the old data must not stay.
+            await activities.endAll();
             return;
           }
           const clock = getSession().clock();

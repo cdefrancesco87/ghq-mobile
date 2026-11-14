@@ -303,7 +303,25 @@ export function createTimerActivities(host: TimerActivityHost) {
     }
   };
 
-  return { sync };
+  /**
+   * Ends every activity on screen, those of this run and those left by an earlier one: no
+   * profile (before the first launch, after «Elimina tutti i dati») has a timer to show.
+   */
+  const endAll = async (): Promise<void> => {
+    cleaned = true;
+    tracked.clear();
+    let left: readonly string[] = [];
+    try {
+      left = host.list();
+    } catch {
+      left = [];
+    }
+    for (const id of left) {
+      await safely(() => host.end(id, null, null));
+    }
+  };
+
+  return { sync, endAll };
 }
 
 export type TimerActivities = ReturnType<typeof createTimerActivities>;

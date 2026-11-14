@@ -3,6 +3,7 @@ import { waitFor } from '@testing-library/react-native';
 import { startTimer } from '@/db/repositories/timers';
 import { runAction, startApp } from '@/stores/app';
 
+import { createTestDb } from '../../../test/db';
 import { FRIDAY, clockAt, missionId, newGame } from '../../../test/game';
 import type { TimerActivityHost, TimerActivityProps } from './timerActivity';
 import { watchTimerActivities } from './useTimerActivities';
@@ -85,5 +86,30 @@ describe('watchTimerActivities (design 12.5, T87)', () => {
       stop();
     }
     expect(touch).toBeNull();
+  });
+
+  it('ends the activity of a running timer after «Elimina tutti i dati»', async () => {
+    const db = newGame(['meditation']);
+    const id = missionId(db, 'meditation');
+    const now = clockAt(FRIDAY, 10);
+    await startApp({ openDatabase: () => Promise.resolve(db), clock: () => now });
+    const { host, shown } = fakeHost();
+    const stop = watchTimerActivities(db, host);
+    try {
+      runAction((actionDb, clock) => startTimer(actionDb, { missionId: id, ...clock }));
+      await waitFor(() => expect([...shown.values()]).toMatchObject([{ phase: 'running' }]));
+    } finally {
+      stop();
+    }
+
+    // The wipe opens a new empty database: the app watches it from the first launch.
+    const empty = createTestDb();
+    await startApp({ openDatabase: () => Promise.resolve(empty), clock: () => now });
+    const stopEmpty = watchTimerActivities(empty, host);
+    try {
+      await waitFor(() => expect(shown.size).toBe(0));
+    } finally {
+      stopEmpty();
+    }
   });
 });
